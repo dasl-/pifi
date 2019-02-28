@@ -18,34 +18,47 @@ def parseArgs():
         help='Number of pixels / units')
     parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=4, metavar='N',
         help='Number of pixels / units')
+    parser.add_argument('--skip-frames', dest='skip_frames', action='store', type=int, default=0, metavar='N',
+        help='Number of frames to skip every output iteration from the youtube video. Default: 0')
+    parser.add_argument('--color', dest='is_color', action='store_true', default=False,
+        help='color output? (default is black and white)')
 
     args = parser.parse_args()
     return args
 
 def setupOutputPi():
-    import board
-    import neopixel
-    num_pixels = args.display_width * args.display_height
-    pixels = neopixel.NeoPixel(board.D18, num_pixels)
+    from driver import apa102
+    pixels = apa102.APA102(num_led=240, global_brightness=10, mosi = 10, sclk = 11, order='rbg')
+    pixels.clear_strip()
     return pixels
 
-def showOutputPi(grayscale_output):
+def showOutputPi(output):
     for x in range(args.display_width):
         for y in range(args.display_height):
-            val = int(grayscale_output[x,y] / 4)
-            pixels[x + (y * args.display_width)] = (val, val, val)
+            if args.is_color:
+                r = scaleOutput(output[x, y, 2])
+                b = scaleOutput(output[x, y, 1])
+                g = scaleOutput(output[x, y, 0])
+                color = pixels.combine_color(r, g, b)
+            else:
+                grayscale = scaleOutput(output[x, y])
+                color = pixels.combine_color(grayscale, grayscale, grayscale)
+            pixels.set_pixel_rgb(x + (y * args.display_width), color)
     pixels.show()
 
-def showOutputFrame(grayscale_output):
+def scaleOutput(val):
+    return int(val / 10)
+
+def showOutputFrame(output): #todo: fix this for running with --color
     canvas_width = 600
     canvas_height = 400
 
-    img = np.zeros((canvas_height, canvas_width, 1), np.uint8) * random.randint(1,255)
+    img = np.zeros((canvas_height, canvas_width, 1), np.uint8)
     slice_height = int(canvas_height / args.display_height)
     slice_width = int(canvas_width / args.display_width)
     for x in range(args.display_width):
         for y in range(args.display_height):
-            img[(y * slice_height):((y + 1) * slice_height), (x * slice_width):((x + 1) * slice_width)] = grayscale_output[x, y]
+            img[(y * slice_height):((y + 1) * slice_height), (x * slice_width):((x + 1) * slice_width)] = output[x, y]
 
     cv2.imshow('image',img)
     cv2.waitKey(1)
@@ -76,11 +89,12 @@ video = getVideo()
 # start the video
 cap = cv2.VideoCapture(video.url)
 while (True):
-    ret, frame = cap.read()
-    # for x in range(1000):
-    #     cap.grab()
-    # ret, frame = cap.retrieve()
-    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    for x in range(args.skip_frames + 1):
+        cap.grab()
+    ret, frame = cap.retrieve()
+
+    if (not args.is_color):
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
     frame_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     frame_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -88,23 +102,33 @@ while (True):
     slice_height = int(frame_height / args.display_height)
     slice_width = int(frame_width / args.display_width)
 
-    grayscale_output = np.zeros((args.display_width, args.display_height), np.uint8)
+    if (args.is_color):
+        output = np.zeros((args.display_width, args.display_height, 3), np.uint8)
+    else:
+        output = np.zeros((args.display_width, args.display_height), np.uint8)
+
     for x in range(args.display_width):
         for y in range(args.display_height):
-            mask = np.zeros(frame.shape, np.uint8)
+            mask = np.zeros(frame.shape[:2], np.uint8)
             mask[(y * slice_height):((y + 1) * slice_height), (x * slice_width):((x + 1) * slice_width)] = 1
-            slice_grayscale = cv2.mean(frame, mask)[0] # 0 - 255 value
-            grayscale_output[x, y] = slice_grayscale
+            # mean returns a list of four 0 - 255 values
+            if (args.is_color):
+                mean = cv2.mean(frame, mask)
+                output[x, y, 0] = mean[0]
+                output[x, y, 1] = mean[1]
+                output[x, y, 2] = mean[2]
+            else:
+                output[x, y] = cv2.mean(frame, mask)[0]
 
     print(cap.get(cv2.CAP_PROP_POS_MSEC))
     print(frame.shape)
-    pprint.pprint(grayscale_output)
+    pprint.pprint(output)
 
     if args.should_output_pi:
-        showOutputPi(grayscale_output)
+        showOutputPi(output)
 
     if args.should_output_frame:
-        showOutputFrame(grayscale_output)
+        showOutputFrame(output)
 
 cap.release()
 cv2.destroyAllWindows()
