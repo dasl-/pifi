@@ -1,0 +1,6 @@
+# Ignore other unneeded files.
+*.swp
+*~
+.project
+.DS_Store
+sftp-config.json
