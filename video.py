@@ -236,7 +236,7 @@ def process_video(video_stream, args):
         if args.should_preprocess_video:
             avg_color_frames.append(avg_color_frame)
         else:
-            show_output_for_frame(avg_color_frame, args.should_output_pi, args.should_output_frame)
+            show_output_for_frame(avg_color_frames, args.should_output_pi, args.should_output_frame)
 
     vid_cap.release()
     if args.should_preprocess_video:
