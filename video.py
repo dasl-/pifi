@@ -98,10 +98,21 @@ def setPixel(x, y, color):
 def scaleOutput(val, gamma_scale):
     return gamma_scale[int(val)]
 
-def show_output_for_frames(avg_color_frames, fps, should_output_pi, should_output_frame):
-    for avg_color_frame in avg_color_frames:
-        show_output_for_frame(avg_color_frame, should_output_pi, should_output_frame)
-        # time.sleep((1/fps)/2)
+def show_output_for_frames(avg_color_frames, fps, should_output_pi, should_output_frame, num_skip_frames):
+    # fps = 29.534
+    print(fps)
+    start_time = time.time()
+    frame_length = (1/fps) * (num_skip_frames + 1)
+    last_frame = None
+
+    while (True):
+        cur_frame = math.ceil((time.time() - start_time) / frame_length)
+        if (cur_frame >= len(avg_color_frames)):
+            break
+
+        if cur_frame != last_frame:
+            show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame)
+            last_frame = cur_frame
 
 def showOutputFrame(avg_color_frame): #todo: fix this for running with --color
     canvas_width = 600
@@ -146,8 +157,8 @@ def get_video_stream(should_preprocess_video):
     pprint.pprint(best_stream.__dict__)
     return best_stream
 
-def save_frames(video_stream, avg_color_frames, is_color, num_skip_frames):
-    np.save(get_frames_save_path(video_stream, is_color, num_skip_frames), avg_color_frames)
+def save_frames(video_stream, avg_color_frames, is_color, num_skip_frames, fps):
+    np.save(get_frames_save_path(video_stream, is_color, num_skip_frames), [fps, avg_color_frames])
 
 def get_frames_save_path(video_stream, is_color, num_skip_frames):
     save_dir = "/tmp/led"
@@ -194,6 +205,7 @@ def process_video(video_stream, args):
     # start the video
     vid_cap = cv2.VideoCapture(video_path)
 
+    fps = vid_cap.get(cv2.CAP_PROP_FPS)
     avg_color_frames = []
     while (True):
         success, frame = get_next_frame(vid_cap, args.num_skip_frames)
@@ -236,12 +248,12 @@ def process_video(video_stream, args):
         if args.should_preprocess_video:
             avg_color_frames.append(avg_color_frame)
         else:
-            show_output_for_frame(avg_color_frames, args.should_output_pi, args.should_output_frame)
+            show_output_for_frame(avg_color_frame, args.should_output_pi, args.should_output_frame)
 
     vid_cap.release()
     if args.should_preprocess_video:
-        save_frames(video_stream, avg_color_frames, args.is_color, args.num_skip_frames)
-        show_output_for_frames(avg_color_frame, video_stream._info['fps'], args.should_output_pi, args.should_output_frame)
+        save_frames(video_stream, avg_color_frames, args.is_color, args.num_skip_frames, fps)
+        show_output_for_frames(avg_color_frames, fps, args.should_output_pi, args.should_output_frame, args.num_skip_frames)
 
 
 args = parseArgs()
@@ -253,8 +265,8 @@ video_stream = get_video_stream(args.should_preprocess_video)
 frames_save_path = get_frames_save_path(video_stream, args.is_color, args.num_skip_frames)
 print("frames path: " + frames_save_path)
 if os.path.exists(frames_save_path):
-    avg_color_frames = np.load(frames_save_path)
-    show_output_for_frames(avg_color_frames, video_stream._info['fps'], args.should_output_pi, args.should_output_frame)
+    fps, avg_color_frames = np.load(frames_save_path)
+    show_output_for_frames(avg_color_frames, fps, args.should_output_pi, args.should_output_frame, args.num_skip_frames)
 else:
     process_video(video_stream, args)
 
