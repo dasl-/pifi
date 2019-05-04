@@ -99,8 +99,6 @@ def scaleOutput(val, gamma_scale):
     return gamma_scale[int(val)]
 
 def show_output_for_frames(avg_color_frames, fps, should_output_pi, should_output_frame, num_skip_frames):
-    # fps = 29.534
-    print(fps)
     start_time = time.time()
     frame_length = (1/fps) * (num_skip_frames + 1)
     last_frame = None
@@ -219,8 +217,8 @@ def process_video(video_stream, args):
         frame_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         frame_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-        slice_height = int(frame_height / args.display_height)
-        slice_width = int(frame_width / args.display_width)
+        slice_height = (frame_height / args.display_height)
+        slice_width = (frame_width / args.display_width)
 
         if args.is_color:
             avg_color_frame = np.zeros((args.display_width, args.display_height, 3), np.uint8)
@@ -230,7 +228,14 @@ def process_video(video_stream, args):
         for x in range(args.display_width):
             for y in range(args.display_height):
                 mask = np.zeros(frame.shape[:2], np.uint8)
-                mask[(y * slice_height):((y + 1) * slice_height), (x * slice_width):((x + 1) * slice_width)] = 1
+                start_y = int(round(y * slice_height, 0))
+                end_y = int(round((y + 1) * slice_height, 0))
+
+                start_x = int(round(x * slice_width, 0))
+                end_x = int(round((x + 1) * slice_width, 0))
+
+                mask[start_y:end_y, start_x:end_x] = 1
+
                 # mean returns a list of four 0 - 255 values
                 if (args.is_color):
                     mean = cv2.mean(frame, mask)
