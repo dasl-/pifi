@@ -9,33 +9,6 @@ import math
 import os
 import time
 
-# gamma 2.8, brightness .4
-scale_red = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 9, 10, 10, 10, 10, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 16, 16, 16, 17, 17, 18, 18, 18, 19, 19, 19, 20, 20, 21, 21, 21, 22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 36, 36, 37, 37, 38, 38, 39, 40, 40, 41, 42, 42, 43, 43, 44, 45, 45, 46, 47, 47, 48, 49, 50, 50, 51, 52, 52, 53, 54, 55, 55, 56, 57, 58, 58, 59, 60, 61, 62, 62, 63, 64, 65, 66, 67, 67, 68, 69, 70, 71, 72, 73, 74, 75, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 99, 100, 101, 102]
-# gamma 2.8, brightness .15
-scale_green = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 26, 26, 26, 27, 27, 27, 28, 28, 28, 29, 29, 30, 30, 30, 31, 31, 31, 32, 32, 32, 33, 33, 34, 34, 34, 35, 35, 36, 36, 36, 37, 37, 38, 38]
-# gamma 2.8, brightness .22
-scale_blue = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 22, 22, 22, 23, 23, 23, 24, 24, 25, 25, 25, 26, 26, 26, 27, 27, 28, 28, 28, 29, 29, 30, 30, 30, 31, 31, 32, 32, 33, 33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 45, 45, 46, 46, 47, 47, 48, 48, 49, 49, 50, 51, 51, 52, 52, 53, 54, 54, 55, 55, 56]
-
-# remember to make sure if r, g, or b has a zero in the scale they all do, otherwise dim pixels will be just that color
-def getGamma(gamma, max_in, max_out):
-    gamma_list = []
-    for i in range (0, max_in+1):
-        gamma_list.append(int(math.floor((pow(float(i / max_in), gamma) * max_out + 0.5))))
-
-    return gamma_list;
-
-scale_red = getGamma(3, 255, int(255 * .4));
-scale_green = getGamma(3, 255, int(255 * .15));
-scale_blue = getGamma(3, 255, int(255 * .22));
-
-for i in range (0,256):
-    if (min(scale_red[i], scale_green[i], scale_blue[i]) == 0):
-        scale_red[i] = 0
-        scale_green[i] = 0
-        scale_blue[i] = 0
-    else:
-        break
-
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
@@ -52,7 +25,7 @@ def parseArgs():
         help='Number of frames to skip every output iteration from the youtube video. Default: 0 (skip no frames)')
     parser.add_argument('--color', dest='is_color', action='store_true', default=False,
         help='color output? (default is black and white)')
-    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=2, metavar='N',
+    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=3, metavar='N',
         help='Global brightness value. Max of 31.')
     parser.add_argument('--stream', dest='should_preprocess_video', action='store_false', default=True,
         help='If set, the video will be streamed instead of pre-processed')
@@ -71,19 +44,40 @@ def setupOutputPi():
     pixels.clear_strip()
     return pixels
 
-def showOutputPi(avg_color_frame):
+def showOutputPi(avg_color_frame, time_in):
+    # gamma_index = math.floor(time_in/0.1) % 40
+    # print("gamma: " + str((gamma_index + 10)/10))
+
+    brightness_total = 0
+    if args.is_color:
+        gamma_index = 18
+    else:
+        for x in range(args.display_width):
+            for y in range(args.display_height):
+                brightness_total += avg_color_frame[x, y]
+        brightness_avg = brightness_total/(args.display_width*args.display_height)
+        gamma_index = int(round(brightness_avg/256 * 40, 0))
+
+    print("gamma: " + str((gamma_index + 10)/10))
+
     for x in range(args.display_width):
         for y in range(args.display_height):
             if args.is_color:
-                r = scaleOutput(avg_color_frame[x, y, 2], scale_red)
-                b = scaleOutput(avg_color_frame[x, y, 1], scale_blue)
-                g = scaleOutput(avg_color_frame[x, y, 0], scale_green)
-                color = pixels.combine_color(r, g, b)
+                r = scaleOutput(avg_color_frame[x, y, 2], scale_red[gamma_index])
+                g = scaleOutput(avg_color_frame[x, y, 1], scale_green[gamma_index])
+                b = scaleOutput(avg_color_frame[x, y, 0], scale_blue[gamma_index])
+                color = pixels.combine_color(r, b, g)
             else:
-                r = scaleOutput(avg_color_frame[x, y], scale_red)
-                b = scaleOutput(avg_color_frame[x, y], scale_blue)
-                g = scaleOutput(avg_color_frame[x, y], scale_green)
-                color = pixels.combine_color(r, g, b)
+                if (x < 14):
+                    new_gamma_index = 18
+                    r = scaleOutput(avg_color_frame[x, y], scale_red[new_gamma_index])
+                    b = scaleOutput(avg_color_frame[x, y], scale_blue[new_gamma_index])
+                    g = scaleOutput(avg_color_frame[x, y], scale_green[new_gamma_index])
+                else:
+                    r = scaleOutput(avg_color_frame[x, y], scale_red[gamma_index])
+                    b = scaleOutput(avg_color_frame[x, y], scale_blue[gamma_index])
+                    g = scaleOutput(avg_color_frame[x, y], scale_green[gamma_index])
+                color = pixels.combine_color(r, b, g)
             setPixel(x, y, color)
     pixels.show()
 
@@ -109,7 +103,7 @@ def show_output_for_frames(avg_color_frames, fps, should_output_pi, should_outpu
             break
 
         if cur_frame != last_frame:
-            show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame)
+            show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame, (time.time() - start_time))
             last_frame = cur_frame
 
 def showOutputFrame(avg_color_frame): #todo: fix this for running with --color
@@ -126,9 +120,9 @@ def showOutputFrame(avg_color_frame): #todo: fix this for running with --color
     cv2.imshow('image',img)
     cv2.waitKey(1)
 
-def show_output_for_frame(avg_color_frame, should_output_pi, should_output_frame):
+def show_output_for_frame(avg_color_frame, should_output_pi, should_output_frame, time_in):
     if should_output_pi:
-        showOutputPi(avg_color_frame)
+        showOutputPi(avg_color_frame, time_in)
     if should_output_frame:
         showOutputFrame(avg_color_frame)
 
@@ -239,9 +233,9 @@ def process_video(video_stream, args):
                 # mean returns a list of four 0 - 255 values
                 if (args.is_color):
                     mean = cv2.mean(frame, mask)
-                    avg_color_frame[x, y, 0] = mean[0]
-                    avg_color_frame[x, y, 1] = mean[1]
-                    avg_color_frame[x, y, 2] = mean[2]
+                    avg_color_frame[x, y, 0] = mean[0] # g
+                    avg_color_frame[x, y, 1] = mean[1] # b
+                    avg_color_frame[x, y, 2] = mean[2] # r
                 else:
                     avg_color_frame[x, y] = cv2.mean(frame, mask)[0]
 
@@ -260,8 +254,136 @@ def process_video(video_stream, args):
         save_frames(video_stream, avg_color_frames, args.is_color, args.num_skip_frames, fps)
         show_output_for_frames(avg_color_frames, fps, args.should_output_pi, args.should_output_frame, args.num_skip_frames)
 
+# remember to make sure if r, g, or b has a zero in the scale they all do, otherwise dim pixels will be just that color
+# gamma: Correction factor
+# max_in: Top end of INPUT range
+# max_out: Top end of OUTPUT range
+def getGamma(gamma, max_in, max_out):
+    gamma_list = []
+    for i in range (0, max_in+1):
+        gamma_list.append(
+            int(
+                round(
+                    pow(float(i / max_in), gamma) * max_out
+                )
+            )
+        )
+
+    return gamma_list;
 
 args = parseArgs()
+
+
+
+# at global brightness 3, was too blue for B&W, not color though
+# scale_red = getGamma(3, 255, 255)#int(255 * .4))
+# scale_green = getGamma(3, 255, 255)#int(255 * .15))
+# scale_blue = getGamma(3, 255, 255)#int(255 * .22))
+
+# at global brightness 10, color was more warm, but too much black (with 0s)
+# scale_red = getGamma(3, 255, int(255 * .4))
+# scale_green = getGamma(3, 255, int(255 * .15))
+# scale_blue = getGamma(3, 255, int(255 * .22))
+
+# at gb 10, still too black (with no 0s)
+# scale_red = getGamma(3, 255, int(255 * .4))
+# scale_green = getGamma(3, 255, int(255 * .15))
+# scale_blue = getGamma(3, 255, int(255 * .22))
+
+# was pastel
+# scale_red = getGamma(1, 255, int(255 * .4))
+# scale_green = getGamma(1, 255, int(255 * .15))
+# scale_blue = getGamma(1, 255, int(255 * .22))
+
+#did notice a black change
+# scale_red = getGamma(2.8, 255, int(255 * .4))
+# scale_green = getGamma(2.8, 255, int(255 * .15))
+# scale_blue = getGamma(2.8, 255, int(255 * .22))
+
+# scale_red = getGamma(3, 255, int255 * 1))
+# scale_green = getGamma(3, 255, int(255 * .15))
+# scale_blue = getGamma(3, 255, int(255 * .15))
+
+# was cooler for b&w, color looked fine
+# scale_red = getGamma(3, 255, int(255 * 1))
+# scale_green = getGamma(3, 255, int(255 * .375))
+# scale_blue = getGamma(3, 255, int(255 * .55))
+
+# had more mid rnage, but needed to be more warm
+# scale_red = getGamma(2.5, 255, int(255 * 1))
+# scale_green = getGamma(2.5, 255, int(255 * .375))
+# scale_blue = getGamma(2.5, 255, int(255 * .55))
+
+# .375 on blue was too low, .45 looked ok, mid range maybe a little washed out
+# scale_red = getGamma(2.5, 255, int(255 * 1))
+# scale_green = getGamma(2.5, 255, int(255 * .375))
+# scale_blue = getGamma(2.5, 255, int(255 * .45))
+
+# this was best white yet
+# scale_red = getGamma(2.8, 255, int(255 * 1))
+# scale_green = getGamma(2.8, 255, int(255 * .375))
+# scale_blue = getGamma(2.8, 255, int(255 * .45))
+
+# at gb 3 this looks ok to
+# scale_red = getGamma(3, 255, int(255 * 1))
+# scale_green = getGamma(3, 255, int(255 * .375))
+# scale_blue = getGamma(3, 255, int(255 * .45))
+
+# # ryans favorite at gb 3
+# scale_red = getGamma(2.8, 255, int(255 * 1))
+# scale_green = getGamma(2.8, 255, int(255 * .375))
+# scale_blue = getGamma(2.8, 255, int(255 * .45))
+
+#doing red alone, trying to get good contrast
+# scale_red = getGamma(2, 255, int(255 * 1))
+# scale_red = getGamma(4, 255, int(255 * 1)) #good contrast
+
+#chose red, trying to get blue to match
+scale_red = []
+scale_blue = []
+scale_green = []
+for i in range(20, 60):
+    scale_red.append(getGamma(i/10, 255, int(255 * 1)))
+    scale_blue.append(getGamma(i/10, 255, int(255 * .375)))
+    scale_green.append(getGamma(i/10, 255, int(255 * .45)))
+
+if (not args.is_color):
+    for g in range(0, 40):
+        for i in range (0,256):
+            if (min(scale_red[g][i], scale_green[g][i], scale_blue[g][i]) == 0):
+                scale_red[g][i] = 0
+                scale_green[g][i] = 0
+                scale_blue[g][i] = 0
+            else:
+                break
+
+
+# for i in range (0,256):
+#     #if they arent all 0s, but at least one is a zero, set all 0s to 1s
+#     if (scale_red[i] == 0 or scale_green[i] == 0 or scale_blue[i] == 0):
+#         nonzero_vals = []
+
+#         if (scale_red[i] != 0):
+#             nonzero_vals.append(scale_red[i])
+#         if (scale_green[i] != 0):
+#             nonzero_vals.append(scale_green[i])
+#         if (scale_blue[i] != 0):
+#             nonzero_vals.append(scale_blue[i])
+
+#         if (len(nonzero_vals) > 0):
+#             set_val = min(nonzero_vals)
+#             if (scale_red[i] == 0):
+#                 scale_red[i] = set_val
+#             if (scale_green[i] == 0):
+#                 scale_green[i] = set_val
+#             if (scale_blue[i] == 0):
+#                 scale_blue[i] = set_val
+
+
+
+
+
+
 pixels = None
 if (args.should_output_pi):
     pixels = setupOutputPi()
