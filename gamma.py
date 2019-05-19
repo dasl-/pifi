@@ -24,21 +24,21 @@ class Gamma:
         self.display_height = display_height
         self.generateGammaScales()
 
-    def getScaledRGBOutputForColorFrame(self, avg_color_frame, x, y):
+    def getScaledRGBOutputForColorFrame(self, frame, x, y):
         return [
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y, 2], True),
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y, 1], False, True),
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y, 0], False, False, True)
+            self.getScaledOutputForPixel(frame[x, y, 2], True),
+            self.getScaledOutputForPixel(frame[x, y, 1], False, True),
+            self.getScaledOutputForPixel(frame[x, y, 0], False, False, True)
         ]
 
-    def getScaledRGBOutputForBlackAndWhiteFrame(self, avg_color_frame, x, y):
+    def getScaledRGBOutputForBlackAndWhiteFrame(self, frame, x, y):
         return [
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y], True),
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y], False, True),
-            self.getScaledOutputForFrame(avg_color_frame, avg_color_frame[x, y], False, False, True)
+            self.getScaledOutputForPixel(frame[x, y], True),
+            self.getScaledOutputForPixel(frame[x, y], False, True),
+            self.getScaledOutputForPixel(frame[x, y], False, False, True)
         ]
 
-    def getScaledOutputForFrame(self, avg_color_frame, val, r = False, g = False, b = False):
+    def getScaledOutputForPixel(self, val, r = False, g = False, b = False):
         gamma_scale = []
 
         if r:
@@ -55,7 +55,7 @@ class Gamma:
         self.gamma_index = new_gamma_index
 
     # powers auto gamma curve using the average brightness of the given frame
-    def setGammaIndexForFrame(self, avg_color_frame):
+    def setGammaIndexForFrame(self, frame):
         brightness_total = 0
         if self.is_color:
             self.setGammaIndex(18)
@@ -63,7 +63,7 @@ class Gamma:
             total_leds = (self.display_width * self.display_height)
             for x in range(self.display_width):
                 for y in range(self.display_height):
-                    brightness_total += avg_color_frame[x, y]
+                    brightness_total += frame[x, y]
 
             brightness_avg = brightness_total / total_leds
             self.gamma_index = int(round(brightness_avg / 256 * ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10), 0))
