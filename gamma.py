@@ -57,16 +57,14 @@ class Gamma:
     # powers auto gamma curve using the average brightness of the given frame
     def setGammaIndexForFrame(self, frame):
         brightness_total = 0
-        if self.is_color:
-            self.setGammaIndex(18)
-        else:
-            total_leds = (self.display_width * self.display_height)
-            for x in range(self.display_width):
-                for y in range(self.display_height):
-                    brightness_total += frame[x, y]
+        total_leds = (self.display_width * self.display_height)
 
-            brightness_avg = brightness_total / total_leds
-            self.gamma_index = int(round(brightness_avg / 256 * ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10), 0))
+        for x in range(self.display_width):
+            for y in range(self.display_height):
+                brightness_total += frame[x, y]
+
+        brightness_avg = brightness_total / total_leds
+        self.gamma_index = int(round(brightness_avg / 256 * ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10), 0))
 
         # print("gamma: " + str((self.gamma_index + 10) / 10))
         return self.gamma_index
