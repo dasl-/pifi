@@ -38,7 +38,7 @@ class Gamma:
             self.getScaledOutputForPixel(frame[x, y], False, False, True)
         ]
 
-    def getScaledOutputForPixel(self, val, r = False, g = False, b = False):
+    def getScaledOutputForPixel(self, brightness, r = False, g = False, b = False):
         gamma_scale = []
 
         if r:
@@ -48,7 +48,7 @@ class Gamma:
         elif b:
             gamma_scale = self.scale_blue
 
-        return gamma_scale[self.gamma_index][int(val)]
+        return gamma_scale[self.gamma_index][int(brightness)]
 
     # set a specific index (0=min)
     def setGammaIndex(self, new_gamma_index):
