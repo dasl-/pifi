@@ -1,3 +1,5 @@
+import numpy as np
+
 class Gamma:
     # possible gamma curve range, step by .1
     MIN_GAMMA_CURVE = 2
@@ -53,21 +55,29 @@ class Gamma:
     # set a specific index (0=min)
     def setGammaIndex(self, new_gamma_index):
         self.gamma_index = new_gamma_index
+        return new_gamma_index
 
     # powers auto gamma curve using the average brightness of the given frame
     def setGammaIndexForFrame(self, frame):
-        brightness_total = 0
-        total_leds = (self.display_width * self.display_height)
-
-        for x in range(self.display_width):
-            for y in range(self.display_height):
-                brightness_total += frame[x, y]
-
-        brightness_avg = brightness_total / total_leds
-        self.gamma_index = int(round(brightness_avg / 256 * ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10), 0))
-
-        # print("gamma: " + str((self.gamma_index + 10) / 10))
+        self.gamma_index = self.getGammaIndexByMagicForFrame(frame)
+        print("gamma index: " + str(self.gamma_index))
+        print("gamma: " + str((self.gamma_index + 10) / 10))
         return self.gamma_index
+
+    def getGammaIndexByMagicForFrame(self, frame):
+        brightness_avg = np.mean(frame)
+        brightness_std = np.std(frame)
+
+        #magic defined here: https://docs.google.com/spreadsheets/d/1hF3N0hCOzZlIG9VZPjADr9MhL_TWClaLHs6NJCH47AM/edit#gid=0
+        gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
+
+        if gamma_index < 0:
+            return 0
+        elif gamma_index >= (self.MAX_GAMMA_CURVE * 10):
+            return ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10) - 1
+        else:
+            return int(round(gamma_index))
+
 
     # gamma: Correction factor
     # max_in: Top end of INPUT range

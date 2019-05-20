@@ -8,6 +8,7 @@ import argparse
 import math
 import os
 import time
+import keyboard
 
 import gamma
 
@@ -60,10 +61,10 @@ def setFramePixelsBlackAndWhite(avg_color_frame, time_in):
         for y in range(args.display_height):
             # this is a test for the left half of the screen at a set gamma curve
             # this line is unecessary without the above test
-            if (x < 14):
-                gamma_controller.setGammaIndex(18)
-            else:
-                gamma_controller.setGammaIndex(gamma_index)
+            # if (x < 14):
+            #     gamma_controller.setGammaIndex(18)
+            # else:
+            #     gamma_controller.setGammaIndex(gamma_index)
 
             r, g, b = gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
             color = pixels.combine_color(r, b, g)
@@ -90,14 +91,46 @@ def show_output_for_frames(avg_color_frames, fps, should_output_pi, should_outpu
     frame_length = (1/fps) * (num_skip_frames + 1)
     last_frame = None
 
-    while (True):
-        cur_frame = math.ceil((time.time() - start_time) / frame_length)
-        if (cur_frame >= len(avg_color_frames)):
-            break
+    pause = False
+    last_time = None
 
-        if cur_frame != last_frame:
-            show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame, (time.time() - start_time))
-            last_frame = cur_frame
+    while (True):
+        try:
+            cur_frame = math.ceil((time.time() - start_time) / frame_length)
+            if (cur_frame >= len(avg_color_frames)):
+                break
+
+            last_time = time.time()
+            if cur_frame != last_frame:
+                show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame, (time.time() - start_time))
+                last_frame = cur_frame
+
+        except KeyboardInterrupt:
+            pause_time = time.time()
+            new_gamma = gamma_controller.gamma_index
+            while (True):
+                print('\n\n---------')
+                print('time: '+str(last_time - start_time))
+
+                in_key = input("Press Enter to continue...")
+
+                if in_key == ' ':
+                    start_time = start_time + (time.time() - pause_time)
+                    break
+                elif in_key == 'u':
+                    new_gamma = gamma_controller.setGammaIndex(min(new_gamma + 1, 39))
+                elif in_key == 'd':
+                    new_gamma = gamma_controller.setGammaIndex(new_gamma - 1)
+                elif in_key.isnumeric():
+                    print(int(in_key))
+                    new_gamma = gamma_controller.setGammaIndex(int(in_key))
+                else:
+                    continue
+
+                print(gamma_controller.gamma_index)
+                show_output_for_frame(avg_color_frames[cur_frame], should_output_pi, should_output_frame, (last_time - start_time))
+
+
 
 def showOutputFrame(avg_color_frame): #todo: fix this for running with --color
     canvas_width = 600
@@ -257,6 +290,13 @@ gamma_controller = gamma.Gamma(args.is_color, args.display_width, args.display_h
 video_stream = get_video_stream(args.should_preprocess_video)
 frames_save_path = get_frames_save_path(video_stream, args.is_color, args.num_skip_frames)
 print("frames path: " + frames_save_path)
+
+
+
+# keyboard.add_hotkey('space', print, args=['space was pressed'])
+
+
+
 if os.path.exists(frames_save_path):
     fps, avg_color_frames = np.load(frames_save_path)
     show_output_for_frames(avg_color_frames, fps, args.should_output_pi, args.should_output_frame, args.num_skip_frames)
