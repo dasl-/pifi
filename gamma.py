@@ -60,8 +60,6 @@ class Gamma:
     # powers auto gamma curve using the average brightness of the given frame
     def setGammaIndexForFrame(self, frame):
         self.gamma_index = self.getGammaIndexByMagicForFrame(frame)
-        print("gamma index: " + str(self.gamma_index))
-        print("gamma: " + str((self.gamma_index + 10) / 10))
         return self.gamma_index
 
     def getGammaIndexByMagicForFrame(self, frame):
@@ -73,7 +71,7 @@ class Gamma:
 
         if gamma_index < 0:
             return 0
-        elif gamma_index >= (self.MAX_GAMMA_CURVE * 10):
+        elif gamma_index >= ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10) - 1:
             return ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10) - 1
         else:
             return int(round(gamma_index))
