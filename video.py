@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import numpy as np
 import cv2
 import pafy
@@ -9,6 +10,7 @@ import math
 import os
 import time
 import keyboard
+import sys
 
 import gamma
 
@@ -59,13 +61,6 @@ def setFramePixelsBlackAndWhite(avg_color_frame, time_in):
 
     for x in range(args.display_width):
         for y in range(args.display_height):
-            # this is a test for the left half of the screen at a set gamma curve
-            # this line is unecessary without the above test
-            # if (x < 14):
-            #     gamma_controller.setGammaIndex(18)
-            # else:
-            #     gamma_controller.setGammaIndex(gamma_index)
-
             r, g, b = gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
             color = pixels.combine_color(r, b, g)
             setPixel(x, y, color)
@@ -179,7 +174,7 @@ def save_frames(video_stream, avg_color_frames, is_color, num_skip_frames, fps):
     np.save(get_frames_save_path(video_stream, is_color, num_skip_frames), [fps, avg_color_frames])
 
 def get_frames_save_path(video_stream, is_color, num_skip_frames):
-    save_dir = "/tmp/led"
+    save_dir = sys.path[0] + "/lightness_data"
     os.makedirs(save_dir, exist_ok = True)
     color_str = ""
     if is_color:
@@ -196,7 +191,7 @@ def get_frames_save_path(video_stream, is_color, num_skip_frames):
 # [tls @ 0x1388940] The specified session has been invalidated for some reason.
 # [tls @ 0x1388940] The specified session has been invalidated for some reason.
 def download_video(video_stream):
-    save_dir = "/tmp/led"
+    save_dir = sys.path[0] + "/lightness_data"
     os.makedirs(save_dir, exist_ok = True)
 
     save_path = save_dir + "/" + video_stream.title + "@" + video_stream.resolution + "." + video_stream.extension
@@ -225,6 +220,7 @@ def process_video(video_stream, args):
 
     fps = vid_cap.get(cv2.CAP_PROP_FPS)
     avg_color_frames = []
+    start = time.time()
     while (True):
         success, frame = get_next_frame(vid_cap, args.num_skip_frames)
         if not success:
@@ -275,6 +271,8 @@ def process_video(video_stream, args):
         else:
             show_output_for_frame(avg_color_frame, args.should_output_pi, args.should_output_frame)
 
+    end = time.time()
+    print("processing video took: " + str(end - start) + " seconds")
     vid_cap.release()
     if args.should_preprocess_video:
         save_frames(video_stream, avg_color_frames, args.is_color, args.num_skip_frames, fps)

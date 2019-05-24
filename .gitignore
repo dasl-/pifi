@@ -4,3 +4,6 @@
 .project
 .DS_Store
 sftp-config.json
+lightness_data/
+__pycache__/
+parallel.py
