@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 import math
 import time
-import gamma
 from driver import apa102
+
+#local libraries
+import gamma
 
 class VideoPlayer:
     video_settings = None
@@ -49,6 +51,7 @@ class VideoPlayer:
                 self.setPixel(x, y, color)
 
     def setPixel(self, x, y, color):
+        # each row is zig-zagged, so every other row needs to be flippe horizontally
         if (y % 2 == 0):
             pixel_index = (y * self.video_settings.display_width) + (self.video_settings.display_width - x - 1)
         else:

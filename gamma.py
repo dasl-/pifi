@@ -88,7 +88,7 @@ class Gamma:
                 )
             )
 
-        return gamma_list;
+        return gamma_list
 
     # is_color: true for color video
     def generateGammaScales(self):
