@@ -7,11 +7,15 @@ import time
 import os
 import time
 import sys
+import urllib
 
 class VideoProcessor:
     video_settings = None
     video_stream = None
     frames_save_path = None
+
+    thumbnail_url = None
+    thumbnail = None
 
     video_fps = None
     video_frames = []
@@ -27,7 +31,22 @@ class VideoProcessor:
 
         print("frames path: " + self.frames_save_path)
 
+    def get_and_display_thumbnail(self, video_player):
+        try:
+            req = urllib.request.urlopen("whammy")#self.thumbnail_url)
+            arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
+            self.thumbnail = cv2.imdecode(arr, -1)
+            self.display_thumbnail(video_player)
+        except:
+            pass
+
+    def display_thumbnail(self, video_player):
+        avg_color_frame = self.get_avg_color_frame(self.thumbnail.shape[1], self.thumbnail.shape[0], self.thumbnail)
+        video_player.playFrame(avg_color_frame)
+
     def process_as_stream(self, video_player, force_stream=False):
+        self.get_and_display_thumbnail(video_player)
+
         if not force_stream and os.path.exists(self.frames_save_path):
             self.video_fps, self.video_frames = np.load(self.frames_save_path)
             video_player.playVideo(self.video_frames, self.video_fps)
@@ -35,13 +54,14 @@ class VideoProcessor:
             self.process_video(True, video_player)
 
     def preprocess_and_play(self, video_player):
+        self.get_and_display_thumbnail(video_player)
+
         if os.path.exists(self.frames_save_path):
             self.video_fps, self.video_frames = np.load(self.frames_save_path)
         else:
             self.process_video()
 
         video_player.playVideo(self.video_frames, self.video_fps)
-
 
     def get_video_stream(self, url):
         p = pafy.new(url)
@@ -64,6 +84,9 @@ class VideoProcessor:
                 lowest_x_dimension = stream.dimensions[0]
         print("Using: " + str(best_stream))
         pprint.pprint(best_stream.__dict__)
+
+        self.thumbnail_url = p.thumb
+
         return best_stream
 
     def save_frames(self):
@@ -134,7 +157,12 @@ class VideoProcessor:
             if not self.video_settings.is_color:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-            avg_color_frame = self.get_avg_color_frame(vid_cap, frame)
+            print(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
+            print(frame.shape)
+            print(vid_cap.get(cv2.CAP_PROP_FPS))
+            frame_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+            frame_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+            avg_color_frame = self.get_avg_color_frame(frame_width, frame_height, frame)
             video_frames.append(avg_color_frame)
 
             if stream:
@@ -149,14 +177,7 @@ class VideoProcessor:
         if not os.path.exists(self.frames_save_path):
             self.save_frames()
 
-    def get_avg_color_frame(self, vid_cap, frame):
-        print(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
-        print(frame.shape)
-        print(vid_cap.get(cv2.CAP_PROP_FPS))
-
-        frame_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        frame_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
+    def get_avg_color_frame(self, frame_width, frame_height, frame):
         slice_height = (frame_height / self.video_settings.display_height)
         slice_width = (frame_width / self.video_settings.display_width)
 

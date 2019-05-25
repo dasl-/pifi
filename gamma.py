@@ -64,6 +64,7 @@ class Gamma:
         brightness_std = np.std(frame)
 
         #magic defined here: https://docs.google.com/spreadsheets/d/1hF3N0hCOzZlIG9VZPjADr9MhL_TWClaLHs6NJCH47AM/edit#gid=0
+        #calibrated at global brightness of 10
         gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
 
         if gamma_index < 0:
