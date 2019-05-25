@@ -33,7 +33,7 @@ class VideoProcessor:
 
     def get_and_display_thumbnail(self, video_player):
         try:
-            req = urllib.request.urlopen("whammy")#self.thumbnail_url)
+            req = urllib.request.urlopen(self.thumbnail_url)
             arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
             self.thumbnail = cv2.imdecode(arr, -1)
             self.display_thumbnail(video_player)
