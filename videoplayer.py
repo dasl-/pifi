@@ -5,10 +5,8 @@ import gamma
 from driver import apa102
 
 class VideoPlayer:
-    is_color = None
-    display_width = None
-    display_height = None
-    brightness = None
+    video_settings = None
+
     gamma_controller = None
     pixels = None
 
@@ -17,19 +15,16 @@ class VideoPlayer:
     SCLK_PIN = 11
     LED_ORDER = 'rbg'
 
-    def __init__(self, is_color, display_width, display_height, brightness):
-        self.is_color = is_color
-        self.display_width = display_width
-        self.display_height = display_height
-        self.brightness = brightness
-        self.gamma_controller = gamma.Gamma(is_color, display_width, display_height)
+    def __init__(self, video_settings):
+        self.video_settings = video_settings
+        self.gamma_controller = gamma.Gamma(video_settings)
         self.setupPixels()
 
     def setupPixels(self):
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.pixels = apa102.APA102(
-            num_led=(self.display_width * self.display_height + 8),
-            global_brightness=self.brightness,
+            num_led=(self.video_settings.display_width * self.video_settings.display_height + 8),
+            global_brightness=self.video_settings.brightness,
             mosi=self.MOSI_PIN,
             sclk=self.SCLK_PIN,
             order=self.LED_ORDER
@@ -38,8 +33,8 @@ class VideoPlayer:
         return self.pixels
 
     def setFramePixelsColor(self, avg_color_frame):
-        for x in range(self.display_width):
-            for y in range(self.display_height):
+        for x in range(self.video_settings.display_width):
+            for y in range(self.video_settings.display_height):
                 r, g, b = self.gamma_controller.getScaledRGBOutputForColorFrame(avg_color_frame, x, y)
                 color = self.pixels.combine_color(r, b, g)
                 self.setPixel(x, y, color)
@@ -47,17 +42,17 @@ class VideoPlayer:
     def setFramePixelsBlackAndWhite(self, avg_color_frame):
         gamma_index = self.gamma_controller.setGammaIndexForFrame(avg_color_frame)
 
-        for x in range(self.display_width):
-            for y in range(self.display_height):
+        for x in range(self.video_settings.display_width):
+            for y in range(self.video_settings.display_height):
                 r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
                 color = self.pixels.combine_color(r, b, g)
                 self.setPixel(x, y, color)
 
     def setPixel(self, x, y, color):
         if (y % 2 == 0):
-            pixel_index = (y * self.display_width) + (self.display_width - x - 1)
+            pixel_index = (y * self.video_settings.display_width) + (self.video_settings.display_width - x - 1)
         else:
-            pixel_index = (y * self.display_width) + x
+            pixel_index = (y * self.video_settings.display_width) + x
 
         self.pixels.set_pixel_rgb(pixel_index, color)
 
@@ -91,7 +86,7 @@ class VideoPlayer:
                         continue
 
     def playFrame(self, avg_color_frame):
-        if self.is_color:
+        if self.video_settings.is_color:
             self.setFramePixelsColor(avg_color_frame)
         else:
             self.setFramePixelsBlackAndWhite(avg_color_frame)

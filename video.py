@@ -13,6 +13,7 @@ import keyboard
 import sys
 
 import videoplayer
+import settings
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
@@ -170,7 +171,10 @@ def process_video(video_stream, args):
         video_player.playVideo(avg_color_frames, fps)
 
 args = parseArgs()
-video_player = videoplayer.VideoPlayer(args.is_color, args.display_width, args.display_height, args.brightness)
+
+video_settings = settings.Settings(args)
+
+video_player = videoplayer.VideoPlayer(video_settings)
 video_stream = get_video_stream(args.should_preprocess_video)
 frames_save_path = get_frames_save_path(video_stream, args.is_color, args.num_skip_frames)
 print("frames path: " + frames_save_path)

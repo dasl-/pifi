@@ -15,15 +15,12 @@ class Gamma:
     scale_blue = []
     scale_green = []
 
-    is_color = None
-    display_width = None
-    display_height = None
+    video_settings = None
+
     gamma_index = 18
 
-    def __init__(self, is_color, display_width, display_height):
-        self.is_color = is_color
-        self.display_width = display_width
-        self.display_height = display_height
+    def __init__(self, video_settings):
+        self.video_settings = video_settings
         self.generateGammaScales()
 
     def getScaledRGBOutputForColorFrame(self, frame, x, y):
@@ -40,7 +37,7 @@ class Gamma:
             self.getScaledOutputForPixel(frame[x, y], False, False, True)
         ]
 
-    def getScaledOutputForPixel(self, brightness, r = False, g = False, b = False):
+    def getScaledOutputForPixel(self, brightness, r=False, g=False, b=False):
         gamma_scale = []
 
         if r:
@@ -102,7 +99,7 @@ class Gamma:
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color
-        if not self.is_color:
+        if not self.video_settings.is_color:
             for g in range(0, ((self.MAX_GAMMA_CURVE - self.MIN_GAMMA_CURVE) * 10)):
                 for i in range(0, 256):
                     if min(self.scale_red[g][i], self.scale_green[g][i], self.scale_blue[g][i]) == 0:
