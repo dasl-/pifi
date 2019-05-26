@@ -41,7 +41,9 @@ class VideoProcessor:
             pass
 
     def display_thumbnail(self, video_player):
-        avg_color_frame = self.get_avg_color_frame(self.thumbnail.shape[1], self.thumbnail.shape[0], self.thumbnail)
+        slice_width = (self.thumbnail.shape[1] / self.video_settings.display_width)
+        slice_height = (self.thumbnail.shape[0] / self.video_settings.display_height)
+        avg_color_frame = self.get_avg_color_frame(slice_width, slice_height, self.thumbnail)
         video_player.playFrame(avg_color_frame)
 
     def process_as_stream(self, video_player, force_stream=False):
@@ -57,6 +59,8 @@ class VideoProcessor:
         self.get_and_display_thumbnail(video_player)
 
         if os.path.exists(self.frames_save_path):
+            # self.video_fps = 25.0
+            # self.video_frames = np.load(self.frames_save_path)
             self.video_fps, self.video_frames = np.load(self.frames_save_path)
         else:
             self.process_video()
@@ -147,8 +151,15 @@ class VideoProcessor:
         vid_cap = cv2.VideoCapture(video_path)
 
         fps = vid_cap.get(cv2.CAP_PROP_FPS)
+        frame_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        frame_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        slice_width = (frame_width / self.video_settings.display_width)
+        slice_height = (frame_height / self.video_settings.display_height)
+
         video_frames = []
+
         start = time.time()
+        i = 0
         while (True):
             success, frame = self.get_next_frame(vid_cap)
             if not success:
@@ -157,16 +168,17 @@ class VideoProcessor:
             if not self.video_settings.is_color:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-            print(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
-            print(frame.shape)
-            print(vid_cap.get(cv2.CAP_PROP_FPS))
-            frame_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-            frame_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-            avg_color_frame = self.get_avg_color_frame(frame_width, frame_height, frame)
+            if (i % 100 == 0):
+                print(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
+                # print(frame.shape)
+                # print(vid_cap.get(cv2.CAP_PROP_FPS))
+
+            avg_color_frame = self.get_avg_color_frame(slice_width, slice_height, frame)
             video_frames.append(avg_color_frame)
 
             if stream:
                 video_player.playFrame(avg_color_frame)
+            i++
 
         end = time.time()
         print("processing video took: " + str(end - start) + " seconds")
@@ -177,14 +189,11 @@ class VideoProcessor:
         if not os.path.exists(self.frames_save_path):
             self.save_frames()
 
-    def get_avg_color_frame(self, frame_width, frame_height, frame):
-        slice_height = (frame_height / self.video_settings.display_height)
-        slice_width = (frame_width / self.video_settings.display_width)
-
+    def get_avg_color_frame(self, slice_width, slice_height, frame):
         if self.video_settings.is_color:
-            avg_color_frame = np.zeros((self.video_settings.display_width, self.video_settings.display_height, 3), np.uint8)
+            avg_color_frame = np.empty((self.video_settings.display_width, self.video_settings.display_height, 3), np.uint8)
         else:
-            avg_color_frame = np.zeros((self.video_settings.display_width, self.video_settings.display_height), np.uint8)
+            avg_color_frame = np.empty((self.video_settings.display_width, self.video_settings.display_height), np.uint8)
 
         for x in range(self.video_settings.display_width):
             for y in range(self.video_settings.display_height):
