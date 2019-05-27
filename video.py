@@ -14,7 +14,7 @@ def parseArgs():
         help='Number of pixels / units')
     parser.add_argument('--color', dest='is_color', action='store_true', default=False,
         help='color output? (default is black and white)')
-    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=10, metavar='N',
+    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=3, metavar='N',
         help='Global brightness value. Max of 31.')
 
     args = parser.parse_args()
