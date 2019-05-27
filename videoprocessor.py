@@ -20,7 +20,7 @@ class VideoProcessor:
     video_frames = []
 
     DATA_DIRECTORY = 'lightness_data'
-    DATA_FILE_FORMAT = '%title@%resolution__%color__skip%num_skip_frames.%extension.npy'
+    DATA_FILE_FORMAT = '%title@%resolution__%color.%extension.npy'
     VIDEO_FILE_FORMAT = '%title@%resolution.%extension'
 
     def __init__(self, url, video_settings):
@@ -44,15 +44,6 @@ class VideoProcessor:
         slice_height = (self.thumbnail.shape[0] / self.video_settings.display_height)
         avg_color_frame = self.get_avg_color_frame(slice_width, slice_height, self.thumbnail)
         video_player.playFrame(avg_color_frame)
-
-    def process_as_stream(self, video_player, force_stream=False):
-        self.get_and_display_thumbnail(video_player)
-
-        if not force_stream and os.path.exists(self.frames_save_path):
-            self.video_fps, self.video_frames = np.load(self.frames_save_path)
-            video_player.playVideo(self.video_frames, self.video_fps)
-        else:
-            self.process_video(True, video_player)
 
     def preprocess_and_play(self, video_player):
         self.get_and_display_thumbnail(video_player)
@@ -101,7 +92,6 @@ class VideoProcessor:
             .replace('%title', self.video_stream.title) \
             .replace('%resolution', self.video_stream.resolution) \
             .replace('%color', "color" if self.video_settings.is_color else "bw") \
-            .replace('%num_skip_frames', str(self.video_settings.num_skip_frames)) \
             .replace('%extension', self.video_stream.extension)
 
         save_path = (self.get_data_directory() + "/" + filename)
@@ -133,7 +123,7 @@ class VideoProcessor:
     def get_next_frame(self, vid_cap):
         success = True
         # add one because we need to call .grab() once even if we're skipping no frames.
-        for x in range(self.video_settings.num_skip_frames + 1):
+        for x in range(1):
             success = vid_cap.grab()
             if not success:
                 return False, None
