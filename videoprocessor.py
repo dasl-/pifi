@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import numpy as np
 import cv2
 import pafy
@@ -59,8 +58,6 @@ class VideoProcessor:
         self.get_and_display_thumbnail(video_player)
 
         if os.path.exists(self.frames_save_path):
-            # self.video_fps = 25.0
-            # self.video_frames = np.load(self.frames_save_path)
             self.video_fps, self.video_frames = np.load(self.frames_save_path)
         else:
             self.process_video()
@@ -87,7 +84,7 @@ class VideoProcessor:
                 best_stream = stream
                 lowest_x_dimension = stream.dimensions[0]
         print("Using: " + str(best_stream))
-        pprint.pprint(best_stream.__dict__)
+        # pprint.pprint(best_stream.__dict__)
 
         self.thumbnail_url = p.thumb
 
@@ -116,7 +113,7 @@ class VideoProcessor:
     # [tls @ 0x1388940] The specified session has been invalidated for some reason.
     # [tls @ 0x1388940] The specified session has been invalidated for some reason.
     def download_video(self):
-        filename = self.DATA_FILE_FORMAT \
+        filename = self.VIDEO_FILE_FORMAT \
             .replace('%title', self.video_stream.title) \
             .replace('%resolution', self.video_stream.resolution) \
             .replace('%extension', self.video_stream.extension)
@@ -135,7 +132,8 @@ class VideoProcessor:
 
     def get_next_frame(self, vid_cap):
         success = True
-        for x in range(self.video_settings.num_skip_frames + 1): # add one because we need to call .grab() once even if we're skipping no frames.
+        # add one because we need to call .grab() once even if we're skipping no frames.
+        for x in range(self.video_settings.num_skip_frames + 1):
             success = vid_cap.grab()
             if not success:
                 return False, None
@@ -160,7 +158,8 @@ class VideoProcessor:
 
         start = time.time()
         i = 0
-        while (True):
+        log_freq = 1/200
+        while True:
             success, frame = self.get_next_frame(vid_cap)
             if not success:
                 break
@@ -168,17 +167,17 @@ class VideoProcessor:
             if not self.video_settings.is_color:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-            if (i % 100 == 0):
-                print(vid_cap.get(cv2.CAP_PROP_POS_MSEC))
+            if i % int(round(log_freq ** -1)) == 0 and i != 0:
+                print("Processing frame at " + str(vid_cap.get(cv2.CAP_PROP_POS_MSEC)) + " ms.")
+                print ("Processing at " + str(i / (time.time() - start)) + " frames per second.")
                 # print(frame.shape)
-                # print(vid_cap.get(cv2.CAP_PROP_FPS))
 
             avg_color_frame = self.get_avg_color_frame(slice_width, slice_height, frame)
             video_frames.append(avg_color_frame)
 
             if stream:
                 video_player.playFrame(avg_color_frame)
-            i++
+            i += 1
 
         end = time.time()
         print("processing video took: " + str(end - start) + " seconds")

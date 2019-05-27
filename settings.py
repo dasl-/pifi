@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 class Settings:
     # Boolean - color output?
     is_color = None

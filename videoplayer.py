@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import math
 import time
 from driver import apa102
