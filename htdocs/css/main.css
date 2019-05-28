@@ -1,0 +1,42 @@
+.header {
+  margin-top: 10px;
+}
+.black-and-white img {
+  filter: grayscale(100%);
+}
+.show-in-color,
+.black-and-white .show-in-black-and-white {
+  display: inline-block;
+}
+.black-and-white .show-in-color,
+.show-in-black-and-white {
+  display: none;
+}
+#search_results {
+  margin-top: 10px;
+}
+.search-result {
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+.search-result img {
+  margin: auto;
+  max-height: 280px;
+  width: auto;
+}
+.search-result .title-padding {
+  margin-top: 15px;
+}
+.search-result h4.title {
+  margin-top: 0;
+}
+.search-result .duration {
+  position: absolute;
+  bottom:5px;
+  right:5px;
+  margin-right: 15px;
+  padding: 0 3px;
+  background-color: black;
+  color: white;
+  border-radius: 2px;
+}

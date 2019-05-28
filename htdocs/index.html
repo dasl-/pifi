@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Lightness</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script type='text/javascript' src='./js/jquery-3.4.1.min.js'></script>
+    <script type='text/javascript' src='./js/secrets.js'></script>
+    <script type='text/javascript' src='./js/main.js'></script>
+
+    <link rel="stylesheet" href="./css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/main.css" />
+    <link rel="icon" href="./assets/favicon.ico">
+  </head>
+  <body>
+    <div class="container">
+      <div class="starter-template">
+        <div class="header">
+          <div class="form-group">
+              <div class="input-group">
+                <input type="text" class="form-control" id="query" placeholder="">
+                <div class="input-group-btn">
+                  <button class="btn btn-primary" type="button" id="submitquery">
+                    <span class='hidden-xs'>Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
+                    <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
+                  </button>
+                  <button class="btn btn-success show-in-color toggle-color" type="button">
+                     <span class='hidden-xs'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Color</span>
+                     <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
+                  </button>
+                  <button class="btn btn-default show-in-black-and-white toggle-color" type="button">
+                    <span class='hidden-xs'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> B&W</span>
+                    <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
+                  </button>
+                  <input type="checkbox" id="color"  style="display: none;" />
+                </div>
+              </div>
+          </div>
+        </div>
+
+        <div id="search_results"></div>
+      </div>
+    </div>
+  </body>
+</html>
