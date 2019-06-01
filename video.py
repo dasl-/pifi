@@ -24,5 +24,5 @@ args = parseArgs()
 video_settings = settings.Settings(args)
 
 video_player = videoplayer.VideoPlayer(video_settings)
-video_processor = videoprocessor.VideoProcessor(args.url, video_settings)
-video_processor.preprocess_and_play(video_player)
+video_processor = videoprocessor.VideoProcessor(video_settings)
+video_processor.preprocess_and_play(url = args.url, video_player = video_player)

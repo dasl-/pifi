@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-import pafy
 import pprint
 import time
 import os
@@ -10,43 +9,48 @@ import urllib
 import re
 import multiprocessing
 import sharedmem
+import logger
+import youtube_dl
 
 class VideoProcessor:
 
     # Settings
     __video_settings = None
 
-    # pafy video stream
-    __video_stream = None
+    # metadata about the video we are using, such as title, resolution, file extension, etc
+    __video_info = None
+
+    __logger = None
 
     __thumbnail_url = None
     __thumbnail = None
 
     __DATA_DIRECTORY = 'lightness_data'
-    __FRAMES_FILE_FORMAT = '%s@%s__%s.%s.npy'
-    __VIDEO_FILE_FORMAT = '%s@%s.%s'
+    __YOUTUBE_DL_FORMAT = 'worstvideo[ext=webm]/worst[ext=webm]/worst'
+    __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W' # a random alphanumeric string that is unlikely to be present in a video title
 
-    def __init__(self, url, video_settings):
+    def __init__(self, video_settings):
         self.__video_settings = video_settings
-        self.__video_stream = self.__get_video_stream(url)
+        self.__logger = logger.Logger().set_namespace(self.__class__.__name__)
 
-    def preprocess_and_play(self, video_player):
+    def preprocess_and_play(self, url, video_player):
+        self.__populate_video_metadata(url)
         self.__get_and_display_thumbnail(video_player)
 
         existing_frames_file_name, video_fps = self.__get_existing_frames_file_name()
         if existing_frames_file_name:
             existing_frames_path = self.__get_data_directory() + "/" + existing_frames_file_name
-            print("Found existing frames file: " + existing_frames_path)
+            self.__logger.info("Found existing frames file: " + existing_frames_path)
             video_frames = np.load(self.__get_data_directory() + "/" + existing_frames_file_name)
         else:
-            print("Unable to find existing frames file. Processing video...")
+            self.__logger.info("Unable to find existing frames file. Processing video...")
             video_frames, video_fps = self.__process_video(video_player)
 
         video_player.playVideo(video_frames, video_fps)
 
     # Regex match from frames save pattern to see if a file matches that with an unknown FPS.
     def __get_existing_frames_file_name(self):
-        regex = self.__insert_fps_into_frames_file_name('([0-9.]+)', True)
+        regex = self.__insert_fps_into_frames_file_name('([0-9.]+)')
         regex = "^" + regex + "$"
         regex = re.compile(regex)
 
@@ -61,17 +65,9 @@ class VideoProcessor:
         return None, None
 
     # we insert the video fps into the saved frames file name
-    def __insert_fps_into_frames_file_name(self, fps, should_regex_escape):
+    def __insert_fps_into_frames_file_name(self, fps):
         frames_save_pattern = self.__get_frames_save_pattern()
-        dot_char = '.'
-        if should_regex_escape:
-            frames_save_pattern = re.escape(frames_save_pattern)
-            dot_char = '\\.'
-
-        index_of_last_dot = frames_save_pattern.rfind(dot_char)
-        chopped = frames_save_pattern[:index_of_last_dot]
-        index_of_penultimate_dot = chopped.rfind(dot_char)
-        frames_file_name = frames_save_pattern[:index_of_penultimate_dot] + "__" + fps + "fps" + frames_save_pattern[index_of_penultimate_dot:]
+        frames_file_name = frames_save_pattern.replace(self.__FPS_PLACEHOLDER, str(fps))
         return frames_file_name
 
     def __get_and_display_thumbnail(self, video_player):
@@ -89,75 +85,75 @@ class VideoProcessor:
         avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, self.__thumbnail)
         video_player.playFrame(avg_color_frame)
 
-    def __get_video_stream(self, url):
-        p = pafy.new(url)
+    def __populate_video_metadata(self, url):
+        ydl_opts = {
+            'format': self.__YOUTUBE_DL_FORMAT,
+            'logger': logger.Logger(),
+        }
+        ydl = youtube_dl.YoutubeDL(ydl_opts)
+        self.__video_info = ydl.extract_info(url, download = False)
 
-        # pick lowest resolution because it will be less resource intensive to process
-        best_stream = None
-        lowest_x_dimension = None
+        video_type = 'video_only'
+        if self.__video_info['acodec'] != 'none':
+            video_type = 'video+audio'
+        self.__logger.info("Using: " + video_type + ":" + self.__video_info['ext'] + "@" +
+            self.__get_resolution_from_video_info())
 
-        print("Options:")
-        for stream in p.videostreams:
-            filesize = '??'
-            if (stream._info['filesize']):
-                filesize = str(round(stream._info['filesize']/1024/1024, 2))
+        self.__thumbnail_url = 'http://i.ytimg.com/vi/%s/default.jpg' % self.__video_info['id']
 
-            print("    " + stream.extension + "@" + stream.resolution + " " +
-                str(stream._info['fps']) + "fps " + filesize + "MB")
-            if (not best_stream or
-                (
-                    stream.dimensions[0] <= lowest_x_dimension and
-                    stream.extension == 'webm' # prefer webm because mp4s sometimes refuse to play
-                )
-            ):
-                best_stream = stream
-                lowest_x_dimension = stream.dimensions[0]
-        print("Using: " + str(best_stream))
-        # pprint.pprint(best_stream.__dict__)
-
-        self.__thumbnail_url = p.thumb
-
-        return best_stream
+    def __get_resolution_from_video_info(self):
+        return str(self.__video_info['width']) + "x" + str(self.__video_info['height'])
 
     def __save_frames(self, video_frames, video_fps):
         np.save(
-            self.__get_data_directory() + "/" + self.__insert_fps_into_frames_file_name(str(video_fps), False),
+            self.__get_data_directory() + "/" + self.__insert_fps_into_frames_file_name(video_fps),
             video_frames
         )
 
-    # get the frames save file name without the FPS inserted into it
+    # get the frames save file name with a placeholder for FPS to be inserted
     def __get_frames_save_pattern(self):
-        filename = self.__FRAMES_FILE_FORMAT % (
-            self.__video_stream.title,
-            self.__video_stream.resolution,
-            "color" if self.__video_settings.is_color else "bw",
-            self.__video_stream.extension
+        s = '%s@%s__%s__' + self.__FPS_PLACEHOLDER + 'fps.%s.npy'
+        filename = self.__sanitize_filename(
+            s % (
+                self.__video_info['title'],
+                self.__get_resolution_from_video_info(),
+                "color" if self.__video_settings.is_color else "bw",
+                self.__video_info['ext']
+            )
         )
-
         return filename
 
-    # download video rather than streaming to avoid errors like:
-    # [tls @ 0x1388940] Error in the pull function.
-    # [matroska,webm @ 0x1396ff0] Read error
-    # [tls @ 0x1388940] The specified session has been invalidated for some reason.
-    # [tls @ 0x1388940] The specified session has been invalidated for some reason.
     def __download_video(self):
-        filename = self.__VIDEO_FILE_FORMAT % (
-            self.__video_stream.title,
-            self.__video_stream.resolution,
-            self.__video_stream.extension
-        )
+        filename = self.__sanitize_filename('%s@%s.%s' % (
+            self.__video_info['title'],
+            self.__get_resolution_from_video_info(),
+            self.__video_info['ext']
+        ))
 
         save_path = (self.__get_data_directory() + "/" + filename)
 
         if os.path.exists(save_path):
-            print("Found existing video file: " + save_path)
+            self.__logger.info("Found existing video file: " + save_path)
             return save_path
         else:
-            print("Unable to find existing video file. Downloading video...")
-            self.__video_stream.download(save_path)
+            self.__logger.info("Unable to find existing video file. Downloading video...")
+            ydl_opts = {
+                'format': self.__video_info['format_id'],
+                'outtmpl': save_path,
+                # 'postprocessors': [{}],
+                'logger': logger.Logger(),
+            }
+            ydl = youtube_dl.YoutubeDL(ydl_opts)
+            ydl.download(url_list = [self.__video_info['webpage_url']])
             return save_path
 
+    # replace special chars with '?'
+    def __sanitize_filename(self, filename):
+        return re.sub(
+           r"[^A-z0-9_\-@\.\? ]",
+           "?",
+           filename
+        )
 
     def __get_data_directory(self):
         save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
@@ -177,7 +173,8 @@ class VideoProcessor:
         return success, frame
 
     def __process_video_subprocess(self, avg_color_frames, process_num, num_processes, video_path):
-        print("[SUBPROCESS " + str(process_num) + "] Starting...")
+        self.__logger.set_namespace(self.__class__.__name__ + " SUBPROCESS " + str(process_num))
+        self.__logger.info("Starting...")
         start_frame = process_num
         vid_cap = cv2.VideoCapture(video_path)
         success, frame = self.__get_next_frame(vid_cap, start_frame)
@@ -202,7 +199,7 @@ class VideoProcessor:
             if loop_counter != 0 and loop_counter % int(round(log_freq ** -1)) == 0:
                 processing_frame_sec = str(round(vid_cap.get(cv2.CAP_PROP_POS_MSEC) / 1000, 2))
                 processing_fps = str(round(loop_counter / (time.time() - start), 2))
-                print("[SUBPROCESS " + str(process_num) + "] Progress: " + str(round(current_frame / num_frames * 100, 2)) + "%. " +
+                self.__logger.info("Progress: " + str(round(current_frame / num_frames * 100, 2)) + "%. " +
                     "Processing frame from " + processing_frame_sec + "s at " + processing_fps + " frames per second.")
 
             avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, frame)
@@ -213,7 +210,7 @@ class VideoProcessor:
                 # Make sure we don't go over what we thought it was...
                 success, frame = self.__get_next_frame(vid_cap, num_processes - 1)
                 if not success:
-                    print("Unable to __get_next_frame")
+                    self.__logger.info("Unable to __get_next_frame")
                     break
             else:
                 break
@@ -223,7 +220,7 @@ class VideoProcessor:
         vid_cap.release()
         end = time.time()
         processing_fps = str(round(loop_counter / (end - start), 2))
-        print("[SUBPROCESS " + str(process_num) + "] Processing video subprocess completed in " +
+        self.__logger.info("Processing video subprocess completed in " +
             str(round(end - start, 2)) + " seconds at " + processing_fps + " frames per second.")
 
     def __process_video(self, video_player):
@@ -253,7 +250,7 @@ class VideoProcessor:
         for process in processes:
             process.wait()
 
-        print("Processing whole video completed in " + str(round(time.time() - start, 2)) + " seconds.")
+        self.__logger.info("Processing whole video completed in " + str(round(time.time() - start, 2)) + " seconds.")
 
         self.__save_frames(avg_color_frames, video_fps)
         return avg_color_frames, video_fps
