@@ -4,5 +4,5 @@
 .project
 .DS_Store
 sftp-config.json
-lightness_data/
+data/
 __pycache__/

@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import argparse
-
-#local libraries
-import videoplayer, videoprocessor, settings
+from lightness.settings import Settings
+from lightness.videoplayer import VideoPlayer
+from lightness.videoprocessor import VideoProcessor
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
@@ -21,8 +21,8 @@ def parseArgs():
     return args
 
 args = parseArgs()
-video_settings = settings.Settings(args)
+video_settings = Settings(args)
 
-video_player = videoplayer.VideoPlayer(video_settings)
-video_processor = videoprocessor.VideoProcessor(video_settings)
+video_player = VideoPlayer(video_settings)
+video_processor = VideoProcessor(video_settings)
 video_processor.preprocess_and_play(url = args.url, video_player = video_player)

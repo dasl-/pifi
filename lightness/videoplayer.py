@@ -1,9 +1,7 @@
 import math
 import time
 from driver import apa102
-
-#local libraries
-import gamma
+from lightness.gamma import Gamma
 
 class VideoPlayer:
     video_settings = None
@@ -18,7 +16,7 @@ class VideoPlayer:
 
     def __init__(self, video_settings):
         self.video_settings = video_settings
-        self.gamma_controller = gamma.Gamma(video_settings)
+        self.gamma_controller = Gamma(video_settings)
         self.setupPixels()
 
     def setupPixels(self):

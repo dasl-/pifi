@@ -9,7 +9,7 @@ import urllib
 import re
 import multiprocessing
 import sharedmem
-import logger
+from lightness.logger import Logger
 import youtube_dl
 
 class VideoProcessor:
@@ -25,13 +25,13 @@ class VideoProcessor:
     __thumbnail_url = None
     __thumbnail = None
 
-    __DATA_DIRECTORY = 'lightness_data'
+    __DATA_DIRECTORY = 'data'
     __YOUTUBE_DL_FORMAT = 'worstvideo[ext=webm]/worst[ext=webm]/worst'
     __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W' # a random alphanumeric string that is unlikely to be present in a video title
 
     def __init__(self, video_settings):
         self.__video_settings = video_settings
-        self.__logger = logger.Logger().set_namespace(self.__class__.__name__)
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def preprocess_and_play(self, url, video_player):
         self.__populate_video_metadata(url)
@@ -88,7 +88,7 @@ class VideoProcessor:
     def __populate_video_metadata(self, url):
         ydl_opts = {
             'format': self.__YOUTUBE_DL_FORMAT,
-            'logger': logger.Logger(),
+            'logger': Logger(),
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
         self.__video_info = ydl.extract_info(url, download = False)
@@ -139,7 +139,7 @@ class VideoProcessor:
                 'format': self.__video_info['format_id'],
                 'outtmpl': save_path,
                 # 'postprocessors': [{}],
-                'logger': logger.Logger(),
+                'logger': Logger(),
             }
             ydl = youtube_dl.YoutubeDL(ydl_opts)
             ydl.download(url_list = [self.__video_info['webpage_url']])
@@ -180,7 +180,7 @@ class VideoProcessor:
         slice_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT) / display_height
         current_frame = start_frame
         loop_counter = 0
-        log_freq = 1 / 200
+        log_freq = 1 / 25
         start = time.time()
         while (True):
             if not self.__video_settings.is_color:
