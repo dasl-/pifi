@@ -113,22 +113,20 @@ class VideoProcessor:
     # get the frames save file name with a placeholder for FPS to be inserted
     def __get_frames_save_pattern(self):
         s = '%s@%s__%s__' + self.__FPS_PLACEHOLDER + 'fps.%s.npy'
-        filename = self.__sanitize_filename(
-            s % (
-                self.__video_info['title'],
-                self.__get_resolution_from_video_info(),
-                "color" if self.__video_settings.is_color else "bw",
-                self.__video_info['ext']
-            )
+        filename = s % (
+            self.__video_info['title'],
+            self.__get_resolution_from_video_info(),
+            "color" if self.__video_settings.is_color else "bw",
+            self.__video_info['ext']
         )
         return filename
 
     def __download_video(self):
-        filename = self.__sanitize_filename('%s@%s.%s' % (
+        filename = '%s@%s.%s' % (
             self.__video_info['title'],
             self.__get_resolution_from_video_info(),
             self.__video_info['ext']
-        ))
+        )
 
         save_path = (self.__get_data_directory() + "/" + filename)
 
@@ -146,14 +144,6 @@ class VideoProcessor:
             ydl = youtube_dl.YoutubeDL(ydl_opts)
             ydl.download(url_list = [self.__video_info['webpage_url']])
             return save_path
-
-    # replace special chars with '?'
-    def __sanitize_filename(self, filename):
-        return re.sub(
-           r"[^A-z0-9_\-@\.\? ]",
-           "?",
-           filename
-        )
 
     def __get_data_directory(self):
         save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
