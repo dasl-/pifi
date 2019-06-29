@@ -135,8 +135,7 @@ function runQuery() {
     clearTimeout(last_request);
     last_request = setTimeout(function() {
       search(
-        $("#query").val(),
-        ($('#color').is(':checked') ? true : false)
+        $("#query").val()
       );
     }, 50)
   }
@@ -192,7 +191,9 @@ $(document).ready(function() {
 
   $("#search_results")
     .on("click", ".search-result", function() {
-      playVideo($(this).closest(".search-result").data("load-url"), false)
+      playVideo(
+        $(this).closest(".search-result").data("load-url"),
+        ($('#color').is(':checked') ? true : false))
     })
 
   $('.toggle-color')

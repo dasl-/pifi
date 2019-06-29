@@ -57,12 +57,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         response_details['is_color'] = is_color
 
         # do something with the data
-        command = ["python3", "/home/pi/lightness/video.py"]
+        command = ["python3", "/home/pi/lightness/video"]
         command.append("--url")
         command.append(url)
 
         if (is_color):
             command.append("--color")
+
+        command.append("--flip-x")
 
         subprocess.Popen(command)
 
