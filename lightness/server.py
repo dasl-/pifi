@@ -9,7 +9,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if self.path == '/':
             self.path = '/index.html'
 
-        self.path = "/htdocs" + self.path
+        self.path = "../htdocs" + self.path
 
         ext = self.path[self.path.rfind(".")+1:].lower()
 

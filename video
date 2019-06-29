@@ -14,6 +14,10 @@ def parseArgs():
         help='Number of pixels / units')
     parser.add_argument('--color', dest='is_color', action='store_true', default=False,
         help='color output? (default is black and white)')
+    parser.add_argument('--flip-x', dest='flip_x', action='store_true', default=False,
+        help='flip X direction output')
+    parser.add_argument('--flip-y', dest='flip_y', action='store_true', default=False,
+        help='flip Y direction output')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=3, metavar='N',
         help='Global brightness value. Max of 31.')
 
@@ -24,5 +28,9 @@ args = parseArgs()
 video_settings = Settings(args)
 
 video_player = VideoPlayer(video_settings)
+video_player.clearScreen()
+
 video_processor = VideoProcessor(video_settings)
 video_processor.preprocess_and_play(url = args.url, video_player = video_player)
+
+video_player.clearScreen()
