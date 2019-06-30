@@ -1,3 +1,3 @@
-var API_KEY = 'API_KEY';
-var CLIENT_ID = 'CLIENT_ID';
-var QUOTA_USER = 'QUOTA_USER';
+var API_KEY = 'AIzaSyDbd6ZSIOBd3JFkJ1iQUV6M33zNSpdWtbs';
+var CLIENT_ID = 'NONE';
+var QUOTA_USER = 'ABCD';

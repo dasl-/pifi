@@ -2,6 +2,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from io import BytesIO
 import json
 import subprocess
+import ssl
+import time
+from process import Process
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
@@ -66,11 +69,28 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         command.append("--flip-x")
 
-        subprocess.Popen(command)
+        print("Running command `" + " ".join(command) + "`")
+
+        # clear any running video process
+        Process.clear_process()
+
+        video = subprocess.Popen(command)
+
+        # wait until the video is actually playing to return success
+        process = Process()
+        status = process.get_status()
+        while(status != Process.STATUS_PLAYING):
+            status = process.get_status()
+            time.sleep(0.3)
 
         response_details['success'] = True
         response.write(bytes(json.dumps(response_details), 'utf-8'))
         self.wfile.write(response.getvalue())
 
-httpd = HTTPServer(('0.0.0.0', 80), SimpleHTTPRequestHandler)
+httpd = HTTPServer(('0.0.0.0', 443), SimpleHTTPRequestHandler)
+
+httpd.socket = ssl.wrap_socket (httpd.socket,
+                                keyfile="/home/pi/.sslcerts/private.key",
+                                certfile='/home/pi/.sslcerts/certificate.crt', server_side=True)
+
 httpd.serve_forever()

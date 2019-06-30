@@ -10,6 +10,7 @@ import re
 import multiprocessing
 import sharedmem
 from lightness.logger import Logger
+from lightness.process import Process
 import youtube_dl
 
 class VideoProcessor:
@@ -20,6 +21,8 @@ class VideoProcessor:
     # metadata about the video we are using, such as title, resolution, file extension, etc
     __video_info = None
 
+    __process = None
+
     __logger = None
 
     __thumbnail_url = None
@@ -29,8 +32,9 @@ class VideoProcessor:
     __YOUTUBE_DL_FORMAT = 'worstvideo[ext=webm]/worst[ext=webm]/worst'
     __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W' # a random alphanumeric string that is unlikely to be present in a video title
 
-    def __init__(self, video_settings):
+    def __init__(self, video_settings, process):
         self.__video_settings = video_settings
+        self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def preprocess_and_play(self, url, video_player):
@@ -46,6 +50,7 @@ class VideoProcessor:
             self.__logger.info("Unable to find existing frames file. Processing video...")
             video_frames, video_fps = self.__process_video(video_player)
 
+        self.__process.set_status(Process.STATUS_PLAYING)
         video_player.playVideo(video_frames, video_fps)
 
     # Regex match from frames save pattern to see if a file matches that with an unknown FPS.
@@ -83,6 +88,12 @@ class VideoProcessor:
         slice_width = (self.__thumbnail.shape[1] / self.__video_settings.display_width)
         slice_height = (self.__thumbnail.shape[0] / self.__video_settings.display_height)
         avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, self.__thumbnail)
+        video_player.playFrame(avg_color_frame)
+
+    def display_image(self, image, video_player):
+        slice_width = (image.shape[1] / self.__video_settings.display_width)
+        slice_height = (image.shape[0] / self.__video_settings.display_height)
+        avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, image)
         video_player.playFrame(avg_color_frame)
 
     def __populate_video_metadata(self, url):

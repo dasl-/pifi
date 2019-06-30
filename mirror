@@ -3,9 +3,15 @@ import argparse
 from lightness.settings import Settings
 from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
-from lightness.process import Process
 
-import os
+import numpy as np
+import cv2
+from matplotlib import pyplot as plt
+import time
+import io
+import datetime
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
@@ -27,17 +33,25 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
-process = Process(Process.MODE_WRITE)
-process.set_status(Process.STATUS_LOADING)
-
 args = parseArgs()
 video_settings = Settings(args)
 
 video_player = VideoPlayer(video_settings)
 video_player.clearScreen()
 
-video_processor = VideoProcessor(video_settings, process)
-video_processor.preprocess_and_play(url = args.url, video_player = video_player)
+video_processor = VideoProcessor(video_settings)
 
-process.set_status(Process.STATUS_DONE)
-video_player.clearScreen()
+# Video Capture - 80, 60 is as small as itll go without artifacts or breaking
+camera = PiCamera()
+camera.resolution = (80, 60)
+camera.vflip = True
+
+rawCapture = PiRGBArray(camera, size=(80, 60))
+time.sleep(0.1)
+
+for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+    image = frame.array
+    video_processor.display_image(image, video_player)
+    rawCapture.truncate(0)
+    print(datetime.datetime.now())
+

@@ -115,13 +115,14 @@ function showVideos(videos) {
     $("#search_results").append(
       `<div class='row search-result' data-load-url='https://www.youtube.com/watch?v=${video_id}'>
         <div class='col-sm-4 search-result-image'>
+          <div class='loading-cover'><div class='dot-pulse'></div></div>
           <img src='${img_src}' class='img-responsive' width='100%' />
           <span class='duration'>${duration}</span>
         </div>
-        <div class='col-sm-8'>
+        <div class='col-sm-8 video-data'>
           <div class='title-padding hidden-sm hidden-md hidden-lg'></div>
           <h4 class='title'>${title}</h4>
-          <div><h6>${channel} | ${view_count} views | ${published} ago</h6></h6>
+          <div><h6>${channel} | ${view_count} views | ${published} ago</h6></div>
           <p>${description}</p>
         </div>
       </div>`
@@ -145,7 +146,7 @@ function setBodyClass() {
   $('body').toggleClass('black-and-white', !$('#color').is(':checked'));
 }
 
-function playVideo(url, is_color) {
+function playVideo(url, is_color, target) {
   $.ajax({
     type: "POST",
     url: "/index.html",
@@ -154,7 +155,7 @@ function playVideo(url, is_color) {
       color: is_color
     }),
     success: function() {
-      alert("LOADING...")
+      target.removeClass("loading");
     }
   });
 }
@@ -191,9 +192,15 @@ $(document).ready(function() {
 
   $("#search_results")
     .on("click", ".search-result", function() {
-      playVideo(
-        $(this).closest(".search-result").data("load-url"),
-        ($('#color').is(':checked') ? true : false))
+      target = $(this).closest(".search-result")
+      if (!target.is(".loading")) {
+        target.addClass("loading")
+        playVideo(
+          target.data("load-url"),
+          ($('#color').is(':checked') ? true : false),
+          target
+        )
+      }
     })
 
   $('.toggle-color')
