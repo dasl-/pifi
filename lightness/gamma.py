@@ -25,26 +25,26 @@ class Gamma:
 
     def getScaledRGBOutputForColorFrame(self, frame, x, y):
         return [
-            self.getScaledOutputForPixel(frame[x, y, 2], True),
-            self.getScaledOutputForPixel(frame[x, y, 1], False, True),
-            self.getScaledOutputForPixel(frame[x, y, 0], False, False, True)
+            self.getScaledOutputForPixel(frame[y, x, 0], 'r'),
+            self.getScaledOutputForPixel(frame[y, x, 2], 'g'),
+            self.getScaledOutputForPixel(frame[y, x, 1], 'b')
         ]
 
     def getScaledRGBOutputForBlackAndWhiteFrame(self, frame, x, y):
         return [
-            self.getScaledOutputForPixel(frame[x, y], True),
-            self.getScaledOutputForPixel(frame[x, y], False, True),
-            self.getScaledOutputForPixel(frame[x, y], False, False, True)
+            self.getScaledOutputForPixel(frame[y, x], 'r'),
+            self.getScaledOutputForPixel(frame[y, x], 'g'),
+            self.getScaledOutputForPixel(frame[y, x], 'b')
         ]
 
-    def getScaledOutputForPixel(self, brightness, r=False, g=False, b=False):
+    def getScaledOutputForPixel(self, brightness, color):
         gamma_scale = []
 
-        if r:
+        if color == 'r':
             gamma_scale = self.scale_red
-        elif g:
+        elif color == 'g':
             gamma_scale = self.scale_green
-        elif b:
+        elif color == 'b':
             gamma_scale = self.scale_blue
 
         return gamma_scale[self.gamma_index][int(brightness)]
@@ -64,7 +64,7 @@ class Gamma:
         brightness_std = np.std(frame)
 
         #magic defined here: https://docs.google.com/spreadsheets/d/1hF3N0hCOzZlIG9VZPjADr9MhL_TWClaLHs6NJCH47AM/edit#gid=0
-        #calibrated at global brightness of 10
+        #calibrated at global brightness of 3 (i think?)
         gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
 
         if gamma_index < 0:

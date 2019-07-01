@@ -34,20 +34,17 @@ class VideoPlayer:
         self.pixels.clear_strip()
         return self.pixels
 
-    def setFramePixelsColor(self, avg_color_frame):
-        for x in range(self.video_settings.display_width):
-            for y in range(self.video_settings.display_height):
-                r, g, b = self.gamma_controller.getScaledRGBOutputForColorFrame(avg_color_frame, x, y)
-                color = self.pixels.combine_color(r, b, g)
-                self.setPixel(x, y, color)
-
-    def setFramePixelsBlackAndWhite(self, avg_color_frame):
-        gamma_index = self.gamma_controller.setGammaIndexForFrame(avg_color_frame)
+    def __setFramePixels(self, avg_color_frame):
+        if not self.video_settings.is_color:
+            self.gamma_controller.setGammaIndexForFrame(avg_color_frame)
 
         for x in range(self.video_settings.display_width):
             for y in range(self.video_settings.display_height):
-                r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
-                color = self.pixels.combine_color(r, b, g)
+                if self.video_settings.is_color:
+                    r, g, b = self.gamma_controller.getScaledRGBOutputForColorFrame(avg_color_frame, x, y)
+                else:
+                    r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                color = self.pixels.combine_color(r, g, b)
                 self.setPixel(x, y, color)
 
     def setPixel(self, x, y, color):
@@ -94,9 +91,5 @@ class VideoPlayer:
                         continue
 
     def playFrame(self, avg_color_frame):
-        if self.video_settings.is_color:
-            self.setFramePixelsColor(avg_color_frame)
-        else:
-            self.setFramePixelsBlackAndWhite(avg_color_frame)
-
+        self.__setFramePixels(avg_color_frame)
         self.pixels.show()

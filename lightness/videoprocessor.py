@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 import pprint
 import time
 import os
@@ -7,51 +6,49 @@ import time
 import sys
 import urllib
 import re
-import multiprocessing
-import sharedmem
 from lightness.logger import Logger
 from lightness.process import Process
+from lightness.cmdrunner import CmdRunner
 import youtube_dl
+import ffmpeg
+import subprocess
+import math
 
 class VideoProcessor:
 
-    # Settings
     __video_settings = None
+    __logger = None
+    __process = None
 
     # metadata about the video we are using, such as title, resolution, file extension, etc
     __video_info = None
 
-    __process = None
-
-    __logger = None
-
-    __thumbnail_url = None
-    __thumbnail = None
-
     __DATA_DIRECTORY = 'data'
-    __YOUTUBE_DL_FORMAT = 'worstvideo[ext=webm]/worst[ext=webm]/worst'
-    __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W' # a random alphanumeric string that is unlikely to be present in a video title
+
+    # mp4 scales quicker than webm in ffmpeg scaling
+    __YOUTUBE_DL_FORMAT = 'worst[ext=mp4]/worst'
+
+    # a random alphanumeric string that is unlikely to be present in a video title
+    __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W'
 
     def __init__(self, video_settings, process):
         self.__video_settings = video_settings
         self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    def preprocess_and_play(self, url, video_player):
+    def process_and_play(self, url, video_player):
         self.__populate_video_metadata(url)
-        self.__get_and_display_thumbnail(video_player)
 
         existing_frames_file_name, video_fps = self.__get_existing_frames_file_name()
         if existing_frames_file_name:
             existing_frames_path = self.__get_data_directory() + "/" + existing_frames_file_name
             self.__logger.info("Found existing frames file: " + existing_frames_path)
             video_frames = np.load(self.__get_data_directory() + "/" + existing_frames_file_name)
+            self.__process.set_status(Process.STATUS_PLAYING)
+            video_player.playVideo(video_frames, video_fps)
         else:
             self.__logger.info("Unable to find existing frames file. Processing video...")
-            video_frames, video_fps = self.__process_video(video_player)
-
-        self.__process.set_status(Process.STATUS_PLAYING)
-        video_player.playVideo(video_frames, video_fps)
+            video_frames, video_fps = self.__process_and_play_video(video_player)
 
     # Regex match from frames save pattern to see if a file matches that with an unknown FPS.
     def __get_existing_frames_file_name(self):
@@ -75,27 +72,6 @@ class VideoProcessor:
         frames_file_name = frames_save_pattern.replace(self.__FPS_PLACEHOLDER, str(fps))
         return frames_file_name
 
-    def __get_and_display_thumbnail(self, video_player):
-        try:
-            req = urllib.request.urlopen(self.__thumbnail_url)
-            arr = np.asarray(bytearray(req.read()), dtype=np.uint8)
-            self.__thumbnail = cv2.imdecode(arr, -1)
-            self.__display_thumbnail(video_player)
-        except:
-            pass
-
-    def __display_thumbnail(self, video_player):
-        slice_width = (self.__thumbnail.shape[1] / self.__video_settings.display_width)
-        slice_height = (self.__thumbnail.shape[0] / self.__video_settings.display_height)
-        avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, self.__thumbnail)
-        video_player.playFrame(avg_color_frame)
-
-    def display_image(self, image, video_player):
-        slice_width = (image.shape[1] / self.__video_settings.display_width)
-        slice_height = (image.shape[0] / self.__video_settings.display_height)
-        avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, image)
-        video_player.playFrame(avg_color_frame)
-
     def __populate_video_metadata(self, url):
         ydl_opts = {
             'format': self.__YOUTUBE_DL_FORMAT,
@@ -109,8 +85,6 @@ class VideoProcessor:
             video_type = 'video+audio'
         self.__logger.info("Using: " + video_type + ":" + self.__video_info['ext'] + "@" +
             self.__get_resolution_from_video_info())
-
-        self.__thumbnail_url = 'http://i.ytimg.com/vi/%s/default.jpg' % self.__video_info['id']
 
     def __get_resolution_from_video_info(self):
         return str(self.__video_info['width']) + "x" + str(self.__video_info['height'])
@@ -161,128 +135,72 @@ class VideoProcessor:
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
-    def __get_next_frame(self, vid_cap, num_skip_frames):
-        success = True
-        # add one because we need to call .grab() once even if we're skipping no frames.
-        for x in range(num_skip_frames + 1):
-            success = vid_cap.grab()
-            if not success:
-                return False, None
-        success, frame = vid_cap.retrieve()
-        if not success:
-            return False, None
-        return success, frame
-
-    def __process_video_subprocess(self, avg_color_frames, process_num, num_processes, video_path):
-        self.__logger.set_namespace(self.__class__.__name__ + " SUBPROCESS " + str(process_num))
-        self.__logger.info("Starting...")
-        start_frame = process_num
-        vid_cap = cv2.VideoCapture(video_path)
-        success, frame = self.__get_next_frame(vid_cap, start_frame)
-        if not success:
-            return
-
-        if (self.__video_settings.is_color):
-            num_frames, display_width, display_height, ignore = avg_color_frames.shape
-        else:
-            num_frames, display_width, display_height = avg_color_frames.shape
-
-        slice_width = vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH) / display_width
-        slice_height = vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT) / display_height
-        current_frame = start_frame
-        loop_counter = 0
-        log_freq = 1 / 25
-        start = time.time()
-        while (True):
-            if not self.__video_settings.is_color:
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-
-            if loop_counter != 0 and loop_counter % int(round(log_freq ** -1)) == 0:
-                processing_frame_sec = str(round(vid_cap.get(cv2.CAP_PROP_POS_MSEC) / 1000, 2))
-                processing_fps = str(round(loop_counter / (time.time() - start), 2))
-                self.__logger.info("Progress: " + str(round(current_frame / num_frames * 100, 2)) + "%. " +
-                    "Processing frame from " + processing_frame_sec + "s at " + processing_fps + " frames per second.")
-
-            avg_color_frame = self.__get_avg_color_frame(slice_width, slice_height, frame)
-            avg_color_frames[current_frame] = avg_color_frame
-            current_frame += num_processes
-            if current_frame < num_frames:
-                # some videos report an incorrect frame count (less frames than it actually is).
-                # Make sure we don't go over what we thought it was...
-                success, frame = self.__get_next_frame(vid_cap, num_processes - 1)
-                if not success:
-                    self.__logger.info("Unable to __get_next_frame")
-                    break
-            else:
-                break
-
-            loop_counter += 1
-
-        vid_cap.release()
-        end = time.time()
-        processing_fps = str(round(loop_counter / (end - start), 2))
-        self.__logger.info("Processing video subprocess completed in " +
-            str(round(end - start, 2)) + " seconds at " + processing_fps + " frames per second.")
-
-    def __process_video(self, video_player):
+    def __process_and_play_video(self, video_player):
         video_path = self.__download_video()
-        vid_cap = cv2.VideoCapture(video_path)
-        video_fps = vid_cap.get(cv2.CAP_PROP_FPS)
-        num_frames = int(vid_cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        vid_cap.release()
 
-        avg_color_frames_shape = self.__get_avg_color_frame_shape()
-        avg_color_frames_shape.insert(0, num_frames)
-        avg_color_frames = sharedmem.empty(avg_color_frames_shape, dtype=np.uint8)
-        num_processes = multiprocessing.cpu_count()
-        processes = []
-        start = time.time()
-        for process_num in range(num_processes):
-            processes.append(sharedmem.background(
-                function = self.__process_video_subprocess,
-                avg_color_frames = avg_color_frames,
-                process_num = process_num,
-                num_processes = num_processes,
-                video_path = video_path
-            ))
+        # fps = self.__calculate_fps()
+        # todo: calculate fps using self.__video_info.url and passing it to ffprobe or opencv. Then we can just pipe the ytdl to ffmpeg after.
+        fps_parts = CmdRunner(self.__logger).run(
+            ('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', video_path)
+        )
+        fps_parts = fps_parts.split('/')
+        fps = float(fps_parts[0]) / float(fps_parts[1])
+        self.__logger.info('Calculated fps: ' + str(fps))
 
-        # time.sleep(7)
-        # video_player.playVideo(avg_color_frames, video_fps)
-        for process in processes:
-            process.wait()
-
-        self.__logger.info("Processing whole video completed in " + str(round(time.time() - start, 2)) + " seconds.")
-
-        self.__save_frames(avg_color_frames, video_fps)
-        return avg_color_frames, video_fps
-
-    def __get_avg_color_frame_shape(self):
+        pix_fmt = 'gray'
+        bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
+        np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
         if self.__video_settings.is_color:
-            return [self.__video_settings.display_width, self.__video_settings.display_height, 3]
-        else:
-            return [self.__video_settings.display_width, self.__video_settings.display_height]
+            pix_fmt = 'rgb24'
+            bytes_per_frame = bytes_per_frame * 3
+            np_array_shape.append(3)
 
-    def __get_avg_color_frame(self, slice_width, slice_height, frame):
-        avg_color_frame = np.empty(self.__get_avg_color_frame_shape(), np.uint8)
-        for x in range(self.__video_settings.display_width):
-            for y in range(self.__video_settings.display_height):
-                mask = np.zeros(frame.shape[:2], np.uint8)
-                start_y = int(round(y * slice_height, 0))
-                end_y = int(round((y + 1) * slice_height, 0))
+        ffmpeg_proc = subprocess.Popen(
+            (
+                'ffmpeg',
+                '-threads', '1', # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
+                '-i', video_path,
+                '-filter:v', 'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height),
+                '-c:a', 'copy', # don't process the audio at all
+                '-f', 'rawvideo', '-pix_fmt', pix_fmt, # output in numpy compatible byte format
+                'pipe:1' # output to stdout
+            ),
+            stdout=subprocess.PIPE
+        )
 
-                start_x = int(round(x * slice_width, 0))
-                end_x = int(round((x + 1) * slice_width, 0))
+        self.__process.set_status(Process.STATUS_PLAYING)
+        time.sleep(0.5) # give ffmpeg some time to start up before we try playing its output
 
-                mask[start_y:end_y, start_x:end_x] = 1
+        start_time = time.time()
+        frame_length = (1/fps)
+        last_frame = None
+        has_whole_video_been_processed = False
 
-                # mean returns a list of four 0 - 255 values
-                if (self.__video_settings.is_color):
-                    mean = cv2.mean(frame, mask)
-                    avg_color_frame[x, y, 0] = mean[0] # g
-                    avg_color_frame[x, y, 1] = mean[1] # b
-                    avg_color_frame[x, y, 2] = mean[2] # r
+        avg_color_frames = []
+        while True:
+            if not has_whole_video_been_processed:
+                in_bytes = ffmpeg_proc.stdout.read(bytes_per_frame)
+            if has_whole_video_been_processed or not in_bytes:
+                if not has_whole_video_been_processed:
+                    self.__logger.info("no in_bytes, end of video processing.")
+                    has_whole_video_been_processed = True
+            else:
+                avg_color_frame = np.frombuffer(in_bytes, np.uint8).reshape(np_array_shape)
+                avg_color_frames.append(avg_color_frame)
+
+            cur_frame = math.floor((time.time() - start_time) / frame_length)
+            if cur_frame >= len(avg_color_frames):
+                if has_whole_video_been_processed:
+                    self.__logger.info("video done playing.")
+                    break
                 else:
-                    avg_color_frame[x, y] = cv2.mean(frame, mask)[0]
+                    self.__logger.error("video processing unable to keep up in real-time")
+                    continue
 
-        return avg_color_frame
+            if cur_frame != last_frame:
+                video_player.playFrame(avg_color_frames[cur_frame])
+                last_frame = cur_frame
 
+        ffmpeg_proc.wait()
+        self.__save_frames(avg_color_frames, fps)
+        return avg_color_frames, fps

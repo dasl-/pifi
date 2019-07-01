@@ -37,7 +37,7 @@ video_player = VideoPlayer(video_settings)
 video_player.clearScreen()
 
 video_processor = VideoProcessor(video_settings, process)
-video_processor.preprocess_and_play(url = args.url, video_player = video_player)
+video_processor.process_and_play(url = args.url, video_player = video_player)
 
 process.set_status(Process.STATUS_DONE)
 video_player.clearScreen()
