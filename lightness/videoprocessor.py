@@ -10,7 +10,6 @@ from lightness.logger import Logger
 from lightness.process import Process
 from lightness.cmdrunner import CmdRunner
 import youtube_dl
-import ffmpeg
 import subprocess
 import math
 
@@ -31,7 +30,7 @@ class VideoProcessor:
     # a random alphanumeric string that is unlikely to be present in a video title
     __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W'
 
-    def __init__(self, video_settings, process):
+    def __init__(self, video_settings, process=None):
         self.__video_settings = video_settings
         self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -44,7 +43,8 @@ class VideoProcessor:
             existing_frames_path = self.__get_data_directory() + "/" + existing_frames_file_name
             self.__logger.info("Found existing frames file: " + existing_frames_path)
             video_frames = np.load(self.__get_data_directory() + "/" + existing_frames_file_name)
-            self.__process.set_status(Process.STATUS_PLAYING)
+            if (self.__process != None):
+                self.__process.set_status(Process.STATUS_PLAYING)
             video_player.playVideo(video_frames, video_fps)
         else:
             self.__logger.info("Unable to find existing frames file. Processing video...")
