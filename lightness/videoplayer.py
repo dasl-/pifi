@@ -46,11 +46,9 @@ class VideoPlayer:
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
                     g, b = [0, 0]
                 elif self.video_settings.green_mode:
-                    # for some reason our b and g are swapped..
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
                     r, b = [0, 0]
                 elif self.video_settings.blue_mode:
-                    # for some reason our b and g are swapped..
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
                     r, g = [0, 0]
                 else:
