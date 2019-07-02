@@ -5,8 +5,13 @@ import subprocess
 import ssl
 import time
 from process import Process
+from db import DB
+# from queue import Queue
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+
+    # __playlist = Queue()
+    __db = DB()
 
     def do_GET(self):
         if self.path == '/':
@@ -59,38 +64,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         response_details['url'] = url
         response_details['is_color'] = is_color
 
-        # do something with the data
-        command = ["python3", "/home/pi/lightness/video"]
-        command.append("--url")
-        command.append(url)
-
-        if (is_color):
-            command.append("--color")
-
-        command.append("--flip-x")
-
-        print("Running command `" + " ".join(command) + "`")
-
-        # clear any running video process
-        Process.clear_process()
-
-        video = subprocess.Popen(command)
-
-        # wait until the video is actually playing to return success
-        process = Process()
-        status = process.get_status()
-        while(status != Process.STATUS_PLAYING):
-            status = process.get_status()
-            time.sleep(0.3)
+        self.__db.enqueue(url, is_color)
 
         response_details['success'] = True
         response.write(bytes(json.dumps(response_details), 'utf-8'))
         self.wfile.write(response.getvalue())
 
-httpd = HTTPServer(('0.0.0.0', 443), SimpleHTTPRequestHandler)
 
-httpd.socket = ssl.wrap_socket (httpd.socket,
-                                keyfile="/home/pi/.sslcerts/private.key",
-                                certfile='/home/pi/.sslcerts/certificate.crt', server_side=True)
+httpd = HTTPServer(('0.0.0.0', 80), SimpleHTTPRequestHandler)
+
+# httpd = HTTPServer(('0.0.0.0', 443), SimpleHTTPRequestHandler)
+
+# httpd.socket = ssl.wrap_socket (httpd.socket,
+#                                 keyfile="/home/pi/.sslcerts/private.key",
+#                                 certfile='/home/pi/.sslcerts/certificate.crt', server_side=True)
 
 httpd.serve_forever()

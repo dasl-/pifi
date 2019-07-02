@@ -12,9 +12,12 @@ class Process:
     __file = None
     __write_contents = {}
 
+    STATUS_QUEUED = 'QUEUED'
     STATUS_LOADING = 'LOADING'
     STATUS_PLAYING = 'PLAYING'
     STATUS_DONE = 'DONE'
+
+    SIGNAL_KILL = 'KILL'
 
     MODE_READ = 'r'
     MODE_WRITE = 'w+'
