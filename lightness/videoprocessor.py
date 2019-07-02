@@ -90,10 +90,9 @@ class VideoProcessor:
         return str(self.__video_info['width']) + "x" + str(self.__video_info['height'])
 
     def __save_frames(self, video_frames, video_fps):
-        np.save(
-            self.__get_data_directory() + "/" + self.__insert_fps_into_frames_file_name(video_fps),
-            video_frames
-        )
+        filename = self.__get_data_directory() + "/" + self.__insert_fps_into_frames_file_name(video_fps)
+        self.__logger.info("Saved frames to: " + filename)
+        np.save(filename,video_frames)
 
     # get the frames save file name with a placeholder for FPS to be inserted
     def __get_frames_save_pattern(self):
@@ -106,29 +105,19 @@ class VideoProcessor:
         )
         return filename
 
-    def __download_video(self):
-        filename = '%s@%s.%s' % (
-            self.__video_info['title'],
-            self.__get_resolution_from_video_info(),
-            self.__video_info['ext']
+    def __get_video_download_proc(self):
+        self.__logger.info("Starting youtube-dl proc for: " + self.__video_info['webpage_url'] + " ...")
+        ytdl_proc = subprocess.Popen(
+            (
+                'youtube-dl',
+                '--output', '-', # output to stdout
+                '--format', self.__video_info['format_id'], # download the specified video quality / encoding
+                self.__video_info['webpage_url'] # url to download
+            ),
+            stdout = subprocess.PIPE
         )
-
-        save_path = (self.__get_data_directory() + "/" + filename)
-
-        if os.path.exists(save_path):
-            self.__logger.info("Found existing video file: " + save_path)
-            return save_path
-        else:
-            self.__logger.info("Unable to find existing video file. Downloading video...")
-            ydl_opts = {
-                'format': self.__video_info['format_id'],
-                'outtmpl': save_path,
-                # 'postprocessors': [{}],
-                'logger': Logger(),
-            }
-            ydl = youtube_dl.YoutubeDL(ydl_opts)
-            ydl.download(url_list = [self.__video_info['webpage_url']])
-            return save_path
+        self.__logger.info("Started youtube-dl proc.")
+        return ytdl_proc
 
     def __get_data_directory(self):
         save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
@@ -136,16 +125,8 @@ class VideoProcessor:
         return save_dir
 
     def __process_and_play_video(self, video_player):
-        video_path = self.__download_video()
-
-        # fps = self.__calculate_fps()
-        # todo: calculate fps using self.__video_info.url and passing it to ffprobe or opencv. Then we can just pipe the ytdl to ffmpeg after.
-        fps_parts = CmdRunner(self.__logger).run(
-            ('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', video_path)
-        )
-        fps_parts = fps_parts.split('/')
-        fps = float(fps_parts[0]) / float(fps_parts[1])
-        self.__logger.info('Calculated fps: ' + str(fps))
+        ytdl_proc = self.__get_video_download_proc()
+        fps = self.__calculate_fps()
 
         pix_fmt = 'gray'
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
@@ -159,22 +140,26 @@ class VideoProcessor:
             (
                 'ffmpeg',
                 '-threads', '1', # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
-                '-i', video_path,
+                '-i', 'pipe:0', # read input video from stdin
                 '-filter:v', 'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height),
                 '-c:a', 'copy', # don't process the audio at all
                 '-f', 'rawvideo', '-pix_fmt', pix_fmt, # output in numpy compatible byte format
+                '-v', 'quiet', # supress output of verbose ffmpeg configuration, etc
+                '-stats', # display progress stats
                 'pipe:1' # output to stdout
             ),
-            stdout=subprocess.PIPE
+            stdout = subprocess.PIPE,
+            stdin = ytdl_proc.stdout
         )
+        ytdl_proc.stdout.close()  # Allow ytdl_proc to receive a SIGPIPE if ffmpeg_proc exits.
 
         self.__process.set_status(Process.STATUS_PLAYING)
-        time.sleep(0.5) # give ffmpeg some time to start up before we try playing its output
 
-        start_time = time.time()
-        frame_length = (1/fps)
+        start_time = None
+        frame_length =  1 / fps
         last_frame = None
         has_whole_video_been_processed = False
+        has_seen_any_in_bytes = False
 
         avg_color_frames = []
         while True:
@@ -185,8 +170,16 @@ class VideoProcessor:
                     self.__logger.info("no in_bytes, end of video processing.")
                     has_whole_video_been_processed = True
             else:
+                has_seen_any_in_bytes = True
                 avg_color_frame = np.frombuffer(in_bytes, np.uint8).reshape(np_array_shape)
                 avg_color_frames.append(avg_color_frame)
+
+            if not has_seen_any_in_bytes:
+                self.__logger.info("waiting for ytdl process to initialize...")
+                continue
+
+            if not start_time:
+                start_time = time.time()
 
             cur_frame = math.floor((time.time() - start_time) / frame_length)
             if cur_frame >= len(avg_color_frames):
@@ -204,3 +197,13 @@ class VideoProcessor:
         ffmpeg_proc.wait()
         self.__save_frames(avg_color_frames, fps)
         return avg_color_frames, fps
+
+    def __calculate_fps(self):
+        self.__logger.info("Calculating video fps...")
+        fps_parts = CmdRunner(self.__logger).run(
+            ('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', self.__video_info['url'])
+        )
+        fps_parts = fps_parts.split('/')
+        fps = float(fps_parts[0]) / float(fps_parts[1])
+        self.__logger.info('Calculated video fps: ' + str(fps))
+        return fps
