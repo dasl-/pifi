@@ -48,14 +48,16 @@ class VideoPlayer:
                 elif self.video_settings.green_mode:
                     # for some reason our b and g are swapped..
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
-                    r, g = [0, 0]
+                    r, b = [0, 0]
                 elif self.video_settings.blue_mode:
                     # for some reason our b and g are swapped..
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
-                    r, b = [0, 0]
+                    r, g = [0, 0]
                 else:
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
-                color = self.pixels.combine_color(r, g, b)
+
+                # order on the strip is RBG (refer to LED_ORDER)
+                color = self.pixels.combine_color(r, b, g)
                 self.setPixel(x, y, color)
 
     def setPixel(self, x, y, color):

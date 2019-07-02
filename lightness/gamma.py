@@ -26,8 +26,8 @@ class Gamma:
     def getScaledRGBOutputForColorFrame(self, frame, x, y):
         return [
             self.getScaledOutputForPixel(frame[y, x, 0], 'r'),
-            self.getScaledOutputForPixel(frame[y, x, 2], 'g'),
-            self.getScaledOutputForPixel(frame[y, x, 1], 'b')
+            self.getScaledOutputForPixel(frame[y, x, 1], 'g'),
+            self.getScaledOutputForPixel(frame[y, x, 2], 'b')
         ]
 
     def getScaledRGBOutputForBlackAndWhiteFrame(self, frame, x, y):
