@@ -17,6 +17,12 @@ def parseArgs():
         help='Number of pixels / units')
     parser.add_argument('--color', dest='is_color', action='store_true', default=False,
         help='color output? (default is black and white)')
+    parser.add_argument('--red-mode', dest='red_mode', action='store_true', default=False,
+        help='red mode? (default is black and white)')
+    parser.add_argument('--green-mode', dest='green_mode', action='store_true', default=False,
+        help='green mode? (default is black and white)')
+    parser.add_argument('--blue-mode', dest='blue_mode', action='store_true', default=False,
+        help='blue mode? (default is black and white)')
     parser.add_argument('--flip-x', dest='flip_x', action='store_true', default=False,
         help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true', default=False,

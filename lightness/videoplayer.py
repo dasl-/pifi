@@ -42,6 +42,17 @@ class VideoPlayer:
             for y in range(self.video_settings.display_height):
                 if self.video_settings.is_color:
                     r, g, b = self.gamma_controller.getScaledRGBOutputForColorFrame(avg_color_frame, x, y)
+                elif self.video_settings.red_mode:
+                    r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                    g, b = [0, 0]
+                elif self.video_settings.green_mode:
+                    # for some reason our b and g are swapped..
+                    r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                    r, g = [0, 0]
+                elif self.video_settings.blue_mode:
+                    # for some reason our b and g are swapped..
+                    r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                    r, b = [0, 0]
                 else:
                     r, g, b = self.gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
                 color = self.pixels.combine_color(r, g, b)
