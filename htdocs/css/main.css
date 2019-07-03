@@ -12,8 +12,16 @@
 .show-in-black-and-white {
   display: none;
 }
-#search_results {
+
+/**
+ * Search Results
+ */
+#search-results {
   margin-top: 10px;
+}
+#search-results-loading {
+  margin: 30px auto;
+  width: 30px;
 }
 .search-result {
   cursor: pointer;
@@ -46,9 +54,39 @@
 }
 
 /**
- * ==============================================
- * Dot Pulse
- * ==============================================
+ * Success message
+ */
+.play-queue.untriggered .play-queue-trigger {
+  transform: translateY(-200px);
+}
+.play-queue-trigger {
+  position: fixed;
+  top: 20px;
+  right: 5%;
+  transition: transform .5s;
+  z-index: 3;
+  width: 100px;
+  padding-top: 12px;
+  text-align: center;
+  overflow: visible;
+  border-radius: 5px;
+  -webkit-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+  box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+}
+.queue-thumbnail {
+  max-width: 80%;
+  margin: auto;
+}
+.play-queue .glyphicon {
+  font-size: 18px;
+}
+.play-queue p {
+  margin-top:3px;
+}
+
+/**
+ * Loading
  */
 .loading-cover {
   top: 50%;
@@ -133,4 +171,30 @@
   100% {
     box-shadow: 10014px 0 0 -5px #FFF;
   }
+}
+
+/**
+ * Playlist Controls
+ */
+.playlist-container {
+  position: fixed;
+  bottom: 0;
+  padding-right: 10%;
+  right: 0;
+}
+.playlist {
+  background-color: #444;
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+  padding: 0;
+  margin: 0;
+}
+.playlist-details {
+  line-height: 35px;
+}
+.playlist .current {
+  color: #fff;
+  margin: 0;
+  padding: 0 2%;
+  display: inline-block;
 }

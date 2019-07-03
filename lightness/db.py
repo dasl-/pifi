@@ -23,6 +23,13 @@ class DB:
                             '""" + Process.STATUS_QUEUED + """'
                           )""")
 
+    def skip(self):
+        self.__execute("UPDATE videos set signal = '" + Process.SIGNAL_KILL + "' WHERE is_current")
+
+    def clear(self):
+        self.__execute("UPDATE videos set status = '" + Process.STATUS_SKIP + "' WHERE status = '" + Process.STATUS_QUEUED + "'")
+        self.skip()
+
     def getVideos(self):
         return self.__fetch("SELECT * FROM videos")
 

@@ -7,6 +7,7 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <script type='text/javascript' src='./js/jquery-3.4.1.min.js'></script>
     <script type='text/javascript' src='./js/secrets.js'></script>
+    <script type='text/javascript' src='./js/util.js'></script>
     <script type='text/javascript' src='./js/main.js'></script>
 
     <link rel="stylesheet" href="./css/bootstrap.min.css" />
@@ -19,8 +20,12 @@
       <div class="starter-template">
         <div class="header">
           <div class="form-group">
-              <div class="input-group">
+
+              <div class="input-group search-input-group">
+                <!-- Search Bar -->
                 <input type="text" class="form-control" id="query" placeholder="">
+
+                <!-- Search Actions -->
                 <div class="input-group-btn">
                   <button class="btn btn-primary" type="button" id="submitquery">
                     <span class='hidden-xs'>Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span></span>
@@ -28,7 +33,7 @@
                   </button>
                   <button class="btn btn-success show-in-color toggle-color" type="button">
                      <span class='hidden-xs'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Color</span>
-                     <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
+                     <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></spa>
                   </button>
                   <button class="btn btn-default show-in-black-and-white toggle-color" type="button">
                     <span class='hidden-xs'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> B&W</span>
@@ -40,7 +45,29 @@
           </div>
         </div>
 
-        <div id="search_results"></div>
+        <div id="search-results-loading" class="hidden"><div class='dot-pulse'></div></div>
+        <div id="search-results"></div>
+
+        <!-- Playlist Actions -->
+        <div class="col-xs-11 col-md-6 playlist-container">
+          <div class="playlist">
+            <div class="input-group control-input-group">
+              <div class="playlist-details">
+                <p class="current">Playing: &lt;Nothing&gt;</p>
+              </div>
+
+              <div class="input-group-btn">
+                <button class="btn btn-default action-clear" type="button">
+                  <span class="glyphicon glyphicon-remove-sign" aria-hidden="true">
+                </button>
+                <button class="btn btn-default action-skip" type="button">
+                  <span class="glyphicon glyphicon-step-forward" aria-hidden="true">
+                </button>
+              </div>
+            </div>
+          </div>
+          </div>
+
       </div>
     </div>
   </body>

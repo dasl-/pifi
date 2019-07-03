@@ -52,11 +52,27 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length)
-        self.send_response(200)
-        self.end_headers()
-        response = BytesIO()
 
         post_data = json.loads(body.decode("utf-8"))
+        action = post_data['action']
+        if (action == 'enqueue'):
+            response = self.enqueue(post_data)
+        elif (action == 'skip'):
+            response = self.skip(post_data)
+        elif (action == 'clear'):
+            response = self.clear(post_data)
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        self.send_response(200)
+        self.end_headers()
+        resp = BytesIO()
+        resp.write(bytes(json.dumps(response), 'utf-8'))
+        self.wfile.write(resp.getvalue())
+
+    def enqueue(self, post_data):
         url = post_data['url']
         is_color = post_data['color']
 
@@ -67,8 +83,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.__db.enqueue(url, is_color)
 
         response_details['success'] = True
-        response.write(bytes(json.dumps(response_details), 'utf-8'))
-        self.wfile.write(response.getvalue())
+        return response_details;
+
+    def skip(self, post_data):
+        self.__db.skip()
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details;
+
+    def clear(self, post_data):
+        self.__db.clear()
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details;
 
 
 httpd = HTTPServer(('0.0.0.0', 80), SimpleHTTPRequestHandler)

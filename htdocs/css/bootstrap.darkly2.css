@@ -184,3 +184,9 @@ a:not([href]):not([tabindex]):hover, a:not([href]):not([tabindex]):focus {
 a:not([href]):not([tabindex]):focus {
   outline: 0;
 }
+
+
+.bg-success {
+  color: #fff;
+  background-color: #00bc8c;
+}

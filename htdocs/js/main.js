@@ -7,70 +7,6 @@ function loadClient() {
             function(err) { console.error("Error loading GAPI client for API", err); });
 }
 
-function abbreviateNumber(value) {
-  var newValue = value;
-  if (value >= 1000) {
-      var suffixes = ["", "K", "M", "B","T"];
-      var suffixNum = Math.floor( (""+value).length/3 );
-      var shortValue = '';
-      for (var precision = 2; precision >= 1; precision--) {
-          shortValue = parseFloat( (suffixNum != 0 ? (value / Math.pow(1000,suffixNum) ) : value).toPrecision(precision));
-          var dotLessShortValue = (shortValue + '').replace(/[^a-zA-Z 0-9]+/g,'');
-          if (dotLessShortValue.length <= 2) { break; }
-      }
-      if (shortValue % 1 != 0)  shortNum = shortValue.toFixed(1);
-      newValue = shortValue+suffixes[suffixNum];
-  }
-  return newValue;
-}
-
-function timeDifference(current, previous) {
-  var msPerMinute = 60 * 1000;
-  var msPerHour = msPerMinute * 60;
-  var msPerDay = msPerHour * 24;
-  var msPerMonth = msPerDay * 30;
-  var msPerYear = msPerDay * 365;
-  var elapsed = current - previous;
-
-  if (elapsed < msPerMinute) {
-       return Math.round(elapsed/1000) + ' seconds';
-  } else if (elapsed < msPerHour) {
-       return Math.round(elapsed/msPerMinute) + ' minutes';
-  } else if (elapsed < msPerDay ) {
-       return Math.round(elapsed/msPerHour ) + ' hours';
-  } else if (elapsed < msPerMonth) {
-      return Math.round(elapsed/msPerDay) + ' days';
-  } else if (elapsed < msPerYear) {
-      return Math.round(elapsed/msPerMonth) + ' months';
-  } else {
-      return Math.round(elapsed/msPerYear ) + ' years';
-  }
-}
-
-function convertISO8601ToSeconds(input) {
-  var reptms = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/;
-  var hours = 0, minutes = 0, seconds = 0, totalseconds;
-
-  if (reptms.test(input)) {
-      var matches = reptms.exec(input);
-      if (matches[1]) hours = Number(matches[1]);
-      if (matches[2]) minutes = Number(matches[2]);
-      if (matches[3]) seconds = Number(matches[3]);
-      totalseconds = hours * 3600  + minutes * 60 + seconds;
-  }
-
-
-  if (totalseconds > 3600) {
-    var show_minutes = Math.round(totalseconds/60).toString().padStart(2, '0')
-    var show_seconds = Math.round(totalseconds%60).toString().padStart(2, '0')
-    return Math.floor(totalseconds/3600).toString().padStart(2, '0') + ":" + show_minutes + ":" + show_seconds;
-  } else {
-    var show_minutes = Math.floor(totalseconds/60)
-    var show_seconds = Math.round(totalseconds%60).toString().padStart(2, '0')
-    return show_minutes + ":" + show_seconds;
-  }
-}
-
 function search(query) {
   return gapi.client.youtube.search.list({
       "part": "snippet",
@@ -89,7 +25,7 @@ function search(query) {
         "id": video_ids
       })
       .then(function(response) {
-        $("#search_results").empty();
+        $("#search-results").empty();
         var videos = response.result.items;
 
         localStorage.setItem("latest_results", JSON.stringify(videos));
@@ -112,8 +48,9 @@ function showVideos(videos) {
     var view_count = abbreviateNumber(video.statistics.viewCount);
     var duration = convertISO8601ToSeconds(video.contentDetails.duration)
 
-    $("#search_results").append(
-      `<div class='row search-result' data-load-url='https://www.youtube.com/watch?v=${video_id}'>
+    $("#search-results-loading").addClass("hidden");
+    $("#search-results").append(
+      `<div class='row search-result' data-load-url='https://www.youtube.com/watch?v=${video_id}' data-video-id="${video_id}">
         <div class='col-sm-4 search-result-image'>
           <div class='loading-cover'><div class='dot-pulse'></div></div>
           <img src='${img_src}' class='img-responsive' width='100%' />
@@ -133,11 +70,11 @@ function showVideos(videos) {
 function runQuery() {
   localStorage.setItem("latest_query", $("#query").val());
   if ($("#query").val() != "") {
+    $("#search-results").empty();
+    $("#search-results-loading").removeClass("hidden");
     clearTimeout(last_request);
     last_request = setTimeout(function() {
-      search(
-        $("#query").val()
-      );
+      search($("#query").val());
     }, 50)
   }
 }
@@ -146,16 +83,67 @@ function setBodyClass() {
   $('body').toggleClass('black-and-white', !$('#color').is(':checked'));
 }
 
-function playVideo(url, is_color, target) {
+function handleSearchResultClick(target) {
+  if (!target.is(".loading")) {
+    target.addClass("loading")
+
+    post_playVideo(
+      target.data("video-id"),
+      target.data("load-url"),
+      ($('#color').is(':checked') ? true : false),
+      target
+    )
+  }
+}
+
+function post_playVideo(video_id, url, is_color, target) {
   $.ajax({
     type: "POST",
     url: "/index.html",
     data: JSON.stringify({
+      action: 'enqueue',
       url: url,
       color: is_color
     }),
     success: function() {
-      target.removeClass("loading");
+      setTimeout(function() {
+        target.removeClass("loading");
+        showPlaylistSuccess(
+          video_id,
+          target.find("img.img-responsive").attr("src")
+        );
+      }, 500);
+    },
+    error: function() {
+      setTimeout(function() {
+        target.removeClass("loading");
+      }, 500);
+    },
+  });
+}
+
+function post_skip() {
+  $.ajax({
+    type: "POST",
+    url: "/index.html",
+    data: JSON.stringify({
+      action: 'skip'
+    }),
+    success: function() {
+
+    }
+  });
+}
+
+function post_clear() {
+  $.ajax({
+    type: "POST",
+    url: "/index.html",
+    data: JSON.stringify({
+      action: 'clear'
+    }),
+    success: function() {
+
     }
   });
 }
@@ -167,6 +155,29 @@ function load() {
   } catch(err) {
     //ignore
   }
+}
+
+function showPlaylistSuccess(video_id, img_src) {
+  let alert = $(`<div class='play-queue untriggered'>
+      <div class='play-queue-trigger bg-success'>
+        <div class='queue-thumbnail'>
+          <img src='${img_src}' class='img-responsive' />
+        </div>
+        <p>Added!</p>
+      </div>
+    </div>`);
+
+  $('body').append(alert);
+
+  setTimeout(function() {
+    alert.removeClass("untriggered");
+    setTimeout(function() {
+      alert.addClass("untriggered");
+      setTimeout(function() {
+        alert.remove();
+      }, 2000);
+    }, 2000);
+  }, 100);
 }
 
 $(document).ready(function() {
@@ -187,21 +198,34 @@ $(document).ready(function() {
     .on("tap", runQuery)
     .on("click", runQuery)
 
+  $('#query')
+    .on("keypress", function(e){
+      var code = e.which;
+      console.log(code);
+      if(code==13||code==188||code==186){
+          runQuery();
+      }
+    });
+
   $('#color')
     .on("click", setBodyClass)
 
-  $("#search_results")
+  $("#search-results")
     .on("click", ".search-result", function() {
-      target = $(this).closest(".search-result")
-      if (!target.is(".loading")) {
-        target.addClass("loading")
-        playVideo(
-          target.data("load-url"),
-          ($('#color').is(':checked') ? true : false),
-          target
-        )
-      }
+      handleSearchResultClick($(this).closest(".search-result"));
     })
+
+  $(".action-skip")
+    .on("click", function(e) {
+      e.preventDefault();
+      post_skip();
+    });
+
+  $(".action-clear")
+    .on("click", function(e) {
+      e.preventDefault();
+      post_clear();
+    });
 
   $('.toggle-color')
     .on('click', function() {
