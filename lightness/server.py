@@ -3,21 +3,21 @@ from io import BytesIO
 import json
 import subprocess
 import ssl
-import time
-from process import Process
-from db import DB
-# from queue import Queue
+import threading
+from lightness.process import Process
+from lightness.db import DB
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
-    # __playlist = Queue()
     __db = DB()
+    __root_dir = "/home/pi/lightness/htdocs"
 
     def do_GET(self):
+        print("GET")
         if self.path == '/':
             self.path = '/index.html'
 
-        self.path = "../htdocs" + self.path
+        self.path = self.__root_dir + self.path
 
         ext = self.path[self.path.rfind(".")+1:].lower()
 
@@ -33,9 +33,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         try:
             if is_bytes:
-                file_to_open = open(self.path[1:], 'rb').read()
+                file_to_open = open(self.path, 'rb').read()
             else:
-                file_to_open = open(self.path[1:]).read()
+                file_to_open = open(self.path).read()
             self.send_response(200)
         except Exception as e:
             print(e)
@@ -83,29 +83,46 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.__db.enqueue(url, is_color)
 
         response_details['success'] = True
-        return response_details;
+        return response_details
 
     def skip(self, post_data):
         self.__db.skip()
 
         response_details = {}
         response_details['success'] = True
-        return response_details;
+        return response_details
 
     def clear(self, post_data):
         self.__db.clear()
 
         response_details = {}
         response_details['success'] = True
-        return response_details;
+        return response_details
 
+class LightnessServer(threading.Thread):
 
-httpd = HTTPServer(('0.0.0.0', 80), SimpleHTTPRequestHandler)
+    __secure = False
 
-# httpd = HTTPServer(('0.0.0.0', 443), SimpleHTTPRequestHandler)
+    def __init__(self, secure=False):
+        threading.Thread.__init__(self)
+        self.__secure = secure;
+        self._stop_event = threading.Event()
 
-# httpd.socket = ssl.wrap_socket (httpd.socket,
-#                                 keyfile="/home/pi/.sslcerts/private.key",
-#                                 certfile='/home/pi/.sslcerts/certificate.crt', server_side=True)
+    def run(self):
+        if (not self.__secure):
+            httpd = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
+        else:
+            httpd = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
 
-httpd.serve_forever()
+            httpd.socket = ssl.wrap_socket (httpd.socket,
+                                            keyfile="/home/pi/.sslcerts/private.key",
+                                            certfile='/home/pi/.sslcerts/certificate.crt',
+                                            server_side=True)
+        while(not self.stopped()):
+            httpd.handle_request()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()

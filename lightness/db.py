@@ -1,5 +1,5 @@
 import sqlite3
-from process import Process
+from lightness.process import Process
 
 def dict_factory(cursor, row):
     d = {}
@@ -11,9 +11,11 @@ class DB:
     __conn = None
 
     def __init__(self):
-        self.__conn = sqlite3.connect('/home/pi/lightness/lightness.db')
+        self.__conn = sqlite3.connect('/home/pi/lightness/lightness.db', check_same_thread=False)
         self.__conn.row_factory = dict_factory
-        # self.__construct()
+
+    def construct(self):
+        self.__construct()
 
     def enqueue(self, url, is_color):
         self.__execute("""INSERT INTO videos (url, is_color, status)
@@ -74,7 +76,7 @@ class DB:
 
     def __construct(self):
         self.__execute("DROP TABLE IF EXISTS videos")
-        self.__execute(""" CREATE TABLE videos (
+        self.__execute("""CREATE TABLE videos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
                         pid INTEGER,

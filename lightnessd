@@ -1,0 +1,73 @@
+import daemon
+from daemon import pidfile
+import signal
+import os
+import time
+import sys
+import threading
+
+from lightness.queue import Queue
+from lightness.server import LightnessServer
+
+__pidfile = "/var/tmp/lightness.pid";
+
+def shutdown(signum, frame):
+    # run any necessary cleanup
+    context.queue.stop()
+    context.server.stop()
+
+    sys.exit(0)
+
+def run():
+    context.queue = Queue(["--flip-x"])
+    context.queue.start()
+
+    context.server = LightnessServer(secure=True)
+    context.server.start()
+
+    while(True):
+        time.sleep(5)
+
+def start():
+    print("LIGHTNESS PROCESS --- STARTING")
+
+    with context:
+        context.open()
+        run()
+
+def stop():
+    print("LIGHTNESS PROCESS --- SHUTTING DOWN")
+    context.close()
+    pid = context.pidfile.read_pid()
+
+    if (pid is None):
+        print ("Could not find existing process")
+        return;
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as exc:
+        print ("Could not find existing process")
+
+def restart():
+    stop()
+    start()
+
+context = daemon.DaemonContext(
+        pidfile=daemon.pidfile.PIDLockFile(__pidfile),
+        signal_map={
+            signal.SIGTERM: shutdown,
+            signal.SIGTSTP: shutdown
+        },
+        # output everything to stdout for now
+        stdout=sys.stdout,
+        stderr=sys.stdout)
+
+if sys.argv[1] == "stop":
+    stop()
+elif sys.argv[1] == "start":
+    start()
+elif sys.argv[1] == "restart":
+    restart()
+else:
+    raise Exception("Unexpected command")
