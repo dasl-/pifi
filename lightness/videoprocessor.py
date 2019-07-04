@@ -12,6 +12,7 @@ from lightness.cmdrunner import CmdRunner
 import youtube_dl
 import subprocess
 import math
+import shlex
 
 class VideoProcessor:
 
@@ -72,6 +73,7 @@ class VideoProcessor:
         frames_file_name = frames_save_pattern.replace(self.__FPS_PLACEHOLDER, str(fps))
         return frames_file_name
 
+    # todo: potentially skip this step to start playback quicker by making use of '--write-info-json' option
     def __populate_video_metadata(self, url):
         ydl_opts = {
             'format': self.__YOUTUBE_DL_FORMAT,
@@ -105,27 +107,13 @@ class VideoProcessor:
         )
         return filename
 
-    def __get_video_download_proc(self):
-        self.__logger.info("Starting youtube-dl proc for: " + self.__video_info['webpage_url'] + " ...")
-        ytdl_proc = subprocess.Popen(
-            (
-                'youtube-dl',
-                '--output', '-', # output to stdout
-                '--format', self.__video_info['format_id'], # download the specified video quality / encoding
-                self.__video_info['webpage_url'] # url to download
-            ),
-            stdout = subprocess.PIPE
-        )
-        self.__logger.info("Started youtube-dl proc.")
-        return ytdl_proc
-
     def __get_data_directory(self):
         save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
     def __process_and_play_video(self, video_player):
-        ytdl_proc = self.__get_video_download_proc()
+        ytdl_cmd = self.__get_youtube_dl_cmd()
         fps = self.__calculate_fps()
 
         pix_fmt = 'gray'
@@ -136,22 +124,20 @@ class VideoProcessor:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
-        ffmpeg_proc = subprocess.Popen(
-            (
-                'ffmpeg',
-                '-threads', '1', # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
-                '-i', 'pipe:0', # read input video from stdin
-                '-filter:v', 'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height),
-                '-c:a', 'copy', # don't process the audio at all
-                '-f', 'rawvideo', '-pix_fmt', pix_fmt, # output in numpy compatible byte format
-                '-v', 'quiet', # supress output of verbose ffmpeg configuration, etc
-                '-stats', # display progress stats
-                'pipe:1' # output to stdout
-            ),
-            stdout = subprocess.PIPE,
-            stdin = ytdl_proc.stdout
+        process_and_play_vid_cmd = (
+            ytdl_cmd + " | tee " +
+            ">(" + self.__get_ffplay_cmd() + " > /dev/null) " + # ensure nothing is output to stdout, because we
+                                                                # need to reserve stdout capture for ffmpeg's output
+            ">(" + self.__get_ffmpeg_cmd(pix_fmt) + " && printf 'dunzo') " +
+            "> /dev/null"
         )
-        ytdl_proc.stdout.close()  # Allow ytdl_proc to receive a SIGPIPE if ffmpeg_proc exits.
+        self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
+        process_and_play_vid_proc = subprocess.Popen(
+            process_and_play_vid_cmd,
+            shell = True,
+            executable = '/bin/bash', # use bash so we can make use of process subsitution
+            stdout = subprocess.PIPE
+        )
 
         self.__process.set_status(Process.STATUS_PLAYING)
 
@@ -164,13 +150,23 @@ class VideoProcessor:
         avg_color_frames = []
         while True:
             if not has_whole_video_been_processed:
-                in_bytes = ffmpeg_proc.stdout.read(bytes_per_frame)
+                in_bytes = process_and_play_vid_proc.stdout.read(5)
+                if in_bytes == b'dunzo':
+                    has_whole_video_been_processed = True
+                if not has_whole_video_been_processed:
+                    # todo: ensure the num bytes we're reading is > 0
+                    in_bytes += process_and_play_vid_proc.stdout.read(bytes_per_frame - 5)
+
             if has_whole_video_been_processed or not in_bytes:
                 if not has_whole_video_been_processed:
                     self.__logger.info("no in_bytes, end of video processing.")
                     has_whole_video_been_processed = True
             else:
                 has_seen_any_in_bytes = True
+                if not start_time:
+                    # start the video clock as soon as we see data. Ffplay probably sent its
+                    # first audio data at around the same time so they stay in sync.
+                    start_time = time.time() + 0.15 # Add time for better audio sync
                 avg_color_frame = np.frombuffer(in_bytes, np.uint8).reshape(np_array_shape)
                 avg_color_frames.append(avg_color_frame)
 
@@ -178,10 +174,7 @@ class VideoProcessor:
                 self.__logger.info("waiting for ytdl process to initialize...")
                 continue
 
-            if not start_time:
-                start_time = time.time()
-
-            cur_frame = math.floor((time.time() - start_time) / frame_length)
+            cur_frame = max(math.floor((time.time() - start_time) / frame_length), 0)
             if cur_frame >= len(avg_color_frames):
                 if has_whole_video_been_processed:
                     self.__logger.info("video done playing.")
@@ -194,9 +187,45 @@ class VideoProcessor:
                 video_player.playFrame(avg_color_frames[cur_frame])
                 last_frame = cur_frame
 
-        ffmpeg_proc.wait()
+        process_and_play_vid_proc.wait()
         self.__save_frames(avg_color_frames, fps)
         return avg_color_frames, fps
+
+    def __get_youtube_dl_cmd(self):
+        return (
+            'youtube-dl ' +
+            '--output - ' + # output to stdout
+            '--format ' + shlex.quote(self.__video_info['format_id']) + " " + # download the specified video quality / encoding
+            shlex.quote(self.__video_info['webpage_url']) # url to download
+        )
+
+    def __get_ffmpeg_cmd(self, pix_fmt):
+        return (
+            'ffmpeg ' +
+            '-threads 1 ' + # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
+            '-i pipe:0 ' + # read input video from stdin
+            '-filter:v ' + shlex.quote( # resize video
+                'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height)) + " "
+            '-c:a copy ' + # don't process the audio at all
+            '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " # output in numpy compatible byte format
+            '-v quiet ' + # supress output of verbose ffmpeg configuration, etc
+            '-stats ' + # display progress stats
+            'pipe:1' # output to stdout
+        )
+
+    def __get_ffplay_cmd(self):
+        return (
+            "ffplay " +
+            "-nodisp " + # Disable graphical display.
+            "-vn " + # Disable video
+            "-autoexit " + # Exit when video is done playing
+            "-i pipe:0 " + # play input from stdin
+            "-v quiet " + # supress verbose ffplay output
+            "-infbuf" # Do not limit the input buffer size, read as much data as possible from the input as soon as possible.
+                      # Without this, ffplay's stdin appears to fill up which blocks piping to ffplay. This has a side
+                      # effect blocking piping to ffmpeg which causes LED video output stutter. Will this cause memory to fill up
+                      # for really long videos?
+        )
 
     def __calculate_fps(self):
         self.__logger.info("Calculating video fps...")
