@@ -8,11 +8,11 @@ import urllib
 import re
 from lightness.logger import Logger
 from lightness.process import Process
-from lightness.cmdrunner import CmdRunner
 import youtube_dl
 import subprocess
 import math
 import shlex
+import tempfile
 
 class VideoProcessor:
 
@@ -31,12 +31,15 @@ class VideoProcessor:
     # a random alphanumeric string that is unlikely to be present in a video title
     __FPS_PLACEHOLDER = 'i9uoQ7dwoA9W'
 
+    __FFMPEG_TO_PYTHON_FIFO_PREFIX = 'lightness_ffmpeg_to_python_fifo__'
+
     def __init__(self, video_settings, process=None):
         self.__video_settings = video_settings
         self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def process_and_play(self, url, video_player):
+        self.__logger.info("Starting process_and_play for url: {}".format(url))
         self.__populate_video_metadata(url)
 
         existing_frames_file_name, video_fps = self.__get_existing_frames_file_name()
@@ -50,6 +53,8 @@ class VideoProcessor:
         else:
             self.__logger.info("Unable to find existing frames file. Processing video...")
             video_frames, video_fps = self.__process_and_play_video(video_player)
+
+        self.__logger.info("Finished process_and_play")
 
     # Regex match from frames save pattern to see if a file matches that with an unknown FPS.
     def __get_existing_frames_file_name(self):
@@ -73,14 +78,15 @@ class VideoProcessor:
         frames_file_name = frames_save_pattern.replace(self.__FPS_PLACEHOLDER, str(fps))
         return frames_file_name
 
-    # todo: potentially skip this step to start playback quicker by making use of '--write-info-json' option
     def __populate_video_metadata(self, url):
+        self.__logger.info("Downloading and populating video metadata...")
         ydl_opts = {
             'format': self.__YOUTUBE_DL_FORMAT,
             'logger': Logger(),
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
         self.__video_info = ydl.extract_info(url, download = False)
+        self.__logger.info("Done downloading and populating video metadata.")
 
         video_type = 'video_only'
         if self.__video_info['acodec'] != 'none':
@@ -93,7 +99,7 @@ class VideoProcessor:
 
     def __save_frames(self, video_frames, video_fps):
         filename = self.__get_data_directory() + "/" + self.__insert_fps_into_frames_file_name(video_fps)
-        self.__logger.info("Saved frames to: " + filename)
+        self.__logger.info("Saving frames to: " + filename + "...")
         np.save(filename,video_frames)
 
     # get the frames save file name with a placeholder for FPS to be inserted
@@ -124,19 +130,21 @@ class VideoProcessor:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
+        ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
+
+        # can also tee to ffmpeg and pipe to ffplay. would that be better?
         process_and_play_vid_cmd = (
+            'set -o pipefail && ' +
             ytdl_cmd + " | tee " +
-            ">(" + self.__get_ffplay_cmd() + " > /dev/null) " + # ensure nothing is output to stdout, because we
-                                                                # need to reserve stdout capture for ffmpeg's output
-            ">(" + self.__get_ffmpeg_cmd(pix_fmt) + " && printf 'dunzo') " +
+            ">(" + self.__get_ffplay_cmd() + ") " +
+            ">(" + self.__get_ffmpeg_cmd(pix_fmt) + " > " + ffmpeg_to_python_fifo_name + ") " +
             "> /dev/null"
         )
-        self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
+        self.__logger.debug('executing process and play cmd: ' + process_and_play_vid_cmd)
         process_and_play_vid_proc = subprocess.Popen(
             process_and_play_vid_cmd,
             shell = True,
             executable = '/bin/bash', # use bash so we can make use of process subsitution
-            stdout = subprocess.PIPE
         )
 
         self.__process.set_status(Process.STATUS_PLAYING)
@@ -144,50 +152,45 @@ class VideoProcessor:
         start_time = None
         frame_length =  1 / fps
         last_frame = None
-        has_whole_video_been_processed = False
-        has_seen_any_in_bytes = False
+        ffmpeg_output = None
+        is_ffmpeg_done_outputting = False
 
         avg_color_frames = []
+        fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
-            if not has_whole_video_been_processed:
-                in_bytes = process_and_play_vid_proc.stdout.read(5)
-                if in_bytes == b'dunzo':
-                    has_whole_video_been_processed = True
-                if not has_whole_video_been_processed:
-                    # todo: ensure the num bytes we're reading is > 0
-                    in_bytes += process_and_play_vid_proc.stdout.read(bytes_per_frame - 5)
-
-            if has_whole_video_been_processed or not in_bytes:
-                if not has_whole_video_been_processed:
-                    self.__logger.info("no in_bytes, end of video processing.")
-                    has_whole_video_been_processed = True
+            if is_ffmpeg_done_outputting:
+                pass
             else:
-                has_seen_any_in_bytes = True
-                if not start_time:
-                    # start the video clock as soon as we see data. Ffplay probably sent its
-                    # first audio data at around the same time so they stay in sync.
-                    start_time = time.time() + 0.15 # Add time for better audio sync
-                avg_color_frame = np.frombuffer(in_bytes, np.uint8).reshape(np_array_shape)
-                avg_color_frames.append(avg_color_frame)
+                ffmpeg_output = fifo.read(bytes_per_frame)
+                if ffmpeg_output and len(ffmpeg_output) < bytes_per_frame:
+                    raise Exception('Expected {} bytes from ffmpeg output, but got {}.'.format(bytes_per_frame, len(ffmpeg_output)))
+                if not ffmpeg_output:
+                    self.__logger.info("no ffmpeg_output, end of video processing.")
+                    is_ffmpeg_done_outputting = True
+                    continue
 
-            if not has_seen_any_in_bytes:
-                self.__logger.info("waiting for ytdl process to initialize...")
-                continue
+                if not start_time:
+                    # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
+                    # first audio data at around the same time so they stay in sync.
+                    start_time = time.time() + 0.15 # Add time for better audio / video sync
+
+                avg_color_frame = np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
+                avg_color_frames.append(avg_color_frame)
 
             cur_frame = max(math.floor((time.time() - start_time) / frame_length), 0)
             if cur_frame >= len(avg_color_frames):
-                if has_whole_video_been_processed:
+                if is_ffmpeg_done_outputting:
                     self.__logger.info("video done playing.")
                     break
                 else:
                     self.__logger.error("video processing unable to keep up in real-time")
-                    continue
+                    cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
 
             if cur_frame != last_frame:
                 video_player.playFrame(avg_color_frames[cur_frame])
                 last_frame = cur_frame
 
-        process_and_play_vid_proc.wait()
+        self.__do_cleanup(process_and_play_vid_proc)
         self.__save_frames(avg_color_frames, fps)
         return avg_color_frames, fps
 
@@ -227,12 +230,42 @@ class VideoProcessor:
                       # for really long videos?
         )
 
+    # Fps is available in self.__video_info metadata obtained via youtube-dl, but it is less accurate than using ffprobe.
+    # The youtube-dl data might be rounded?
     def __calculate_fps(self):
         self.__logger.info("Calculating video fps...")
-        fps_parts = CmdRunner(self.__logger).run(
-            ('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries', 'stream=r_frame_rate', self.__video_info['url'])
-        )
+        fps_parts = (subprocess
+            .check_output(('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries',
+                'stream=r_frame_rate', self.__video_info['url']))
+            .decode("utf-8"))
         fps_parts = fps_parts.split('/')
         fps = float(fps_parts[0]) / float(fps_parts[1])
         self.__logger.info('Calculated video fps: ' + str(fps))
         return fps
+
+    def __make_ffmpeg_to_python_fifo(self):
+        make_fifo_cmd = (
+            '{} && fifo_name=$(mktemp --tmpdir={} --dry-run {}) && mkfifo -m 600 "$fifo_name" && printf $fifo_name'
+                .format(
+                    self.__get_cleanup_ffmpeg_to_python_fifos_cmd(),
+                    tempfile.gettempdir(),
+                    self.__FFMPEG_TO_PYTHON_FIFO_PREFIX + 'XXXXXXXXXX'
+                )
+        )
+        self.__logger.info('Making ffmpeg_to_python_fifo...')
+        ffmpeg_to_python_fifo_name = (subprocess
+            .check_output(make_fifo_cmd, shell = True, executable = '/bin/bash')
+            .decode("utf-8"))
+        return ffmpeg_to_python_fifo_name
+
+    def __get_cleanup_ffmpeg_to_python_fifos_cmd(self):
+        path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FFMPEG_TO_PYTHON_FIFO_PREFIX) + '*'
+        return 'rm -rf {}'.format(path_glob)
+
+    def __do_cleanup(self, process_and_play_vid_proc):
+        self.__logger.info("Waiting for process_and_play_vid_proc to end...")
+        exit_status = process_and_play_vid_proc.wait()
+        if exit_status != 0:
+            self.__logger.error('Got non-zero exit_status for process_and_play_vid_proc: {}'.format(exit_status))
+        self.__logger.info("Deleting ffmpeg_to_python fifos...")
+        subprocess.check_output(self.__get_cleanup_ffmpeg_to_python_fifos_cmd(), shell = True, executable = '/bin/bash')
