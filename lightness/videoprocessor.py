@@ -53,7 +53,7 @@ class VideoProcessor:
 
     # Regex match from frames save pattern to see if a file matches that with an unknown FPS.
     def __get_existing_frames_file_name(self):
-        regex = self.__insert_fps_into_frames_file_name('([0-9.]+)')
+        regex = self.__insert_fps_into_frames_file_name(fps = '([0-9.]+)', should_escape_save_pattern = True)
         regex = "^" + regex + "$"
         regex = re.compile(regex)
 
@@ -68,8 +68,8 @@ class VideoProcessor:
         return None, None
 
     # we insert the video fps into the saved frames file name
-    def __insert_fps_into_frames_file_name(self, fps):
-        frames_save_pattern = self.__get_frames_save_pattern()
+    def __insert_fps_into_frames_file_name(self, fps, should_escape_save_pattern = False):
+        frames_save_pattern = self.__get_frames_save_pattern(should_escape_save_pattern)
         frames_file_name = frames_save_pattern.replace(self.__FPS_PLACEHOLDER, str(fps))
         return frames_file_name
 
@@ -97,7 +97,7 @@ class VideoProcessor:
         np.save(filename,video_frames)
 
     # get the frames save file name with a placeholder for FPS to be inserted
-    def __get_frames_save_pattern(self):
+    def __get_frames_save_pattern(self, should_escape_save_pattern):
         s = '%s@%s__%s__' + self.__FPS_PLACEHOLDER + 'fps.%s.npy'
         filename = s % (
             self.__video_info['title'],
@@ -105,7 +105,7 @@ class VideoProcessor:
             "color" if self.__video_settings.is_color else "bw",
             self.__video_info['ext']
         )
-        return filename
+        return re.escape(filename)
 
     def __get_data_directory(self):
         save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
