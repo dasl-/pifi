@@ -72,36 +72,6 @@ class VideoPlayer:
 
         self.pixels.set_pixel_rgb(pixel_index, color)
 
-    # TODO this is unused now i think
-    def playVideo(self, avg_color_frames, fps):
-        start_time = time.time()
-        frame_length = (1/fps)
-        last_frame = None
-
-        while (True):
-            try:
-                cur_frame = math.ceil((time.time() - start_time) / frame_length)
-                if (cur_frame >= len(avg_color_frames)):
-                    break
-
-                if cur_frame != last_frame:
-                    self.playFrame(avg_color_frames[cur_frame])
-                    last_frame = cur_frame
-
-            except KeyboardInterrupt:
-                pause_time = time.time()
-
-                while (True):
-                    in_key = input("type ' ' to unpause...")
-
-                    if in_key == ' ':
-                        # unpause
-                        start_time = start_time + (time.time() - pause_time)
-                        break
-                    else:
-                        # wait for next key pres
-                        continue
-
     def playFrame(self, avg_color_frame):
         self.__setFramePixels(avg_color_frame)
         self.pixels.show()
