@@ -26,16 +26,24 @@ class Settings:
     # Boolean - swap top to bottom, depending on wiring
     flip_y = None
 
-    def __init__(self, args):
-        self.setFromArgs(args)
+    # Boolean
+    should_play_audio = False
 
-    def setFromArgs(self, args):
+    # Boolean - saving the video allows us to avoid youtube-dl network calls to download the video if it's played again.
+    should_save_video = False
+
+    def __init__(self, args):
+        self.__setFromArgs(args)
+
+    def __setFromArgs(self, args):
         self.is_color = args.is_color
         self.red_mode = args.red_mode
         self.green_mode = args.green_mode
         self.blue_mode = args.blue_mode
         self.display_width = args.display_width
         self.display_height = args.display_height
+        self.should_play_audio = args.should_play_audio
         self.brightness = args.brightness
         self.flip_x = args.flip_x
         self.flip_y = args.flip_y
+        self.should_save_video = args.should_save_video

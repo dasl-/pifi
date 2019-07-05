@@ -72,6 +72,7 @@ class VideoPlayer:
 
         self.pixels.set_pixel_rgb(pixel_index, color)
 
+    # TODO this is unused now i think
     def playVideo(self, avg_color_frames, fps):
         start_time = time.time()
         frame_length = (1/fps)

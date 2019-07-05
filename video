@@ -23,12 +23,16 @@ def parseArgs():
         help='green mode? (default is black and white)')
     parser.add_argument('--blue-mode', dest='blue_mode', action='store_true', default=False,
         help='blue mode? (default is black and white)')
+    parser.add_argument('--audio', dest='should_play_audio', action='store_true', default=False,
+        help='play the audio (default is no audio)')
     parser.add_argument('--flip-x', dest='flip_x', action='store_true', default=False,
         help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true', default=False,
         help='flip Y direction output')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=3, metavar='N',
         help='Global brightness value. Max of 31.')
+    parser.add_argument('--save', dest='should_save_video', action='store_true', default=False,
+        help='Save the video to avoid downloading it in the future. Default is not to save.')
 
     args = parser.parse_args()
     return args
