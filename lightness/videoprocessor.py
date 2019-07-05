@@ -8,12 +8,14 @@ import urllib
 import re
 from lightness.logger import Logger
 from lightness.process import Process
+from lightness.appendonlycircularbuffer import AppendOnlyCircularBuffer
 import youtube_dl
 import subprocess
 import math
 import shlex
 import tempfile
 import hashlib
+import select
 
 class VideoProcessor:
 
@@ -32,12 +34,19 @@ class VideoProcessor:
 
     __DATA_DIRECTORY = 'data'
 
-    # mp4 scales quicker than webm in ffmpeg scaling
-    __YOUTUBE_DL_FORMAT = 'worst[ext=mp4]/worst'
+    __YOUTUBE_DL_FORMAT = 'worst[ext=mp4]/worst' # mp4 scales quicker than webm in ffmpeg scaling
+    __YOUTUBE_DL_BUFFER_SIZE_BYTES = 1024 * 1024 * 10 # 10 megabytes
     __DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
     __FFMPEG_TO_PYTHON_FIFO_PREFIX = 'lightness_ffmpeg_to_python_fifo__'
+
+    # A very high FPS rate is 60 fps, which works out to a frame every ~16ms. Thus, blocking for 2 ms during
+    # select() is nbd -- we won't perceive much stutter in the frame rate.
+    # TODO: is this too short? check CPU time
+    __SELECT_TIMEOUT_S = 0.002
+
+    __FRAMES_BUFFER_LENGTH = 1024
 
     def __init__(self, video_settings, process=None):
         self.__video_settings = video_settings
@@ -117,40 +126,59 @@ class VideoProcessor:
         last_frame = None
         ffmpeg_output = None
         is_ffmpeg_done_outputting = False
-        avg_color_frames = []
+        avg_color_frames = AppendOnlyCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
-            if is_ffmpeg_done_outputting:
+            if is_ffmpeg_done_outputting or avg_color_frames.is_full():
                 pass
             else:
-                ffmpeg_output = ffmpeg_to_python_fifo.read(bytes_per_frame)
-                if ffmpeg_output and len(ffmpeg_output) < bytes_per_frame:
-                    raise Exception('Expected {} bytes from ffmpeg output, but got {}.'.format(bytes_per_frame, len(ffmpeg_output)))
-                if not ffmpeg_output:
-                    self.__logger.info("no ffmpeg_output, end of video processing.")
-                    is_ffmpeg_done_outputting = True
-                    continue
+                ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], self.__SELECT_TIMEOUT_S)
+                if ready_to_read:
+                    ffmpeg_output = ffmpeg_to_python_fifo.read(bytes_per_frame)
 
-                if not start_time:
-                    # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
-                    # first audio data at around the same time so they stay in sync.
-                    start_time = time.time() + video_start_time_offset # Add time for better audio / video sync
+                    if ffmpeg_output and len(ffmpeg_output) < bytes_per_frame:
+                        raise Exception('Expected {} bytes from ffmpeg output, but got {}.'.format(bytes_per_frame, len(ffmpeg_output)))
+                    if not ffmpeg_output:
+                        self.__logger.info("no ffmpeg_output, end of video processing.")
+                        is_ffmpeg_done_outputting = True
+                        continue
 
-                avg_color_frame = np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
-                avg_color_frames.append(avg_color_frame)
+                    if not start_time:
+                        # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
+                        # first audio data at around the same time so they stay in sync.
+                        start_time = time.time() + video_start_time_offset # Add time for better audio / video sync
 
-            cur_frame = max(math.floor((time.time() - start_time) / frame_length), 0)
-            if cur_frame >= len(avg_color_frames):
-                if is_ffmpeg_done_outputting:
-                    self.__logger.info("video done playing.")
-                    break
-                else:
-                    self.__logger.error("video processing unable to keep up in real-time")
-                    cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
+                    avg_color_frame = np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
+                    avg_color_frames.append(avg_color_frame)
 
-            if cur_frame != last_frame:
-                video_player.playFrame(avg_color_frames[cur_frame])
-                last_frame = cur_frame
+            if start_time:
+                cur_frame = max(math.floor((time.time() - start_time) / frame_length), 0)
+                if cur_frame >= len(avg_color_frames):
+                    if is_ffmpeg_done_outputting:
+                        self.__logger.info("Video done playing.")
+                        break
+                    else:
+                        self.__logger.error("Video processing unable to keep up in real-time")
+                        cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
+
+                num_skipped_frames = 0
+                if cur_frame != last_frame:
+                    if last_frame == None:
+                        if cur_frame != 0:
+                            num_skipped_frames = cur_frame
+                    elif cur_frame - last_frame > 1:
+                        num_skipped_frames = cur_frame - last_frame - 1
+                    if num_skipped_frames > 0:
+                        self.__logger.error(
+                            ("Video playing unable to keep up in real-time. Skipped playing {} frame(s)."
+                                .format(num_skipped_frames))
+                        )
+                    # s = time.time()
+                    # TODO: optimize this bc it causes us to skip frames sometimes. Other shit takes < 3ms above
+                    video_player.playFrame(avg_color_frames[cur_frame])
+                    # t = (time.time() - s) * 1000
+                    # print(str(t) + 'ms')
+                    last_frame = cur_frame
 
         self.__do_post_cleanup(process_and_play_vid_proc)
 
@@ -160,7 +188,12 @@ class VideoProcessor:
         if self.__is_video_already_downloaded:
             vid_data_cmd = '< {} '.format(shlex.quote(video_save_path))
         else:
-            vid_data_cmd = self.__get_youtube_dl_cmd() + ' | '
+            vid_data_cmd = (
+                # Add a buffer to give some slack in the case of network blips downloading the video.
+                # Not necessary in my testing, but then again I have a good connection...
+                self.__get_youtube_dl_cmd() + ' | ' +
+                'mbuffer -q -Q -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
+            )
 
         maybe_play_audio_tee = ''
         if self.__video_settings.should_play_audio:
@@ -220,11 +253,7 @@ class VideoProcessor:
             "-vn " + # Disable video
             "-autoexit " + # Exit when video is done playing
             "-i pipe:0 " + # play input from stdin
-            "-v quiet " + # supress verbose ffplay output
-            "-infbuf" # Do not limit the input buffer size, read as much data as possible from the input as soon as possible.
-                      # Without this, ffplay's stdin appears to fill up which blocks piping to ffplay. This has a side
-                      # effect blocking piping to ffmpeg which causes LED video output stutter. Will this cause memory to fill up
-                      # for really long videos?
+            "-v quiet" # supress verbose ffplay output
         )
 
     # Fps is available in self.__video_info metadata obtained via youtube-dl, but it is less accurate than using ffprobe.
