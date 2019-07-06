@@ -69,6 +69,8 @@ class VideoPlayer:
     #   python3 -m cProfile -s cumtime video --url https://www.youtube.com/watch?v=AxuvUAjHYWQ --color-mode color
     #
     # In the nested for loop, function calls are to be avoided. Inlining them is more performant.
+    #
+    # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
     def __setFramePixels(self, avg_color_frame):
         if not self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
