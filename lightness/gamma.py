@@ -2,6 +2,14 @@ import numpy as np
 from lightness.settings import Settings
 
 class Gamma:
+
+    DEFAULT_GAMMA_INDEX = 18
+
+    # list of gamma curves from min to max
+    scale_red_curves = []
+    scale_blue_curves = []
+    scale_green_curves = []
+
     # possible gamma curve range, step by .1
     __MIN_GAMMA_CURVE = 2
     __MAX_GAMMA_CURVE = 6
@@ -11,47 +19,14 @@ class Gamma:
     __GREEN_MAX_BRIGHTNESS = .45
     __BLUE_MAX_BRIGHTNESS = .375
 
-    # list of gamma curves from min to max
-    scale_red = []
-    scale_blue = []
-    scale_green = []
-
     __video_settings = None
-
-    gamma_index = 18
 
     def __init__(self, video_settings):
         self.__video_settings = video_settings
         self.__generateGammaScales()
 
-    def getScaledRGBOutputForColorPixel(self, rgb):
-        return [
-            self.getScaledOutputForBrightnessAndColor(rgb[0], 'r'),
-            self.getScaledOutputForBrightnessAndColor(rgb[1], 'g'),
-            self.getScaledOutputForBrightnessAndColor(rgb[2], 'b')
-        ]
-
-    def getScaledRGBOutputForBlackAndWhitePixel(self, brightness):
-        return [
-            self.getScaledOutputForBrightnessAndColor(brightness, 'r'),
-            self.getScaledOutputForBrightnessAndColor(brightness, 'g'),
-            self.getScaledOutputForBrightnessAndColor(brightness, 'b')
-        ]
-
-    def getScaledOutputForBrightnessAndColor(self, brightness, color):
-        gamma_scale = []
-
-        if color == 'r':
-            gamma_scale = self.scale_red
-        elif color == 'g':
-            gamma_scale = self.scale_green
-        elif color == 'b':
-            gamma_scale = self.scale_blue
-
-        return gamma_scale[self.gamma_index][int(brightness)]
-
-    # powers auto gamma curve using the average brightness of the given frame
-    def setGammaIndexForMonochromeFrame(self, frame):
+    # powers auto dynamic gamma curve using the average brightness of the given frame
+    def getGammaIndexForMonochromeFrame(self, frame):
         brightness_avg = np.mean(frame)
         brightness_std = np.std(frame)
 
@@ -63,13 +38,11 @@ class Gamma:
         gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
 
         if gamma_index < 0:
-            self.gamma_index = 0
+            return 0
         elif gamma_index >= ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1:
-            self.gamma_index = ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1
+            return ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1
         else:
-            self.gamma_index = int(round(gamma_index))
-        return self.gamma_index
-
+            return int(round(gamma_index))
 
     # gamma: Correction factor
     # max_in: Top end of INPUT range
@@ -90,18 +63,18 @@ class Gamma:
 
     def __generateGammaScales(self):
         for i in range(self.__MIN_GAMMA_CURVE * 10, self.__MAX_GAMMA_CURVE * 10):
-            self.scale_red.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__RED_MAX_BRIGHTNESS)))
-            self.scale_blue.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__BLUE_MAX_BRIGHTNESS)))
-            self.scale_green.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__GREEN_MAX_BRIGHTNESS)))
+            self.scale_red_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__RED_MAX_BRIGHTNESS)))
+            self.scale_blue_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__BLUE_MAX_BRIGHTNESS)))
+            self.scale_green_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__GREEN_MAX_BRIGHTNESS)))
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color
         if self.__video_settings.color_mode == Settings.COLOR_MODE_BW:
             for g in range(0, ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10)):
                 for i in range(0, 256):
-                    if min(self.scale_red[g][i], self.scale_green[g][i], self.scale_blue[g][i]) == 0:
-                        self.scale_red[g][i] = 0
-                        self.scale_green[g][i] = 0
-                        self.scale_blue[g][i] = 0
+                    if min(self.scale_red_curves[g][i], self.scale_green_curves[g][i], self.scale_blue_curves[g][i]) == 0:
+                        self.scale_red_curves[g][i] = 0
+                        self.scale_green_curves[g][i] = 0
+                        self.scale_blue_curves[g][i] = 0
                     else:
                         break
