@@ -58,11 +58,9 @@ class VideoPlayer:
                 else:
                     r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
 
-                # order on the strip is RBG (refer to self.__LED_ORDER)
-                color = self.__pixels.combine_color(r, b, g)
-                self.__setPixel(x, y, color)
+                self.__setPixel(x, y, r, g, b)
 
-    def __setPixel(self, x, y, color):
+    def __setPixel(self, x, y, r, g, b):
         if (self.__video_settings.flip_x):
             x = self.__video_settings.display_width - x - 1
         if (self.__video_settings.flip_y):
@@ -74,4 +72,5 @@ class VideoPlayer:
         else:
             pixel_index = (y * self.__video_settings.display_width) + x
 
-        self.__pixels.set_pixel_rgb(pixel_index, color)
+        # order on the strip is RBG (refer to self.__LED_ORDER)
+        self.__pixels.set_pixel(pixel_index, r, b, g)
