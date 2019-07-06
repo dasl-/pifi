@@ -4,7 +4,7 @@
 #
 # When you do `val = my_buffer[i]`, under the hood, the buffer will remove all values with index <= i.
 # You can only access the items once; this makes room for more values.
-class AppendOnlyCircularBuffer():
+class ReadOnceCircularBuffer():
 
     # remove items from start
     __start = None

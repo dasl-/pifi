@@ -8,7 +8,7 @@ import urllib
 import re
 from lightness.logger import Logger
 from lightness.process import Process
-from lightness.appendonlycircularbuffer import AppendOnlyCircularBuffer
+from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
 import youtube_dl
 import subprocess
 import math
@@ -97,7 +97,7 @@ class VideoProcessor:
         )
 
     def __get_data_directory(self):
-        save_dir = sys.path[0] + "/" + self.__DATA_DIRECTORY
+        save_dir = os.path.abspath(os.path.dirname(__file__) + '/../' + self.__DATA_DIRECTORY)
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
@@ -126,7 +126,7 @@ class VideoProcessor:
         last_frame = None
         ffmpeg_output = None
         is_ffmpeg_done_outputting = False
-        avg_color_frames = AppendOnlyCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
+        avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
             if is_ffmpeg_done_outputting or avg_color_frames.is_full():
