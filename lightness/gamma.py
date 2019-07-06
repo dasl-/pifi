@@ -1,4 +1,5 @@
 import numpy as np
+from lightness.settings import Settings
 
 class Gamma:
     # possible gamma curve range, step by .1
@@ -23,21 +24,21 @@ class Gamma:
         self.__video_settings = video_settings
         self.__generateGammaScales()
 
-    def getScaledRGBOutputForColorFrame(self, frame, x, y):
+    def getScaledRGBOutputForColorPixel(self, rgb):
         return [
-            self.getScaledOutputForPixel(frame[y, x, 0], 'r'),
-            self.getScaledOutputForPixel(frame[y, x, 1], 'g'),
-            self.getScaledOutputForPixel(frame[y, x, 2], 'b')
+            self.getScaledOutputForBrightnessAndColor(rgb[0], 'r'),
+            self.getScaledOutputForBrightnessAndColor(rgb[1], 'g'),
+            self.getScaledOutputForBrightnessAndColor(rgb[2], 'b')
         ]
 
-    def getScaledRGBOutputForBlackAndWhiteFrame(self, frame, x, y):
+    def getScaledRGBOutputForBlackAndWhitePixel(self, brightness):
         return [
-            self.getScaledOutputForPixel(frame[y, x], 'r'),
-            self.getScaledOutputForPixel(frame[y, x], 'g'),
-            self.getScaledOutputForPixel(frame[y, x], 'b')
+            self.getScaledOutputForBrightnessAndColor(brightness, 'r'),
+            self.getScaledOutputForBrightnessAndColor(brightness, 'g'),
+            self.getScaledOutputForBrightnessAndColor(brightness, 'b')
         ]
 
-    def getScaledOutputForPixel(self, brightness, color):
+    def getScaledOutputForBrightnessAndColor(self, brightness, color):
         gamma_scale = []
 
         if color == 'r':
@@ -50,24 +51,24 @@ class Gamma:
         return gamma_scale[self.gamma_index][int(brightness)]
 
     # powers auto gamma curve using the average brightness of the given frame
-    def setGammaIndexForFrame(self, frame):
-        self.gamma_index = self.getGammaIndexByMagicForFrame(frame)
-        return self.gamma_index
-
-    def getGammaIndexByMagicForFrame(self, frame):
+    def setGammaIndexForMonochromeFrame(self, frame):
         brightness_avg = np.mean(frame)
         brightness_std = np.std(frame)
 
-        #magic defined here: https://docs.google.com/spreadsheets/d/1hF3N0hCOzZlIG9VZPjADr9MhL_TWClaLHs6NJCH47AM/edit#gid=0
-        #calibrated at global brightness of 3 (i think?)
+        # magic defined here: https://docs.google.com/spreadsheets/d/1hF3N0hCOzZlIG9VZPjADr9MhL_TWClaLHs6NJCH47AM/edit#gid=0
+        # calibrated with:
+        #   * --brightness of 3 (i think?)
+        #   * black and white video
+        #   * using opencv LED color averaging rather than ffmpeg (https://github.com/dasl-/lightness/commit/8a4703fb479421160b9c119dc718b747a8627b4f#commitcomment-34206224)
         gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
 
         if gamma_index < 0:
-            return 0
+            self.gamma_index = 0
         elif gamma_index >= ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1:
-            return ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1
+            self.gamma_index = ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10) - 1
         else:
-            return int(round(gamma_index))
+            self.gamma_index = int(round(gamma_index))
+        return self.gamma_index
 
 
     # gamma: Correction factor
@@ -95,7 +96,7 @@ class Gamma:
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color
-        if not self.__video_settings.is_color:
+        if self.__video_settings.color_mode == Settings.COLOR_MODE_BW:
             for g in range(0, ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10)):
                 for i in range(0, 256):
                     if min(self.scale_red[g][i], self.scale_green[g][i], self.scale_blue[g][i]) == 0:

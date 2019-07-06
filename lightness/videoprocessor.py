@@ -9,6 +9,7 @@ import re
 from lightness.logger import Logger
 from lightness.process import Process
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
+from lightness.settings import Settings
 import youtube_dl
 import subprocess
 import math
@@ -116,7 +117,7 @@ class VideoProcessor:
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
-        if self.__video_settings.is_color:
+        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
@@ -230,7 +231,7 @@ class VideoProcessor:
 
     def __get_ffmpeg_cmd(self):
         pix_fmt = 'gray'
-        if self.__video_settings.is_color:
+        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
             pix_fmt = 'rgb24'
 
         return (

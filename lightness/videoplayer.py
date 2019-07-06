@@ -2,6 +2,7 @@ import math
 import time
 from driver import apa102
 from lightness.gamma import Gamma
+from lightness.settings import Settings
 
 class VideoPlayer:
     __video_settings = None
@@ -39,24 +40,26 @@ class VideoPlayer:
         return self.__pixels
 
     def __setFramePixels(self, avg_color_frame):
-        if not self.__video_settings.is_color:
-            self.__gamma_controller.setGammaIndexForFrame(avg_color_frame)
+        if not self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+            self.__gamma_controller.setGammaIndexForMonochromeFrame(avg_color_frame)
 
         for x in range(self.__video_settings.display_width):
             for y in range(self.__video_settings.display_height):
-                if self.__video_settings.is_color:
-                    r, g, b = self.__gamma_controller.getScaledRGBOutputForColorFrame(avg_color_frame, x, y)
-                elif self.__video_settings.red_mode:
-                    r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+                    r, g, b = self.__gamma_controller.getScaledRGBOutputForColorPixel(avg_color_frame[y, x])
+                elif self.__video_settings.color_mode == Settings.COLOR_MODE_R:
+                    r = self.__gamma_controller.getScaledOutputForBrightnessAndColor(avg_color_frame[y, x], 'r')
                     g, b = [0, 0]
-                elif self.__video_settings.green_mode:
-                    r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                elif self.__video_settings.color_mode == Settings.COLOR_MODE_G:
+                    g = self.__gamma_controller.getScaledOutputForBrightnessAndColor(avg_color_frame[y, x], 'g')
                     r, b = [0, 0]
-                elif self.__video_settings.blue_mode:
-                    r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                elif self.__video_settings.color_mode == Settings.COLOR_MODE_B:
+                    b = self.__gamma_controller.getScaledOutputForBrightnessAndColor(avg_color_frame[y, x], 'b')
                     r, g = [0, 0]
+                elif self.__video_settings.color_mode == Settings.COLOR_MODE_BW:
+                    r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhitePixel(avg_color_frame[y, x])
                 else:
-                    r, g, b = self.__gamma_controller.getScaledRGBOutputForBlackAndWhiteFrame(avg_color_frame, x, y)
+                    raise Exception('Unexpected color mode: {}'.format(self.__video_settings.color_mode))
 
                 self.__setPixel(x, y, r, g, b)
 
