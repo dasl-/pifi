@@ -10,7 +10,7 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `sudo dd bs=1m if=image.img of=/dev/rdisk<disk# from diskutil> conv=sync`
 
 ### Set up Wifi
-[wpa_supplicant.conf](https://raspberrypi.stackexchange.com/a/57023):
+`[/boot/wpa_supplicant.conf](https://raspberrypi.stackexchange.com/a/57023)`:
 
     country=US
     ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
