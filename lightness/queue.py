@@ -48,7 +48,7 @@ class Queue(threading.Thread):
         command = ["python3", "/home/pi/lightness/video", "--url", video["url"]]
 
         if video["is_color"]:
-            command.append("--color")
+            command.extend(["--color-mode", "color"])
 
         # add global arguments to the video player
         command = command + self.__additional_video_args
