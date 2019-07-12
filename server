@@ -1,9 +1,10 @@
+#!/usr/bin/python3
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from io import BytesIO
 import json
 import subprocess
 import ssl
-import threading
 from lightness.process import Process
 from lightness.db import DB
 
@@ -99,30 +100,24 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         response_details['success'] = True
         return response_details
 
-class LightnessServer(threading.Thread):
+class LightnessServer:
 
     __secure = False
+    __server = None
 
     def __init__(self, secure=False):
-        threading.Thread.__init__(self)
-        self.__secure = secure;
-        self._stop_event = threading.Event()
-
-    def run(self):
+        self.__secure = secure
         if (not self.__secure):
-            httpd = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
+            self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
         else:
-            httpd = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
-
-            httpd.socket = ssl.wrap_socket (httpd.socket,
+            self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
+            self.__server.socket = ssl.wrap_socket (self.__server.socket,
                                             keyfile="/home/pi/.sslcerts/private.key",
                                             certfile='/home/pi/.sslcerts/certificate.crt',
                                             server_side=True)
-        while(not self.stopped()):
-            httpd.handle_request()
 
-    def stop(self):
-        self._stop_event.set()
+    def serve_forever(self):
+        self.__server.serve_forever()
 
-    def stopped(self):
-        return self._stop_event.is_set()
+server = LightnessServer(secure=False)
+server.serve_forever()

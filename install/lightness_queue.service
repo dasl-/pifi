@@ -1,0 +1,12 @@
+[Unit]
+Description=lightness queue
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Command to execute when the service is started
+ExecStart=/home/pi/lightness/queue
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

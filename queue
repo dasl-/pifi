@@ -1,14 +1,15 @@
+#!/usr/bin/python3
+
 import os
 import sys
 import ast
 import signal
 import subprocess
 import time
-import threading
 from lightness.process import Process
 from lightness.db import DB
 
-class Queue(threading.Thread):
+class Queue:
 
     __db = None
     __video_proc = None
@@ -16,22 +17,15 @@ class Queue(threading.Thread):
     __additional_video_args = []
 
     def __init__(self, additional_video_args=[]):
-        threading.Thread.__init__(self)
         self.__db = DB()
         self.__additional_video_args = additional_video_args
-        self._stop_event = threading.Event()
+
+
 
     def run(self):
-        while(not self.stopped()):
+        while True:
             self.__check_cycle()
-            time.sleep(.1)
-
-    def stop(self):
-        self._stop_event.set()
-        self.__kill_current_video()
-
-    def stopped(self):
-        return self._stop_event.is_set()
+            time.sleep(0.2)
 
     def __check_cycle(self):
         if self.__fetch_current_video() is not None:
@@ -45,7 +39,7 @@ class Queue(threading.Thread):
             self.__check_for_next_video()
 
     def __play_video(self, video):
-        command = ["python3", "/home/pi/lightness/video", "--url", video["url"]]
+        command = ["/home/pi/lightness/video", "--audio", "--url", video["url"]]
 
         if video["is_color"]:
             command.extend(["--color-mode", "color"])
@@ -94,3 +88,6 @@ class Queue(threading.Thread):
             if next_video is not None:
                 if next_video["status"] != Process.STATUS_LOADING:
                   self.__play_video(next_video)
+
+queue = Queue()
+queue.run()
