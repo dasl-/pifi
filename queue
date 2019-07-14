@@ -44,7 +44,8 @@ class Queue:
             self.__check_for_next_video()
 
     def __play_video(self, video):
-        command = ["/home/pi/lightness/video", "--audio", "--url", video["url"]]
+        video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
+        command = [video_cmd_path, "--audio", "--url", video["url"]]
         if self.__custom_video_args:
             command.extend(self.__custom_video_args)
 

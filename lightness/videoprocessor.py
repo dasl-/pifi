@@ -51,6 +51,7 @@ class VideoProcessor:
 
     def process_and_play(self, url, video_player):
         self.__logger.info("Starting process_and_play for url: {}".format(url))
+        self.__show_loading_screen(video_player)
         self.__url = url
         video_save_path = self.__get_video_save_path()
         if os.path.isfile(video_save_path):
@@ -59,6 +60,10 @@ class VideoProcessor:
 
         self.__process_and_play_video(video_player)
         self.__logger.info("Finished process_and_play")
+
+    def __show_loading_screen(self, video_player):
+        loading_screen_path = os.path.abspath(os.path.dirname(__file__)) + '/../loading_screen.npy'
+        video_player.playFrame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
@@ -306,10 +311,10 @@ class VideoProcessor:
 
     def __get_cleanup_ffmpeg_to_python_fifos_cmd(self):
         path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FFMPEG_TO_PYTHON_FIFO_PREFIX) + '*'
-        return 'rm -rf {}'.format(path_glob)
+        return 'sudo rm -rf {}'.format(path_glob)
 
     def __get_cleanup_incomplete_video_downloads_cmd(self):
-        return 'rm -rf *{}'.format(shlex.quote(self.__TEMP_VIDEO_DOWNLOAD_SUFFIX))
+        return 'sudo rm -rf *{}'.format(shlex.quote(self.__TEMP_VIDEO_DOWNLOAD_SUFFIX))
 
     # Perhaps aggressive to do 'pre' cleanup, but wanting to be a good citizen. Protects against a hypothetical
     # where we're stuck in a state of failing to finish playing videos and thus post cleanup logic never gets

@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+
+import subprocess
+import argparse
+import numpy as np
+
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='convert an image to an RGB frame for display on the LEDs')
+    parser.add_argument('--image', dest='image_path', action='store',
+        help='path to the image to convert')
+    parser.add_argument('--display-width', dest='display_width', action='store', type=int, default=28, metavar='N',
+        help='Number of pixels / units')
+    parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=18, metavar='N',
+        help='Number of pixels / units')
+    parser.add_argument('--output-file', dest='output_file', action='store',
+        help="output path to save the array. The suffix '.npy' will be added to this file name.")
+
+    args = parser.parse_args()
+    return args
+
+args = parseArgs()
+
+# ffmpeg -threads 1 -i ~/Desktop/loading.png -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt rgb24 -v quiet -stats pipe:1
+ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
+    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-stats', 'pipe:1')
+data = subprocess.check_output(ffmpeg_cmd)
+arr = np.frombuffer(data, np.uint8).reshape([args.display_height, args.display_width, 3])
+
+np.save(args.output_file, arr)
