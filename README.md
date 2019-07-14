@@ -45,8 +45,9 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `git clone git@github.com:dasl-/lightness.git`
 1. `cd lightness`
 
-### Install Dependencies
-1. `sh dependencies.sh`
+### Install
+1. `./install/install_dependencies.sh`
+1. `./install/install.sh`
 
 ### Connect GPIO Pins
 (pinout: https://pinout.xyz/)
