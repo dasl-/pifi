@@ -6,21 +6,26 @@ import ast
 import signal
 import subprocess
 import time
+import json
 from lightness.process import Process
 from lightness.db import DB
+from lightness.logger import Logger
 
 class Queue:
 
     __db = None
     __video_proc = None
     __current_video = None
-    __additional_video_args = []
+    __logger = None
+    __custom_video_args = None
 
-    def __init__(self, additional_video_args=[]):
+    __CONFIG_FILENAME = 'queue_config.json'
+
+    def __init__(self):
         self.__db = DB()
-        self.__additional_video_args = additional_video_args
-
-
+        self.__custom_video_args = None
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__maybe_load_custom_config()
 
     def run(self):
         while True:
@@ -40,12 +45,11 @@ class Queue:
 
     def __play_video(self, video):
         command = ["/home/pi/lightness/video", "--audio", "--url", video["url"]]
+        if self.__custom_video_args:
+            command.extend(self.__custom_video_args)
 
         if video["is_color"]:
             command.extend(["--color-mode", "color"])
-
-        # add global arguments to the video player
-        command = command + self.__additional_video_args
 
         self.__video_proc = subprocess.Popen(command, stdout=subprocess.PIPE)
         self.__db.setCurrentVideo(video["id"], self.__video_proc.pid)
@@ -88,6 +92,17 @@ class Queue:
             if next_video is not None:
                 if next_video["status"] != Process.STATUS_LOADING:
                   self.__play_video(next_video)
+
+    def __maybe_load_custom_config(self):
+        config_path = os.path.abspath(os.path.dirname(__file__)) + '/' + self.__CONFIG_FILENAME
+        if not os.path.exists(config_path):
+            self.__logger.info("No custom config found at: {}".format(config_path))
+            return
+
+        self.__logger.info("Found custom config found at: {}".format(config_path))
+        with open(config_path) as config_json:
+            data = json.load(config_json)
+            self.__custom_video_args = data['custom_video_args']
 
 queue = Queue()
 queue.run()
