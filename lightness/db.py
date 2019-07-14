@@ -17,11 +17,13 @@ class DB:
     def construct(self):
         self.__construct()
 
-    def enqueue(self, url, is_color):
-        self.__execute("""INSERT INTO videos (url, is_color, status)
+    def enqueue(self, url, is_color, thumbnail, title):
+        self.__execute("""INSERT INTO videos (url, is_color, thumbnail, title, status)
                           VALUES(
                             '""" + url + """',
                             """ + (('1') if is_color else '0') + """,
+                            '""" + thumbnail + """',
+                            '""" + title + """',
                             '""" + Process.STATUS_QUEUED + """'
                           )""")
 
@@ -40,6 +42,9 @@ class DB:
 
     def getNextVideo(self):
         return self.__fetchSingle("SELECT * FROM videos WHERE NOT(is_current) and status='" + Process.STATUS_QUEUED + "' order by id asc")
+
+    def getQueue(self):
+        return self.__fetch("SELECT * FROM videos WHERE is_current OR status='" + Process.STATUS_QUEUED + "' order by id asc")
 
     def setCurrentVideo(self, video_id, pid):
         self.__execute("""UPDATE videos set
@@ -82,6 +87,8 @@ class DB:
                         pid INTEGER,
                         is_current BOOLEAN DEFAULT 0,
                         url TEXT,
+                        thumbnail TEXT,
+                        title TEXT,
                         is_color BOOLEAN,
                         status VARCHAR(255),
                         signal VARCHAR(255)

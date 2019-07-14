@@ -53,14 +53,14 @@ function showVideos(videos) {
       `<div class='row search-result' data-load-url='https://www.youtube.com/watch?v=${video_id}' data-video-id="${video_id}">
         <div class='col-sm-4 search-result-image'>
           <div class='loading-cover'><div class='dot-pulse'></div></div>
-          <img src='${img_src}' class='img-responsive' width='100%' />
+          <img src='${img_src}' class='img-responsive video-thumbnail' width='100%' />
           <span class='duration'>${duration}</span>
         </div>
         <div class='col-sm-8 video-data'>
           <div class='title-padding hidden-sm hidden-md hidden-lg'></div>
           <h4 class='title'>${title}</h4>
           <div><h6>${channel} | ${view_count} views | ${published} ago</h6></div>
-          <p>${description}</p>
+          <p class='video-description'>${description}</p>
         </div>
       </div>`
     );
@@ -91,18 +91,22 @@ function handleSearchResultClick(target) {
       target.data("video-id"),
       target.data("load-url"),
       ($('#color').is(':checked') ? true : false),
+      target.find(".video-thumbnail").attr('src'),
+      target.find(".title").text(),
       target
     )
   }
 }
 
-function post_playVideo(video_id, url, is_color, target) {
+function post_playVideo(video_id, url, is_color, thumbnail, title, target) {
   $.ajax({
     type: "POST",
     url: "/index.html",
     data: JSON.stringify({
       action: 'enqueue',
       url: url,
+      thumbnail: thumbnail,
+      title: title,
       color: is_color
     }),
     success: function() {
@@ -113,11 +117,15 @@ function post_playVideo(video_id, url, is_color, target) {
           target.find("img.img-responsive").attr("src")
         );
       }, 500);
+
+      get_queue();
     },
     error: function() {
       setTimeout(function() {
         target.removeClass("loading");
       }, 500);
+
+      get_queue();
     },
   });
 }
@@ -130,7 +138,7 @@ function post_skip() {
       action: 'skip'
     }),
     success: function() {
-
+      get_queue();
     }
   });
 }
@@ -143,9 +151,89 @@ function post_clear() {
       action: 'clear'
     }),
     success: function() {
-
+      get_queue();
     }
   });
+}
+
+function togglePlaylist() {
+  if ($(".playlist-container").is(".expanded")) {
+    $(".playlist-container").toggleClass("expanded");
+  } else {
+    $(".playlist-contents").empty();
+    $(".playlist-container").toggleClass("expanded");
+    get_queue();
+  }
+}
+
+function get_queue() {
+  $.ajax({
+    type: "GET",
+    url: "/api/get_queue",
+    success: function(result) {
+      result = JSON.parse(result);
+      loadQueue(result.queue);
+    }
+  });
+}
+
+function loadQueue(videos) {
+  var current = null;
+  var video_contents = [];
+
+  for (var video_i in videos) {
+    var video = videos[video_i];
+    var video_id = video.id;
+    var video_status = video.status;
+    var img_src = video.thumbnail;
+    var title = video.title;
+    var url = video.url;
+    var is_current = video.is_current;
+    var is_color = video.is_color;
+
+    color_class = is_color ? 'color' : 'black-and-white';
+    current_class = '';
+
+    if (is_current) {
+      current = video;
+      current_class = 'current';
+    }
+
+    video_contents.push(
+      `<div class='row playlist-video ${color_class} ${current_class}'>
+        <div class='col-xs-4 col-sm-4 playlist-video't-image'>
+          <img src='${img_src}' class='img-responsive video-thumbnail' width='100%' />
+        </div>
+        <div class='col-xs-7 col-sm-8 video-data'>
+          <h5 class='title'>${title}</h5>
+        </div>
+      </div>`
+    );
+  }
+
+  if (videos.length === 0) {
+    $(".playlist-contents").html("<div class='empty'>&lt;Empty Queue&gt;</div>");
+  } else {
+    var existing_rows = $(".playlist-contents").find(".row")
+
+    existing_rows.each(function(i, row) {
+        if (typeof video_contents[i] !== "undefined") {
+          $(row).replaceWith(video_contents[i]);
+        } else {
+          $(row).remove();
+        }
+    });
+
+    if (video_contents.length > existing_rows.length) {
+      $(".playlist-contents").append(video_contents.slice(existing_rows.length));
+    }
+  }
+
+  if (current === null) {
+    $(".currently-playing").html("Playing: &lt;Nothing&gt;")
+  } else {
+    $(".currently-playing").html("Playing: " + current.title)
+  }
 }
 
 function load() {
@@ -182,6 +270,7 @@ function showPlaylistSuccess(video_id, img_src) {
 
 $(document).ready(function() {
   setBodyClass();
+  get_queue();
 
   gapi.load("client:auth2", function() {
     gapi.auth2.init({
@@ -231,4 +320,7 @@ $(document).ready(function() {
     .on('click', function() {
       $('#color').trigger('click');
     })
+
+  $(".playlist-details")
+    .on('click', togglePlaylist)
 });

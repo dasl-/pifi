@@ -7,14 +7,18 @@ import subprocess
 import ssl
 from lightness.process import Process
 from lightness.db import DB
+from lightness.logger import Logger
 
 class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
     __db = DB()
     __root_dir = "/home/pi/lightness/htdocs"
+    __logger = Logger().set_namespace("LightnessServerRequestHandler")
 
     def do_GET(self):
-        print("GET")
+        if self.path[:4] == "/api":
+            return self.API_GET_REQUEST(self.path[5:])
+
         if self.path == '/':
             self.path = '/index.html'
 
@@ -50,6 +54,27 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         else:
             self.wfile.write(bytes(file_to_open, 'utf-8'))
 
+    def API_GET_REQUEST(self, path):
+        if (path == 'get_queue'):
+            response = self.get_queue()
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        self.send_response(200)
+        self.end_headers()
+        resp = BytesIO()
+        resp.write(bytes(json.dumps(response), 'utf-8'))
+        self.wfile.write(resp.getvalue())
+
+    def get_queue(self):
+        response_details = {}
+        queue = self.__db.getQueue()
+        response_details['queue'] = queue
+        response_details['success'] = True
+        return response_details
+
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length)
@@ -76,12 +101,16 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
     def enqueue(self, post_data):
         url = post_data['url']
         is_color = post_data['color']
+        thumbnail = post_data['thumbnail']
+        title = post_data['title']
 
         response_details = {}
         response_details['url'] = url
         response_details['is_color'] = is_color
+        response_details['thumbnail'] = thumbnail
+        response_details['title'] = title
 
-        self.__db.enqueue(url, is_color)
+        self.__db.enqueue(url, is_color, thumbnail, title)
 
         response_details['success'] = True
         return response_details

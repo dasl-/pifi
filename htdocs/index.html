@@ -18,9 +18,9 @@
   <body>
     <div class="container">
       <div class="starter-template">
+
         <div class="header">
           <div class="form-group">
-
               <div class="input-group search-input-group">
                 <!-- Search Bar -->
                 <input type="text" class="form-control" id="query" placeholder="">
@@ -39,7 +39,7 @@
                     <span class='hidden-xs'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> B&W</span>
                     <span class='hidden-sm hidden-md hidden-lg'><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
                   </button>
-                  <input type="checkbox" id="color"  style="display: none;" />
+                  <input type="checkbox" id="color" style="display: none;" />
                 </div>
               </div>
           </div>
@@ -49,11 +49,11 @@
         <div id="search-results"></div>
 
         <!-- Playlist Actions -->
-        <div class="col-xs-11 col-md-6 playlist-container">
-          <div class="playlist">
+        <div class="col-xs-12 col-md-6 playlist-container">
+          <div class="playlist-bar">
             <div class="input-group control-input-group">
               <div class="playlist-details">
-                <p class="current">Playing: &lt;Nothing&gt;</p>
+                <span class="currently-playing">Playing: &lt;Nothing&gt;</span>
               </div>
 
               <div class="input-group-btn">
@@ -66,7 +66,11 @@
               </div>
             </div>
           </div>
+
+          <div class="playlist-expand">
+            <div class="playlist-contents"></div>
           </div>
+        </div>
 
       </div>
     </div>
