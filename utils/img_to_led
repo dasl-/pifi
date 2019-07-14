@@ -22,9 +22,16 @@ def parseArgs():
 args = parseArgs()
 
 # ffmpeg -threads 1 -i ~/Desktop/loading.png -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt rgb24 -v quiet -stats pipe:1
+pix_fmt = 'gray'
 ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
-    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-stats', 'pipe:1')
-data = subprocess.check_output(ffmpeg_cmd)
-arr = np.frombuffer(data, np.uint8).reshape([args.display_height, args.display_width, 3])
+    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
+gray_data = subprocess.check_output(ffmpeg_cmd)
+gray_arr = np.frombuffer(gray_data, np.uint8).reshape([args.display_height, args.display_width])
+np.save(args.output_file + '_monochrome', gray_arr)
 
-np.save(args.output_file, arr)
+pix_fmt = 'rgb24'
+ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
+    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
+color_data = subprocess.check_output(ffmpeg_cmd)
+color_arr = np.frombuffer(color_data, np.uint8).reshape([args.display_height, args.display_width, 3])
+np.save(args.output_file + '_color', color_arr)

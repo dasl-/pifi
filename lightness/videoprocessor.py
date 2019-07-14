@@ -62,7 +62,10 @@ class VideoProcessor:
         self.__logger.info("Finished process_and_play")
 
     def __show_loading_screen(self, video_player):
-        loading_screen_path = os.path.abspath(os.path.dirname(__file__)) + '/../loading_screen.npy'
+        filename = 'loading_screen_monochrome.npy'
+        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+            filename = 'loading_screen_color.npy'
+        loading_screen_path = os.path.abspath(os.path.dirname(__file__)) + '/../{}'.format(filename)
         video_player.playFrame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
