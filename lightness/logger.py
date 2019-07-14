@@ -4,7 +4,6 @@ import sys
 
 class Logger:
 
-    # Settings
     __namespace = None
     __info_log_file = None
     __err_log_file = None

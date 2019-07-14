@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import argparse
-from lightness.settings import Settings
+from lightness.videosettings import VideoSettings
 from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
 from lightness.process import Process
@@ -15,10 +15,10 @@ def parseArgs():
         help='Number of pixels / units')
     parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=18, metavar='N',
         help='Number of pixels / units')
-    parser.add_argument('--color-mode', dest='color_mode', action='store', default=Settings.COLOR_MODE_COLOR,
+    parser.add_argument('--color-mode', dest='color_mode', action='store', default=VideoSettings.COLOR_MODE_COLOR,
         help=("one of: '{}', '{}', '{}', '{}', or '{}'. Default is '{}'."
-            .format(Settings.COLOR_MODE_COLOR, Settings.COLOR_MODE_BW, Settings.COLOR_MODE_R,
-                Settings.COLOR_MODE_G, Settings.COLOR_MODE_B, Settings.COLOR_MODE_COLOR))
+            .format(VideoSettings.COLOR_MODE_COLOR, VideoSettings.COLOR_MODE_BW, VideoSettings.COLOR_MODE_R,
+                VideoSettings.COLOR_MODE_G, VideoSettings.COLOR_MODE_B, VideoSettings.COLOR_MODE_COLOR))
     )
     parser.add_argument('--audio', dest='should_play_audio', action='store_true', default=False,
         help='play the audio (default is no audio)')
@@ -30,13 +30,13 @@ def parseArgs():
         help='Global brightness value. Max of 31.')
     parser.add_argument('--save', dest='should_save_video', action='store_true', default=False,
         help='Save the video to avoid downloading it in the future. Default is not to save.')
-    parser.add_argument('--log-level', dest='log_level', action='store', default=Settings.LOG_LEVEL_VERBOSE,
+    parser.add_argument('--log-level', dest='log_level', action='store', default=VideoSettings.LOG_LEVEL_VERBOSE,
         help=("one of: '{}' or '{}'. Default is '{}'."
-            .format(Settings.LOG_LEVEL_NORMAL, Settings.LOG_LEVEL_VERBOSE, Settings.LOG_LEVEL_VERBOSE))
+            .format(VideoSettings.LOG_LEVEL_NORMAL, VideoSettings.LOG_LEVEL_VERBOSE, VideoSettings.LOG_LEVEL_VERBOSE))
     )
-    parser.add_argument('--log-file', dest='log_file', action='store', default=Settings.LOG_FILE_TERMINAL,
+    parser.add_argument('--log-file', dest='log_file', action='store', default=VideoSettings.LOG_FILE_TERMINAL,
         help=("Either a path to a log file or '{}'. Default is '{}'."
-            .format(Settings.LOG_FILE_TERMINAL, Settings.LOG_FILE_TERMINAL))
+            .format(VideoSettings.LOG_FILE_TERMINAL, VideoSettings.LOG_FILE_TERMINAL))
     )
 
     args = parser.parse_args()
@@ -46,7 +46,7 @@ process = Process(Process.MODE_WRITE)
 process.set_status(Process.STATUS_LOADING)
 
 args = parseArgs()
-video_settings = Settings(args)
+video_settings = VideoSettings(args)
 
 video_player = VideoPlayer(video_settings)
 video_player.clearScreen()

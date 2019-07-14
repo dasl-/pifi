@@ -11,7 +11,7 @@ import shlex
 from lightness.process import Process
 from lightness.db import DB
 from lightness.logger import Logger
-from lightness.settings import Settings
+from lightness.videosettings import VideoSettings
 
 class Queue:
 
@@ -47,7 +47,7 @@ class Queue:
 
     def __play_video(self, video):
         video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
-        command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(Settings.LOG_LEVEL_NORMAL)
+        command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(VideoSettings.LOG_LEVEL_NORMAL)
         if self.__custom_video_args:
             command += " " + self.__custom_video_args + " "
 

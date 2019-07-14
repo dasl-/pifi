@@ -9,7 +9,7 @@ import re
 from lightness.logger import Logger
 from lightness.process import Process
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
-from lightness.settings import Settings
+from lightness.videosettings import VideoSettings
 import youtube_dl
 import subprocess
 import math
@@ -25,11 +25,11 @@ class VideoProcessor:
     __process = None
     __url = None
 
-    # True if the video already exists (see: Settings.should_save_video)
+    # True if the video already exists (see: VideoSettings.should_save_video)
     __is_video_already_downloaded = False
 
     # Metadata about the video we are using, such as title, resolution, file extension, etc
-    # Note this is only populated if the video didn't already exist (see: Settings.should_save_video)
+    # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
     # Access should go through self.__get_video_info() to populate it lazily
     __video_info = None
 
@@ -48,7 +48,7 @@ class VideoProcessor:
         self.__video_settings = video_settings
         self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        if self.__video_settings.log_file != Settings.LOG_FILE_TERMINAL:
+        if self.__video_settings.log_file != VideoSettings.LOG_FILE_TERMINAL:
             self.__logger.set_log_files(self.__video_settings.log_file, self.__video_settings.log_file)
 
     def process_and_play(self, url, video_player):
@@ -65,7 +65,7 @@ class VideoProcessor:
 
     def __show_loading_screen(self, video_player):
         filename = 'loading_screen_monochrome.npy'
-        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             filename = 'loading_screen_color.npy'
         loading_screen_path = os.path.abspath(os.path.dirname(__file__)) + '/../{}'.format(filename)
         video_player.playFrame(np.load(loading_screen_path))
@@ -122,7 +122,7 @@ class VideoProcessor:
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
-        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
@@ -242,9 +242,9 @@ class VideoProcessor:
 
     def __get_youtube_dl_cmd(self):
         video_info = self.__get_video_info()
-        if self.__video_settings.log_level == Settings.LOG_LEVEL_VERBOSE:
+        if self.__video_settings.log_level == VideoSettings.LOG_LEVEL_VERBOSE:
             log_level = ''
-        elif self.__video_settings.log_level == Settings.LOG_LEVEL_NORMAL:
+        elif self.__video_settings.log_level == VideoSettings.LOG_LEVEL_NORMAL:
             log_level = '--no-progress '
         log_opts = ''
         if not sys.stderr.isatty():
@@ -260,7 +260,7 @@ class VideoProcessor:
 
     def __get_ffmpeg_cmd(self):
         pix_fmt = 'gray'
-        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             pix_fmt = 'rgb24'
 
         # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks

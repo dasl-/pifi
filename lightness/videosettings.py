@@ -1,4 +1,4 @@
-class Settings:
+class VideoSettings:
 
     COLOR_MODE_COLOR = 'color'
     COLOR_MODE_BW = 'bw' # black and white

@@ -2,7 +2,7 @@ import math
 import time
 from driver import apa102
 from lightness.gamma import Gamma
-from lightness.settings import Settings
+from lightness.videosettings import VideoSettings
 
 class VideoPlayer:
     __video_settings = None
@@ -31,7 +31,7 @@ class VideoPlayer:
 
         # Memoizing the specific gamma curve index for static gamma videos enables us to shave
         # 1 or 2 milliseconds off the loop per frame. See: self.__setFramePixels
-        if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             # static gamma
             self.__scale_red_gamma_curve = self.__gamma_controller.scale_red_curves[Gamma.DEFAULT_GAMMA_INDEX]
             self.__scale_green_gamma_curve = self.__gamma_controller.scale_green_curves[Gamma.DEFAULT_GAMMA_INDEX]
@@ -72,28 +72,28 @@ class VideoPlayer:
     #
     # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
     def __setFramePixels(self, avg_color_frame):
-        if not self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+        if not self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
 
         for x in range(self.__video_settings.display_width):
             for y in range(self.__video_settings.display_height):
                 # calculate gamma corrected colors
-                if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
+                if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
                     r, g, b = [
                         self.__scale_red_gamma_curve[avg_color_frame[y, x, 0]],
                         self.__scale_green_gamma_curve[avg_color_frame[y, x, 1]],
                         self.__scale_blue_gamma_curve[avg_color_frame[y, x, 2]]
                     ]
-                elif self.__video_settings.color_mode == Settings.COLOR_MODE_R:
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_R:
                     r = self.__scale_red_gamma_curves[gamma_index][avg_color_frame[y, x]]
                     g, b = [0, 0]
-                elif self.__video_settings.color_mode == Settings.COLOR_MODE_G:
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_G:
                     g = self.__scale_green_gamma_curves[gamma_index][avg_color_frame[y, x]]
                     r, b = [0, 0]
-                elif self.__video_settings.color_mode == Settings.COLOR_MODE_B:
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_B:
                     b = self.__scale_blue_gamma_curves[gamma_index][avg_color_frame[y, x]]
                     r, g = [0, 0]
-                elif self.__video_settings.color_mode == Settings.COLOR_MODE_BW:
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_BW:
                     r, g, b = [
                         self.__scale_red_gamma_curves[gamma_index][avg_color_frame[y, x]],
                         self.__scale_green_gamma_curves[gamma_index][avg_color_frame[y, x]],
