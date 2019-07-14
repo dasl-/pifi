@@ -18,20 +18,14 @@ class DB:
         self.__construct()
 
     def enqueue(self, url, is_color, thumbnail, title):
-        self.__execute("""INSERT INTO videos (url, is_color, thumbnail, title, status)
-                          VALUES(
-                            '""" + url + """',
-                            """ + (('1') if is_color else '0') + """,
-                            '""" + thumbnail + """',
-                            '""" + title + """',
-                            '""" + Process.STATUS_QUEUED + """'
-                          )""")
+        self.__execute("INSERT INTO videos (url, is_color, thumbnail, title, status) VALUES(?, ?, ?, ?, ?)",
+                          [url, (('1') if is_color else '0'), thumbnail, title, Process.STATUS_QUEUED])
 
     def skip(self):
-        self.__execute("UPDATE videos set signal = '" + Process.SIGNAL_KILL + "' WHERE is_current")
+        self.__execute("UPDATE videos set signal = ? WHERE is_current", [Process.SIGNAL_KILL])
 
     def clear(self):
-        self.__execute("UPDATE videos set status = '" + Process.STATUS_SKIP + "' WHERE status = '" + Process.STATUS_QUEUED + "'")
+        self.__execute("UPDATE videos set status = ? WHERE status = ?", [Process.STATUS_SKIP, Process.STATUS_QUEUED])
         self.skip()
 
     def getVideos(self):
@@ -41,39 +35,37 @@ class DB:
         return self.__fetchSingle("SELECT * FROM videos WHERE is_current")
 
     def getNextVideo(self):
-        return self.__fetchSingle("SELECT * FROM videos WHERE NOT(is_current) and status='" + Process.STATUS_QUEUED + "' order by id asc")
+        return self.__fetchSingle("SELECT * FROM videos WHERE NOT(is_current) and status=? order by id asc", [Process.STATUS_QUEUED])
 
     def getQueue(self):
-        return self.__fetch("SELECT * FROM videos WHERE is_current OR status='" + Process.STATUS_QUEUED + "' order by id asc")
+        return self.__fetch("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [Process.STATUS_QUEUED])
 
     def setCurrentVideo(self, video_id, pid):
-        self.__execute("""UPDATE videos set
-                            is_current=1,
-                            pid='""" + str(pid) + """',
-                            status='""" + Process.STATUS_LOADING + """'
-                            WHERE id=""" + str(video_id))
+        self.__execute("UPDATE videos set is_current=1, pid=?, status=? WHERE id=?",
+                          [str(pid), Process.STATUS_LOADING, str(video_id)])
 
     def setVideoStatus(self, video_id, status):
-        self.__execute("UPDATE videos set status='" + status + "' WHERE id=" + str(video_id))
+        self.__execute("UPDATE videos set status=? WHERE id=?", [status, str(video_id)])
 
     def endVideo(self, video_id):
-        self.__execute("UPDATE videos set status='" + Process.STATUS_DONE + "', is_current=0 WHERE id=" + str(video_id))
+        self.__execute("UPDATE videos set status=?, is_current=0 WHERE id=?", [Process.STATUS_DONE, str(video_id)])
 
     def setVideoSignal(self, video_id, signal):
-        self.__execute("UPDATE videos set signal='" + signal + "' WHERE id=" + str(video_id))
+        self.__execute("UPDATE videos set signal=? WHERE id=?", [signal, str(video_id)])
 
-    def __execute(self, sql):
+    def __execute(self, sql, params=[]):
         c = self.__conn.cursor()
-        c.execute(sql)
+        c.execute(sql, params)
         self.__conn.commit()
 
-    def __fetch(self, sql):
+    def __fetch(self, sql, params=[]):
+        print(params)
         c = self.__conn.cursor()
-        c.execute(sql)
+        c.execute(sql, params)
         return c.fetchall()
 
-    def __fetchSingle(self, sql):
-        rows = self.__fetch(sql)
+    def __fetchSingle(self, sql, params=[]):
+        rows = self.__fetch(sql, params)
         if (len(rows) > 0):
             return rows[0]
 
