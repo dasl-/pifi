@@ -232,11 +232,12 @@
   padding-left: 15px;
   padding-bottom: 5px;
 }
-.placeholder {
+.playlist-container .placeholder {
   width: 100%;
   padding-bottom: 75%;
   background: #333;
   max-height: 280px;
+  background-size: 100%;
 }
 .playlist-container .video-data {
   margin-left: 0;
