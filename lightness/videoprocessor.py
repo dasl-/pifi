@@ -83,6 +83,7 @@ class VideoProcessor:
         ydl_opts = {
             'format': self.__YOUTUBE_DL_FORMAT,
             'logger': Logger(),
+            'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
         self.__video_info = ydl.extract_info(self.__url, download = False)
@@ -213,8 +214,10 @@ class VideoProcessor:
             vid_data_cmd = (
                 # Add a buffer to give some slack in the case of network blips downloading the video.
                 # Not necessary in my testing, but then again I have a good connection...
+                # Set HOME variable to prevent these logs when run via sudo:
+                #   mbuffer: warning: HOME environment variable not set - unable to find defaults file
                 self.__get_youtube_dl_cmd() + ' | ' +
-                'mbuffer -q -Q -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
+                'HOME=/home/pi mbuffer -q -Q -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
             )
 
         maybe_play_audio_tee = ''
@@ -252,6 +255,7 @@ class VideoProcessor:
         return (
             'youtube-dl ' +
             '--output - ' + # output to stdout
+            '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
             log_level +
             log_opts +
