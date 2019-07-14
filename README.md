@@ -56,13 +56,6 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 - data: 19
 - clock: 23
 
-### Copy Adafruit LED Drivers
-(from https://github.com/adafruit/Adafruit_Python_GPIO)
-1. `cd ~`
-1. `git clone https://github.com/adafruit/Adafruit_Python_GPIO.git`
-1. `cd Adafruit_Python_GPIO`
-1. `sudo python setup.py install`
-
 ### Set Up Sublime
 1. `sudo wget -O /usr/local/bin/subl https://raw.github.com/aurora/rmate/master/rmate`
 1. `sudo chmod a+x /usr/local/bin/subl`
