@@ -117,15 +117,11 @@ function post_playVideo(video_id, url, is_color, thumbnail, title, target) {
           target.find("img.img-responsive").attr("src")
         );
       }, 500);
-
-      get_queue();
     },
     error: function() {
       setTimeout(function() {
         target.removeClass("loading");
       }, 500);
-
-      get_queue();
     },
   });
 }
@@ -138,7 +134,7 @@ function post_skip() {
       action: 'skip'
     }),
     success: function() {
-      get_queue();
+
     }
   });
 }
@@ -151,7 +147,7 @@ function post_clear() {
       action: 'clear'
     }),
     success: function() {
-      get_queue();
+
     }
   });
 }
@@ -191,8 +187,8 @@ function loadQueue(videos) {
     var is_current = video.is_current;
     var is_color = video.is_color;
 
-    color_class = is_color ? 'color' : 'black-and-white';
-    current_class = '';
+    var color_class = is_color ? 'color' : 'black-and-white';
+    var current_class = '';
 
     if (is_current) {
       current = video;
@@ -200,9 +196,10 @@ function loadQueue(videos) {
     }
 
     video_contents.push(
-      `<div class='row playlist-video ${color_class} ${current_class}'>
+      `<div class='row playlist-video ${color_class} ${current_class}' data-video-id='${video_id}'>
         <div class='col-xs-4 col-sm-4 playlist-video't-image'>
-          <img src='${img_src}' class='img-responsive video-thumbnail' width='100%' />
+          <div class='placeholder' style='background-image: url("${img_src}");'>
+          </div>
         </div>
         <div class='col-xs-7 col-sm-8 video-data'>
           <h5 class='title'>${title}</h5>
@@ -217,11 +214,15 @@ function loadQueue(videos) {
     var existing_rows = $(".playlist-contents").find(".row")
 
     existing_rows.each(function(i, row) {
-        if (typeof video_contents[i] !== "undefined") {
+      if (typeof video_contents[i] !== "undefined") {
+        video_id = videos[i].id;
+
+        if (parseInt($(row).data("video-id"), 10) !== video_id) {
           $(row).replaceWith(video_contents[i]);
-        } else {
-          $(row).remove();
         }
+      } else {
+        $(row).remove();
+      }
     });
 
     if (video_contents.length > existing_rows.length) {
@@ -268,9 +269,13 @@ function showPlaylistSuccess(video_id, img_src) {
   }, 100);
 }
 
+function startQueuePoll() {
+  setInterval(get_queue, 1000);
+}
+
 $(document).ready(function() {
   setBodyClass();
-  get_queue();
+  startQueuePoll();
 
   gapi.load("client:auth2", function() {
     gapi.auth2.init({

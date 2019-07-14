@@ -232,10 +232,11 @@
   padding-left: 15px;
   padding-bottom: 5px;
 }
-.playlist-container .playlist-video img {
-  margin: auto;
+.placeholder {
+  width: 100%;
+  padding-bottom: 75%;
+  background: #333;
   max-height: 280px;
-  width: auto;
 }
 .playlist-container .video-data {
   margin-left: 0;
