@@ -7,6 +7,9 @@ Wants=network-online.target
 # Command to execute when the service is started
 ExecStart=/home/pi/lightness/queue
 Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=LIGHTNESS_QUEUE
 
 [Install]
 WantedBy=multi-user.target

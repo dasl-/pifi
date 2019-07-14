@@ -7,9 +7,11 @@ import signal
 import subprocess
 import time
 import json
+import shlex
 from lightness.process import Process
 from lightness.db import DB
 from lightness.logger import Logger
+from lightness.settings import Settings
 
 class Queue:
 
@@ -45,14 +47,15 @@ class Queue:
 
     def __play_video(self, video):
         video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
-        command = [video_cmd_path, "--audio", "--url", video["url"]]
+        command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(Settings.LOG_LEVEL_NORMAL)
         if self.__custom_video_args:
-            command.extend(self.__custom_video_args)
+            command += " " + self.__custom_video_args + " "
 
         if video["is_color"]:
-            command.extend(["--color-mode", "color"])
+            command += " --color-mode color "
 
-        self.__video_proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+        command += " 1>>/var/log/lightness/video.log 2>&1"
+        self.__video_proc = subprocess.Popen(command, stdout = subprocess.PIPE, shell = True, executable = '/bin/bash')
         self.__db.setCurrentVideo(video["id"], self.__video_proc.pid)
 
     def __fetch_current_video(self):
@@ -67,10 +70,10 @@ class Queue:
         if self.__video_proc is not None and self.__video_proc.pid == self.__current_video["pid"]:
             # kill the process
             try:
-                print("KILL PID " + str(self.__video_proc.pid))
+                self.__logger.info("KILL PID " + str(self.__video_proc.pid))
                 os.kill(self.__video_proc.pid, signal.SIGTERM)
             except OSError:
-                print("invalid process")
+                self.__logger.error("invalid process")
 
             # Update the db status
             self.__db.endVideo(self.__current_video["id"])

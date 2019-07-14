@@ -1,5 +1,6 @@
 import sqlite3
 from lightness.process import Process
+from lightness.logger import Logger
 
 def dict_factory(cursor, row):
     d = {}
@@ -9,10 +10,12 @@ def dict_factory(cursor, row):
 
 class DB:
     __conn = None
+    __logger = None
 
     def __init__(self):
         self.__conn = sqlite3.connect('/home/pi/lightness/lightness.db', check_same_thread=False)
         self.__conn.row_factory = dict_factory
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def construct(self):
         self.__construct()
@@ -59,7 +62,7 @@ class DB:
         self.__conn.commit()
 
     def __fetch(self, sql, params=[]):
-        print(params)
+        self.__logger.debug(str(params))
         c = self.__conn.cursor()
         c.execute(sql, params)
         return c.fetchall()

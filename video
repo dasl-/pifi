@@ -30,6 +30,14 @@ def parseArgs():
         help='Global brightness value. Max of 31.')
     parser.add_argument('--save', dest='should_save_video', action='store_true', default=False,
         help='Save the video to avoid downloading it in the future. Default is not to save.')
+    parser.add_argument('--log-level', dest='log_level', action='store', default=Settings.LOG_LEVEL_VERBOSE,
+        help=("one of: '{}' or '{}'. Default is '{}'."
+            .format(Settings.LOG_LEVEL_NORMAL, Settings.LOG_LEVEL_VERBOSE, Settings.LOG_LEVEL_VERBOSE))
+    )
+    parser.add_argument('--log-file', dest='log_file', action='store', default=Settings.LOG_FILE_TERMINAL,
+        help=("Either a path to a log file or '{}'. Default is '{}'."
+            .format(Settings.LOG_FILE_TERMINAL, Settings.LOG_FILE_TERMINAL))
+    )
 
     args = parser.parse_args()
     return args

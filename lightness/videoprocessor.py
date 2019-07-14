@@ -48,6 +48,8 @@ class VideoProcessor:
         self.__video_settings = video_settings
         self.__process = process
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        if self.__video_settings.log_file != Settings.LOG_FILE_TERMINAL:
+            self.__logger.set_log_files(self.__video_settings.log_file, self.__video_settings.log_file)
 
     def process_and_play(self, url, video_player):
         self.__logger.info("Starting process_and_play for url: {}".format(url))
@@ -240,10 +242,19 @@ class VideoProcessor:
 
     def __get_youtube_dl_cmd(self):
         video_info = self.__get_video_info()
+        if self.__video_settings.log_level == Settings.LOG_LEVEL_VERBOSE:
+            log_level = ''
+        elif self.__video_settings.log_level == Settings.LOG_LEVEL_NORMAL:
+            log_level = '--no-progress '
+        log_opts = ''
+        if not sys.stderr.isatty():
+            log_opts = '--newline '
         return (
             'youtube-dl ' +
             '--output - ' + # output to stdout
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            log_level +
+            log_opts +
             shlex.quote(video_info['webpage_url']) # url to download
         )
 
@@ -251,6 +262,11 @@ class VideoProcessor:
         pix_fmt = 'gray'
         if self.__video_settings.color_mode == Settings.COLOR_MODE_COLOR:
             pix_fmt = 'rgb24'
+
+        # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
+        log_opts = ''
+        if sys.stderr.isatty():
+            log_opts = '-stats '
 
         return (
             'ffmpeg ' +
@@ -261,7 +277,7 @@ class VideoProcessor:
             '-c:a copy ' + # don't process the audio at all
             '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " # output in numpy compatible byte format
             '-v quiet ' + # supress output of verbose ffmpeg configuration, etc
-            '-stats ' + # display progress stats
+            log_opts + # maybe display progress stats
             'pipe:1' # output to stdout
         )
 

@@ -1,0 +1,8 @@
+/var/log/lightness/*.log {
+    nocompress
+    copytruncate
+    daily
+    dateext
+    ifempty
+    rotate 7
+}

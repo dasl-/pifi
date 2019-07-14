@@ -6,6 +6,11 @@ class Settings:
     COLOR_MODE_G = 'g'
     COLOR_MODE_B = 'b'
 
+    LOG_LEVEL_NORMAL = 'normal'
+    LOG_LEVEL_VERBOSE = 'verbose'
+
+    LOG_FILE_TERMINAL = 'terminal'
+
     # One of the COLOR_MODE_* constants
     color_mode = COLOR_MODE_COLOR
 
@@ -30,6 +35,10 @@ class Settings:
     # Boolean - saving the video allows us to avoid youtube-dl network calls to download the video if it's played again.
     should_save_video = False
 
+    log_level = None
+
+    log_file = None
+
     def __init__(self, args):
         self.__set_color_mode(args.color_mode)
         self.display_width = args.display_width
@@ -39,6 +48,8 @@ class Settings:
         self.flip_x = args.flip_x
         self.flip_y = args.flip_y
         self.should_save_video = args.should_save_video
+        self.log_level = args.log_level
+        self.log_file = args.log_file
 
     def __set_color_mode(self, color_mode):
         color_mode = color_mode.lower()
