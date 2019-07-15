@@ -52,6 +52,7 @@ class LightnessAPI():
 
 class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
+    __root_dir = "/home/pi/lightness/app/build"
     __api = LightnessAPI()
     __logger = Logger().set_namespace("LightnessServerRequestHandler")
 
@@ -72,13 +73,13 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         if self.path[:4] == "/api":
             return self.do_api_GET(self.path[5:])
 
-        return self.do_404()
+        return self.serve_static_asset()
 
     def do_POST(self):
         if self.path[:4] == "/api":
             return self.do_api_POST(self.path[5:])
 
-        return self.do_404()
+        return self.serve_static_asset()
 
     def do_api_GET(self, path):
         if (path == 'queue'):
@@ -88,7 +89,6 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("content-type", "application/json")
         self.end_headers()
         resp = BytesIO()
         resp.write(bytes(json.dumps(response), 'utf-8'))
@@ -112,11 +112,45 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("content-type", "application/json")
         self.end_headers()
         resp = BytesIO()
         resp.write(bytes(json.dumps(response), 'utf-8'))
         self.wfile.write(resp.getvalue())
+
+    def serve_static_asset(self):
+        if self.path == '/':
+            self.path = '/index.html'
+
+        self.path = self.__root_dir + self.path
+
+        ext = self.path[self.path.rfind(".")+1:].lower()
+
+        is_bytes = False
+        if ext == 'ico':
+            is_bytes = True
+        elif ext == 'woff':
+            is_bytes = True
+        elif ext == 'woff2':
+            is_bytes = True
+        elif ext == 'ttf':
+            is_bytes = True
+
+        try:
+            if is_bytes:
+                file_to_open = open(self.path, 'rb').read()
+            else:
+                file_to_open = open(self.path).read()
+            self.send_response(200)
+        except Exception as e:
+            file_to_open = "File not found"
+            return self.do_404()
+
+        self.end_headers()
+
+        if is_bytes:
+            self.wfile.write(file_to_open)
+        else:
+            self.wfile.write(bytes(file_to_open, 'utf-8'))
 
 class LightnessServer:
 

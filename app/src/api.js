@@ -1,15 +1,10 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
-const BASE_URI = 'http://192.168.1.176:80/api';
-
 const client = axios.create({
- baseURL: BASE_URI,
+ baseURL: process.env.REACT_APP_API_BASE_URL,
  json: true
 });
-
-var API_KEY = 'API_KEY';
-var CLIENT_ID = 'NONE';
 
 //On load, called to load the auth2 library and API client library.
 gapi.load('client:auth2', initGoogleClient);
@@ -18,9 +13,9 @@ gapi.load('client:auth2', initGoogleClient);
 function initGoogleClient() {
   gapi.client.init({
     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
-    client_id: CLIENT_ID
+    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID
   }).then(function () {
-    gapi.client.setApiKey(API_KEY);
+    gapi.client.setApiKey(process.env.REACT_APP_GOOGLE_API_KEY);
   });
 }
 
