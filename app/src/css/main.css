@@ -1,0 +1,247 @@
+.header {
+  margin-top: 10px;
+}
+.black-and-white img {
+  filter: grayscale(100%);
+}
+.color img {
+  filter: grayscale(0%);
+}
+.show-in-color,
+.black-and-white .show-in-black-and-white {
+  display: inline-block;
+}
+.black-and-white .show-in-color,
+.show-in-black-and-white {
+  display: none;
+}
+
+/**
+ * Search Results
+ */
+#search-results {
+  margin-top: 10px;
+}
+#search-results-loading {
+  margin: 30px auto;
+  width: 30px;
+}
+.search-result {
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+.search-result img {
+  margin: auto;
+  max-height: 280px;
+  width: auto;
+}
+.search-result .title-padding {
+  margin-top: 15px;
+}
+.search-result h4.title {
+  margin-top: 0;
+}
+.search-result .video-description {
+  word-wrap: break-word;
+}
+.search-result .duration {
+  position: absolute;
+  bottom:5px;
+  right:5px;
+  margin-right: 15px;
+  padding: 0 3px;
+  background-color: black;
+  color: white;
+  border-radius: 2px;
+}
+.search-result.loading img,
+.search-result.loading .video-data {
+  opacity: .3;
+}
+
+/**
+ * Success message
+ */
+.play-queue.untriggered .play-queue-trigger {
+  transform: translateY(-200px);
+}
+.play-queue-trigger {
+  position: fixed;
+  top: 20px;
+  right: 5%;
+  transition: transform .5s;
+  z-index: 3;
+  width: 100px;
+  padding-top: 12px;
+  text-align: center;
+  overflow: visible;
+  border-radius: 5px;
+  -webkit-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+  box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
+}
+.queue-thumbnail {
+  max-width: 80%;
+  margin: auto;
+}
+.play-queue .glyphicon {
+  font-size: 18px;
+}
+.play-queue p {
+  margin-top:3px;
+}
+
+/**
+ * Loading
+ */
+.loading-cover {
+  top: 50%;
+  position: absolute;
+  left: 50%;
+  display: none;
+}
+.loading .loading-cover {
+  display: block;
+}
+.dot-pulse {
+  position: relative;
+  left: -9999px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #FFF;
+  color: #FFF;
+  box-shadow: 9999px 0 0 -5px #FFF;
+  animation: dotPulse 1.5s infinite linear;
+  animation-delay: .25s;
+}
+
+.dot-pulse::before, .dot-pulse::after {
+  content: '';
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #FFF;
+  color: #FFF;
+}
+
+.dot-pulse::before {
+  box-shadow: 9984px 0 0 -5px #FFF;
+  animation: dotPulseBefore 1.5s infinite linear;
+  animation-delay: 0s;
+}
+
+.dot-pulse::after {
+  box-shadow: 10014px 0 0 -5px #FFF;
+  animation: dotPulseAfter 1.5s infinite linear;
+  animation-delay: .5s;
+}
+
+@keyframes dotPulseBefore {
+  0% {
+    box-shadow: 9984px 0 0 -5px #FFF;
+  }
+  30% {
+    box-shadow: 9984px 0 0 2px #FFF;
+  }
+  60%,
+  100% {
+    box-shadow: 9984px 0 0 -5px #FFF;
+  }
+}
+
+@keyframes dotPulse {
+  0% {
+    box-shadow: 9999px 0 0 -5px #FFF;
+  }
+  30% {
+    box-shadow: 9999px 0 0 2px #FFF;
+  }
+  60%,
+  100% {
+    box-shadow: 9999px 0 0 -5px #FFF;
+  }
+}
+
+@keyframes dotPulseAfter {
+  0% {
+    box-shadow: 10014px 0 0 -5px #FFF;
+  }
+  30% {
+    box-shadow: 10014px 0 0 2px #FFF;
+  }
+  60%,
+  100% {
+    box-shadow: 10014px 0 0 -5px #FFF;
+  }
+}
+
+/**
+ * Playlist Controls
+ */
+.playlist-container {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  overflow-y: auto;
+  max-height: 90%;
+}
+.playlist-bar {
+  cursor: pointer;
+  background-color: #444;
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+  padding: 0;
+  margin: 0;
+}
+.playlist-details {
+
+}
+.playlist-container .currently-playing {
+  color: #fff;
+  margin: 0;
+  padding: 5px;
+  display: inline-block;
+  overflow: hidden;
+  height: 28px;
+}
+.playlist-expand {
+  background-color: #444;
+  border-width: 1px;
+  padding: 5px 0 0;
+  margin: 0;
+}
+.playlist-container .playlist-expand {
+  display: none;
+}
+.playlist-container.expanded .playlist-bar {
+}
+.playlist-container.expanded .playlist-expand {
+  display: block;
+}
+.playlist-container .empty {
+  text-align: center;
+  padding: 10px;
+}
+.playlist-container .playlist-video {
+  margin-right: 0;
+  padding-left: 15px;
+  padding-bottom: 5px;
+}
+.playlist-container .placeholder {
+  width: 100%;
+  padding-bottom: 75%;
+  background: #333;
+  max-height: 280px;
+  background-size: 100%;
+}
+.playlist-container .video-data {
+  margin-left: 0;
+  padding-left: 0;
+}
+.playlist-container .playlist-video h4.title {
+  margin-top: 0;
+}

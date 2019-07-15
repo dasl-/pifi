@@ -1,0 +1,141 @@
+#!/usr/bin/python3
+
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from io import BytesIO
+import json
+import subprocess
+import ssl
+from lightness.process import Process
+from lightness.db import DB
+from lightness.logger import Logger
+
+class LightnessAPI():
+    __db = DB()
+
+    def get_queue(self):
+        response_details = {}
+        queue = self.__db.getQueue()
+        response_details['queue'] = queue
+        response_details['success'] = True
+        return response_details
+
+    def enqueue(self, post_data):
+        url = post_data['url']
+        is_color = post_data['color']
+        thumbnail = post_data['thumbnail']
+        title = post_data['title']
+
+        response_details = {}
+        response_details['url'] = url
+        response_details['color'] = is_color
+        response_details['thumbnail'] = thumbnail
+        response_details['title'] = title
+
+        self.__db.enqueue(url, is_color, thumbnail, title)
+
+        response_details['success'] = True
+        return response_details
+
+    def skip(self):
+        self.__db.skip()
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details
+
+    def clear(self):
+        self.__db.clear()
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details
+
+class LightnessServerRequestHandler(BaseHTTPRequestHandler):
+
+    __api = LightnessAPI()
+    __logger = Logger().set_namespace("LightnessServerRequestHandler")
+
+    def do_OPTIONS(self):
+        self.send_response(200, "ok")
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
+    def do_404(self):
+        self.send_response(404)
+        self.end_headers()
+        return
+
+    def do_GET(self):
+        if self.path[:4] == "/api":
+            return self.do_api_GET(self.path[5:])
+
+        return self.do_404()
+
+    def do_POST(self):
+        if self.path[:4] == "/api":
+            return self.do_api_POST(self.path[5:])
+
+        return self.do_404()
+
+    def do_api_GET(self, path):
+        if (path == 'queue'):
+            response = self.__api.get_queue()
+        else:
+            return self.do_404()
+
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("content-type", "application/json")
+        self.end_headers()
+        resp = BytesIO()
+        resp.write(bytes(json.dumps(response), 'utf-8'))
+        self.wfile.write(resp.getvalue())
+
+    def do_api_POST(self, path):
+        content_length = int(self.headers['Content-Length'])
+
+        if (content_length > 0):
+            body = self.rfile.read(content_length)
+            post_data = json.loads(body.decode("utf-8"))
+
+        if (path == 'queue'):
+            response = self.__api.enqueue(post_data)
+        elif (path == 'skip'):
+            response = self.__api.skip()
+        elif (path == 'clear'):
+            response = self.__api.clear()
+        else:
+            return self.do_404()
+
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("content-type", "application/json")
+        self.end_headers()
+        resp = BytesIO()
+        resp.write(bytes(json.dumps(response), 'utf-8'))
+        self.wfile.write(resp.getvalue())
+
+class LightnessServer:
+
+    __secure = False
+    __server = None
+
+    def __init__(self, secure=False):
+        self.__secure = secure
+        if (not self.__secure):
+            self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
+        else:
+            self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
+            self.__server.socket = ssl.wrap_socket (self.__server.socket,
+                                            keyfile="/home/pi/.sslcerts/private.key",
+                                            certfile='/home/pi/.sslcerts/certificate.crt',
+                                            server_side=True)
+
+    def serve_forever(self):
+        self.__server.serve_forever()
+
+server = LightnessServer(secure=False)
+server.serve_forever()
