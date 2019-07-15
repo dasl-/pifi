@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # setup logging: syslog
 sudo mkdir -p /var/log/lightness
