@@ -71,17 +71,15 @@ class Search extends React.Component {
     e.preventDefault();
     localStorage.setItem("last_search", this.state.search_term);
 
-    this.setState(state => ({
-      loading: true
-    }));
+    this.setState({loading: true});
 
     this.apiClient.searchYoutube(this.state.search_term)
       .then((data) => {
         localStorage.setItem("latest_results", JSON.stringify(data));
-        this.setState(state => ({
+        this.setState({
           search_results: Video.prototype.fromArray(data),
           loading: false
-        }));
+        });
       });
   }
 }
