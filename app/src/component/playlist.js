@@ -47,6 +47,10 @@ class Playlist extends React.Component {
 
         <div className="playlist-expand">
           <div className="playlist-contents">
+              {this.state.videos.length === 0 && !this.state.loading && (
+                <div class='empty'>&lt;Empty Queue&gt;</div>
+              )}
+
               {this.state.videos.map(function(video, index) {
                 return <PlaylistItem
                   key = {index}

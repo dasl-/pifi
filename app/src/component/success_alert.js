@@ -19,17 +19,16 @@ class SuccessAlert extends React.Component {
 
     return (
       <div className={'play-queue ' + triggered_class}>
-       <div className='play-queue-trigger bg-success'>
-         <div className='queue-thumbnail'>
-           {(this.props.video)
-            ? <img
+        <div className='play-queue-trigger bg-success'>
+          <div className='queue-thumbnail'>
+            {(this.props.video) && (
+              <img
                 src={this.props.video.thumbnail_img_src}
                 className='img-responsive'
                 alt={this.props.video.title}/>
-            : <span />
-           }
-         </div>
-         <p>Added!</p>
+            )}
+          </div>
+          <p>Added!</p>
        </div>
      </div>
     );
