@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import os
 from http.server import HTTPServer, BaseHTTPRequestHandler, HTTPStatus
 from io import BytesIO
 import json
@@ -155,8 +155,17 @@ class LightnessServer:
 
     __secure = False
     __server = None
+    __custom_server_args = []
 
-    def __init__(self, secure=False):
+    __CONFIG_FILENAME = 'config.json'
+
+    def __init__(self):
+        self.__maybe_load_custom_config()
+
+        secure = False
+        if self.__custom_server_args:
+            secure = self.__custom_server_args['use_ssl']
+
         self.__secure = secure
         if (not self.__secure):
             self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
@@ -170,5 +179,14 @@ class LightnessServer:
     def serve_forever(self):
         self.__server.serve_forever()
 
-server = LightnessServer(secure=False)
+    def __maybe_load_custom_config(self):
+        config_path = os.path.abspath(os.path.dirname(__file__)) + '/' + self.__CONFIG_FILENAME
+        if not os.path.exists(config_path):
+            return
+
+        with open(config_path) as config_json:
+            data = json.load(config_json)
+            self.__custom_server_args = data['custom_server_args']
+
+server = LightnessServer()
 server.serve_forever()

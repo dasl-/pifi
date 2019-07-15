@@ -7,4 +7,4 @@ sftp-config.json
 data/
 __pycache__/
 *.db
-queue_config.json
+config.json
