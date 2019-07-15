@@ -5,7 +5,6 @@ from io import BytesIO
 import json
 import subprocess
 import ssl
-from lightness.process import Process
 from lightness.db import DB
 from lightness.logger import Logger
 
@@ -123,34 +122,15 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
         self.path = self.__root_dir + self.path
 
-        ext = self.path[self.path.rfind(".")+1:].lower()
-
-        is_bytes = False
-        if ext == 'ico':
-            is_bytes = True
-        elif ext == 'woff':
-            is_bytes = True
-        elif ext == 'woff2':
-            is_bytes = True
-        elif ext == 'ttf':
-            is_bytes = True
-
         try:
-            if is_bytes:
-                file_to_open = open(self.path, 'rb').read()
-            else:
-                file_to_open = open(self.path).read()
+            file_to_open = open(self.path, 'rb').read()
             self.send_response(200)
         except Exception as e:
             file_to_open = "File not found"
             return self.do_404()
 
         self.end_headers()
-
-        if is_bytes:
-            self.wfile.write(file_to_open)
-        else:
-            self.wfile.write(bytes(file_to_open, 'utf-8'))
+        self.wfile.write(bytes(file_to_open, 'utf-8'))
 
 class LightnessServer:
 
@@ -164,9 +144,9 @@ class LightnessServer:
         else:
             self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
             self.__server.socket = ssl.wrap_socket (self.__server.socket,
-                                            keyfile="/home/pi/.sslcerts/private.key",
-                                            certfile='/home/pi/.sslcerts/certificate.crt',
-                                            server_side=True)
+                                                    keyfile="/home/pi/.sslcerts/private.key",
+                                                    certfile='/home/pi/.sslcerts/certificate.crt',
+                                                    server_side=True)
 
     def serve_forever(self):
         self.__server.serve_forever()
