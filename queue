@@ -55,7 +55,7 @@ class Queue:
             command += " --color-mode color "
 
         command += " 1>>/var/log/lightness/video.log 2>&1"
-        self.__video_proc = subprocess.Popen(command, stdout = subprocess.PIPE, shell = True, executable = '/bin/bash')
+        self.__video_proc = subprocess.Popen("exec " + command, stdout = subprocess.PIPE, shell = True, executable = '/bin/bash')
         self.__db.setCurrentVideo(video["id"], self.__video_proc.pid)
 
     def __fetch_current_video(self):

@@ -62,7 +62,6 @@ class DB:
         self.__conn.commit()
 
     def __fetch(self, sql, params=[]):
-        self.__logger.debug(str(params))
         c = self.__conn.cursor()
         c.execute(sql, params)
         return c.fetchall()
