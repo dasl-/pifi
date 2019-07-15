@@ -50,6 +50,11 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `./install/install.sh`
 1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
+### Static IP and DNS A record:
+1. Setup static IP for raspberry pi via: https://raspberrypi.stackexchange.com/a/74428
+1. Optionally reserve the chosen IP on your router (if it supports this) to avoid conflicts
+1. Note if you choose 192.168.1.100 for the static IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :)
+
 ### Connect GPIO Pins
 (pinout: https://pinout.xyz/)
 - power: 2
