@@ -18,3 +18,6 @@ sudo chmod 644 /etc/systemd/system/lightness_*.service
 sudo systemctl enable /etc/systemd/system/lightness_*.service
 sudo systemctl daemon-reload
 sudo systemctl restart $(ls /etc/systemd/system/lightness_*.service | cut -d'/' -f5)
+
+# build the web app
+sudo npm run build --prefix /home/pi/lightness/app
