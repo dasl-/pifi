@@ -14,24 +14,28 @@ def parseArgs():
     parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=18, metavar='N',
         help='Number of pixels / units')
     parser.add_argument('--output-file', dest='output_file', action='store',
-        help="output path to save the array. The suffix '.npy' will be added to this file name.")
+        help="output path to save the array. The suffix '_<color-mode>.npy' will be appended to this file name.")
+    parser.add_argument('--color-mode', dest='color_mode', action='store', default='color',
+        help="Either 'color' or 'monochrome'. Defaults to 'color'.")
 
     args = parser.parse_args()
     return args
 
 args = parseArgs()
 
-# ffmpeg -threads 1 -i ~/Desktop/loading.png -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt rgb24 -v quiet -stats pipe:1
-pix_fmt = 'gray'
-ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
-    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
-gray_data = subprocess.check_output(ffmpeg_cmd)
-gray_arr = np.frombuffer(gray_data, np.uint8).reshape([args.display_height, args.display_width])
-np.save(args.output_file + '_monochrome', gray_arr)
+reshape_dimensions = None
+pix_fmt = None
+if args.color_mode == 'color':
+    reshape_dimensions = [args.display_height, args.display_width, 3]
+    pix_fmt = 'rgb24'
+elif args.color_mode == 'monochrome':
+    reshape_dimensions = [args.display_height, args.display_width]
+    pix_fmt = 'gray'
+else:
+    raise Exception('Invalid color mode: {}'.format(args.color_mode))
 
-pix_fmt = 'rgb24'
 ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
     '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
-color_data = subprocess.check_output(ffmpeg_cmd)
-color_arr = np.frombuffer(color_data, np.uint8).reshape([args.display_height, args.display_width, 3])
-np.save(args.output_file + '_color', color_arr)
+data = subprocess.check_output(ffmpeg_cmd)
+arr = np.frombuffer(data, np.uint8).reshape(reshape_dimensions)
+np.save(args.output_file + '_{}'.format(args.color_mode), arr)
