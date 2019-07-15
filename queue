@@ -12,22 +12,20 @@ from lightness.process import Process
 from lightness.db import DB
 from lightness.logger import Logger
 from lightness.videosettings import VideoSettings
+from lightness.config import Config
 
 class Queue:
 
     __db = None
+    __config = None
     __video_proc = None
     __current_video = None
     __logger = None
-    __custom_video_args = None
-
-    __CONFIG_FILENAME = 'config.json'
 
     def __init__(self):
         self.__db = DB()
-        self.__custom_video_args = None
+        self.__config = Config()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__maybe_load_custom_config()
 
     def run(self):
         while True:
@@ -48,8 +46,7 @@ class Queue:
     def __play_video(self, video):
         video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
         command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(VideoSettings.LOG_LEVEL_NORMAL)
-        if self.__custom_video_args:
-            command += " " + " ".join(self.__custom_video_args) + " "
+        command += " " + " ".join(self.__config.getCustomVideoArgs()) + " "
 
         if video["is_color"]:
             command += " --color-mode color "
@@ -96,17 +93,6 @@ class Queue:
             if next_video is not None:
                 if next_video["status"] != Process.STATUS_LOADING:
                   self.__play_video(next_video)
-
-    def __maybe_load_custom_config(self):
-        config_path = os.path.abspath(os.path.dirname(__file__)) + '/' + self.__CONFIG_FILENAME
-        if not os.path.exists(config_path):
-            self.__logger.info("No custom config found at: {}".format(config_path))
-            return
-
-        self.__logger.info("Found custom config found at: {}".format(config_path))
-        with open(config_path) as config_json:
-            data = json.load(config_json)
-            self.__custom_video_args = data['custom_video_args']
 
 queue = Queue()
 queue.run()
