@@ -2,7 +2,7 @@ import React from 'react';
 
 import api from 'api';
 import Search from 'component/search';
-import SuccessAlert from 'component/success_alert';
+import SuccessAlert from 'component/success-alert';
 import Playlist from 'component/playlist';
 
 class App extends React.Component {

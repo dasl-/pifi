@@ -2,7 +2,7 @@ import React from 'react';
 
 import api from 'api';
 import utils from 'utils';
-import QueuedVideo from 'data/queued_video';
+import QueuedVideo from 'dataobj/queued_video';
 import PlaylistItem from 'component/playlist_item';
 
 class Playlist extends React.Component {

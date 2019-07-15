@@ -2,7 +2,7 @@ import React from 'react';
 
 import api from 'api';
 import SearchResult from 'component/search-result';
-import Video from 'data/video';
+import Video from 'dataobj/video';
 
 class Search extends React.Component {
   constructor(props) {
