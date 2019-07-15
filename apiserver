@@ -130,7 +130,11 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
             return self.do_404()
 
         self.end_headers()
-        self.wfile.write(bytes(file_to_open, 'utf-8'))
+
+        if (type(file_to_open) is bytes):
+            self.wfile.write(file_to_open)
+        else:
+            self.wfile.write(bytes(file_to_open, 'utf-8'))
 
 class LightnessServer:
 
