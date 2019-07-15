@@ -1,3 +1,0 @@
-var API_KEY = 'AIzaSyDbd6ZSIOBd3JFkJ1iQUV6M33zNSpdWtbs';
-var CLIENT_ID = 'NONE';
-var QUOTA_USER = 'ABCD';
