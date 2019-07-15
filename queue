@@ -49,7 +49,7 @@ class Queue:
         video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
         command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(VideoSettings.LOG_LEVEL_NORMAL)
         if self.__custom_video_args:
-            command += " " + self.__custom_video_args + " "
+            command += " " + " ".join(self.__custom_video_args) + " "
 
         if video["is_color"]:
             command += " --color-mode color "
