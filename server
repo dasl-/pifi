@@ -166,8 +166,8 @@ class LightnessServer:
         else:
             self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
             self.__server.socket = ssl.wrap_socket (self.__server.socket,
-                                                    keyfile="/home/pi/.sslcerts/private.key",
-                                                    certfile='/home/pi/.sslcerts/certificate.crt',
+                                                    keyfile=self.__config.getServerConfig('keyfile', ""),
+                                                    certfile=self.__config.getServerConfig('certfile', ""),
                                                     server_side=True)
 
     def serve_forever(self):
