@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import os
 from http.server import HTTPServer, BaseHTTPRequestHandler, HTTPStatus
 from io import BytesIO
 import json
@@ -67,7 +66,6 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
     def do_404(self):
         self.send_response(404)
         self.end_headers()
-        return
 
     def do_GET(self):
         if self.path[:4] == "/api":
@@ -82,10 +80,11 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         return self.serve_static_asset()
 
     def do_api_GET(self, path):
-        if (path == 'queue'):
+        if path == 'queue':
             response = self.__api.get_queue()
         else:
-            return self.do_404()
+            self.do_404()
+            return
 
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -98,18 +97,19 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
     def do_api_POST(self, path):
         content_length = int(self.headers['Content-Length'])
 
-        if (content_length > 0):
+        if content_length > 0:
             body = self.rfile.read(content_length)
             post_data = json.loads(body.decode("utf-8"))
 
-        if (path == 'queue'):
+        if path == 'queue':
             response = self.__api.enqueue(post_data)
-        elif (path == 'skip'):
+        elif path == 'skip':
             response = self.__api.skip()
-        elif (path == 'clear'):
+        elif path == 'clear':
             response = self.__api.clear()
         else:
-            return self.do_404()
+            self.do_404()
+            return
 
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -131,14 +131,16 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.__logger.error(str(e))
             file_to_open = "File not found"
-            return self.do_404()
+            self.do_404()
+            return
 
         self.end_headers()
 
-        if (type(file_to_open) is bytes):
+        if type(file_to_open) is bytes:
             self.wfile.write(file_to_open)
         else:
             self.wfile.write(bytes(file_to_open, 'utf-8'))
+        return
 
     def log_request(self, code='-', size='-'):
         if isinstance(code, HTTPStatus):
@@ -161,14 +163,14 @@ class LightnessServer:
     def __init__(self):
         self.__secure = self.__config.getServerConfig('use_ssl', False)
 
-        if (not self.__secure):
+        if not self.__secure:
             self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
         else:
             self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
-            self.__server.socket = ssl.wrap_socket (self.__server.socket,
-                                                    keyfile=self.__config.getServerConfig('keyfile', ""),
-                                                    certfile=self.__config.getServerConfig('certfile', ""),
-                                                    server_side=True)
+            self.__server.socket = ssl.wrap_socket(self.__server.socket,
+                                                   keyfile=self.__config.getServerConfig('keyfile', ""),
+                                                   certfile=self.__config.getServerConfig('certfile', ""),
+                                                   server_side=True)
 
     def serve_forever(self):
         self.__server.serve_forever()
