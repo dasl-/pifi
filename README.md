@@ -62,9 +62,8 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 - data: 19
 - clock: 23
 
-### Set Up Sublime
-1. `sudo wget -O /usr/local/bin/subl https://raw.github.com/aurora/rmate/master/rmate`
-1. `sudo chmod a+x /usr/local/bin/subl`
+### Hacking on the code:
+See [development_setup](development_setup.md)
 
 ## Troubleshooting
 If you see log lines like this:
@@ -73,7 +72,7 @@ If you see log lines like this:
 ```
 It might mean the pi is getting throttled because it's either overheating or has too low of a voltage from the power supply.
 
-Test running a command like this (video obtained via [youtube](https://www.youtube.com/watch?v=4aeETEoNfOg)): 
+Test running a command like this (video obtained via [youtube](https://www.youtube.com/watch?v=4aeETEoNfOg)):
 ```
 vcgencmd measure_temp && vcgencmd get_throttled && time ffmpeg -threads 1 -i "/home/pi/lightness/data/The Smashing Pumpkins - 1979 (Official Video)@480x360.mp4" -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt gray pipe:1 > /dev/null && vcgencmd measure_temp && vcgencmd get_throttled
 ```
