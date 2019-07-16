@@ -1,7 +1,7 @@
 import sqlite3
-from lightness.process import Process
 from lightness.logger import Logger
 from lightness.directoryutils import DirectoryUtils
+from lightness.videorecord import VideoRecord
 
 class DB:
 
@@ -40,13 +40,13 @@ class DB:
 
     def enqueue(self, url, is_color, thumbnail, title):
         self.__cursor.execute("INSERT INTO videos (url, is_color, thumbnail, title, status) VALUES(?, ?, ?, ?, ?)",
-                          [url, (('1') if is_color else '0'), thumbnail, title, Process.STATUS_QUEUED])
+                          [url, (('1') if is_color else '0'), thumbnail, title, VideoRecord.STATUS_QUEUED])
 
     def skip(self):
-        self.__cursor.execute("UPDATE videos set signal = ? WHERE is_current", [Process.SIGNAL_KILL])
+        self.__cursor.execute("UPDATE videos set signal = ? WHERE is_current", [VideoRecord.SIGNAL_KILL])
 
     def clear(self):
-        self.__cursor.execute("UPDATE videos set status = ? WHERE status = ?", [Process.STATUS_SKIP, Process.STATUS_QUEUED])
+        self.__cursor.execute("UPDATE videos set status = ? WHERE status = ?", [VideoRecord.STATUS_SKIP, VideoRecord.STATUS_QUEUED])
         self.skip()
 
     def getVideos(self):
@@ -60,25 +60,25 @@ class DB:
     def getNextVideo(self):
         self.__cursor.execute(
             "SELECT * FROM videos WHERE NOT(is_current) and status=? order by id asc LIMIT 1",
-            [Process.STATUS_QUEUED]
+            [VideoRecord.STATUS_QUEUED]
         )
         return self.__cursor.fetchone()
 
     def getQueue(self):
-        self.__cursor.execute("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [Process.STATUS_QUEUED])
+        self.__cursor.execute("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [VideoRecord.STATUS_QUEUED])
         return self.__cursor.fetchall()
 
     def setCurrentVideo(self, video_id, pid):
         self.__cursor.execute(
             "UPDATE videos set is_current=1, pid=?, status=? WHERE id=?",
-            [str(pid), Process.STATUS_LOADING, str(video_id)]
+            [str(pid), VideoRecord.STATUS_LOADING, str(video_id)]
         )
 
     def setVideoStatus(self, video_id, status):
         self.__cursor.execute("UPDATE videos set status=? WHERE id=?", [status, str(video_id)])
 
     def endVideo(self, video_id):
-        self.__cursor.execute("UPDATE videos set status=?, is_current=0 WHERE id=?", [Process.STATUS_DONE, str(video_id)])
+        self.__cursor.execute("UPDATE videos set status=?, is_current=0 WHERE id=?", [VideoRecord.STATUS_DONE, str(video_id)])
 
     def setVideoSignal(self, video_id, signal):
         self.__cursor.execute("UPDATE videos set signal=? WHERE id=?", [signal, str(video_id)])

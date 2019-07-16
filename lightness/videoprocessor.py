@@ -7,11 +7,11 @@ import sys
 import urllib
 import re
 from lightness.logger import Logger
-from lightness.process import Process
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
 from lightness.videosettings import VideoSettings
 from lightness.directoryutils import DirectoryUtils
 from lightness.db import DB
+from lightness.videorecord import VideoRecord
 import youtube_dl
 import subprocess
 import math
@@ -24,7 +24,6 @@ class VideoProcessor:
 
     __video_settings = None
     __logger = None
-    __process = None
     __url = None
 
     __db = None
@@ -49,14 +48,13 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
-    def __init__(self, video_settings, process = None, db_video_id = None):
+    def __init__(self, video_settings, db_video_id = None):
         self.__video_settings = video_settings
 
         if self.__video_settings.should_check_abort_signals:
             self.__db = DB()
             self.__db_video_id = db_video_id
 
-        self.__process = process
         self.__is_video_already_downloaded = False
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
@@ -134,8 +132,6 @@ class VideoProcessor:
         process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
         process_and_play_vid_proc = subprocess.Popen(process_and_play_vid_cmd, shell = True, executable = '/bin/bash')
-
-        self.__process.set_status(Process.STATUS_PLAYING)
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
@@ -397,7 +393,7 @@ class VideoProcessor:
             )
             return False
 
-        if current_video["signal"] == Process.SIGNAL_KILL:
+        if current_video["signal"] == VideoRecord.SIGNAL_KILL:
             self.__logger.info("Got signal from DB to abort current video.")
             if process_and_play_vid_proc:
                 process_and_play_vid_proc.kill()
