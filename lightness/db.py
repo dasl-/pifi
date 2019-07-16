@@ -39,7 +39,7 @@ class DB:
         return self.__fetchSingle("SELECT * FROM videos WHERE is_current")
 
     def getNextVideo(self):
-        return self.__fetchSingle("SELECT * FROM videos WHERE NOT(is_current) and status=? order by id asc", [Process.STATUS_QUEUED])
+        return self.__fetchSingle("SELECT * FROM videos WHERE NOT(is_current) and status=? order by id asc LIMIT 1", [Process.STATUS_QUEUED])
 
     def getQueue(self):
         return self.__fetch("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [Process.STATUS_QUEUED])
@@ -74,6 +74,13 @@ class DB:
 
         return None
 
+    # TODO:
+    #   * indices
+    #   * is `is_current` necessary when we have `status`? One or the other.
+    #   * when we play a new video, make sure we set old vidos status / is_current fields to not playing
+    #   * change `is_color` to `color_mode`
+    #   * remove `pid`
+    #   * remove `signal`, replace with `is_skipped` and `is_deleted`
     def __construct(self):
         self.__execute("DROP TABLE IF EXISTS videos")
         self.__execute("""CREATE TABLE videos (

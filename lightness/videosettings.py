@@ -9,7 +9,10 @@ class VideoSettings:
     LOG_LEVEL_NORMAL = 'normal'
     LOG_LEVEL_VERBOSE = 'verbose'
 
-    LOG_FILE_TERMINAL = 'terminal'
+    DEFAULT_DISPLAY_WIDTH = 28
+    DEFAULT_DISPLAY_HEIGHT = 18
+
+    DEFAULT_BRIGHTNESS = 3
 
     # One of the COLOR_MODE_* constants
     color_mode = COLOR_MODE_COLOR
@@ -30,26 +33,48 @@ class VideoSettings:
     flip_y = None
 
     # Boolean
-    should_play_audio = False
+    should_play_audio = None
 
     # Boolean - saving the video allows us to avoid youtube-dl network calls to download the video if it's played again.
-    should_save_video = False
+    should_save_video = None
 
     log_level = None
 
-    log_file = None
+    # If True, the videoprocessor will periodically check the DB to see if it should abort playing the video
+    should_check_abort_signals = None
 
-    def __init__(self, args):
-        self.__set_color_mode(args.color_mode)
-        self.display_width = args.display_width
-        self.display_height = args.display_height
-        self.should_play_audio = args.should_play_audio
-        self.brightness = args.brightness
-        self.flip_x = args.flip_x
-        self.flip_y = args.flip_y
-        self.should_save_video = args.should_save_video
-        self.log_level = args.log_level
-        self.log_file = args.log_file
+    def __init__(
+        self, color_mode = None, display_width = None, display_height = None,
+        should_play_audio = True, brightness = None, flip_x = False, flip_y = False,
+        should_save_video = False, log_level = None, should_check_abort_signals = False
+    ):
+        if color_mode == None:
+            color_mode = self.COLOR_MODE_COLOR
+        self.__set_color_mode(color_mode)
+
+        if display_width == None:
+            display_width = self.DEFAULT_DISPLAY_WIDTH
+        self.display_width = display_width
+
+        if display_height == None:
+            display_height = self.DEFAULT_DISPLAY_HEIGHT
+        self.display_height = display_height
+
+        self.should_play_audio = should_play_audio
+
+        if brightness == None:
+            brightness = self.DEFAULT_BRIGHTNESS
+        self.brightness = brightness
+
+        self.flip_x = flip_x
+        self.flip_y = flip_y
+        self.should_save_video = should_save_video
+
+        if log_level == None:
+            log_level = self.LOG_LEVEL_NORMAL
+        self.log_level = log_level
+
+        self.should_check_abort_signals = should_check_abort_signals
 
     def __set_color_mode(self, color_mode):
         color_mode = color_mode.lower()

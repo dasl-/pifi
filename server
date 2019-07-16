@@ -168,15 +168,15 @@ class LightnessServer:
     __config = Config()
 
     def __init__(self):
-        self.__secure = self.__config.getServerConfig('use_ssl', False)
+        self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:
             self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
         else:
             self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
             self.__server.socket = ssl.wrap_socket(self.__server.socket,
-                                                   keyfile=self.__config.getServerConfig('keyfile', ""),
-                                                   certfile=self.__config.getServerConfig('certfile', ""),
+                                                   keyfile=self.__config.get_server_config('keyfile', ""),
+                                                   certfile=self.__config.get_server_config('certfile', ""),
                                                    server_side=True)
 
     def serve_forever(self):

@@ -12,88 +12,102 @@ from lightness.process import Process
 from lightness.db import DB
 from lightness.logger import Logger
 from lightness.videosettings import VideoSettings
+from lightness.videoplayer import VideoPlayer
+from lightness.videoprocessor import VideoProcessor
 from lightness.config import Config
-from lightness.directoryutils import DirectoryUtils
 
 class Queue:
 
     __db = None
     __config = None
-    __video_proc = None
-    __current_video = None
     __logger = None
 
     def __init__(self):
         self.__db = DB()
         self.__config = Config()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__clear_screen()
 
     def run(self):
         while True:
-            self.__check_cycle()
+            next_video = self.__db.getNextVideo()
+            if next_video:
+                self.__play_video(next_video)
             time.sleep(0.050)
 
-    def __check_cycle(self):
-        if self.__fetch_current_video() is not None:
-            # check for control signals on the current video
-            self.__check_current_signal()
+    def __play_video(self, video_record):
+        self.__db.setCurrentVideo(video_record["id"], 1)
+        process = Process(Process.MODE_WRITE)
+        process.set_status(Process.STATUS_LOADING)
 
-            # check the video process to see if it died
-            self.__check_video_status()
+        video_settings = self.__get_video_settings(video_record)
+        video_player = VideoPlayer(video_settings)
+        video_processor = VideoProcessor(video_settings, process, video_record['id'])
+        video_processor.process_and_play(url = video_record["url"], video_player = video_player)
+
+        process.set_status(Process.STATUS_DONE)
+        self.__db.endVideo(video_record["id"])
+
+    def __clear_screen(self):
+        # VIdeoPlayer.__init__() method will clear the screen
+        VideoPlayer(self.__get_video_settings())
+
+    def __get_video_settings(self, video_record = None):
+        config = self.__config.get_video_settings()
+
+        if 'color_mode' in config:
+            color_mode = config['color_mode']
         else:
-            # get the next video if there isnt a current one
-            self.__check_for_next_video()
+            color_mode = VideoSettings.COLOR_MODE_BW
+            if video_record and video_record["is_color"]:
+                color_mode = VideoSettings.COLOR_MODE_COLOR
 
-    def __play_video(self, video):
-        video_cmd_path = DirectoryUtils().root_dir + '/' + 'video'
-        command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(VideoSettings.LOG_LEVEL_NORMAL)
-        command += " " + " ".join(self.__config.getCustomVideoArgs()) + " "
+        if 'display_width' in config:
+            display_width = config['display_width']
+        else:
+            display_width = VideoSettings.DEFAULT_DISPLAY_WIDTH
 
-        if video["is_color"]:
-            command += " --color-mode color "
+        if 'display_height' in config:
+            display_height = config['display_height']
+        else:
+            display_height = VideoSettings.DEFAULT_DISPLAY_HEIGHT
 
-        command += " 1>>/var/log/lightness/video.log 2>&1"
-        self.__video_proc = subprocess.Popen("exec " + command, stdout = subprocess.PIPE, shell = True, executable = '/bin/bash')
-        self.__db.setCurrentVideo(video["id"], self.__video_proc.pid)
+        if 'should_play_audio' in config:
+            should_play_audio = config['should_play_audio']
+        else:
+            should_play_audio = True
 
-    def __fetch_current_video(self):
-        self.__current_video = self.__db.getCurrentVideo()
-        return self.__current_video
+        if 'brightness' in config:
+            brightness = config['brightness']
+        else:
+            brightness = VideoSettings.DEFAULT_BRIGHTNESS
 
-    def __check_current_signal(self):
-        if self.__current_video is not None and self.__current_video["signal"] == Process.SIGNAL_KILL:
-            self.__kill_current_video()
+        if 'flip_x' in config:
+            flip_x = config['flip_x']
+        else:
+            flip_x = False
 
-    def __kill_current_video(self):
-        if self.__video_proc is not None and self.__video_proc.pid == self.__current_video["pid"]:
-            # kill the process
-            try:
-                self.__logger.info("KILL PID " + str(self.__video_proc.pid))
-                os.kill(self.__video_proc.pid, signal.SIGTERM)
-            except OSError:
-                self.__logger.error("invalid process")
+        if 'flip_y' in config:
+            flip_y = config['flip_y']
+        else:
+            flip_y = False
 
-            # Update the db status
-            self.__db.endVideo(self.__current_video["id"])
+        if 'should_save_video' in config:
+            should_save_video = config['should_save_video']
+        else:
+            should_save_video = False
 
-            # todo: clear the screen
+        if 'log_level' in config:
+            log_level = config['log_level']
+        else:
+            log_level = VideoSettings.LOG_LEVEL_NORMAL
 
-    def __check_video_status(self):
-        if self.__current_video is not None:
-            if self.__video_proc is not None and self.__video_proc.poll() is not None:
-                # the process has ended
-                self.__db.endVideo(self.__current_video["id"])
-            elif self.__video_proc is None:
-                # the queue has no reference to a process, so it never ran it, mark the video as dead so we can proceed
-                self.__db.endVideo(self.__current_video["id"])
-
-    def __check_for_next_video(self):
-        if self.__current_video is None:
-            # pick up the next video
-            next_video = self.__db.getNextVideo()
-            if next_video is not None:
-                if next_video["status"] != Process.STATUS_LOADING:
-                  self.__play_video(next_video)
+        return VideoSettings(
+            color_mode = color_mode, display_width = display_width, display_height = display_height,
+            should_play_audio = should_play_audio, brightness = brightness,
+            flip_x = flip_x, flip_y = flip_y, should_save_video = should_save_video,
+            log_level = log_level, should_check_abort_signals = True,
+        )
 
 queue = Queue()
 queue.run()

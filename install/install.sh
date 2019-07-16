@@ -42,9 +42,13 @@ fi
 
 # setup logging: syslog
 sudo mkdir -p /var/log/lightness
-sudo touch /var/log/lightness/video.log /var/log/lightness/server.log /var/log/lightness/queue.log
+sudo touch /var/log/lightness/server.log /var/log/lightness/queue.log
 sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
 sudo systemctl restart rsyslog
+
+# clean up deprecated stuff:
+# todo: delete this eventually
+sudo rm -rf /var/log/lightness/video.log*
 
 # setup logging: logrotate
 sudo cp "$BASE_DIR"/install/lightness_logrotate /etc/logrotate.d

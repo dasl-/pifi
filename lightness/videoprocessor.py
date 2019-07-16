@@ -11,6 +11,7 @@ from lightness.process import Process
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
 from lightness.videosettings import VideoSettings
 from lightness.directoryutils import DirectoryUtils
+from lightness.db import DB
 import youtube_dl
 import subprocess
 import math
@@ -26,8 +27,11 @@ class VideoProcessor:
     __process = None
     __url = None
 
+    __db = None
+    __db_video_id = None
+
     # True if the video already exists (see: VideoSettings.should_save_video)
-    __is_video_already_downloaded = False
+    __is_video_already_downloaded = None
 
     # Metadata about the video we are using, such as title, resolution, file extension, etc
     # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
@@ -45,12 +49,16 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
-    def __init__(self, video_settings, process=None):
+    def __init__(self, video_settings, process = None, db_video_id = None):
         self.__video_settings = video_settings
+
+        if self.__video_settings.should_check_abort_signals:
+            self.__db = DB()
+            self.__db_video_id = db_video_id
+
         self.__process = process
+        self.__is_video_already_downloaded = False
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        if self.__video_settings.log_file != VideoSettings.LOG_FILE_TERMINAL:
-            self.__logger.set_log_files(self.__video_settings.log_file, self.__video_settings.log_file)
 
     def process_and_play(self, url, video_player):
         self.__logger.info("Starting process_and_play for url: {}".format(url))
@@ -62,6 +70,7 @@ class VideoProcessor:
             self.__is_video_already_downloaded = True
 
         self.__process_and_play_video(video_player)
+        video_player.clearScreen()
         self.__logger.info("Finished process_and_play")
 
     def __show_loading_screen(self, video_player):
@@ -110,11 +119,17 @@ class VideoProcessor:
         return save_dir
 
     def __process_and_play_video(self, video_player):
+        if self.__maybe_abort_video():
+            return
+
         self.__do_pre_cleanup()
 
         fps = self.__calculate_fps()
         ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
         self.__maybe_set_volume()
+
+        if self.__maybe_abort_video():
+            return
 
         process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
@@ -128,57 +143,66 @@ class VideoProcessor:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
-        start_time = None
+        vid_start_time = None
+        last_abort_check_time = 0
         frame_length =  1 / fps
         last_frame = None
         is_ffmpeg_done_outputting = False
         avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
+            t = time.time()
+            if (t - last_abort_check_time) > 1.0:
+                if self.__maybe_abort_video(process_and_play_vid_proc):
+                    break
+                last_abort_check_time = t
+
             if is_ffmpeg_done_outputting or avg_color_frames.is_full():
                 pass
             else:
-                is_ffmpeg_done_outputting, start_time = self.__populate_avg_color_frames(
-                    avg_color_frames, ffmpeg_to_python_fifo, start_time, bytes_per_frame, np_array_shape
+                is_ffmpeg_done_outputting, vid_start_time = self.__populate_avg_color_frames(
+                    avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
                 )
 
-            if not start_time:
+            if not vid_start_time:
                 # video has not started being processed yet
                 pass
             else:
                 is_video_done_playing, last_frame = self.__play_video(
-                    video_player, avg_color_frames, start_time, frame_length, is_ffmpeg_done_outputting, last_frame
+                    video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting, last_frame
                 )
                 if is_video_done_playing:
                     break
 
         self.__do_post_cleanup(process_and_play_vid_proc)
 
-    def __populate_avg_color_frames(self, avg_color_frames, ffmpeg_to_python_fifo, start_time, bytes_per_frame, np_array_shape):
+    def __populate_avg_color_frames(
+        self, avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
+    ):
         is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)
         if not is_ready_to_read:
-            return [False, start_time]
+            return [False, vid_start_time]
 
         ffmpeg_output = ffmpeg_to_python_fifo.read(bytes_per_frame)
         if ffmpeg_output and len(ffmpeg_output) < bytes_per_frame:
             raise Exception('Expected {} bytes from ffmpeg output, but got {}.'.format(bytes_per_frame, len(ffmpeg_output)))
         if not ffmpeg_output:
             self.__logger.info("no ffmpeg_output, end of video processing.")
-            return [True, start_time]
+            return [True, vid_start_time]
 
-        if not start_time:
+        if not vid_start_time:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
             # first audio data at around the same time so they stay in sync.
             # Add time for better audio / video sync
-            start_time = time.time() + (0.15 if self.__video_settings.should_play_audio else 0)
+            vid_start_time = time.time() + (0.15 if self.__video_settings.should_play_audio else 0)
 
         avg_color_frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
         )
-        return [False, start_time]
+        return [False, vid_start_time]
 
-    def __play_video(self, video_player, avg_color_frames, start_time, frame_length, is_ffmpeg_done_outputting, last_frame):
-        cur_frame = max(math.floor((time.time() - start_time) / frame_length), 0)
+    def __play_video(self, video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting, last_frame):
+        cur_frame = max(math.floor((time.time() - vid_start_time) / frame_length), 0)
         if cur_frame >= len(avg_color_frames):
             if is_ffmpeg_done_outputting:
                 self.__logger.info("Video done playing.")
@@ -360,3 +384,23 @@ class VideoProcessor:
 
         self.__logger.info("Deleting incomplete video downloads...")
         subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
+
+    def __maybe_abort_video(self, process_and_play_vid_proc = None):
+        if not self.__video_settings.should_check_abort_signals:
+            return False
+
+        current_video = self.__db.getCurrentVideo()
+        if current_video['id'] != self.__db_video_id:
+            self.__logger.warning(
+                "Database and videoprocessor disagree about which video is currently playing. " +
+                "Database says video_id: {}, whereas videoprocessor says video_id: {}.".format(current_video['id'], self.__db_video_id)
+            )
+            return False
+
+        if current_video["signal"] == Process.SIGNAL_KILL:
+            self.__logger.info("Got signal from DB to abort current video.")
+            if process_and_play_vid_proc:
+                process_and_play_vid_proc.kill()
+            return True
+
+        return False

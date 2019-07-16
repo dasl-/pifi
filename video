@@ -6,15 +6,16 @@ from lightness.videoprocessor import VideoProcessor
 from lightness.process import Process
 
 import os
+import time
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
         help='youtube video url. default: The Smashing Pumpkins - Today.')
-    parser.add_argument('--display-width', dest='display_width', action='store', type=int, default=28, metavar='N',
-        help='Number of pixels / units')
-    parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=18, metavar='N',
-        help='Number of pixels / units')
+    parser.add_argument('--display-width', dest='display_width', action='store', type=int,
+        default=VideoSettings.DEFAULT_DISPLAY_WIDTH, metavar='N', help='Number of pixels / units')
+    parser.add_argument('--display-height', dest='display_height', action='store', type=int,
+        default=VideoSettings.DEFAULT_DISPLAY_HEIGHT, metavar='N', help='Number of pixels / units')
     parser.add_argument('--color-mode', dest='color_mode', action='store', default=VideoSettings.COLOR_MODE_COLOR,
         help=("one of: '{}', '{}', '{}', '{}', or '{}'. Default is '{}'."
             .format(VideoSettings.COLOR_MODE_COLOR, VideoSettings.COLOR_MODE_BW, VideoSettings.COLOR_MODE_R,
@@ -26,17 +27,13 @@ def parseArgs():
         help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true', default=False,
         help='flip Y direction output')
-    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=3, metavar='N',
-        help='Global brightness value. Max of 31.')
+    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=VideoSettings.DEFAULT_BRIGHTNESS,
+        metavar='N', help='Global brightness value. Max of 31.')
     parser.add_argument('--save', dest='should_save_video', action='store_true', default=False,
         help='Save the video to avoid downloading it in the future. Default is not to save.')
     parser.add_argument('--log-level', dest='log_level', action='store', default=VideoSettings.LOG_LEVEL_VERBOSE,
         help=("one of: '{}' or '{}'. Default is '{}'."
             .format(VideoSettings.LOG_LEVEL_NORMAL, VideoSettings.LOG_LEVEL_VERBOSE, VideoSettings.LOG_LEVEL_VERBOSE))
-    )
-    parser.add_argument('--log-file', dest='log_file', action='store', default=VideoSettings.LOG_FILE_TERMINAL,
-        help=("Either a path to a log file or '{}'. Default is '{}'."
-            .format(VideoSettings.LOG_FILE_TERMINAL, VideoSettings.LOG_FILE_TERMINAL))
     )
 
     args = parser.parse_args()
@@ -46,13 +43,15 @@ process = Process(Process.MODE_WRITE)
 process.set_status(Process.STATUS_LOADING)
 
 args = parseArgs()
-video_settings = VideoSettings(args)
+video_settings = VideoSettings(
+    color_mode = args.color_mode, display_width = args.display_width, display_height = args.display_height,
+    should_play_audio = args.should_play_audio, brightness = args.brightness,
+    flip_x = args.flip_x, flip_y = args.flip_y, should_save_video = args.should_save_video,
+    log_level = args.log_level, should_check_abort_signals = False,
+)
 
 video_player = VideoPlayer(video_settings)
-video_player.clearScreen()
-
 video_processor = VideoProcessor(video_settings, process)
 video_processor.process_and_play(url = args.url, video_player = video_player)
 
 process.set_status(Process.STATUS_DONE)
-video_player.clearScreen()
