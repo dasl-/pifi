@@ -1,6 +1,7 @@
 import sqlite3
 from lightness.process import Process
 from lightness.logger import Logger
+from lightness.directoryutils import DirectoryUtils
 
 def dict_factory(cursor, row):
     d = {}
@@ -13,7 +14,7 @@ class DB:
     __logger = None
 
     def __init__(self):
-        self.__conn = sqlite3.connect('/home/pi/lightness/lightness.db', check_same_thread=False)
+        self.__conn = sqlite3.connect(DirectoryUtils().root_dir + '/lightness.db', check_same_thread=False)
         self.__conn.row_factory = dict_factory
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 

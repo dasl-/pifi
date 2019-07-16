@@ -2,10 +2,10 @@ import os
 import sys
 import ast
 import signal
+from lightness.directoryutils import DirectoryUtils
 
 class Process:
 
-    __DATA_DIRECTORY = '/home/pi/lightness/data'
     __PROCESS_FILE = 'process'
 
     __mode = None
@@ -24,6 +24,7 @@ class Process:
     MODE_WRITE = 'w+'
 
     def __init__(self, mode=MODE_READ):
+        self.__DATA_DIRECTORY = DirectoryUtils().root_dir + '/data'
         self.__mode = mode
 
         if (mode == self.MODE_WRITE):

@@ -7,6 +7,7 @@ import ssl
 from lightness.db import DB
 from lightness.logger import Logger
 from lightness.config import Config
+from lightness.directoryutils import DirectoryUtils
 
 class LightnessAPI():
     __db = DB()
@@ -51,9 +52,15 @@ class LightnessAPI():
 
 class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
-    __root_dir = "/home/pi/lightness/app/build"
-    __api = LightnessAPI()
-    __logger = Logger().set_namespace("LightnessServerRequestHandler")
+    __root_dir = None
+    __api = None
+    __logger = None
+
+    def __init__(self, request, client_address, server):
+        self.__root_dir = DirectoryUtils().root_dir + "/app/build"
+        self.__api = LightnessAPI()
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
+        BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def do_OPTIONS(self):
         self.send_response(200, "ok")

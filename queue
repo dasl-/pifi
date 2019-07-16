@@ -13,6 +13,7 @@ from lightness.db import DB
 from lightness.logger import Logger
 from lightness.videosettings import VideoSettings
 from lightness.config import Config
+from lightness.directoryutils import DirectoryUtils
 
 class Queue:
 
@@ -30,7 +31,7 @@ class Queue:
     def run(self):
         while True:
             self.__check_cycle()
-            time.sleep(0.2)
+            time.sleep(0.050)
 
     def __check_cycle(self):
         if self.__fetch_current_video() is not None:
@@ -44,7 +45,7 @@ class Queue:
             self.__check_for_next_video()
 
     def __play_video(self, video):
-        video_cmd_path = os.path.abspath(os.path.dirname(__file__)) + '/' + 'video'
+        video_cmd_path = DirectoryUtils().root_dir + '/' + 'video'
         command = video_cmd_path + " --audio --url " + shlex.quote(video["url"]) + " --log-level {} ".format(VideoSettings.LOG_LEVEL_NORMAL)
         command += " " + " ".join(self.__config.getCustomVideoArgs()) + " "
 

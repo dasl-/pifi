@@ -1,6 +1,7 @@
 import os
 import json
 from lightness.logger import Logger
+from lightness.directoryutils import DirectoryUtils
 
 class Config:
 
@@ -28,7 +29,7 @@ class Config:
         return []
 
     def __maybe_load_custom_config(self):
-        config_path = '/home/pi/lightness/' + self.__CONFIG_FILENAME
+        config_path = DirectoryUtils().root_dir + '/' + self.__CONFIG_FILENAME
         if not os.path.exists(config_path):
             self.__logger.info("No custom config found at: {}".format(config_path))
             return

@@ -30,27 +30,30 @@ done
 
 set -x
 
+BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+
 # generate loading screens
-if [ ! -f /home/pi/lightness/loading_screen_monochrome.npy ]; then
-    /home/pi/lightness/utils/img_to_led --image /home/pi/lightness/utils/loading_screen_monochrome.jpg --display-width $display_width --display-height $display_height --output-file /home/pi/lightness/loading_screen --color-mode monochrome
+if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
+    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
 fi
-if [ ! -f /home/pi/lightness/loading_screen_color.npy ]; then
-    /home/pi/lightness/utils/img_to_led --image /home/pi/lightness/utils/loading_screen_color.jpg --display-width $display_width --display-height $display_height --output-file /home/pi/lightness/loading_screen --color-mode color
+if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
+    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode color
 fi
 
 # setup logging: syslog
 sudo mkdir -p /var/log/lightness
 sudo touch /var/log/lightness/video.log /var/log/lightness/server.log /var/log/lightness/queue.log
-sudo cp /home/pi/lightness/install/*_syslog.conf /etc/rsyslog.d
+sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
 sudo systemctl restart rsyslog
 
 # setup logging: logrotate
-sudo cp /home/pi/lightness/install/lightness_logrotate /etc/logrotate.d
+sudo cp "$BASE_DIR"/install/lightness_logrotate /etc/logrotate.d
 sudo chown root:root /etc/logrotate.d/lightness_logrotate
 sudo chmod 644 /etc/logrotate.d/lightness_logrotate
 
 # setup systemd services
-sudo cp /home/pi/lightness/install/*.service /etc/systemd/system
+sudo $BASE_DIR/install/lightness_queue_service.sh
+sudo $BASE_DIR/install/lightness_server_service.sh
 sudo chown root:root /etc/systemd/system/lightness_*.service
 sudo chmod 644 /etc/systemd/system/lightness_*.service
 sudo systemctl enable /etc/systemd/system/lightness_*.service
@@ -58,4 +61,4 @@ sudo systemctl daemon-reload
 sudo systemctl restart $(ls /etc/systemd/system/lightness_*.service | cut -d'/' -f5)
 
 # build the web app
-sudo npm run build --prefix /home/pi/lightness/app
+sudo npm run build --prefix "$BASE_DIR"/app

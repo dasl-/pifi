@@ -1,6 +1,8 @@
 #!/bin/bash
 set -x
 
+BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+
 # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
 # when the version changed between `apt-get install npm` and `npm install npm@latest -g`
 if ! which npm
@@ -18,7 +20,7 @@ sudo pip3 install --upgrade youtube_dl numpy opencv-python sharedmem HTTPServer 
 sudo npm install npm@latest -g
 
 # Install app dependencies
-sudo npm install --prefix /home/pi/lightness/app
+sudo npm install --prefix "$BASE_DIR/app"
 
 if [ "$is_restart_required" = true ] ; then
     echo "Restarting..."

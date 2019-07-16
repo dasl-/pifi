@@ -10,6 +10,7 @@ from lightness.logger import Logger
 from lightness.process import Process
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
 from lightness.videosettings import VideoSettings
+from lightness.directoryutils import DirectoryUtils
 import youtube_dl
 import subprocess
 import math
@@ -67,7 +68,7 @@ class VideoProcessor:
         filename = 'loading_screen_monochrome.npy'
         if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
             filename = 'loading_screen_color.npy'
-        loading_screen_path = os.path.abspath(os.path.dirname(__file__)) + '/../{}'.format(filename)
+        loading_screen_path = DirectoryUtils().root_dir + '/' + filename
         video_player.playFrame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
@@ -104,7 +105,7 @@ class VideoProcessor:
         )
 
     def __get_data_directory(self):
-        save_dir = os.path.abspath(os.path.dirname(__file__) + '/../' + self.__DATA_DIRECTORY)
+        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
