@@ -6,6 +6,7 @@ from lightness.directoryutils import DirectoryUtils
 
 class Process:
 
+    __DATA_DIRECTORY = None
     __PROCESS_FILE = 'process'
 
     __mode = None
