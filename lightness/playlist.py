@@ -26,8 +26,6 @@ class Playlist:
         self.__cursor = self.__conn.cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    # TODO:
-    #   * indices
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS playlist_videos")
         self.__cursor.execute("""
@@ -42,6 +40,7 @@ class Playlist:
                 is_skip_requested INTEGER DEFAULT 0
             )"""
         )
+        self.__cursor.execute("CREATE INDEX status_idx ON playlist_videos (status)")
 
     def enqueue(self, url, color_mode, thumbnail, title):
         self.__cursor.execute("INSERT INTO playlist_videos (url, color_mode, thumbnail, title, status) VALUES(?, ?, ?, ?, ?)",
