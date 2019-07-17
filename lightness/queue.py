@@ -52,9 +52,17 @@ class Queue:
         if 'color_mode' in config:
             color_mode = config['color_mode']
         else:
-            color_mode = VideoSettings.COLOR_MODE_BW
-            if video_record and video_record["is_color"]:
-                color_mode = VideoSettings.COLOR_MODE_COLOR
+            color_mode = VideoSettings.COLOR_MODE_COLOR
+            if video_record:
+                color_modes = [
+                    VideoSettings.COLOR_MODE_COLOR,
+                    VideoSettings.COLOR_MODE_BW,
+                    VideoSettings.COLOR_MODE_R,
+                    VideoSettings.COLOR_MODE_G,
+                    VideoSettings.COLOR_MODE_B
+                ]
+                if video_record["color_mode"] in color_modes:
+                    color_mode = video_record["color_mode"]
 
         if 'display_width' in config:
             display_width = config['display_width']

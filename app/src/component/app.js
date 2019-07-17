@@ -15,7 +15,7 @@ class App extends React.Component {
     this.apiClient = new api();
 
     this.toggleColorMode = this.toggleColorMode.bind(this);
-    this.queueVideo = this.queueVideo.bind(this);
+    this.enqueueVideo = this.enqueueVideo.bind(this);
   }
 
   render() {
@@ -23,7 +23,7 @@ class App extends React.Component {
       <div className={"container " + this.state.color_mode}>
         <Search
           toggleColorMode = {this.toggleColorMode}
-          queueVideo = {this.queueVideo}
+          enqueueVideo = {this.enqueueVideo}
         />
 
         <Playlist />
@@ -40,14 +40,14 @@ class App extends React.Component {
 
   toggleColorMode(e) {
     if (this.state.color_mode === 'color') {
-      this.setState({color_mode: 'black-and-white'});
+      this.setState({color_mode: 'bw'});
     } else {
       this.setState({color_mode: 'color'});
     }
   }
 
-  queueVideo(video) {
-    return this.apiClient.queueVideo(video, true)
+  enqueueVideo(video) {
+    return this.apiClient.enqueueVideo(video, this.state.color_mode)
       .then((data) => {
         if (data.success) {
           this.setState({

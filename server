@@ -21,17 +21,17 @@ class LightnessAPI():
 
     def enqueue(self, post_data):
         url = post_data['url']
-        is_color = post_data['color']
+        color_mode = post_data['color_mode']
         thumbnail = post_data['thumbnail']
         title = post_data['title']
 
         response_details = {}
         response_details['url'] = url
-        response_details['color'] = is_color
+        response_details['color_mode'] = color_mode
         response_details['thumbnail'] = thumbnail
         response_details['title'] = title
 
-        self.__db.enqueue(url, is_color, thumbnail, title)
+        self.__db.enqueue(url, color_mode, thumbnail, title)
 
         response_details['success'] = True
         return response_details
@@ -70,27 +70,33 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
-    def do_404(self):
+    def do_GET(self):
+        try:
+            if self.path[:4] == "/api":
+                return self.__do_api_GET(self.path[5:])
+
+            return self.__serve_static_asset()
+        except Exception as e:
+            self.log_error('Exception: ' + str(e))
+
+    def do_POST(self):
+        try:
+            if self.path[:4] == "/api":
+                return self.__do_api_POST(self.path[5:])
+
+            return self.__serve_static_asset()
+        except Exception as e:
+            self.log_error('Exception: ' + str(e))
+
+    def __do_404(self):
         self.send_response(404)
         self.end_headers()
 
-    def do_GET(self):
-        if self.path[:4] == "/api":
-            return self.do_api_GET(self.path[5:])
-
-        return self.serve_static_asset()
-
-    def do_POST(self):
-        if self.path[:4] == "/api":
-            return self.do_api_POST(self.path[5:])
-
-        return self.serve_static_asset()
-
-    def do_api_GET(self, path):
+    def __do_api_GET(self, path):
         if path == 'queue':
             response = self.__api.get_queue()
         else:
-            self.do_404()
+            self.__do_404()
             return
 
         self.send_response(200)
@@ -101,7 +107,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         resp.write(bytes(json.dumps(response), 'utf-8'))
         self.wfile.write(resp.getvalue())
 
-    def do_api_POST(self, path):
+    def __do_api_POST(self, path):
         content_length = int(self.headers['Content-Length'])
 
         if content_length > 0:
@@ -115,7 +121,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         elif path == 'clear':
             response = self.__api.clear()
         else:
-            self.do_404()
+            self.__do_404()
             return
 
         self.send_response(200)
@@ -126,7 +132,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         resp.write(bytes(json.dumps(response), 'utf-8'))
         self.wfile.write(resp.getvalue())
 
-    def serve_static_asset(self):
+    def __serve_static_asset(self):
         if self.path == '/':
             self.path = '/index.html'
 
@@ -138,7 +144,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.__logger.error(str(e))
             file_to_open = "File not found"
-            self.do_404()
+            self.__do_404()
             return
 
         self.end_headers()

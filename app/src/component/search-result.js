@@ -42,7 +42,7 @@ class SearchResult extends React.Component {
       loading: true
     }));
 
-    this.props.queueVideo(this.props.video)
+    this.props.enqueueVideo(this.props.video)
       .then((data) => {
         this.setState(state => ({
           loading: false

@@ -2,7 +2,7 @@ import React from 'react';
 
 class PlaylistItem extends React.Component {
   render() {
-    var color_class = this.props.video.is_color ? 'color' : 'black-and-white';
+    var color_class = this.props.video.color_mode;
     var current_class = '';
 
     if (this.props.video.is_current) {

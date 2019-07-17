@@ -38,7 +38,7 @@ class Search extends React.Component {
                      <span className='hidden-xs'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Color</span>
                      <span className='hidden-sm hidden-md hidden-lg'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
                   </button>
-                  <button className="btn btn-default show-in-black-and-white toggle-color" type="button" onClick={this.props.toggleColorMode}>
+                  <button className="btn btn-default show-in-bw toggle-color" type="button" onClick={this.props.toggleColorMode}>
                     <span className='hidden-xs'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span> B&W</span>
                     <span className='hidden-sm hidden-md hidden-lg'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
                   </button>
@@ -55,7 +55,7 @@ class Search extends React.Component {
                 return <SearchResult
                   key = {index}
                   video = {video}
-                  queueVideo = {this.props.queueVideo} />
+                  enqueueVideo = {this.props.enqueueVideo} />
               }.bind(this))}
             </div>
         }

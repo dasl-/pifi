@@ -1,18 +1,18 @@
 .header {
   margin-top: 10px;
 }
-.black-and-white img {
+.bw img {
   filter: grayscale(100%);
 }
 .color img {
   filter: grayscale(0%);
 }
 .show-in-color,
-.black-and-white .show-in-black-and-white {
+.bw .show-in-bw {
   display: inline-block;
 }
-.black-and-white .show-in-color,
-.show-in-black-and-white {
+.bw .show-in-color,
+.show-in-bw {
   display: none;
 }
 

@@ -32,10 +32,10 @@ class APIClient {
     return this.perform('post', '/clear');
   }
 
-  queueVideo(video, color_mode) {
+  enqueueVideo(video, color_mode) {
     return this.perform('post', '/queue', {
         url: video.video_url,
-        color: color_mode,
+        color_mode: color_mode,
         thumbnail: video.thumbnail_img_src,
         title: video.title
     });
