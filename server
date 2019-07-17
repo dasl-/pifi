@@ -14,7 +14,7 @@ class LightnessAPI():
 
     def get_queue(self):
         response_details = {}
-        queue = self.__db.getQueue()
+        queue = self.__db.get_queue()
         response_details['queue'] = queue
         response_details['success'] = True
         return response_details

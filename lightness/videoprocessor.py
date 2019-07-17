@@ -385,7 +385,7 @@ class VideoProcessor:
         if not self.__video_settings.should_check_abort_signals:
             return False
 
-        current_video = self.__db.getCurrentVideo()
+        current_video = self.__db.get_current_video()
         if current_video['id'] != self.__db_video_id:
             self.__logger.warning(
                 "Database and videoprocessor disagree about which video is currently playing. " +

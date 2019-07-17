@@ -27,7 +27,7 @@ class Queue:
 
     def run(self):
         while True:
-            next_video = self.__db.getNextVideo()
+            next_video = self.__db.get_next_video()
             if next_video:
                 self.__play_video(next_video)
             time.sleep(0.050)
@@ -40,7 +40,7 @@ class Queue:
         video_processor = VideoProcessor(video_settings, video_record['id'])
         video_processor.process_and_play(url = video_record["url"], video_player = video_player)
 
-        self.__db.endVideo(video_record["id"])
+        self.__db.end_video(video_record["id"])
 
     def __clear_screen(self):
         # VIdeoPlayer.__init__() method will clear the screen

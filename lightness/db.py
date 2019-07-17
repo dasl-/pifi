@@ -54,22 +54,18 @@ class DB:
         self.__cursor.execute("UPDATE videos set status = ? WHERE status = ?", [VideoRecord.STATUS_SKIP, VideoRecord.STATUS_QUEUED])
         self.skip()
 
-    def getVideos(self):
-        self.__cursor.execute("SELECT * FROM videos")
-        return self.__cursor.fetchall()
-
-    def getCurrentVideo(self):
+    def get_current_video(self):
         self.__cursor.execute("SELECT * FROM videos WHERE is_current LIMIT 1")
         return self.__cursor.fetchone()
 
-    def getNextVideo(self):
+    def get_next_video(self):
         self.__cursor.execute(
             "SELECT * FROM videos WHERE NOT(is_current) and status=? order by id asc LIMIT 1",
             [VideoRecord.STATUS_QUEUED]
         )
         return self.__cursor.fetchone()
 
-    def getQueue(self):
+    def get_queue(self):
         self.__cursor.execute("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [VideoRecord.STATUS_QUEUED])
         return self.__cursor.fetchall()
 
@@ -79,11 +75,5 @@ class DB:
             [VideoRecord.STATUS_LOADING, str(video_id)]
         )
 
-    def setVideoStatus(self, video_id, status):
-        self.__cursor.execute("UPDATE videos set status=? WHERE id=?", [status, str(video_id)])
-
-    def endVideo(self, video_id):
+    def end_video(self, video_id):
         self.__cursor.execute("UPDATE videos set status=?, is_current=0 WHERE id=?", [VideoRecord.STATUS_DONE, str(video_id)])
-
-    def setVideoSignal(self, video_id, signal):
-        self.__cursor.execute("UPDATE videos set signal=? WHERE id=?", [signal, str(video_id)])
