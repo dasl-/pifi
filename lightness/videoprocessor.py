@@ -4,7 +4,6 @@ import time
 import os
 import time
 import sys
-import urllib
 import re
 from lightness.logger import Logger
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
@@ -18,6 +17,7 @@ import shlex
 import tempfile
 import hashlib
 import select
+import signal
 
 class VideoProcessor:
 
@@ -27,6 +27,7 @@ class VideoProcessor:
 
     __playlist = None
     __playlist_video_id = None
+    __was_video_skipped = None
 
     # True if the video already exists (see: VideoSettings.should_save_video)
     __is_video_already_downloaded = None
@@ -55,6 +56,7 @@ class VideoProcessor:
             self.__playlist_video_id = playlist_video_id
 
         self.__is_video_already_downloaded = False
+        self.__was_video_skipped = False
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def process_and_play(self, url, video_player):
@@ -116,7 +118,7 @@ class VideoProcessor:
         return save_dir
 
     def __process_and_play_video(self, video_player):
-        if self.__maybe_abort_video():
+        if self.__maybe_skip_video():
             return
 
         self.__do_pre_cleanup()
@@ -125,12 +127,14 @@ class VideoProcessor:
         ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
         self.__maybe_set_volume()
 
-        if self.__maybe_abort_video():
+        if self.__maybe_skip_video():
             return
 
         process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
-        process_and_play_vid_proc = subprocess.Popen(process_and_play_vid_cmd, shell = True, executable = '/bin/bash')
+        process_and_play_vid_proc = subprocess.Popen(
+            process_and_play_vid_cmd, shell = True, executable = '/bin/bash', start_new_session = True
+        )
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
@@ -139,7 +143,7 @@ class VideoProcessor:
             np_array_shape.append(3)
 
         vid_start_time = None
-        last_abort_check_time = 0
+        last_skip_check_time = 0
         frame_length =  1 / fps
         last_frame = None
         is_ffmpeg_done_outputting = False
@@ -147,10 +151,10 @@ class VideoProcessor:
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
             t = time.time()
-            if (t - last_abort_check_time) > 1.0:
-                if self.__maybe_abort_video(process_and_play_vid_proc):
+            if (t - last_skip_check_time) > 0.100:
+                if self.__maybe_skip_video(process_and_play_vid_proc):
                     break
-                last_abort_check_time = t
+                last_skip_check_time = t
 
             if is_ffmpeg_done_outputting or avg_color_frames.is_full():
                 pass
@@ -371,7 +375,9 @@ class VideoProcessor:
     def __do_post_cleanup(self, process_and_play_vid_proc):
         self.__logger.info("Waiting for process_and_play_vid_proc to end...")
         exit_status = process_and_play_vid_proc.wait()
-        if exit_status != 0:
+        if self.__was_video_skipped and exit_status == -signal.SIGTERM:
+            pass # We expect a specific non-zero exit code if the video was skipped.
+        elif exit_status != 0:
             self.__logger.error('Got non-zero exit_status for process_and_play_vid_proc: {}'.format(exit_status))
 
         self.__logger.info("Deleting ffmpeg_to_python fifos...")
@@ -380,7 +386,7 @@ class VideoProcessor:
         self.__logger.info("Deleting incomplete video downloads...")
         subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
 
-    def __maybe_abort_video(self, process_and_play_vid_proc = None):
+    def __maybe_skip_video(self, process_and_play_vid_proc = None):
         if not self.__video_settings.should_check_playlist:
             return False
 
@@ -396,7 +402,8 @@ class VideoProcessor:
         if current_video["is_skip_requested"]:
             self.__logger.info("Skipping current video as requested.")
             if process_and_play_vid_proc:
-                process_and_play_vid_proc.kill()
+                os.killpg(os.getpgid(process_and_play_vid_proc.pid), signal.SIGTERM)
+            self.__was_video_skipped = True
             return True
 
         return False
