@@ -4,17 +4,17 @@ from io import BytesIO
 import json
 import subprocess
 import ssl
-from lightness.db import DB
+from lightness.playlist import Playlist
 from lightness.logger import Logger
 from lightness.config import Config
 from lightness.directoryutils import DirectoryUtils
 
 class LightnessAPI():
-    __db = DB()
+    __playlist = Playlist()
 
     def get_queue(self):
         response_details = {}
-        queue = self.__db.get_queue()
+        queue = self.__playlist.get_queue()
         response_details['queue'] = queue
         response_details['success'] = True
         return response_details
@@ -31,20 +31,20 @@ class LightnessAPI():
         response_details['thumbnail'] = thumbnail
         response_details['title'] = title
 
-        self.__db.enqueue(url, color_mode, thumbnail, title)
+        self.__playlist.enqueue(url, color_mode, thumbnail, title)
 
         response_details['success'] = True
         return response_details
 
     def skip(self):
-        self.__db.skip()
+        self.__playlist.skip()
 
         response_details = {}
         response_details['success'] = True
         return response_details
 
     def clear(self):
-        self.__db.clear()
+        self.__playlist.clear()
 
         response_details = {}
         response_details['success'] = True

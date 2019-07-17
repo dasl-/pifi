@@ -13,7 +13,7 @@ class Playlist extends React.Component {
     this.state = {
       loading: true,
       expanded: false,
-      curent_video: null,
+      current_video: null,
       videos: []
     };
 
@@ -98,14 +98,19 @@ class Playlist extends React.Component {
           });
 
           if (current_video) {
-            if ((this.state.current_video && this.state.current_video.id !== current_video.id) || !this.state.current_video) {
+            if (
+              (this.state.current_video && this.state.current_video.playlist_video_id !== current_video.playlist_video_id) ||
+              !this.state.current_video
+            ) {
               this.setState({
                 current_video: current_video
               });
             }
           }
 
-          if (!utils.areArraysEqual(this.state.videos.map(video => video.id), videos.map(video => video.id))) {
+          if (!utils.areArraysEqual(
+            this.state.videos.map(video => video.playlist_video_id), videos.map(video => video.playlist_video_id)
+          )) {
             this.setState({
               videos: videos
             });

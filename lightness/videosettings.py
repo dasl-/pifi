@@ -40,13 +40,13 @@ class VideoSettings:
 
     log_level = None
 
-    # If True, the videoprocessor will periodically check the DB to see if it should abort playing the video
-    should_check_abort_signals = None
+    # If True, the videoprocessor will periodically check the DB to see if it should skip playing the current video
+    should_check_playlist = None
 
     def __init__(
         self, color_mode = None, display_width = None, display_height = None,
         should_play_audio = True, brightness = None, flip_x = False, flip_y = False,
-        should_save_video = False, log_level = None, should_check_abort_signals = False
+        should_save_video = False, log_level = None, should_check_playlist = False
     ):
         if color_mode == None:
             color_mode = self.COLOR_MODE_COLOR
@@ -74,7 +74,7 @@ class VideoSettings:
             log_level = self.LOG_LEVEL_NORMAL
         self.log_level = log_level
 
-        self.should_check_abort_signals = should_check_abort_signals
+        self.should_check_playlist = should_check_playlist
 
     def __set_color_mode(self, color_mode):
         color_mode = color_mode.lower()

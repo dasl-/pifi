@@ -49,7 +49,7 @@ class APIClient {
     })
     .then(function(response) {
       var videos = response.result.items;
-      var video_ids = ''
+      var video_ids = '';
       for (var i in videos) {
         video_ids += videos[i].id.videoId + ",";
       }

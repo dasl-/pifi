@@ -43,7 +43,7 @@ video_settings = VideoSettings(
     color_mode = args.color_mode, display_width = args.display_width, display_height = args.display_height,
     should_play_audio = args.should_play_audio, brightness = args.brightness,
     flip_x = args.flip_x, flip_y = args.flip_y, should_save_video = args.should_save_video,
-    log_level = args.log_level, should_check_abort_signals = False,
+    log_level = args.log_level, should_check_playlist = False,
 )
 
 video_player = VideoPlayer(video_settings)

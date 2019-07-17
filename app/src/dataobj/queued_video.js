@@ -1,6 +1,6 @@
 class QueuedVideo {
   constructor(props) {
-      this.id = props.id;
+      this.playlist_video_id = props.playlist_video_id;
       this.create_date = props.create_date;
       this.color_mode = props.color_mode;
       this.is_current = props.is_current;

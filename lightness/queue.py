@@ -1,12 +1,11 @@
 import os
 import sys
 import ast
-import signal
 import subprocess
 import time
 import json
 import shlex
-from lightness.db import DB
+from lightness.playlist import Playlist
 from lightness.logger import Logger
 from lightness.videosettings import VideoSettings
 from lightness.videoplayer import VideoPlayer
@@ -15,32 +14,32 @@ from lightness.config import Config
 
 class Queue:
 
-    __db = None
+    __playlist = None
     __config = None
     __logger = None
 
     def __init__(self):
-        self.__db = DB()
+        self.__playlist = Playlist()
         self.__config = Config()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__clear_screen()
 
     def run(self):
         while True:
-            next_video = self.__db.get_next_video()
+            next_video = self.__playlist.get_next_video()
             if next_video:
                 self.__play_video(next_video)
             time.sleep(0.050)
 
     def __play_video(self, video_record):
-        self.__db.set_current_video(video_record["id"])
+        self.__playlist.set_current_video(video_record["playlist_video_id"])
 
         video_settings = self.__get_video_settings(video_record)
         video_player = VideoPlayer(video_settings)
-        video_processor = VideoProcessor(video_settings, video_record['id'])
+        video_processor = VideoProcessor(video_settings, video_record['playlist_video_id'])
         video_processor.process_and_play(url = video_record["url"], video_player = video_player)
 
-        self.__db.end_video(video_record["id"])
+        self.__playlist.end_video(video_record["playlist_video_id"])
 
     def __clear_screen(self):
         # VIdeoPlayer.__init__() method will clear the screen
@@ -108,5 +107,5 @@ class Queue:
             color_mode = color_mode, display_width = display_width, display_height = display_height,
             should_play_audio = should_play_audio, brightness = brightness,
             flip_x = flip_x, flip_y = flip_y, should_save_video = should_save_video,
-            log_level = log_level, should_check_abort_signals = True,
+            log_level = log_level, should_check_playlist = True,
         )

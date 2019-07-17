@@ -10,8 +10,7 @@ from lightness.logger import Logger
 from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
 from lightness.videosettings import VideoSettings
 from lightness.directoryutils import DirectoryUtils
-from lightness.db import DB
-from lightness.videorecord import VideoRecord
+from lightness.playlist import Playlist
 import youtube_dl
 import subprocess
 import math
@@ -26,8 +25,8 @@ class VideoProcessor:
     __logger = None
     __url = None
 
-    __db = None
-    __db_video_id = None
+    __playlist = None
+    __playlist_video_id = None
 
     # True if the video already exists (see: VideoSettings.should_save_video)
     __is_video_already_downloaded = None
@@ -48,12 +47,12 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
-    def __init__(self, video_settings, db_video_id = None):
+    def __init__(self, video_settings, playlist_video_id = None):
         self.__video_settings = video_settings
 
-        if self.__video_settings.should_check_abort_signals:
-            self.__db = DB()
-            self.__db_video_id = db_video_id
+        if self.__video_settings.should_check_playlist:
+            self.__playlist = Playlist()
+            self.__playlist_video_id = playlist_video_id
 
         self.__is_video_already_downloaded = False
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -382,19 +381,20 @@ class VideoProcessor:
         subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
 
     def __maybe_abort_video(self, process_and_play_vid_proc = None):
-        if not self.__video_settings.should_check_abort_signals:
+        if not self.__video_settings.should_check_playlist:
             return False
 
-        current_video = self.__db.get_current_video()
-        if current_video['id'] != self.__db_video_id:
+        current_video = self.__playlist.get_current_video()
+        if current_video['playlist_video_id'] != self.__playlist_video_id:
             self.__logger.warning(
                 "Database and videoprocessor disagree about which video is currently playing. " +
-                "Database says video_id: {}, whereas videoprocessor says video_id: {}.".format(current_video['id'], self.__db_video_id)
+                "Database says playlist_video_id: {}, whereas videoprocessor says playlist_video_id: {}."
+                    .format(current_video['playlist_video_id'], self.__playlist_video_id)
             )
             return False
 
-        if current_video["signal"] == VideoRecord.SIGNAL_KILL:
-            self.__logger.info("Got signal from DB to abort current video.")
+        if current_video["is_skip_requested"]:
+            self.__logger.info("Skipping current video as requested.")
             if process_and_play_vid_proc:
                 process_and_play_vid_proc.kill()
             return True
