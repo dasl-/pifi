@@ -24,6 +24,7 @@ class Queue:
         self.__config = Config()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__clear_screen()
+        self.__playlist.clean_up_state()
 
     def run(self):
         while True:

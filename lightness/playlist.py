@@ -101,3 +101,11 @@ class Playlist:
             "UPDATE playlist_videos set status=? WHERE playlist_video_id=?",
             [self.STATUS_DONE, playlist_video_id]
         )
+
+    # Clean up any weird state we may have in the DB as a result of unclean shutdowns, etc:
+    # set any existing 'playing' videos to 'done'.
+    def clean_up_state(self):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set status = ? WHERE status = ?",
+            [self.STATUS_DONE, self.STATUS_PLAYING]
+        )
