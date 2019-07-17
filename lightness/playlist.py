@@ -28,7 +28,6 @@ class Playlist:
 
     # TODO:
     #   * indices
-    #   * when we play a new video, make sure we set old vidos status / is_current fields to not playing
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS playlist_videos")
         self.__cursor.execute("""
