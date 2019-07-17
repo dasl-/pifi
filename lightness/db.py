@@ -26,7 +26,6 @@ class DB:
     #   * indices
     #   * is `is_current` necessary when we have `status`? One or the other.
     #   * when we play a new video, make sure we set old vidos status / is_current fields to not playing
-    #   * remove `pid`
     #   * remove `signal`, replace with `is_skipped` and `is_deleted`
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS videos")
@@ -34,7 +33,6 @@ class DB:
             CREATE TABLE videos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
-                pid INTEGER,
                 is_current BOOLEAN DEFAULT 0,
                 url TEXT,
                 thumbnail TEXT,
@@ -75,10 +73,10 @@ class DB:
         self.__cursor.execute("SELECT * FROM videos WHERE is_current OR status=? order by id asc", [VideoRecord.STATUS_QUEUED])
         return self.__cursor.fetchall()
 
-    def setCurrentVideo(self, video_id, pid):
+    def set_current_video(self, video_id):
         self.__cursor.execute(
-            "UPDATE videos set is_current=1, pid=?, status=? WHERE id=?",
-            [str(pid), VideoRecord.STATUS_LOADING, str(video_id)]
+            "UPDATE videos set is_current=1, status=? WHERE id=?",
+            [VideoRecord.STATUS_LOADING, str(video_id)]
         )
 
     def setVideoStatus(self, video_id, status):

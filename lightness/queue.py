@@ -33,7 +33,7 @@ class Queue:
             time.sleep(0.050)
 
     def __play_video(self, video_record):
-        self.__db.setCurrentVideo(video_record["id"], 1)
+        self.__db.set_current_video(video_record["id"])
 
         video_settings = self.__get_video_settings(video_record)
         video_player = VideoPlayer(video_settings)
