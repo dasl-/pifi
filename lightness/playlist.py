@@ -10,10 +10,10 @@ def dict_factory(cursor, row):
 
 class Playlist:
 
-    STATUS_QUEUED = 'QUEUED'
-    STATUS_DELETED = 'DELETED' # No longer in the queue
-    STATUS_PLAYING = 'PLAYING'
-    STATUS_DONE = 'DONE'
+    STATUS_QUEUED = 'STATUS_QUEUED'
+    STATUS_DELETED = 'STATUS_DELETED' # No longer in the queue
+    STATUS_PLAYING = 'STATUS_PLAYING'
+    STATUS_DONE = 'STATUS_DONE'
 
     __conn = None
     __cursor = None
@@ -29,7 +29,6 @@ class Playlist:
     # TODO:
     #   * indices
     #   * when we play a new video, make sure we set old vidos status / is_current fields to not playing
-    #   * atomic skip
     #   * atomic get and play video
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS playlist_videos")
@@ -50,8 +49,13 @@ class Playlist:
         self.__cursor.execute("INSERT INTO playlist_videos (url, color_mode, thumbnail, title, status) VALUES(?, ?, ?, ?, ?)",
                           [url, color_mode, thumbnail, title, self.STATUS_QUEUED])
 
-    def skip(self):
-        self.__cursor.execute("UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ?", [self.STATUS_PLAYING])
+    # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
+    # video that the user intended to skip.
+    def skip(self, playlist_video_id):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ? AND playlist_video_id = ?",
+            [self.STATUS_PLAYING, playlist_video_id]
+        )
 
     def clear(self):
         self.__cursor.execute("UPDATE playlist_videos set status = ? WHERE status = ?",

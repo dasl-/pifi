@@ -12,6 +12,7 @@ from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
 from lightness.config import Config
 
+# The Queue is responsible for playing the next video in the Playlist
 class Queue:
 
     __playlist = None

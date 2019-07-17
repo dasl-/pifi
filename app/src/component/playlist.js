@@ -83,7 +83,7 @@ class Playlist extends React.Component {
 
   nextVideo(e) {
     e.preventDefault();
-    this.apiClient.nextVideo();
+    this.apiClient.nextVideo(this.state.current_video.playlist_video_id);
   }
 
   updateStateOnLoop() {
@@ -94,7 +94,7 @@ class Playlist extends React.Component {
         if (data.success) {
           var videos = QueuedVideo.prototype.fromArray(data.queue);
           var current_video = videos.find(function(video) {
-            return video.is_current;
+            return video.status === 'STATUS_PLAYING';
           });
 
           if (current_video) {

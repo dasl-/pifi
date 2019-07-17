@@ -36,8 +36,8 @@ class LightnessAPI():
         response_details['success'] = True
         return response_details
 
-    def skip(self):
-        self.__playlist.skip()
+    def skip(self, post_data):
+        self.__playlist.skip(post_data['playlist_video_id'])
 
         response_details = {}
         response_details['success'] = True
@@ -117,7 +117,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         if path == 'queue':
             response = self.__api.enqueue(post_data)
         elif path == 'skip':
-            response = self.__api.skip()
+            response = self.__api.skip(post_data)
         elif path == 'clear':
             response = self.__api.clear()
         else:

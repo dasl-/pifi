@@ -5,7 +5,7 @@ class PlaylistItem extends React.Component {
     var color_class = this.props.video.color_mode;
     var current_class = '';
 
-    if (this.props.video.is_current) {
+    if (this.props.video.status === 'STATUS_PLAYING') {
       current_class = ' current';
     }
 

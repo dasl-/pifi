@@ -24,8 +24,12 @@ class APIClient {
    return this.perform('get', '/queue');
   }
 
-  nextVideo() {
-    return this.perform('post', '/skip');
+  // Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
+  // video that the user intended to skip.
+  nextVideo(playlist_video_id) {
+    return this.perform('post', '/skip', {
+      playlist_video_id: playlist_video_id
+    });
   }
 
   clearQueue() {
