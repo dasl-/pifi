@@ -29,7 +29,6 @@ class Playlist:
     # TODO:
     #   * indices
     #   * when we play a new video, make sure we set old vidos status / is_current fields to not playing
-    #   * atomic get and play video
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS playlist_videos")
         self.__cursor.execute("""
@@ -61,7 +60,10 @@ class Playlist:
         self.__cursor.execute("UPDATE playlist_videos set status = ? WHERE status = ?",
             [self.STATUS_DELETED, self.STATUS_QUEUED]
         )
-        self.skip()
+        self.__cursor.execute(
+            "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ?",
+            [self.STATUS_PLAYING]
+        )
 
     def get_current_video(self):
         self.__cursor.execute("SELECT * FROM playlist_videos WHERE status = ? LIMIT 1", [self.STATUS_PLAYING])
@@ -69,7 +71,7 @@ class Playlist:
 
     def get_next_video(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status= ? order by playlist_video_id asc LIMIT 1",
+            "SELECT * FROM playlist_videos WHERE status = ? order by playlist_video_id asc LIMIT 1",
             [self.STATUS_QUEUED]
         )
         return self.__cursor.fetchone()
@@ -81,14 +83,21 @@ class Playlist:
         )
         return self.__cursor.fetchall()
 
+    # Atomically set the requested video to "playing" status. This may fail if in a scenario like:
+    #   1) Next video in the queue is retrieved
+    #   2) Someone deletes the video from the queue
+    #   3) We attempt to set the video to "playing" status
     def set_current_video(self, playlist_video_id):
         self.__cursor.execute(
-            "UPDATE playlist_videos set status=? WHERE playlist_video_id=?",
-            [self.STATUS_PLAYING, str(playlist_video_id)]
+            "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
+            [self.STATUS_PLAYING, self.STATUS_QUEUED, playlist_video_id]
         )
+        if self.__cursor.rowcount == 1:
+            return True
+        return False
 
     def end_video(self, playlist_video_id):
         self.__cursor.execute(
             "UPDATE playlist_videos set status=? WHERE playlist_video_id=?",
-            [self.STATUS_DONE, str(playlist_video_id)]
+            [self.STATUS_DONE, playlist_video_id]
         )

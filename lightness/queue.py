@@ -33,7 +33,9 @@ class Queue:
             time.sleep(0.050)
 
     def __play_video(self, video_record):
-        self.__playlist.set_current_video(video_record["playlist_video_id"])
+        if not self.__playlist.set_current_video(video_record["playlist_video_id"]):
+            # Someone deleted the video from the queue in between getting the video and starting it.
+            return
 
         video_settings = self.__get_video_settings(video_record)
         video_player = VideoPlayer(video_settings)
