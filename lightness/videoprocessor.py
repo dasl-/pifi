@@ -391,7 +391,7 @@ class VideoProcessor:
             return False
 
         current_video = self.__playlist.get_current_video()
-        if current_video['playlist_video_id'] != self.__playlist_video_id:
+        if current_video and current_video['playlist_video_id'] != self.__playlist_video_id:
             self.__logger.warning(
                 "Database and videoprocessor disagree about which video is currently playing. " +
                 "Database says playlist_video_id: {}, whereas videoprocessor says playlist_video_id: {}."
@@ -399,7 +399,7 @@ class VideoProcessor:
             )
             return False
 
-        if current_video["is_skip_requested"]:
+        if current_video and current_video["is_skip_requested"]:
             self.__logger.info("Skipping current video as requested.")
             if process_and_play_vid_proc:
                 os.killpg(os.getpgid(process_and_play_vid_proc.pid), signal.SIGTERM)
