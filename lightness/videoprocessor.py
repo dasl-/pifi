@@ -146,6 +146,7 @@ class VideoProcessor:
         last_skip_check_time = 0
         frame_length =  1 / fps
         last_frame = None
+        vid_processing_lag_counter = 0
         is_ffmpeg_done_outputting = False
         avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
@@ -167,8 +168,9 @@ class VideoProcessor:
                 # video has not started being processed yet
                 pass
             else:
-                is_video_done_playing, last_frame = self.__play_video(
-                    video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting, last_frame
+                is_video_done_playing, last_frame, vid_processing_lag_counter = self.__play_video(
+                    video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+                    last_frame, vid_processing_lag_counter
                 )
                 if is_video_done_playing:
                     break
@@ -200,19 +202,26 @@ class VideoProcessor:
         )
         return [False, vid_start_time]
 
-    def __play_video(self, video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting, last_frame):
+    def __play_video(
+        self, video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+        last_frame, vid_processing_lag_counter
+    ):
         cur_frame = max(math.floor((time.time() - vid_start_time) / frame_length), 0)
         if cur_frame >= len(avg_color_frames):
             if is_ffmpeg_done_outputting:
-                self.__logger.info("Video done playing.")
-                return [True, cur_frame]
+                self.__logger.info("Video done playing. Video processing lag counter: {}.".format(vid_processing_lag_counter))
+                return [True, cur_frame, vid_processing_lag_counter]
             else:
-                self.__logger.error("Video processing unable to keep up in real-time")
+                vid_processing_lag_counter += 1
+                if vid_processing_lag_counter % 100000 == 0 or vid_processing_lag_counter == 1:
+                    self.__logger.error(
+                        "Video processing is lagging. Counter: {}.".format(vid_processing_lag_counter)
+                    )
                 cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
 
         if cur_frame == last_frame:
             # Don't need to play a frame since we're still supposed to be playing the last frame we played
-            return [False, cur_frame]
+            return [False, cur_frame, vid_processing_lag_counter]
 
         # Play the new frame
         num_skipped_frames = 0
@@ -227,7 +236,7 @@ class VideoProcessor:
                     .format(num_skipped_frames))
             )
         video_player.playFrame(avg_color_frames[cur_frame])
-        return [False, cur_frame]
+        return [False, cur_frame, vid_processing_lag_counter]
 
     def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name):
         video_save_path = self.__get_video_save_path()
