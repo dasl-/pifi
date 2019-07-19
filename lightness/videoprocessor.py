@@ -18,6 +18,8 @@ import tempfile
 import hashlib
 import select
 import signal
+import random
+import string
 
 class VideoProcessor:
 
@@ -57,10 +59,12 @@ class VideoProcessor:
 
         self.__is_video_already_downloaded = False
         self.__was_video_skipped = False
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
+
+        log_namespace_unique_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+        self.__logger = Logger().set_namespace(self.__class__.__name__ + "__" + log_namespace_unique_id)
 
     def process_and_play(self, url, video_player):
-        self.__logger.info("Starting process_and_play for url: {}".format(url))
+        self.__logger.info("Starting process_and_play for url: {}, VideoSettings: {}".format(url, vars(self.__video_settings)))
         self.__show_loading_screen(video_player)
         self.__url = url
         video_save_path = self.__get_video_save_path()
