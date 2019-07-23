@@ -43,6 +43,20 @@ class LightnessAPI():
         response_details['success'] = True
         return response_details
 
+    def remove(self, post_data):
+        self.__playlist.remove(post_data['playlist_video_id'])
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details
+
+    def favorite(self, post_data):
+        self.__playlist.favorite(post_data['playlist_video_id'], post_data['is_favorite'])
+
+        response_details = {}
+        response_details['success'] = True
+        return response_details
+
     def clear(self):
         self.__playlist.clear()
 
@@ -118,6 +132,10 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.enqueue(post_data)
         elif path == 'skip':
             response = self.__api.skip(post_data)
+        elif path == 'remove':
+            response = self.__api.remove(post_data)
+        elif path == 'favorite':
+            response = self.__api.favorite(post_data)
         elif path == 'clear':
             response = self.__api.clear()
         else:

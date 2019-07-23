@@ -38,6 +38,7 @@ class Playlist:
                 color_mode VARCHAR(20),
                 status VARCHAR(20),
                 is_skip_requested INTEGER DEFAULT 0
+                is_favorite INTEGER DEFAULT 0
             )"""
         )
         self.__cursor.execute("CREATE INDEX status_idx ON playlist_videos (status)")
@@ -52,6 +53,18 @@ class Playlist:
         self.__cursor.execute(
             "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ? AND playlist_video_id = ?",
             [self.STATUS_PLAYING, playlist_video_id]
+        )
+
+    def remove(self, playlist_video_id):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set status = ? WHERE playlist_video_id = ?",
+            [self.STATUS_DELETED, playlist_video_id]
+        )
+
+    def favorite(self, playlist_video_id, is_favorite=True):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set is_favorite = ? WHERE playlist_video_id = ?",
+            [is_favorite, playlist_video_id]
         )
 
     def clear(self):

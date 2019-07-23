@@ -245,3 +245,7 @@
 .playlist-container .playlist-video h4.title {
   margin-top: 0;
 }
+.playlist-video.favorite .glyphicon-star {
+  color: #FF0;
+  text-shadow: -1px -1px 2px #990, 1px -1px 2px #990, -1px 1px 2px #990, 1px 1px 2px #990;
+}

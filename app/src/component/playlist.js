@@ -1,8 +1,7 @@
 import React from 'react';
 
 import api from 'api';
-import utils from 'utils';
-import QueuedVideo from 'dataobj/queued_video';
+import PlaylistVideo from 'dataobj/playlist_video';
 import PlaylistItem from 'component/playlist_item';
 
 class Playlist extends React.Component {
@@ -35,10 +34,10 @@ class Playlist extends React.Component {
             </div>
 
             <div className="input-group-btn">
-              <button className="btn btn-default action-clear" type="button" onClick={this.clearQueue}>
+              <button className="btn btn-default" type="button" onClick={this.clearQueue}>
                 <span className="glyphicon glyphicon-remove-sign" aria-hidden="true" />
               </button>
-              <button className="btn btn-default action-skip" type="button" onClick={this.nextVideo}>
+              <button className="btn btn-default" type="button" onClick={this.nextVideo}>
                 <span className="glyphicon glyphicon-step-forward" aria-hidden="true" />
               </button>
             </div>
@@ -48,7 +47,7 @@ class Playlist extends React.Component {
         <div className="playlist-expand">
           <div className="playlist-contents">
               {this.state.videos.length === 0 && !this.state.loading && (
-                <div class='empty'>&lt;Empty Queue&gt;</div>
+                <div className='empty'>&lt;Empty Queue&gt;</div>
               )}
 
               {this.state.videos.map(function(video, index) {
@@ -92,7 +91,7 @@ class Playlist extends React.Component {
         this.setState({ loading: false });
 
         if (data.success) {
-          var videos = QueuedVideo.prototype.fromArray(data.queue);
+          var videos = PlaylistVideo.fromArray(data.queue);
           var current_video = videos.find(function(video) {
             return video.status === 'STATUS_PLAYING';
           });
@@ -108,17 +107,13 @@ class Playlist extends React.Component {
             }
           }
 
-          if (!utils.areArraysEqual(
-            this.state.videos.map(video => video.playlist_video_id), videos.map(video => video.playlist_video_id)
-          )) {
-            this.setState({
-              videos: videos
-            });
-          }
+          this.setState({
+            videos: videos
+          });
         }
-
-        setTimeout(this.updateStateOnLoop.bind(this), 5000);
-      });
+      }).finally((data) => {
+        setTimeout(this.updateStateOnLoop.bind(this), 1000);
+    });
   }
 }
 

@@ -32,6 +32,19 @@ class APIClient {
     });
   }
 
+  removeVideo(video) {
+    return this.perform('post', '/remove', {
+      playlist_video_id: video.playlist_video_id
+    });
+  }
+
+  favoriteVideo(video) {
+    return this.perform('post', '/favorite', {
+      playlist_video_id: video.playlist_video_id,
+      is_favorite: !video.is_favorite
+    });
+  }
+
   clearQueue() {
     return this.perform('post', '/clear');
   }

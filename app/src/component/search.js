@@ -1,8 +1,8 @@
 import React from 'react';
 
 import api from 'api';
-import SearchResult from 'component/search-result';
-import Video from 'dataobj/video';
+import SearchResult from 'component/search_result';
+import SearchResultVideo from 'dataobj/search_result_video';
 
 class Search extends React.Component {
   constructor(props) {
@@ -12,7 +12,7 @@ class Search extends React.Component {
     this.state = {
       loading: false,
       search_term: localStorage.getItem("last_search") || "",
-      search_results: Video.prototype.fromArray(JSON.parse(localStorage.getItem("latest_results") || "[]"))
+      search_results: SearchResultVideo.fromArray(JSON.parse(localStorage.getItem("latest_results") || "[]"))
     };
 
     this.search = this.search.bind(this);
@@ -77,7 +77,7 @@ class Search extends React.Component {
       .then((data) => {
         localStorage.setItem("latest_results", JSON.stringify(data));
         this.setState({
-          search_results: Video.prototype.fromArray(data),
+          search_results: SearchResultVideo.fromArray(data),
           loading: false
         });
       });

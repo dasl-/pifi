@@ -1,16 +1,29 @@
 import React from 'react';
 
+import api from 'api';
+
 class PlaylistItem extends React.Component {
+  constructor(props) {
+    super(props);
+    this.apiClient = new api();
+
+    this.handleRemoveClick = this.handleRemoveClick.bind(this);
+    this.handleFavoriteClick = this.handleFavoriteClick.bind(this);
+  }
+
   render() {
-    var color_class = this.props.video.color_mode;
-    var current_class = '';
+    var row_class = this.props.video.color_mode;
 
     if (this.props.video.status === 'STATUS_PLAYING') {
-      current_class = ' current';
+      row_class += ' current';
+    }
+
+    if (this.props.video.is_favorite) {
+      row_class += ' favorite';
     }
 
     return (
-      <div className={"row playlist-video " + color_class + current_class}>
+      <div className={"row playlist-video " + row_class}>
         <div className='col-xs-4 col-sm-4 playlist-video'>
           <div className='placeholder' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
           </div>
@@ -18,8 +31,28 @@ class PlaylistItem extends React.Component {
         <div className='col-xs-7 col-sm-8 video-data'>
           <h5 className='title'>{this.props.video.title}</h5>
         </div>
+        <div className='col-xs-7 col-sm-8 video-data'>
+            <div className="input-group-btn">
+              <button className="btn btn-default" type="button" onClick={(e) => this.handleRemoveClick(e, this.props.video)}>
+                <span className="glyphicon glyphicon-remove-sign" aria-hidden="true" />
+              </button>
+              <button className="btn btn-default" type="button" onClick={(e) => this.handleFavoriteClick(e, this.props.video)}>
+                <span className="glyphicon glyphicon-star" aria-hidden="true" />
+              </button>
+            </div>
+        </div>
       </div>
     );
+  }
+
+  handleRemoveClick(e, video) {
+    e.preventDefault();
+    this.apiClient.removeVideo(video);
+  }
+
+  handleFavoriteClick(e, video) {
+    e.preventDefault();
+    this.apiClient.favoriteVideo(video);
   }
 }
 
