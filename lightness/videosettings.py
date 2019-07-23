@@ -90,3 +90,6 @@ class VideoSettings:
             self.color_mode = color_mode
         else:
             raise Exception("Unknown color_mode: {}".format(color_mode))
+
+    def is_color_mode_rgb(self):
+        return self.color_mode in [self.COLOR_MODE_COLOR, self.COLOR_MODE_INVERT_COLOR];

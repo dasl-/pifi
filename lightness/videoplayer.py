@@ -31,7 +31,7 @@ class VideoPlayer:
 
         # Memoizing the specific gamma curve index for static gamma videos enables us to shave
         # 1 or 2 milliseconds off the loop per frame. See: self.__setFramePixels
-        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR or self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR:
+        if self.__video_settings.is_color_mode_rgb():
             # static gamma
             self.__scale_red_gamma_curve = self.__gamma_controller.scale_red_curves[Gamma.DEFAULT_GAMMA_INDEX]
             self.__scale_green_gamma_curve = self.__gamma_controller.scale_green_curves[Gamma.DEFAULT_GAMMA_INDEX]
@@ -72,8 +72,7 @@ class VideoPlayer:
     #
     # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
     def __setFramePixels(self, avg_color_frame):
-        if not (self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR or
-                self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR):
+        if not (self.__video_settings.is_color_mode_rgb()):
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
 
         for x in range(self.__video_settings.display_width):
