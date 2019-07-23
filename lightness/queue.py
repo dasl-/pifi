@@ -62,7 +62,9 @@ class Queue:
                     VideoSettings.COLOR_MODE_BW,
                     VideoSettings.COLOR_MODE_R,
                     VideoSettings.COLOR_MODE_G,
-                    VideoSettings.COLOR_MODE_B
+                    VideoSettings.COLOR_MODE_B,
+                    VideoSettings.COLOR_MODE_INVERT_COLOR,
+                    VideoSettings.COLOR_MODE_INVERT_BW
                 ]
                 if video_record["color_mode"] in color_modes:
                     color_mode = video_record["color_mode"]
