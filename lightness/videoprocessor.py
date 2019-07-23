@@ -68,8 +68,15 @@ class VideoProcessor:
         self.__show_loading_screen(video_player)
         self.__url = url
         video_save_path = self.__get_video_save_path()
+
         if os.path.isfile(video_save_path):
             self.__logger.info('Video has already been downloaded. Using saved video: {}'.format(video_save_path))
+            self.__is_video_already_downloaded = True
+        elif self.__video_settings.should_predownload_video:
+            download_command = self.__download_youtube_video()
+            self.__logger.info('Downloading video: {}'.format(download_command))
+            subprocess.call(download_command, shell=True)
+            self.__logger.info('Video download complete: {}'.format(video_save_path))
             self.__is_video_already_downloaded = True
 
         self.__process_and_play_video(video_player)
@@ -180,6 +187,17 @@ class VideoProcessor:
                     break
 
         self.__do_post_cleanup(process_and_play_vid_proc)
+
+    def __download_youtube_video(self):
+        video_info = self.__get_video_info()
+
+        return (
+            'youtube-dl ' +
+            '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
+            '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
+            '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            shlex.quote(video_info['webpage_url']) # url to download
+        )
 
     def __populate_avg_color_frames(
         self, avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape

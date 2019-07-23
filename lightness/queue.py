@@ -107,9 +107,14 @@ class Queue:
         else:
             log_level = VideoSettings.LOG_LEVEL_NORMAL
 
+        if 'should_predownload_video' in config:
+            should_predownload_video = config['should_predownload_video']
+        else:
+            should_predownload_video = False
+
         return VideoSettings(
             color_mode = color_mode, display_width = display_width, display_height = display_height,
             should_play_audio = should_play_audio, brightness = brightness,
             flip_x = flip_x, flip_y = flip_y, should_save_video = should_save_video,
-            log_level = log_level, should_check_playlist = True,
+            log_level = log_level, should_check_playlist = True, should_predownload_video = should_predownload_video
         )

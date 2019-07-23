@@ -5,6 +5,8 @@ class VideoSettings:
     COLOR_MODE_R = 'r'
     COLOR_MODE_G = 'g'
     COLOR_MODE_B = 'b'
+    COLOR_MODE_INVERT_COLOR = 'inv_color'
+    COLOR_MODE_INVERT_BW = 'inv_bw'
 
     LOG_LEVEL_NORMAL = 'normal'
     LOG_LEVEL_VERBOSE = 'verbose'
@@ -38,6 +40,9 @@ class VideoSettings:
     # Boolean - saving the video allows us to avoid youtube-dl network calls to download the video if it's played again.
     should_save_video = None
 
+    # Boolean - force the video to fully download before playing
+    should_predownload_video = None
+
     log_level = None
 
     # If True, the videoprocessor will periodically check the DB to see if it should skip playing the current video
@@ -46,7 +51,8 @@ class VideoSettings:
     def __init__(
         self, color_mode = None, display_width = None, display_height = None,
         should_play_audio = True, brightness = None, flip_x = False, flip_y = False,
-        should_save_video = False, log_level = None, should_check_playlist = False
+        should_save_video = False, log_level = None, should_check_playlist = False,
+        should_predownload_video = False
     ):
         if color_mode == None:
             color_mode = self.COLOR_MODE_COLOR
@@ -76,9 +82,11 @@ class VideoSettings:
 
         self.should_check_playlist = should_check_playlist
 
+        self.should_predownload_video = should_predownload_video
+
     def __set_color_mode(self, color_mode):
         color_mode = color_mode.lower()
-        if color_mode in [self.COLOR_MODE_COLOR, self.COLOR_MODE_BW, self.COLOR_MODE_R, self.COLOR_MODE_G, self.COLOR_MODE_B]:
+        if color_mode in [self.COLOR_MODE_COLOR, self.COLOR_MODE_BW, self.COLOR_MODE_R, self.COLOR_MODE_G, self.COLOR_MODE_B, self.COLOR_MODE_INVERT_COLOR, self.COLOR_MODE_INVERT_BW]:
             self.color_mode = color_mode
         else:
             raise Exception("Unknown color_mode: {}".format(color_mode))

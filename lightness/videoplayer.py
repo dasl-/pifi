@@ -99,6 +99,18 @@ class VideoPlayer:
                         self.__scale_green_gamma_curves[gamma_index][avg_color_frame[y, x]],
                         self.__scale_blue_gamma_curves[gamma_index][avg_color_frame[y, x]]
                     ]
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR:
+                    r, g, b = [
+                        self.__scale_red_gamma_curve[255 - avg_color_frame[y, x, 0]],
+                        self.__scale_green_gamma_curve[255 - avg_color_frame[y, x, 1]],
+                        self.__scale_blue_gamma_curve[255 - avg_color_frame[y, x, 2]]
+                    ]
+                elif self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_BW:
+                    r, g, b = [
+                        self.__scale_red_gamma_curves[gamma_index][255 - avg_color_frame[y, x]],
+                        self.__scale_green_gamma_curves[gamma_index][255 - avg_color_frame[y, x]],
+                        self.__scale_blue_gamma_curves[gamma_index][255 - avg_color_frame[y, x]]
+                    ]
                 else:
                     raise Exception('Unexpected color mode: {}'.format(self.__video_settings.color_mode))
 
