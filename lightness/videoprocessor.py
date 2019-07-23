@@ -85,7 +85,7 @@ class VideoProcessor:
 
     def __show_loading_screen(self, video_player):
         filename = 'loading_screen_monochrome.npy'
-        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR or self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR:
             filename = 'loading_screen_color.npy'
         loading_screen_path = DirectoryUtils().root_dir + '/' + filename
         video_player.playFrame(np.load(loading_screen_path))
@@ -149,7 +149,7 @@ class VideoProcessor:
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
-        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR or self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR:
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
@@ -319,7 +319,7 @@ class VideoProcessor:
 
     def __get_ffmpeg_cmd(self):
         pix_fmt = 'gray'
-        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR:
+        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_COLOR or self.__video_settings.color_mode == VideoSettings.COLOR_MODE_INVERT_COLOR:
             pix_fmt = 'rgb24'
 
         # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks

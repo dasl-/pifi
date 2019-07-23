@@ -16,9 +16,10 @@ def parseArgs():
     parser.add_argument('--display-height', dest='display_height', action='store', type=int,
         default=VideoSettings.DEFAULT_DISPLAY_HEIGHT, metavar='N', help='Number of pixels / units')
     parser.add_argument('--color-mode', dest='color_mode', action='store', default=VideoSettings.COLOR_MODE_COLOR,
-        help=("one of: '{}', '{}', '{}', '{}', or '{}'. Default is '{}'."
+        help=("one of: '{}', '{}', '{}', '{}', '{}', '{}', or '{}'. Default is '{}'."
             .format(VideoSettings.COLOR_MODE_COLOR, VideoSettings.COLOR_MODE_BW, VideoSettings.COLOR_MODE_R,
-                VideoSettings.COLOR_MODE_G, VideoSettings.COLOR_MODE_B, VideoSettings.COLOR_MODE_COLOR))
+                VideoSettings.COLOR_MODE_G, VideoSettings.COLOR_MODE_B, VideoSettings.COLOR_MODE_INVERT_COLOR,
+                VideoSettings.COLOR_MODE_INVERT_BW, VideoSettings.COLOR_MODE_COLOR))
     )
     parser.add_argument('--audio', dest='should_play_audio', action='store_true', default=False,
         help='play the audio (default is no audio)')
