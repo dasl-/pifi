@@ -1,0 +1,18 @@
+.ListItem {
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.BouncingListItem {
+  transition: transform 0.5s ease-out;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.Wrapper {
+  position: relative;
+  transition: max-height 0.5s ease;
+  max-height: 1000px;
+  transform-origin: top;
+  overflow: hidden;
+}

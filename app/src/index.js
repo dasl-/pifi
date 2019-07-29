@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import App from 'component/app';
-import InvalidBuild from 'component/invalid_build';
+import App from 'component/app/app';
+import InvalidBuild from 'component/app/invalid_build';
 
 import 'css/bootstrap.min.css';
 import 'css/bootstrap.darkly2.css';

@@ -1,8 +1,10 @@
 import React from 'react';
 
 import api from 'api';
-import SearchResult from 'component/search_result';
+import SearchResult from './search_result';
 import SearchResultVideo from 'dataobj/search_result_video';
+
+import './search.css';
 
 class Search extends React.Component {
   constructor(props) {
@@ -49,8 +51,8 @@ class Search extends React.Component {
         </form>
 
         { this.state.loading
-          ? <div id="search-results-loading"><div className='dot-pulse'></div></div>
-          : <div id="search-results">
+          ? <div className="search-results-loading"><div className='dot-pulse'></div></div>
+          : <div className="search-results">
               {this.state.search_results.map(function(video, index) {
                 return <SearchResult
                   key = {index}

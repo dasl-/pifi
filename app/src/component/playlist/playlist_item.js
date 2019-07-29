@@ -22,6 +22,7 @@ class PlaylistItem extends React.Component {
       row_class += ' favorite';
     }
 
+
     return (
       <div className={"row playlist-video " + row_class}>
         <div className='col-xs-4 col-sm-4 playlist-video'>
@@ -32,13 +33,8 @@ class PlaylistItem extends React.Component {
           <h5 className='title'>{this.props.video.title}</h5>
         </div>
         <div className='col-xs-7 col-sm-8 video-data'>
-            <div className="input-group-btn">
-              <button className="btn btn-default" type="button" onClick={(e) => this.handleRemoveClick(e, this.props.video)}>
-                <span className="glyphicon glyphicon-remove-sign" aria-hidden="true" />
-              </button>
-              <button className="btn btn-default" type="button" onClick={(e) => this.handleFavoriteClick(e, this.props.video)}>
-                <span className="glyphicon glyphicon-star" aria-hidden="true" />
-              </button>
+            <div onClick={(e) => this.handleFavoriteClick(e, this.props.video)}>
+              <span className="glyphicon glyphicon-star" aria-hidden="true" />
             </div>
         </div>
       </div>

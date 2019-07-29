@@ -2,7 +2,12 @@ import React from 'react';
 
 import api from 'api';
 import PlaylistVideo from 'dataobj/playlist_video';
-import PlaylistItem from 'component/playlist_item';
+import PlaylistItem from './playlist_item';
+
+import './playlist.css';
+
+import SwipeableList from 'component/lib/SwipeableList/SwipeableList';
+import SwipeableListItem from 'component/lib/SwipeableList/SwipeableListItem';
 
 class Playlist extends React.Component {
   constructor(props) {
@@ -19,12 +24,14 @@ class Playlist extends React.Component {
     this.togglePlaylist = this.togglePlaylist.bind(this);
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
+    this.handleSwipeVideo = this.handleSwipeVideo.bind(this);
+
     this.updateStateOnLoop();
   }
 
   render() {
     return (
-      <div className={"col-xs-12 col-md-6 playlist-container " + (this.state.expanded ? 'expanded' : '')}>
+      <div style={{'position':'fixed'}} className={"col-xs-12 col-md-6 playlist-container " + (this.state.expanded ? 'expanded' : '')}>
         <div className="playlist-bar">
           <div className="input-group control-input-group">
             <div className="playlist-details" onClick={this.togglePlaylist}>
@@ -50,11 +57,13 @@ class Playlist extends React.Component {
                 <div className='empty'>&lt;Empty Queue&gt;</div>
               )}
 
-              {this.state.videos.map(function(video, index) {
-                return <PlaylistItem
-                  key = {index}
-                  video = {video} />;
-              })}
+              <SwipeableList background={<span></span>}>
+                {this.state.videos.map(function(video, index) {
+                  return <SwipeableListItem key={video.playlist_video_id} onSwipe={() => this.handleSwipeVideo(video)}>
+                    <PlaylistItem video = {video} />
+                  </SwipeableListItem>;
+                }.bind(this))}
+              </SwipeableList>
           </div>
         </div>
       </div>
@@ -82,7 +91,13 @@ class Playlist extends React.Component {
 
   nextVideo(e) {
     e.preventDefault();
-    this.apiClient.nextVideo(this.state.current_video.playlist_video_id);
+    if (this.state.current_video) {
+      this.apiClient.nextVideo(this.state.current_video.playlist_video_id);
+    }
+  }
+
+  handleSwipeVideo(video) {
+    this.apiClient.removeVideo(video);
   }
 
   updateStateOnLoop() {

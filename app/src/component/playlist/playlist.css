@@ -1,0 +1,67 @@
+.playlist-container {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  overflow-y: auto;
+  max-height: 90%;
+}
+.playlist-bar {
+  cursor: pointer;
+  background-color: #444;
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+  padding: 0;
+  margin: 0;
+}
+.playlist-details {
+
+}
+.playlist-container .currently-playing {
+  color: #fff;
+  margin: 0;
+  padding: 5px;
+  display: inline-block;
+  overflow: hidden;
+  height: 28px;
+}
+.playlist-expand {
+  background-color: #444;
+  border-width: 1px;
+  padding: 5px 0 0;
+  margin: 0;
+}
+.playlist-container .playlist-expand {
+  display: none;
+}
+.playlist-container.expanded .playlist-bar {
+}
+.playlist-container.expanded .playlist-expand {
+  display: block;
+}
+.playlist-container .empty {
+  text-align: center;
+  padding: 10px;
+}
+.playlist-container .playlist-video {
+  margin-right: 0;
+  padding-left: 15px;
+  padding-bottom: 5px;
+}
+.playlist-container .placeholder {
+  width: 100%;
+  padding-bottom: 75%;
+  background: #333;
+  max-height: 280px;
+  background-size: 100%;
+}
+.playlist-container .video-data {
+  margin-left: 0;
+  padding-left: 0;
+}
+.playlist-container .playlist-video h4.title {
+  margin-top: 0;
+}
+.playlist-video.favorite .glyphicon-star {
+  color: #FF0;
+  text-shadow: -1px -1px 2px #990, 1px -1px 2px #990, -1px 1px 2px #990, 1px 1px 2px #990;
+}

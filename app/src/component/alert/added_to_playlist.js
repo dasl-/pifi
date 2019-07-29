@@ -1,4 +1,5 @@
 import React from 'react';
+import './added_to_playlist'
 
 class SuccessAlert extends React.Component {
   constructor(props) {

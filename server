@@ -44,6 +44,7 @@ class LightnessAPI():
         return response_details
 
     def remove(self, post_data):
+        # todo: if you remove the current video it should be equivalent to a skip, currently it is not
         self.__playlist.remove(post_data['playlist_video_id'])
 
         response_details = {}

@@ -1,9 +1,9 @@
 import React from 'react';
 
 import api from 'api';
-import Search from 'component/search';
-import SuccessAlert from 'component/success-alert';
-import Playlist from 'component/playlist';
+import Search from 'component/search/search';
+import AddedToPlaylistAlert from 'component/alert/added_to_playlist';
+import Playlist from 'component/playlist/playlist';
 
 class App extends React.Component {
   constructor(props) {
@@ -29,7 +29,7 @@ class App extends React.Component {
         <Playlist />
 
         {this.state.last_queued_videos.map(function(video, index) {
-          return <SuccessAlert
+          return <AddedToPlaylistAlert
             key = {index}
             video = {video}
             show = {index === this.state.last_queued_videos.length - 1} />
