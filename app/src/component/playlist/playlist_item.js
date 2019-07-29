@@ -29,12 +29,10 @@ class PlaylistItem extends React.Component {
           </div>
         </div>
         <div className='col-xs-7 col-sm-8 video-data'>
-          <h5 className='title'>{this.props.video.title}</h5>
-        </div>
-        <div className='col-xs-7 col-sm-8 video-data'>
-            <div onClick={(e) => this.handleFavoriteClick(e, this.props.video)}>
-              <span className="glyphicon glyphicon-star" aria-hidden="true" />
-            </div>
+          <span className='title'>{this.props.video.title}</span>
+          <span onClick={(e) => this.handleFavoriteClick(e, this.props.video)}>
+            <span className="glyphicon glyphicon-star" aria-hidden="true" />
+          </span>
         </div>
       </div>
     );

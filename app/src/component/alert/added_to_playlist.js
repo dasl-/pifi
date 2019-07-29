@@ -1,5 +1,5 @@
 import React from 'react';
-import './added_to_playlist'
+import './added_to_playlist.css'
 
 class SuccessAlert extends React.Component {
   constructor(props) {
