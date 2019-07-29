@@ -22,11 +22,10 @@ class PlaylistItem extends React.Component {
       row_class += ' favorite';
     }
 
-
     return (
       <div className={"row playlist-video " + row_class}>
         <div className='col-xs-4 col-sm-4 playlist-video'>
-          <div className='placeholder' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
+          <div className='placeholder use-color-mode' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
           </div>
         </div>
         <div className='col-xs-7 col-sm-8 video-data'>

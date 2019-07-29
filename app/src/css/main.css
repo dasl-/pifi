@@ -4,12 +4,19 @@
 .header {
   margin-top: 10px;
 }
-.bw img {
+.bw img,
+.bw .use-color-mode,
+.color .bw img,
+.color .bw .use-color-mode {
   filter: grayscale(100%);
 }
-.color img {
+.color img,
+.color .use-color-mode,
+.bw .color img,
+.bw .color .use-color-mode {
   filter: grayscale(0%);
 }
+
 .show-in-color,
 .bw .show-in-bw {
   display: inline-block;
