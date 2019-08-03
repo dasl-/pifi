@@ -28,6 +28,7 @@ class PlaylistItem extends React.Component {
           <div className='img-container'>
             <div className='placeholder use-color-mode' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
             </div>
+            <span className='duration'>{this.props.video.duration}</span>
           </div>
         </div>
         <div className='col-xs-7 col-sm-8 video-data'>

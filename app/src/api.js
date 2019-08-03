@@ -54,7 +54,8 @@ class APIClient {
         url: video.video_url,
         color_mode: color_mode,
         thumbnail: video.thumbnail_img_src,
-        title: video.title
+        title: video.title,
+        duration: video.duration
     });
   }
 

@@ -22,6 +22,7 @@ class PlaylistItem extends React.Component {
       <div className={"currently-playing-full " + row_class}>
         <div className='img-container'>
           <img src={this.props.video.thumbnail} />
+          <span className='duration'>{this.props.video.duration}</span>
         </div>
 
         <div className="control-group">

@@ -35,17 +35,18 @@ class Playlist:
                 url TEXT,
                 thumbnail TEXT,
                 title TEXT,
+                duration VARCHAR(20),
                 color_mode VARCHAR(20),
                 status VARCHAR(20),
-                is_skip_requested INTEGER DEFAULT 0
+                is_skip_requested INTEGER DEFAULT 0,
                 is_favorite INTEGER DEFAULT 0
             )"""
         )
         self.__cursor.execute("CREATE INDEX status_idx ON playlist_videos (status)")
 
-    def enqueue(self, url, color_mode, thumbnail, title):
-        self.__cursor.execute("INSERT INTO playlist_videos (url, color_mode, thumbnail, title, status) VALUES(?, ?, ?, ?, ?)",
-                          [url, color_mode, thumbnail, title, self.STATUS_QUEUED])
+    def enqueue(self, url, color_mode, thumbnail, title, duration):
+        self.__cursor.execute("INSERT INTO playlist_videos (url, color_mode, thumbnail, title, duration, status) VALUES(?, ?, ?, ?, ?, ?)",
+                          [url, color_mode, thumbnail, title, duration, self.STATUS_QUEUED])
 
     # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
     # video that the user intended to skip.

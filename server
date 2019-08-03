@@ -20,19 +20,10 @@ class LightnessAPI():
         return response_details
 
     def enqueue(self, post_data):
-        url = post_data['url']
-        color_mode = post_data['color_mode']
-        thumbnail = post_data['thumbnail']
-        title = post_data['title']
-
-        response_details = {}
-        response_details['url'] = url
-        response_details['color_mode'] = color_mode
-        response_details['thumbnail'] = thumbnail
-        response_details['title'] = title
-
-        self.__playlist.enqueue(url, color_mode, thumbnail, title)
-
+        self.__playlist.enqueue(
+            post_data['url'], post_data['color_mode'], post_data['thumbnail'], post_data['title'], post_data['duration']
+        )
+        response_details = post_data
         response_details['success'] = True
         return response_details
 

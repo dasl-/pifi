@@ -8,7 +8,8 @@ class PlaylistVideo {
       thumbnail: props.thumbnail,
       title: props.title,
       url: props.url,
-      is_favorite: props.is_favorite
+      is_favorite: props.is_favorite,
+      duration: props.duration
     };
   }
 
