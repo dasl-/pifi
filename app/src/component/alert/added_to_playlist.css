@@ -16,6 +16,9 @@
   -moz-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
   box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
 }
+.img-container {
+  background-color: #000;
+}
 .queue-thumbnail {
   max-width: 80%;
   margin: auto;

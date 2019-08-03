@@ -1,6 +1,7 @@
 import React from 'react';
 
 import api from 'api';
+import App from 'component/app/app';
 import SearchResult from './search_result';
 import SearchResultVideo from 'dataobj/search_result_video';
 
@@ -11,10 +12,17 @@ class Search extends React.Component {
     super(props);
     this.apiClient = new api();
 
+    var stored_results = [];
+    try {
+      stored_results = JSON.parse(localStorage.getItem("latest_results") || "[]");
+    } catch (e) {
+      stored_results = [];
+    }
+
     this.state = {
       loading: false,
       search_term: localStorage.getItem("last_search") || "",
-      search_results: SearchResultVideo.fromArray(JSON.parse(localStorage.getItem("latest_results") || "[]"))
+      search_results: SearchResultVideo.fromArray(stored_results)
     };
 
     this.search = this.search.bind(this);
@@ -36,14 +44,11 @@ class Search extends React.Component {
                     <span className='hidden-xs'>Search <span className="glyphicon glyphicon-search" aria-hidden="true"></span></span>
                     <span className='hidden-sm hidden-md hidden-lg'><span className="glyphicon glyphicon-search" aria-hidden="true"></span></span>
                   </button>
-                  <button className="btn btn-success show-in-color toggle-color" type="button" onClick={this.props.toggleColorMode}>
-                     <span className='hidden-xs'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Color</span>
+                  <button className="btn btn-primary toggle-color use-color-mode" type="button" onClick={this.props.toggleColorMode}>
+                     <span className='hidden-xs'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Color Mode</span>
                      <span className='hidden-sm hidden-md hidden-lg'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
                   </button>
-                  <button className="btn btn-default show-in-bw toggle-color" type="button" onClick={this.props.toggleColorMode}>
-                    <span className='hidden-xs'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span> B&W</span>
-                    <span className='hidden-sm hidden-md hidden-lg'><span className="glyphicon glyphicon-eye-open" aria-hidden="true"></span></span>
-                  </button>
+
                 </div>
               </div>
             </div>

@@ -4,26 +4,76 @@
 .header {
   margin-top: 10px;
 }
-.bw img,
-.bw .use-color-mode,
-.color .bw img,
-.color .bw .use-color-mode {
+
+/* COLOR MODE: BLACK AND WHITE */
+.color-mode-bw img, .color-mode-bw .use-color-mode,
+
+.color-mode-color .color-mode-bw img, .color-mode-color .color-mode-bw .use-color-mode,
+.color-mode-red   .color-mode-bw img, .color-mode-red   .color-mode-bw .use-color-mode,
+.color-mode-blue  .color-mode-bw img, .color-mode-blue  .color-mode-bw .use-color-mode,
+.color-mode-green .color-mode-bw img, .color-mode-green .color-mode-bw .use-color-mode {
   filter: grayscale(100%);
 }
-.color img,
-.color .use-color-mode,
-.bw .color img,
-.bw .color .use-color-mode {
+
+/* COLOR MODE: FULL COLOR */
+.color-mode-color img, .color-mode-color .use-color-mode,
+
+.color-mode-bw    .color-mode-color img, .color-mode-bw    .color-mode-color .use-color-mode,
+.color-mode-red   .color-mode-color img, .color-mode-red   .color-mode-color .use-color-mode,
+.color-mode-blue  .color-mode-color img, .color-mode-blue  .color-mode-color .use-color-mode,
+.color-mode-green .color-mode-color img, .color-mode-green .color-mode-color .use-color-mode {
   filter: grayscale(0%);
 }
 
-.show-in-color,
-.bw .show-in-bw {
-  display: inline-block;
+/* COLOR MODE: RED */
+.color-mode-red img, .color-mode-red .use-color-mode,
+
+.color-mode-bw    color-mode-red img, .color-mode-bw     .color-mode-red .use-color-mode,
+.color-mode-color .color-mode-red img, .color-mode-color .color-mode-red .use-color-mode,
+.color-mode-blue  .color-mode-red img, .color-mode-blue  .color-mode-red .use-color-mode,
+.color-mode-green .color-mode-red img, .color-mode-green .color-mode-red .use-color-mode {
+  -webkit-filter: url(#red-mode);
+  filter:  url(#red-mode);
 }
-.bw .show-in-color,
-.show-in-bw {
+
+/* COLOR MODE: GREEN */
+.color-mode-green img, .color-mode-green .use-color-mode,
+
+.color-mode-bw    .color-mode-green img, .color-mode-bw    .color-mode-green .use-color-mode,
+.color-mode-color .color-mode-green img, .color-mode-color .color-mode-green .use-color-mode,
+.color-mode-red   .color-mode-green img, .color-mode-red   .color-mode-green .use-color-mode,
+.color-mode-blue  .color-mode-green img, .color-mode-blue  .color-mode-green .use-color-mode {
+  -webkit-filter: url(#green-mode);
+  filter:  url(#green-mode);
+}
+
+/* COLOR MODE: BLUE */
+.color-mode-blue img, .color-mode-blue .use-color-mode,
+
+.color-mode-bw    .color-mode-blue img, .color-mode-bw    .color-mode-blue .use-color-mode,
+.color-mode-color .color-mode-blue img, .color-mode-color .color-mode-blue .use-color-mode,
+.color-mode-red   .color-mode-blue img, .color-mode-red   .color-mode-blue .use-color-mode,
+.color-mode-green .color-mode-blue img, .color-mode-green .color-mode-blue .use-color-mode {
+  -webkit-filter: url(#blue-mode);
+  filter:  url(#blue-mode);
+}
+
+
+
+
+.show-in-color,
+.show-in-bw,
+.show-in-red-mode,
+.show-in-green-mode,
+.show-in-blue-mode {
   display: none;
+}
+.color-mode-color .show-in-color,
+.color-mode-bw .show-in-bw,
+.color-mode-red .show-in-red-mode,
+.color-mode-green .show-in-green-mode,
+.color-mode-blue .show-in-blue-mode {
+  display: inline-block;
 }
 
 /**

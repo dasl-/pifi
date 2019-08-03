@@ -8,5 +8,29 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <svg class="defs-only">
+      <filter id="red-mode" color-interpolation-filters="sRGB" x="0" y="0" height="100%" width="100%">
+        <feColorMatrix type="matrix"
+          values="0.95 0 0 0 1
+                  0.1  0 0 0 0.1
+                  0.1  0 0 0 0.1
+                  0    1 0 0 0" />
+      </filter>
+      <filter id="blue-mode" color-interpolation-filters="sRGB" x="0" y="0" height="100%" width="100%">
+        <feColorMatrix type="matrix"
+          values="0.1  0 0 0 0
+                  0.1  0 0 0 0.1
+                  0.95 0 0 0 1
+                  0    1 0 0 0" />
+      </filter>
+      <filter id="green-mode" color-interpolation-filters="sRGB" x="0" y="0" height="100%" width="100%">
+        <feColorMatrix type="matrix"
+          values="0.1  0 0 0 0
+                  0.95 0 0 0 1
+                  0.1  0 0 0 0
+                  0    1 0 0 0" />
+      </filter>
+    </svg>
   </body>
 </html>

@@ -12,7 +12,7 @@ class PlaylistItem extends React.Component {
   }
 
   render() {
-    var row_class = this.props.video.color_mode;
+    var row_class = 'color-mode-' + this.props.video.color_mode;
 
     if (this.props.video.status === 'STATUS_PLAYING') {
       row_class += ' current';
@@ -25,7 +25,9 @@ class PlaylistItem extends React.Component {
     return (
       <div className={"row playlist-video " + row_class}>
         <div className='col-xs-4 col-sm-4 playlist-video'>
-          <div className='placeholder use-color-mode' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
+          <div className='img-container'>
+            <div className='placeholder use-color-mode' style={{'backgroundImage': `url(${this.props.video.thumbnail})`}}>
+            </div>
           </div>
         </div>
         <div className='col-xs-7 col-sm-8 video-data'>

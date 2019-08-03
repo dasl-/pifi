@@ -10,7 +10,8 @@ class App extends React.Component {
     super(props);
     this.state = {
       color_mode: 'color',
-      last_queued_videos: []
+      last_queued_videos: [],
+      last_queued_video_color_modes: []
     };
     this.apiClient = new api();
 
@@ -20,7 +21,7 @@ class App extends React.Component {
 
   render() {
     return (
-      <div className={"container " + this.state.color_mode}>
+      <div className={"container color-mode-" + this.state.color_mode}>
         <Search
           toggleColorMode = {this.toggleColorMode}
           enqueueVideo = {this.enqueueVideo}
@@ -32,6 +33,7 @@ class App extends React.Component {
           return <AddedToPlaylistAlert
             key = {index}
             video = {video}
+            color_mode = {this.state.last_queued_video_color_modes[index]}
             show = {index === this.state.last_queued_videos.length - 1} />
         }.bind(this))}
       </div>
@@ -41,6 +43,14 @@ class App extends React.Component {
   toggleColorMode(e) {
     if (this.state.color_mode === 'color') {
       this.setState({color_mode: 'bw'});
+    } else if (this.state.color_mode === 'bw') {
+      this.setState({color_mode: 'red'});
+    } else if (this.state.color_mode === 'red') {
+      this.setState({color_mode: 'green'});
+    } else if (this.state.color_mode === 'green') {
+      this.setState({color_mode: 'blue'});
+    } else if (this.state.color_mode === 'blue') {
+      this.setState({color_mode: 'color'});
     } else {
       this.setState({color_mode: 'color'});
     }
@@ -52,6 +62,9 @@ class App extends React.Component {
         if (data.success) {
           this.setState({
             last_queued_videos:[...this.state.last_queued_videos, video]
+          });
+          this.setState({
+            last_queued_video_color_modes:[...this.state.last_queued_video_color_modes, this.state.color_mode]
           });
         }
       });
