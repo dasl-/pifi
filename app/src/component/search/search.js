@@ -27,16 +27,18 @@ class Search extends React.Component {
 
     this.search = this.search.bind(this);
     this.changeSearchTerm = this.changeSearchTerm.bind(this);
+
+    this.searchInputRef = React.createRef();
   }
 
   render() {
     return (
       <div>
-        <form onSubmit={this.search}>
+        <form onSubmit={this.search} action="/">
           <div className="header">
             <div className="form-group">
               <div className="input-group search-input-group">
-                <input type="text" className="form-control" id="query" placeholder="Search YouTube..."
+                <input type="search" className="form-control" id="query" placeholder="Search YouTube..." ref={this.searchInputRef}
                        value={this.state.search_term} onChange={(value) => this.changeSearchTerm(value)} />
 
                 <div className="input-group-btn">
@@ -76,6 +78,14 @@ class Search extends React.Component {
 
   search(e) {
     e.preventDefault();
+
+    // make sure soft keyboards get hidden
+    var target = this.searchInputRef.current;
+    setTimeout(() => {
+      target.focus();
+      target.blur();
+    }, 20);
+
     localStorage.setItem("last_search", this.state.search_term);
 
     this.setState({loading: true});

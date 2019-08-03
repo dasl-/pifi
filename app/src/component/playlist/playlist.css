@@ -3,7 +3,10 @@
   bottom: 0;
   right: 0;
   overflow-y: auto;
-  max-height: 90%;
+  max-height: 98%;
+  z-index: 100;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 .playlist-bar {
   cursor: pointer;
@@ -13,16 +16,24 @@
   padding: 0;
   margin: 0;
 }
+.playlist-bar .btn {
+  padding: 15px;
+}
 .playlist-details {
 
+}
+.ui-marquee {
+  width:80%;
 }
 .playlist-container .currently-playing {
   color: #fff;
   margin: 0;
-  padding: 5px;
+  padding: 12px 8px;
   display: inline-block;
   overflow: hidden;
-  height: 28px;
+  height: 50px;
+  font-size: 18px;
+  line-height: 30px;
 }
 .playlist-expand {
   background-color: #444;
@@ -30,13 +41,15 @@
   padding: 5px 0 0;
   margin: 0;
 }
-.playlist-container .playlist-expand {
-  display: none;
+.playlist-container .playlist-header {
+  text-align: center;
+  padding: 10px 5px;
+  font-size: 20px;
+  border-bottom: 1px solid #000;
+  margin: 0 20px 5px 20px;
 }
 .playlist-container.expanded .playlist-bar {
-}
-.playlist-container.expanded .playlist-expand {
-  display: block;
+  padding-bottom: 10px;
 }
 .playlist-container .empty {
   text-align: center;
@@ -73,4 +86,38 @@
 .playlist-video.favorite .glyphicon-star {
   color: #FF0;
   text-shadow: -1px -1px 2px #990, 1px -1px 2px #990, -1px 1px 2px #990, 1px 1px 2px #990;
+}
+.currently-playing-full.favorite .glyphicon-star {
+  color: #FF0;
+  text-shadow: -1px -1px 2px #990, 1px -1px 2px #990, -1px 1px 2px #990, 1px 1px 2px #990;
+}
+
+.currently-playing-full {
+  text-align: center;
+  padding: 0px 5px 20px 5px;
+  border-bottom: 1px solid #000;
+  margin: 0 20px 10px 20px;
+}
+.currently-playing-full .title {
+  font-size: 20px;
+}
+.currently-playing-full .img-container {
+  background-color: #000;
+  max-width: 50%;
+  margin: auto;
+}
+.currently-playing-full .img-container img {
+  width: 100%;
+}
+.control-group .input-group {
+  text-align: center;
+  width: 100%;
+  margin-top: 5px;
+}
+.control-group .fav-button {
+  margin-right: 3px;
+}
+.playlist-footer {
+  text-align: center;
+  padding: 3px;
 }

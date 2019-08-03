@@ -2,9 +2,9 @@ class VideoSettings:
 
     COLOR_MODE_COLOR = 'color'
     COLOR_MODE_BW = 'bw' # black and white
-    COLOR_MODE_R = 'r'
-    COLOR_MODE_G = 'g'
-    COLOR_MODE_B = 'b'
+    COLOR_MODE_R = 'red'
+    COLOR_MODE_G = 'green'
+    COLOR_MODE_B = 'blue'
     COLOR_MODE_INVERT_COLOR = 'inv_color'
     COLOR_MODE_INVERT_BW = 'inv_bw'
 
