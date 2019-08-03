@@ -36,7 +36,7 @@ class Search extends React.Component {
           <div className="header">
             <div className="form-group">
               <div className="input-group search-input-group">
-                <input type="text" className="form-control" id="query" placeholder=""
+                <input type="text" className="form-control" id="query" placeholder="Search YouTube..."
                        value={this.state.search_term} onChange={(value) => this.changeSearchTerm(value)} />
 
                 <div className="input-group-btn">
