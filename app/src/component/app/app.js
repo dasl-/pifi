@@ -5,10 +5,13 @@ import Search from 'component/search/search';
 import AddedToPlaylistAlert from 'component/alert/added_to_playlist';
 import Playlist from 'component/playlist/playlist';
 
+import './app.css';
+
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      playlist_expanded: false,
       color_mode: 'color',
       last_queued_videos: [],
       last_queued_video_color_modes: []
@@ -17,17 +20,26 @@ class App extends React.Component {
 
     this.toggleColorMode = this.toggleColorMode.bind(this);
     this.enqueueVideo = this.enqueueVideo.bind(this);
+    this.togglePlaylist = this.togglePlaylist.bind(this);
   }
 
   render() {
+    var lock_class = "unlocked";
+    if (this.state.playlist_expanded) {
+      lock_class = "locked";
+    }
+
     return (
-      <div className={"container color-mode-" + this.state.color_mode}>
+      <div className={lock_class + " container color-mode-" + this.state.color_mode}>
         <Search
           toggleColorMode = {this.toggleColorMode}
           enqueueVideo = {this.enqueueVideo}
         />
 
-        <Playlist />
+        <Playlist
+          expanded = {this.state.playlist_expanded}
+          togglePlaylist = {this.togglePlaylist}
+        />
 
         {this.state.last_queued_videos.map(function(video, index) {
           return <AddedToPlaylistAlert
@@ -38,6 +50,10 @@ class App extends React.Component {
         }.bind(this))}
       </div>
     );
+  }
+
+  togglePlaylist(e) {
+    this.setState({playlist_expanded: !this.state.playlist_expanded});
   }
 
   toggleColorMode(e) {

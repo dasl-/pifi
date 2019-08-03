@@ -3,6 +3,7 @@
   bottom: 0;
   right: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   max-height: 98%;
   z-index: 100;
   padding-left: 0 !important;

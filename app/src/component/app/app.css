@@ -1,0 +1,12 @@
+.container {
+  height: 100%;
+  position: fixed;
+  width: 100% !important;
+}
+.locked {
+  overflow: hidden;
+}
+.unlocked {
+  overflow: scroll;
+  -webkit-overflow-scrolling: touch;
+}

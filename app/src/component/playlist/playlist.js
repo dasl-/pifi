@@ -17,12 +17,10 @@ class Playlist extends React.Component {
 
     this.state = {
       loading: true,
-      expanded: false,
       current_video: null,
       videos: []
     };
 
-    this.togglePlaylist = this.togglePlaylist.bind(this);
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
     this.handleSwipeVideo = this.handleSwipeVideo.bind(this);
@@ -30,34 +28,25 @@ class Playlist extends React.Component {
     this.updateStateOnLoop();
   }
 
-  componentWillMount() {
-    this.setBodyScroll();
-  }
-
-  componentWillUnmount() {
-    this.setBodyScroll();
-  }
-
   setBodyScroll() {
     // todo: this doesnt work well - I need to handle this state change at the app level
   }
 
   render() {
-    this.setBodyScroll();
     var current_video = this.getCurrentVideo();
 
     return (
-      <div style={{'position':'fixed'}} className={"col-xs-12 col-md-6 playlist-container " + (this.state.expanded ? 'expanded' : '')}>
+      <div style={{'position':'fixed'}} className={"col-xs-12 col-md-6 playlist-container " + (this.props.expanded ? 'expanded' : '')}>
         <div className="playlist-bar">
-          { this.state.expanded && (
-            <div className="playlist-header" onClick={this.togglePlaylist}>
+          { this.props.expanded && (
+            <div className="playlist-header" onClick={this.props.togglePlaylist}>
               <span className="glyphicon glyphicon-chevron-down" aria-hidden="true" />
             </div>
           )}
 
-          { !this.state.expanded && (
+          { !this.props.expanded && (
             <div className="input-group control-input-group">
-              <div className="playlist-details" onClick={this.togglePlaylist}>
+              <div className="playlist-details" onClick={this.props.togglePlaylist}>
                 <span className="currently-playing">
                   {this.getCurrentlyPlayingTitle()}
                 </span>
@@ -72,7 +61,7 @@ class Playlist extends React.Component {
           )}
         </div>
 
-        { this.state.expanded && (
+        { this.props.expanded && (
           <div className="playlist-expand">
             <div className="playlist-contents">
                 {this.state.videos.length === 0 && !this.state.loading && (
@@ -121,10 +110,6 @@ class Playlist extends React.Component {
     }
 
     return '<Nothing>';
-  }
-
-  togglePlaylist(e) {
-    this.setState({expanded: !this.state.expanded});
   }
 
   clearQueue(e) {
