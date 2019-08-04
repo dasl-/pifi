@@ -38,54 +38,48 @@ class Playlist extends React.Component {
     return (
       <div style={{'position':'fixed'}} className={"col-xs-12 col-md-6 playlist-container " + (this.props.expanded ? 'expanded' : '')}>
         <div className="playlist-bar">
-          { this.props.expanded && (
-            <div className="playlist-header" onClick={this.props.togglePlaylist}>
-              <span className="glyphicon glyphicon-chevron-down" aria-hidden="true" />
-            </div>
-          )}
+          <div className={"playlist-header " + (this.props.expanded ? "" : "hidden")} onClick={this.props.togglePlaylist}>
+            <span className="glyphicon glyphicon-chevron-down" aria-hidden="true" />
+          </div>
 
-          { !this.props.expanded && (
-            <div className="input-group control-input-group">
-              <div className="playlist-details" onClick={this.props.togglePlaylist}>
-                <span className="currently-playing">
-                  {this.getCurrentlyPlayingTitle()}
-                </span>
-              </div>
-
-              <div className="input-group-btn">
-                <button className="btn btn-default" type="button" onClick={this.nextVideo}>
-                  <span className="glyphicon glyphicon-step-forward" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        { this.props.expanded && (
-          <div className="playlist-expand">
-            <div className="playlist-contents">
-                {this.state.videos.length === 0 && !this.state.loading && (
-                  <div className='empty'>&lt;Empty Queue&gt;</div>
-                )}
-
-                {current_video && (
-                    <CurrentlyPlaying video = {current_video} />
-                )}
-
-                <SwipeableList background={<span></span>}>
-                  {this.getQueuedVideos().map(function(video, index) {
-                    return <SwipeableListItem key={video.playlist_video_id} onSwipe={() => this.handleSwipeVideo(video)}>
-                      <PlaylistItem video = {video} />
-                    </SwipeableListItem>;
-                  }.bind(this))}
-                </SwipeableList>
+          <div className={"input-group control-input-group " + (this.props.expanded ? "hidden" : "")}>
+            <div className="playlist-details" onClick={this.props.togglePlaylist}>
+              <span className="currently-playing">
+                {this.getCurrentlyPlayingTitle()}
+              </span>
             </div>
 
-            <div className="playlist-footer">
-              <a href="#" onClick={this.clearQueue}>Clear</a>
+            <div className="input-group-btn">
+              <button className="btn btn-default" type="button" onClick={this.nextVideo}>
+                <span className="glyphicon glyphicon-step-forward" aria-hidden="true" />
+              </button>
             </div>
           </div>
-        )}
+        </div>
+
+        <div className={"playlist-expand " + (this.props.expanded ? "" : "hidden")}>
+          <div className="playlist-contents">
+              {this.state.videos.length === 0 && !this.state.loading && (
+                <div className='empty'>&lt;Empty Queue&gt;</div>
+              )}
+
+              {current_video && (
+                  <CurrentlyPlaying video = {current_video} />
+              )}
+
+              <SwipeableList background={<span></span>}>
+                {this.getQueuedVideos().map(function(video, index) {
+                  return <SwipeableListItem key={video.playlist_video_id} onSwipe={() => this.handleSwipeVideo(video)}>
+                    <PlaylistItem video = {video} />
+                  </SwipeableListItem>;
+                }.bind(this))}
+              </SwipeableList>
+          </div>
+
+          <div className="playlist-footer">
+            <a href="#" onClick={this.clearQueue}>Clear</a>
+          </div>
+        </div>
       </div>
     );
   }
