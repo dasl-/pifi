@@ -2,11 +2,23 @@
   height: 100%;
   position: fixed;
   width: 100% !important;
+  padding-bottom: 20px;
 }
 .locked {
   overflow: hidden;
 }
+.locked .blur-on-lock {
+  opacity:.3;
+  position: relative;
+}
 .unlocked {
   overflow: scroll;
   -webkit-overflow-scrolling: touch;
+}
+.background-mask {
+  z-index:10;
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  margin: -30px;
 }

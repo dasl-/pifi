@@ -21,6 +21,7 @@ class App extends React.Component {
     this.toggleColorMode = this.toggleColorMode.bind(this);
     this.enqueueVideo = this.enqueueVideo.bind(this);
     this.togglePlaylist = this.togglePlaylist.bind(this);
+    this.collapsePlaylist = this.collapsePlaylist.bind(this);
   }
 
   render() {
@@ -31,10 +32,16 @@ class App extends React.Component {
 
     return (
       <div className={lock_class + " container color-mode-" + this.state.color_mode}>
-        <Search
-          toggleColorMode = {this.toggleColorMode}
-          enqueueVideo = {this.enqueueVideo}
-        />
+        <div className="blur-on-lock">
+          {
+            this.state.playlist_expanded &&
+            (<div className="background-mask" onClick={this.collapsePlaylist}></div>)
+          }
+          <Search
+            toggleColorMode = {this.toggleColorMode}
+            enqueueVideo = {this.enqueueVideo}
+          />
+        </div>
 
         <Playlist
           expanded = {this.state.playlist_expanded}
@@ -54,6 +61,12 @@ class App extends React.Component {
 
   togglePlaylist(e) {
     this.setState({playlist_expanded: !this.state.playlist_expanded});
+  }
+
+  collapsePlaylist(e) {
+    if (this.state.playlist_expanded) {
+      this.setState({playlist_expanded: false});
+    }
   }
 
   toggleColorMode(e) {
@@ -77,9 +90,7 @@ class App extends React.Component {
       .then((data) => {
         if (data.success) {
           this.setState({
-            last_queued_videos:[...this.state.last_queued_videos, video]
-          });
-          this.setState({
+            last_queued_videos:[...this.state.last_queued_videos, video],
             last_queued_video_color_modes:[...this.state.last_queued_video_color_modes, this.state.color_mode]
           });
         }
