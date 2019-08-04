@@ -79,10 +79,11 @@
 }
 .playlist-container .placeholder {
   width: 100%;
-  padding-bottom: 75%;
+  padding-bottom: 56.25%;
   background: #333;
   max-height: 280px;
   background-size: 100%;
+  background-repeat: no-repeat;
 }
 .playlist-container .video-data {
   margin-left: 0;

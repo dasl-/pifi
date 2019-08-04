@@ -5,7 +5,7 @@ class SearchResultVideo {
     return {
       index: index,
       video_id: props.id,
-      thumbnail_img_src: props.snippet.thumbnails.high.url,
+      thumbnail_img_src: props.snippet.thumbnails.medium.url,
       video_url: 'https://www.youtube.com/watch?v=' + props.id,
       description: props.snippet.description.split(' ').slice(0,30).join(' ') + "...",
       title: props.snippet.title,
