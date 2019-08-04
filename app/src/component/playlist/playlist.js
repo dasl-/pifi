@@ -137,17 +137,16 @@ class Playlist extends React.Component {
           var videos = PlaylistVideo.fromArray(data.queue);
           var current_video = videos.find(function(video) {
             return video.status === 'STATUS_PLAYING';
-          });
+          }) || null;
 
-          if (current_video) {
-            if (
-              (this.state.current_video && this.state.current_video.playlist_video_id !== current_video.playlist_video_id) ||
-              !this.state.current_video
-            ) {
-              this.setState({
-                current_video: current_video
-              });
-            }
+          if (
+            (current_video && this.state.current_video && this.state.current_video.playlist_video_id !== current_video.playlist_video_id) ||
+            (current_video && !this.state.current_video) ||
+            (!current_video && this.state.current_video)
+          ) {
+            this.setState({
+              current_video: current_video
+            });
           }
 
           this.setState({
