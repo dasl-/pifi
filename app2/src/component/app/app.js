@@ -279,7 +279,6 @@ class App extends React.Component {
       .finally(() => this.getPlaylistQueue(false))
   }
   expandFooterPlaylist() {
-    console.log("expandFooterPlaylist");
     this.setState({'playlist_expanded':true});
   }
   contractFooterPlaylist() {

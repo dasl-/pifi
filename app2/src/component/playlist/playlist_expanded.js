@@ -63,7 +63,6 @@ class PlaylistExpanded extends React.Component {
   }
 
   onSwipeVideo(video) {
-    console.log(video);
     this.props.removeVideo(video);
   }
 }
