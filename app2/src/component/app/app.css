@@ -46,14 +46,15 @@
 }
 .playlist-enter {
   max-height: 0;
+  opacity: 1;
 }
 .playlist-enter-active {
   overflow-y: hidden;
-  max-height: 700px;
+  max-height: 100%;
+  opacity: 1;
 
   transition-property: all;
   transition-duration: .5s;
-  transition-timing-function: ease-in;
 }
 .playlist-enter-done {
   overflow-y: scroll;
