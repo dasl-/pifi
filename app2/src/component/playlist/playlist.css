@@ -1,0 +1,18 @@
+.playlist-enter {
+  opacity: 0;
+}
+.playlist-enter-active {
+  opacity: 1;
+  transition: opacity 600ms;
+  transition-timing-function: ease-in;
+}
+.playlist-video-loading {
+  opacity: 0;
+  transition: opacity 50ms;
+  transition-timing-function: ease-in;
+}
+.playlist-video {
+  opacity: 1;
+  transition: opacity 50ms;
+  transition-timing-function: ease-in;
+}

@@ -1,0 +1,6 @@
+.now_playing {
+  min-height: 330px;
+}
+.loading .video-thumbnail {
+  opacity: .3;
+}

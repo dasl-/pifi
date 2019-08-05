@@ -1,0 +1,74 @@
+.duration {
+  right: 0;
+  bottom: 0;
+}
+
+
+.playlist-mask {
+  display: block;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(9, 9, 9, 0.7);
+  z-index: 1;
+}
+.content {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: auto;
+}
+.content.lock {
+  overflow:hidden;
+}
+
+
+.intro-enter {
+  opacity: 0;
+}
+.intro-enter-active {
+  opacity: 1;
+  transition: opacity 1000ms;
+  transition-timing-function: ease-in;
+}
+
+
+.playlist-expander {
+  max-height: 0;
+  position: fixed;
+  bottom: 0;
+  z-index: 10000;
+}
+.playlist-enter {
+  max-height: 0;
+}
+.playlist-enter-active {
+  overflow-y: hidden;
+  max-height: 700px;
+
+  transition-property: all;
+  transition-duration: .5s;
+  transition-timing-function: ease-in;
+}
+.playlist-enter-done {
+  overflow-y: scroll;
+  max-height: 100%;
+}
+.playlist-exit {
+  overflow-y: hidden;
+  max-height: 700px;
+}
+.playlist-exit-active {
+  max-height: 0;
+
+  transition-property: all;
+  transition-duration: .5s;
+  transition-timing-function: ease-in;
+}
+.playlist-exit-done {
+  max-height: 0;
+}

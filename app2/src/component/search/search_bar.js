@@ -1,0 +1,52 @@
+import React from 'react';
+
+class SearchBar extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.onSubmit = this.onSubmit.bind(this);
+    this.onSearchTermChange = this.onSearchTermChange.bind(this);
+    this.search_input = React.createRef();
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.onSubmit} action='/' className='text-center container'>
+        <div className='input-group input-group-lg px-3'>
+
+          <input disabled = {this.props.loading ? 'disabled' : ''}
+            type='search' className='form-control' placeholder='Search YouTube...'
+            value={this.props.search_term} ref={this.search_input}
+            onChange={this.onSearchTermChange} />
+
+          <div className='input-group-append'>
+            <span className='input-group-text' onClick={this.onSubmit}>
+              <span className='d-none d-sm-inline-block mr-1'>Search </span>
+              <span className='glyphicon glyphicon-search'></span>
+            </span>
+          </div>
+        </div>
+      </form>
+    );
+  }
+
+  onSubmit(e) {
+    e.preventDefault();
+
+    // make sure soft keyboards get hidden
+    var target = this.search_input.current;
+    setTimeout(() => {
+      target.focus();
+      target.blur();
+    }, 20);
+
+    this.props.onSubmit();
+  }
+
+  onSearchTermChange(e) {
+    e.preventDefault();
+    this.props.onSearchTermChange(e.target.value);
+  }
+}
+
+export default SearchBar;
