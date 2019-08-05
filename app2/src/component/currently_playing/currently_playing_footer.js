@@ -23,7 +23,7 @@ class CurrentlyPlayingFooter extends React.Component {
                 onLoad={this.props.setImageLoaded}
               />
             </div>
-            <div className='col-7 pl-0 small-vertical-center'>
+            <div className='col-7 col-sm-8 pl-0 small-vertical-center'>
               <div className='small'>
                 {(this.props.video)
                   ? this.props.video.title
