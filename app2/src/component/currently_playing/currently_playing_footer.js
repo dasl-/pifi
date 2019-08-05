@@ -46,6 +46,7 @@ class CurrentlyPlayingFooter extends React.Component {
 
   handleSkip(e) {
     e.preventDefault();
+    e.stopPropagation();
     this.props.setLoading();
     this.props.nextVideo();
   }

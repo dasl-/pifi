@@ -9,6 +9,7 @@ import SearchBar from 'component/search/search_bar';
 import CurrentlyPlayingFooter from 'component/currently_playing/currently_playing_footer';
 import Playlist from 'component/playlist/playlist';
 import PlaylistExpanded from 'component/playlist/playlist_expanded';
+import AddedToPlaylistAlert from 'component/alert/added_to_playlist';
 
 import PlaylistVideo from 'dataobj/playlist_video';
 import SearchResultVideo from 'dataobj/search_result_video';
@@ -131,7 +132,7 @@ class App extends React.Component {
 
                       <div className="d-none d-md-block">
                         <div className="row p-0 m-0">
-                          <div className="col-7 col-lg-8 p-0 m-0">
+                          <div className="col-7 col-lg-8 p-0 m-0 bg-light">
                             <Search
                               loading={this.state.search_loading}
                               search_term={this.state.search_term}
@@ -183,6 +184,15 @@ class App extends React.Component {
               }
             </div>
           </CSSTransition>
+
+
+          {this.state.last_queued_videos.map(function(video, index) {
+            return <AddedToPlaylistAlert
+              key = {index}
+              video = {video}
+              color_mode = {this.state.last_queued_video_color_modes[index]}
+              show = {index === this.state.last_queued_videos.length - 1} />
+          }.bind(this))}
       </div>
     );
   }

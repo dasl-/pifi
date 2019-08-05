@@ -1,0 +1,18 @@
+.play-queue.untriggered .play-queue-trigger {
+  transform: translateY(-200px);
+}
+.play-queue-trigger {
+  position: fixed;
+  top: 20px;
+  right: 5%;
+  transition: transform .5s;
+  z-index: 3;
+  width: 100px;
+  padding-top: 12px;
+  text-align: center;
+  overflow: visible;
+  border-radius: 5px;
+  -webkit-box-shadow: 15px 5px 15px 0px rgba(0,0,0,0.7);
+  -moz-box-shadow: 5px 5px 15px 0px rgba(0,0,0,0.7);
+  box-shadow: 5px 5px 15px 0px rgba(0,0,0,0.7);
+}
