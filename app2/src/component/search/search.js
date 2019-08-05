@@ -11,8 +11,8 @@ class Search extends React.Component {
         <SearchBar
           loading={this.props.search_loading}
           search_term={this.props.search_term}
-          onSearchTermChange={this.props.setSearchTerm}
-          onSubmit={this.props.search}
+          onSearchTermChange={this.props.onSearchTermChange}
+          onSubmit={this.props.onSubmit}
         />
         <SearchResults
           loading={this.props.search_loading}
