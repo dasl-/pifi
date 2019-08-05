@@ -245,7 +245,7 @@ class App extends React.Component {
           });
         }
       })
-      .finally(() => this.getPlaylistQueue(false))
+      .finally(() => this.getPlaylistQueue())
   }
 
   /* playlist callbacks */
@@ -260,7 +260,7 @@ class App extends React.Component {
         .finally(() => {
           // need to do this on a timeout because the server isnt so great about
           // the currently playing video immediately after skipping
-          setTimeout(() => {this.getPlaylistQueue(false)}, 1000)
+          setTimeout(() => {this.getPlaylistQueue()}, 1000)
         })
     }
   }
@@ -269,14 +269,14 @@ class App extends React.Component {
 
     return this.apiClient
       .clearQueue()
-      .finally(() => this.getPlaylistQueue(false))
+      .finally(() => this.getPlaylistQueue())
   }
   removeVideo(video) {
     this.cancelQueuePoll();
 
     return this.apiClient
       .removeVideo(video)
-      .finally(() => this.getPlaylistQueue(false))
+      .finally(() => this.getPlaylistQueue())
   }
   expandFooterPlaylist() {
     this.setState({'playlist_expanded':true});
@@ -287,7 +287,7 @@ class App extends React.Component {
   cancelQueuePoll() {
     clearTimeout(this.queue_timeout);
   }
-  getPlaylistQueue(poll = true) {
+  getPlaylistQueue() {
     if (this.state.playlist_loading) {
       this.cancelQueuePoll();
       this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), 1000);
@@ -333,9 +333,7 @@ class App extends React.Component {
         this.setState({ playlist_loading: false });
       })
       .finally((data) => {
-        if (poll) {
-          this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), 1000);
-        }
+        this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), 1000);
       });
   }
 
