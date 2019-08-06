@@ -8,9 +8,6 @@ import Playlist from 'component/playlist/playlist';
 import PlaylistExpanded from 'component/playlist/playlist_expanded';
 import PlaylistMask from 'component/playlist/playlist_mask';
 
-import PlaylistVideo from 'dataobj/playlist_video';
-import SearchResultVideo from 'dataobj/search_result_video';
-
 import './content.css';
 
 class Content extends React.Component {
