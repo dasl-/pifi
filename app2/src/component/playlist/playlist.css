@@ -1,3 +1,6 @@
+.playlist-expanded {
+  min-height: 100%;
+}
 .playlist-enter {
   opacity: 0;
 }
@@ -15,4 +18,23 @@
   opacity: 1;
   transition: opacity 50ms;
   transition-timing-function: ease-in;
+}
+
+.playlist-mask {
+  visibility: visible;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(9, 9, 9, 0.7);
+  z-index: 1;
+  transition: background-color .5s;
+}
+.playlist-mask.unmask {
+  background: rgba(9, 9, 9, 0);
+}
+.playlist-mask.hidden-mask {
+  background: rgba(9, 9, 9, 0);
+  visibility: hidden;
 }

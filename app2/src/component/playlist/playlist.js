@@ -69,7 +69,7 @@ class Playlist extends React.Component {
               </div>
             </div>
           </div>
-          </CSSTransition>
+        </CSSTransition>
       </section>
     );
   }

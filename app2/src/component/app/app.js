@@ -3,12 +3,9 @@ import { CSSTransition } from 'react-transition-group';
 import api from 'api';
 
 import Header from './header';
-import LoadWithVideo from 'component/util/load_with_video';
-import Search from 'component/search/search';
+import Content from './content';
+
 import SearchBar from 'component/search/search_bar';
-import CurrentlyPlayingFooter from 'component/currently_playing/currently_playing_footer';
-import Playlist from 'component/playlist/playlist';
-import PlaylistExpanded from 'component/playlist/playlist_expanded';
 import AddedToPlaylistAlert from 'component/alert/added_to_playlist';
 
 import PlaylistVideo from 'dataobj/playlist_video';
@@ -30,26 +27,14 @@ class App extends React.Component {
     }
 
     this.state = {
-      /* intro transition */
       show_intro: props.is_new_session,
       show_search: !props.is_new_session,
-
-      /* search */
       search_loading: false,
       search_term: localStorage.getItem("last_search") || "",
       search_results: SearchResultVideo.fromArray(stored_results),
-
-      /* playlist */
-      playlist_expanded: false,
-      playlist_fully_expanded: false,
-      playlist_loading: false,
       playlist_current_video: null,
       playlist_videos: [],
-
-      /* search results */
       color_mode: 'color',
-
-      /* alerts */
       last_queued_videos: [],
       last_queued_video_color_modes: []
     };
@@ -69,9 +54,6 @@ class App extends React.Component {
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
-    this.expandFooterPlaylist = this.expandFooterPlaylist.bind(this);
-    this.contractFooterPlaylist = this.contractFooterPlaylist.bind(this);
-    this.setPlaylistFullyExpanded = this.setPlaylistFullyExpanded.bind(this);
   }
 
   componentDidMount() {
@@ -80,7 +62,7 @@ class App extends React.Component {
 
   render() {
     return (
-      <div className='h-100'>
+      <div className='h-100 bg-primary'>
         {!this.state.playlist_expanded &&
           <Header />
         }
@@ -102,97 +84,33 @@ class App extends React.Component {
           classNames="intro"
           onEnter={() => this.setShowIntro(false)}
           >
-            <div className="container-fluid p-0 app-body h-100">
-              {this.state.show_search &&
-                <div>
-                  {this.state.playlist_fully_expanded &&
-                    <div className="playlist-mask"></div>
-                  }
+          <div className={"container-fluid p-0 app-body h-100 " + ((this.state.show_search) ? '' : 'd-none')}>
+            <Content
+              playlist_loading={this.state.playlist_loading}
+              search_loading={this.state.search_loading}
+              search_term={this.state.search_term}
+              search_results={this.state.search_results}
+              playlist_current_video={this.state.playlist_current_video}
+              playlist_videos={this.state.playlist_videos}
+              color_mode={this.state.color_mode}
 
-                  <div className={this.state.playlist_fully_expanded ? 'lock content' : 'content'}>
-                    <div className='h-100'>
-                      <div className="d-block d-md-none">
-                        <Search
-                          loading={this.state.search_loading}
-                          search_term={this.state.search_term}
-                          search_results={this.state.search_results}
-                          onSearchTermChange={this.setSearchTerm}
-                          onSubmit={this.search}
-                          queueVideo={this.queueVideo}
-                        />
+              setSearchTerm={this.setSearchTerm}
+              search={this.search}
+              queueVideo={this.queueVideo}
+              nextVideo={this.nextVideo}
+              clearQueue={this.clearQueue}
+              removeVideo={this.removeVideo}
+            />
+          </div>
+        </CSSTransition>
 
-                        <LoadWithVideo video={this.state.playlist_current_video}>
-                          <CurrentlyPlayingFooter
-                            onClick={this.expandFooterPlaylist}
-                            nextVideo={this.nextVideo}
-                            clearQueue={this.clearQueue}
-                          />
-                        </LoadWithVideo>
-                      </div>
-
-                      <div className="d-none d-md-block">
-                        <div className="row p-0 m-0">
-                          <div className="col-7 col-lg-8 p-0 m-0 bg-light">
-                            <Search
-                              loading={this.state.search_loading}
-                              search_term={this.state.search_term}
-                              search_results={this.state.search_results}
-                              onSearchTermChange={this.setSearchTerm}
-                              onSubmit={this.search}
-                              queueVideo={this.queueVideo}
-                            />
-                          </div>
-
-                          <Playlist
-                            loading={!this.state.playlist_loading}
-                            current_video={this.state.playlist_current_video}
-                            videos={this.state.playlist_videos}
-                            nextVideo={this.nextVideo}
-                            clearQueue={this.clearQueue}
-                            removeVideo={this.removeVideo}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <CSSTransition
-                    in={this.state.playlist_expanded}
-                    timeout={300}
-                    classNames="playlist"
-                    onEnter={() => this.setPlaylistFullyExpanded(false)}
-                    onEntered={() => this.setPlaylistFullyExpanded(true)}
-                    onExit={() => this.setPlaylistFullyExpanded(false)}
-                    >
-
-                    <div className="playlist-expander w-100 bg-dark">
-                      <div className="d-block d-md-none h-100 w-100 bg-dark">
-                        <PlaylistExpanded
-                          loading={!this.state.playlist_loading}
-                          current_video={this.state.playlist_current_video}
-                          videos={this.state.playlist_videos}
-                          nextVideo={this.nextVideo}
-                          clearQueue={this.clearQueue}
-                          removeVideo={this.removeVideo}
-                          contractFooterPlaylist={this.contractFooterPlaylist}
-                        />
-                      </div>
-                    </div>
-
-                  </CSSTransition>
-                </div>
-              }
-            </div>
-          </CSSTransition>
-
-
-          {this.state.last_queued_videos.map(function(video, index) {
-            return <AddedToPlaylistAlert
-              key = {index}
-              video = {video}
-              color_mode = {this.state.last_queued_video_color_modes[index]}
-              show = {index === this.state.last_queued_videos.length - 1} />
-          }.bind(this))}
+        {this.state.last_queued_videos.map(function(video, index) {
+          return <AddedToPlaylistAlert
+            key = {index}
+            video = {video}
+            color_mode = {this.state.last_queued_video_color_modes[index]}
+            show = {index === this.state.last_queued_videos.length - 1} />
+        }.bind(this))}
       </div>
     );
   }
@@ -204,10 +122,6 @@ class App extends React.Component {
   setShowSearch(val) {
     this.setState({'show_search':val});
   }
-  setPlaylistFullyExpanded(val) {
-    this.setState({'playlist_fully_expanded':val});
-  }
-
 
   /* search callbacks */
   setSearchTerm(val) {
@@ -278,12 +192,7 @@ class App extends React.Component {
       .removeVideo(video)
       .finally(() => this.getPlaylistQueue())
   }
-  expandFooterPlaylist() {
-    this.setState({'playlist_expanded':true});
-  }
-  contractFooterPlaylist() {
-    this.setState({'playlist_expanded':false});
-  }
+
   cancelQueuePoll() {
     clearTimeout(this.queue_timeout);
   }
