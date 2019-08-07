@@ -3,16 +3,19 @@ import utils from 'utils';
 class SearchResultVideo {
   fromProps(props, index) {
     return {
-      index: index,
+      // Shared Data
       video_id: props.id,
-      thumbnail_img_src: props.snippet.thumbnails.medium.url,
+      thumbnail: props.snippet.thumbnails.medium.url,
       video_url: 'https://www.youtube.com/watch?v=' + props.id,
-      description: props.snippet.description.split(' ').slice(0,30).join(' ') + "...",
       title: props.snippet.title,
+      duration: utils.convertISO8601ToSeconds(props.contentDetails.duration),
+
+      // Unique Data
+      index: index,
+      description: props.snippet.description.split(' ').slice(0,30).join(' ') + "...",
       channel: props.snippet.channelTitle,
       published: utils.timeDifference(Date.now(), Date.parse(props.snippet.publishedAt)),
       view_count: utils.abbreviateNumber(props.statistics.viewCount),
-      duration: utils.convertISO8601ToSeconds(props.contentDetails.duration)
     };
   }
 

@@ -12,20 +12,7 @@
   text-align: center;
   overflow: visible;
   border-radius: 5px;
-  -webkit-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
-  -moz-box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
-  box-shadow: 10px 10px 36px 0px rgba(0,0,0,0.75);
-}
-.img-container {
-  background-color: #000;
-}
-.queue-thumbnail {
-  max-width: 80%;
-  margin: auto;
-}
-.play-queue .glyphicon {
-  font-size: 18px;
-}
-.play-queue p {
-  margin-top:3px;
+  -webkit-box-shadow: 15px 5px 15px 0px rgba(0,0,0,0.7);
+  -moz-box-shadow: 5px 5px 15px 0px rgba(0,0,0,0.7);
+  box-shadow: 5px 5px 15px 0px rgba(0,0,0,0.7);
 }

@@ -7,33 +7,34 @@ class SuccessAlert extends React.Component {
 
     this.state = {
       visible: false,
-      show: props.show,
-      color_mode: ""
+      show: props.show
     };
+  }
+
+  componentDidMount() {
+    if (this.state.show) {
+      setTimeout(this.trigger.bind(this), 10);
+    }
   }
 
   render() {
     var color_class = ' color-mode-' + this.props.color_mode;
     var triggered_class = (!this.state.visible) ? ' untriggered' : '';
 
-    if (this.state.show) {
-      setTimeout(this.trigger.bind(this), 10);
-    }
-
     return (
       <div className={'play-queue ' + color_class + triggered_class}>
         <div className='play-queue-trigger bg-success'>
           <div className='queue-thumbnail'>
             {(this.props.video) && (
-              <div className="img-container">
+              <div className="img-container px-2">
                 <img
-                  src={this.props.video.thumbnail_img_src}
-                  className='img-responsive'
+                  src={this.props.video.thumbnail}
+                  className='img-responsive w-100 bg-dark'
                   alt={this.props.video.title}/>
               </div>
             )}
           </div>
-          <p>Added!</p>
+          <div className="p-2 text-light">Added!</div>
        </div>
      </div>
     );

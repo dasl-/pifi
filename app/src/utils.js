@@ -1,3 +1,26 @@
+function setCookie(cname, cvalue, exhours) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exhours*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) === ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) === 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
 export default {
   abbreviateNumber(value) {
     var newValue = value;
@@ -39,7 +62,7 @@ export default {
   },
 
   convertISO8601ToSeconds(input) {
-    var reptms = /^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/;
+    var reptms = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
     var days = 0, hours = 0, minutes = 0, seconds = 0, totalseconds;
 
     if (reptms.test(input)) {
@@ -66,7 +89,7 @@ export default {
 
   areArraysEqual(a, b) {
     if (a === b) return true;
-    if (a == null || b == null) return false;
+    if (a === null || b === null) return false;
     if (a.length !== b.length) return false;
 
     a.sort();
@@ -76,5 +99,18 @@ export default {
       if (a[i] !== b[i]) return false;
     }
     return true;
-  }
+  },
+
+  hasExistingSession() {
+    var existing_session_id = getCookie("sessionid");
+    var last_search = (localStorage.getItem("last_search") || "");
+
+    // create or extend the session
+    setCookie("sessionid", Date.now(), 12)
+
+    return (existing_session_id !== '' && last_search !== '');
+  },
+
+  setCookie,
+  getCookie
 }

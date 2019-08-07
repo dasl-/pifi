@@ -53,7 +53,7 @@ class APIClient {
     return this.perform('post', '/queue', {
         url: video.video_url,
         color_mode: color_mode,
-        thumbnail: video.thumbnail_img_src,
+        thumbnail: video.thumbnail,
         title: video.title,
         duration: video.duration
     });

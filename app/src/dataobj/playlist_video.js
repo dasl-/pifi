@@ -1,15 +1,18 @@
 class PlaylistVideo {
   fromProps(props) {
     return {
+      // Shared Data
+      video_id: props.playlist_video_id,
+      thumbnail: props.thumbnail,
       playlist_video_id: props.playlist_video_id,
+      video_url: props.url,
+      title: props.title,
+      duration: props.duration,
+
+      // Unique Data
       create_date: props.create_date,
       color_mode: props.color_mode,
-      status: props.status,
-      thumbnail: props.thumbnail,
-      title: props.title,
-      url: props.url,
-      is_favorite: props.is_favorite,
-      duration: props.duration
+      status: props.status
     };
   }
 

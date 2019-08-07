@@ -1,21 +1,17 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-
+import React from 'react'
+import { render } from 'react-dom'
 import App from 'component/app/app';
-import InvalidBuild from 'component/app/invalid_build';
 
-import 'css/bootstrap.min.css';
-import 'css/bootstrap.darkly2.css';
+import utils from 'utils';
+
 import 'css/main.css';
+// import 'css/creative.min.css';
+import 'css/bootstrap.min.css';
+import 'css/custom-theme.css';
 
-if (!process.env.REACT_APP_API_BASE_URL) {
-  ReactDOM.render(
-    <InvalidBuild />,
-    document.getElementById('root')
-  );
-} else {
-  ReactDOM.render(
-    <App />,
-    document.getElementById('root')
-  );
-}
+render(
+  <App
+    is_new_session={!utils.hasExistingSession()}
+  />,
+  document.getElementById('root')
+)

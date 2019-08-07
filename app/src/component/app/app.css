@@ -1,24 +1,32 @@
-.container {
+.duration {
+  right: 0;
+  bottom: 0;
+}
+
+.content {
   height: 100%;
-  position: fixed;
-  width: 100% !important;
-  padding-bottom: 20px;
-}
-.locked {
-  overflow: hidden;
-}
-.locked .blur-on-lock {
-  opacity:.3;
-  position: relative;
-}
-.unlocked {
-  overflow: scroll;
+  max-width: 1200px;
+  position: absolute;
+  top: 0;
+  overflow: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
-.background-mask {
-  z-index:10;
-  position: absolute;
-  width: 200%;
-  height: 200%;
-  margin: -30px;
+.content.lock {
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .content.lock {
+    overflow: auto;
+  }
+}
+
+
+.intro-enter {
+  opacity: 0;
+}
+.intro-enter-active {
+  opacity: 1;
+  transition: opacity 1000ms;
+  transition-timing-function: ease-in;
 }
