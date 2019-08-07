@@ -62,7 +62,7 @@ export default {
   },
 
   convertISO8601ToSeconds(input) {
-    var reptms = /^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/;
+    var reptms = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
     var days = 0, hours = 0, minutes = 0, seconds = 0, totalseconds;
 
     if (reptms.test(input)) {
