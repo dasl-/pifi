@@ -10,7 +10,7 @@ class PlaylistVideo extends React.Component {
   }
 
   render() {
-    var row_class = 'container py-2 px-0 mt-2 border-top border-secondary '
+    var row_class = 'container py-2 px-0 mt-2 '
       + (this.props.loading ? 'playlist-video-loading' : 'playlist-video');
 
     return (
@@ -29,8 +29,8 @@ class PlaylistVideo extends React.Component {
             <div className='small badge badge-secondary'>{this.props.video.duration}</div>
           </div>
           <div className='col-1 p-0 small-vertical-center'>
-            <a href='#' className='badge badge-light' onClick={this.onRemoveVideo}>
-              <span className='glyphicon glyphicon-remove' aria-hidden='true' />
+            <a href='#' onClick={this.onRemoveVideo}>
+              <span className='glyphicon glyphicon-remove bg-light-text' aria-hidden='true' />
             </a>
           </div>
         </div>

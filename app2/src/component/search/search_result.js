@@ -9,11 +9,11 @@ class SearchResult extends React.Component {
 
   render() {
     var video = this.props.video;
-    var row_class = 'search-result row px-0 m-3 ' + (this.props.loading ? 'loading' : '')
+    var row_class = 'search-result row px-0 m-0 ' + (this.props.loading ? 'loading' : '')
 
     return (
       <div key={video.video_id} className={row_class} onClick={(e) => this.onQueueVideo(e, video)}>
-        <div className="col-sm-4 col-md-12 col-lg-4 small-vertical-center text-center m-0 p-3 p-sm-0">
+        <div className="col-7 col-sm-5 col-md-4 small-vertical-center text-center m-0 p-2">
           <div className="position-relative w-100 bg-dark">
             <img
               src={video.thumbnail}
@@ -27,12 +27,12 @@ class SearchResult extends React.Component {
           </div>
         </div>
 
-        <div className="col-sm-8 col-md-12 col-lg-8 py-md-2">
-          <h6 className="title">{video.title}</h6>
-          <div className="small pb-1">
+        <div className="col-5 col-sm-7 col-md-8 p-2 m-0">
+          <h6 className="video-title">{video.title}</h6>
+          <div className="small pb-1 video-details">
           {video.channel} | {video.view_count} views | {video.published} ago
           </div>
-          <div className="small">{video.description}</div>
+          <div className="small video-description d-none d-sm-block">{video.description}</div>
         </div>
       </div>
     );

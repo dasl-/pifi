@@ -11,7 +11,7 @@ class SearchBar extends React.Component {
 
   render() {
     return (
-      <form onSubmit={this.onSubmit} action='/' className='text-center container'>
+      <form onSubmit={this.onSubmit} action='/' className='text-center px-2'>
         <div className='input-group input-group-lg px-3'>
 
           <input disabled = {this.props.loading ? 'disabled' : ''}
@@ -21,8 +21,7 @@ class SearchBar extends React.Component {
 
           <div className='input-group-append'>
             <span className='input-group-text' onClick={this.onSubmit}>
-              <span className='d-none d-sm-inline-block mr-1'>Search </span>
-              <span className='glyphicon glyphicon-search'></span>
+              <span className='glyphicon glyphicon-search bg-dark-text'></span>
             </span>
           </div>
         </div>

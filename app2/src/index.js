@@ -5,7 +5,9 @@ import App from 'component/app/app';
 import utils from 'utils';
 
 import 'css/main.css';
-import 'css/creative.min.css';
+// import 'css/creative.min.css';
+import 'css/bootstrap.min.css';
+import 'css/custom-theme.css';
 
 render(
   <App

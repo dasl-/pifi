@@ -4,3 +4,6 @@
 .search-result {
   cursor: pointer;
 }
+.search-results {
+  padding-bottom:50px;
+}

@@ -19,6 +19,7 @@
 .playlist-enter-done {
   overflow-y: scroll;
   max-height: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 .playlist-exit {
   overflow-y: hidden;

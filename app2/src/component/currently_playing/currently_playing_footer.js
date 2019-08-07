@@ -11,7 +11,7 @@ class CurrentlyPlayingFooter extends React.Component {
     var row_class = 'row ' + (this.props.loading ? 'loading' : '')
 
     return (
-      <footer className='navbar bg-dark text-light fixed-bottom p-0 m-0' onClick={this.props.onClick}>
+      <footer className='playlist-footer navbar bg-dark text-light fixed-bottom p-0 m-0' onClick={this.props.onClick}>
         <div className='container p-2 now-playing-footer'>
           <div className={row_class}>
             <div className='col-4 col-sm-3 col-md-2 small-vertical-center bg-dark position-relative'>
@@ -34,7 +34,7 @@ class CurrentlyPlayingFooter extends React.Component {
             <div className='col-1 pl-0 small-vertical-center'>
               {(this.props.video) &&
                 <a href='#' className='text-light float-right' onClick={this.handleSkip}>
-                  <span className='glyphicon glyphicon-forward' aria-hidden='true' />
+                  <span className='glyphicon glyphicon-forward bg-dark-text' aria-hidden='true' />
                 </a>
               }
             </div>

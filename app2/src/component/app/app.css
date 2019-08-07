@@ -1,7 +1,3 @@
-.app-body {
-  max-width: 1200px;
-  margin: auto;
-}
 .duration {
   right: 0;
   bottom: 0;
@@ -9,12 +5,12 @@
 
 .content {
   height: 100%;
-  width: 100%;
+  max-width: 1200px;
   position: absolute;
   top: 0;
-  left: 0;
   overflow: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .content.lock {
   overflow: hidden;

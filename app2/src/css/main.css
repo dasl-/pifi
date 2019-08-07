@@ -1,3 +1,7 @@
+.app-body {
+  max-width: 1200px;
+  margin: auto;
+}
 .vertical-center {
   min-height: 100%;
   min-height: 100vh;
@@ -105,6 +109,16 @@
 
   src: url('../fonts/glyphicons-halflings-regular.eot');
   src: url('../fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('../fonts/glyphicons-halflings-regular.woff2') format('woff2'), url('../fonts/glyphicons-halflings-regular.woff') format('woff'), url('../fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('../fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+@font-face {
+  font-family: 'Neon 80s';
+
+  src: url('../fonts/Neon80S-8jL2.ttf') format('truetype');
+}
+.neon80s {
+  font-family: 'Neon 80s';
+  font-style: normal;
+  font-weight: normal;
 }
 .glyphicon {
   position: relative;

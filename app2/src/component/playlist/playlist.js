@@ -5,7 +5,7 @@ import { CSSTransition } from 'react-transition-group';
 import './playlist.css';
 
 import LoadWithVideo from 'component/util/load_with_video';
-import CurrentlyPlayingRight from 'component/currently_playing/currently_playing_right';
+import CurrentlyPlaying from 'component/currently_playing/currently_playing_video';
 import PlaylistVideo from './playlist_video';
 
 class Playlist extends React.Component {
@@ -32,7 +32,7 @@ class Playlist extends React.Component {
 
   render() {
     return (
-      <section className="col-5 col-lg-4 p-0 m-0 bg-dark text-light">
+      <section className="col-5 col-lg-4 p-0 m-0 bg-light text-light">
 
         {this.state.initial_fadein &&
           <section className="page-section h-100"></section>
@@ -47,14 +47,23 @@ class Playlist extends React.Component {
 
           <div className="playlist">
             <div className="p-2 px-4">
-              <LoadWithVideo video={this.props.current_video}>
-                <CurrentlyPlayingRight
-                  nextVideo={this.props.nextVideo}
-                  clearQueue={this.props.clearQueue}
-                />
-              </LoadWithVideo>
+              <div className="pt-3">
+                <LoadWithVideo video={this.props.current_video}>
+                  <CurrentlyPlaying
+                    nextVideo={this.props.nextVideo}
+                    clearQueue={this.props.clearQueue}
+                  />
+                </LoadWithVideo>
+              </div>
 
               <div className="play-queue">
+                { (this.props.videos.length == 0) &&
+                  <div className='container pt-2 px-0 mt-2 playlist-video'>
+                    <div className="py-3 text-center">
+                      &lt;Nothing&gt;
+                    </div>
+                  </div>
+                }
                 {
                   this.props.videos.map((video, index) => {
                     return (

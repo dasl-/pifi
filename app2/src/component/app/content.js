@@ -1,6 +1,7 @@
 import React from 'react';
 import { CSSTransition } from 'react-transition-group';
 
+import Header from './header';
 import LoadWithVideo from 'component/util/load_with_video';
 import Search from 'component/search/search';
 import CurrentlyPlayingFooter from 'component/currently_playing/currently_playing_footer';
@@ -39,6 +40,9 @@ class Content extends React.Component {
         />
 
         <div className={this.state.playlist_fully_expanded ? 'lock content' : 'content'}>
+          {!this.state.playlist_expanded &&
+            <Header />
+          }
           <div className='h-100'>
             <div className="d-block d-md-none h-100">
               {/* Phone View */}
@@ -63,7 +67,7 @@ class Content extends React.Component {
             <div className="d-none d-md-block h-100">
               {/* Desktop View */}
               <div className="row p-0 m-0 h-100">
-                <div className="col-7 col-lg-8 p-0 m-0 bg-light">
+                <div className="col-7 col-lg-8 p-0 m-0 bg-light pl-3">
                   <Search
                     loading={this.props.search_loading}
                     search_term={this.props.search_term}
@@ -97,8 +101,8 @@ class Content extends React.Component {
           onExited={() => this.setPlaylistFullyContracted(true)}
           >
 
-          <div className="playlist-expander w-100 bg-dark">
-            <div className="d-block d-md-none h-100 w-100 bg-dark">
+          <div className="playlist-expander w-100 bg-primary">
+            <div className="d-block d-md-none h-100 w-100 bg-primary">
               <PlaylistExpanded
                 current_video={this.props.playlist_current_video}
                 videos={this.props.playlist_videos}

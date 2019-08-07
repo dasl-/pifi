@@ -62,20 +62,20 @@ class App extends React.Component {
 
   render() {
     return (
-      <div className='h-100 bg-primary'>
-        {!this.state.playlist_expanded &&
-          <Header />
-        }
-
+      <div className='h-100 bg-primary bg-background'>
         {this.state.show_intro &&
-          <section className="bg-primary page-section vertical-center">
-            <SearchBar
-              loading={this.state.search_loading}
-              search_term={this.state.search_term}
-              onSearchTermChange={this.setSearchTerm}
-              onSubmit={this.search}
-            />
-          </section>
+          <div>
+            <section className="bg-primary page-section vertical-center">
+              <div className="splash">
+                  <SearchBar
+                    loading={this.state.search_loading}
+                    search_term={this.state.search_term}
+                    onSearchTermChange={this.setSearchTerm}
+                    onSubmit={this.search}
+                  />
+              </div>
+            </section>
+          </div>
         }
 
         <CSSTransition
