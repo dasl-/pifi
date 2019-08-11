@@ -40,9 +40,7 @@ class Content extends React.Component {
         />
 
         <div className={this.state.playlist_fully_expanded ? 'lock content' : 'content'}>
-          {!this.state.playlist_expanded &&
-            <Header />
-          }
+          <Header />
           <div className='h-100'>
             <div className="d-block d-md-none h-100">
               {/* Phone View */}

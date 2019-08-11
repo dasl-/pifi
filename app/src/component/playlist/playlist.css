@@ -28,7 +28,7 @@
   top: 0;
   left: 0;
   background: rgba(9, 9, 9, 0.7);
-  z-index: 1;
+  z-index: 20;
   transition: background-color .5s;
 }
 .playlist-mask.unmask {
