@@ -2,7 +2,7 @@ import axios from 'axios';
 import gapi from 'gapi-client';
 
 const client = axios.create({
- baseURL: process.env.REACT_APP_API_BASE_URL,
+ baseURL: "//" + window.location.hostname + "/api",
  json: true
 });
 
