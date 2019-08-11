@@ -2,7 +2,6 @@ import React from 'react';
 import { CSSTransition } from 'react-transition-group';
 import api from 'api';
 
-import Header from './header';
 import Content from './content';
 
 import SearchBar from 'component/search/search_bar';

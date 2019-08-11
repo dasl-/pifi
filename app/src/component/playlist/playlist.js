@@ -57,7 +57,7 @@ class Playlist extends React.Component {
               </div>
 
               <div className="play-queue">
-                { (this.props.videos.length == 0) &&
+                { (this.props.videos.length === 0) &&
                   <div className='container pt-2 px-0 mt-2 playlist-video'>
                     <div className="py-3 text-center">
                       &lt;Nothing&gt;
