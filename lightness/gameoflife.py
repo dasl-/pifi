@@ -7,9 +7,6 @@ from lightness.datastructure.appendonlycircularbuffer import AppendOnlyCircularB
 
 class GameOfLife:
 
-    __GAME_OVER_DETECTION_LOOKBACK = 10
-    __TICK_DURATION = 0.500 # seconds
-
     # GameOfLifeSettings
     __settings = None
 
@@ -22,18 +19,33 @@ class GameOfLife:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
         self.__video_player = VideoPlayer(self.__settings)
+        self.__logger.info("Doing init with GameOfLifeSettings: {}".format(vars(self.__settings)))
 
-    def play(self):
-        self.__reset()
-        while True:
-            time.sleep(self.__TICK_DURATION)
-            self.tick()
-            if self.__is_game_over():
-                break;
+    def play(self, should_loop = False):
+        if should_loop:
+            while True:
+                self.tick(should_loop = should_loop)
+        else:
+            while True:
+                if not self.tick():
+                    break
 
-    def play_loop(self):
-        while True:
-            self.play()
+    # return False when the game is over, True otherwise.
+    def tick(self, should_loop = False, force_reset = False):
+        if self.__board is None or force_reset:
+            # start the game
+            self.__reset()
+            is_game_in_progress = True
+        elif self.__is_game_over():
+            if should_loop:
+                self.__reset()
+            is_game_in_progress = False
+        else:
+            self.__tick_internal()
+            is_game_in_progress = True
+
+        time.sleep(self.__settings.tick_sleep)
+        return is_game_in_progress
 
     def __is_game_over(self):
         if not self.__last_num_live.is_full():
@@ -52,7 +64,7 @@ class GameOfLife:
 
     def __reset(self):
         self.__logger.info("Starting new game.")
-        self.__last_num_live = AppendOnlyCircularBuffer(self.__GAME_OVER_DETECTION_LOOKBACK)
+        self.__last_num_live = AppendOnlyCircularBuffer(self.__settings.game_over_detection_lookback)
         self.__seed()
 
     def __seed(self):
@@ -76,7 +88,8 @@ class GameOfLife:
                     frame[y, x] = rgb
         return frame
 
-    def tick(self):
+    # Takes ~127-155ms on a 28x18 LED array
+    def __tick_internal(self):
         new_board = np.zeros([self.__settings.display_height, self.__settings.display_width], np.uint8)
         num_live = 0
 

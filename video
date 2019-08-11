@@ -4,9 +4,6 @@ from lightness.settings.videosettings import VideoSettings
 from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
 
-import os
-import time
-
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert a video.')
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
