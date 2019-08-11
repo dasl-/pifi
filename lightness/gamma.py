@@ -1,5 +1,5 @@
 import numpy as np
-from lightness.videosettings import VideoSettings
+from lightness.settings.ledsettings import LedSettings
 
 class Gamma:
 
@@ -19,10 +19,10 @@ class Gamma:
     __GREEN_MAX_BRIGHTNESS = .45
     __BLUE_MAX_BRIGHTNESS = .375
 
-    __video_settings = None
+    __led_settings = None
 
-    def __init__(self, video_settings):
-        self.__video_settings = video_settings
+    def __init__(self, led_settings):
+        self.__led_settings = led_settings
         self.__generateGammaScales()
 
     # powers auto dynamic gamma curve using the average brightness of the given frame
@@ -69,7 +69,7 @@ class Gamma:
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color
-        if self.__video_settings.color_mode == VideoSettings.COLOR_MODE_BW:
+        if self.__led_settings.color_mode == LedSettings.COLOR_MODE_BW:
             for g in range(0, ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10)):
                 for i in range(0, 256):
                     if min(self.scale_red_curves[g][i], self.scale_green_curves[g][i], self.scale_blue_curves[g][i]) == 0:

@@ -7,7 +7,7 @@ import json
 import shlex
 from lightness.playlist import Playlist
 from lightness.logger import Logger
-from lightness.videosettings import VideoSettings
+from lightness.settings.videosettings import VideoSettings
 from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
 from lightness.config import Config

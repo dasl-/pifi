@@ -6,8 +6,8 @@ import time
 import sys
 import re
 from lightness.logger import Logger
-from lightness.readoncecircularbuffer import ReadOnceCircularBuffer
-from lightness.videosettings import VideoSettings
+from lightness.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
+from lightness.settings.videosettings import VideoSettings
 from lightness.directoryutils import DirectoryUtils
 from lightness.playlist import Playlist
 import youtube_dl
@@ -80,7 +80,7 @@ class VideoProcessor:
             self.__is_video_already_downloaded = True
 
         self.__process_and_play_video(video_player)
-        video_player.clearScreen()
+        video_player.clear_screen()
         self.__logger.info("Finished process_and_play")
 
     def __show_loading_screen(self, video_player):
@@ -88,7 +88,7 @@ class VideoProcessor:
         if self.__video_settings.is_color_mode_rgb():
             filename = 'loading_screen_color.npy'
         loading_screen_path = DirectoryUtils().root_dir + '/' + filename
-        video_player.playFrame(np.load(loading_screen_path))
+        video_player.play_frame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
@@ -257,7 +257,7 @@ class VideoProcessor:
                 ("Video playing unable to keep up in real-time. Skipped playing {} frame(s)."
                     .format(num_skipped_frames))
             )
-        video_player.playFrame(avg_color_frames[cur_frame])
+        video_player.play_frame(avg_color_frames[cur_frame])
         return [False, cur_frame, vid_processing_lag_counter]
 
     def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name):
