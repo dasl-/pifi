@@ -17,7 +17,7 @@ class LedSettings:
     DEFAULT_BRIGHTNESS = 3
 
     # One of the COLOR_MODE_* constants
-    color_mode = COLOR_MODE_COLOR
+    color_mode = None
 
     # Int - Number of pixels / units
     display_width = None

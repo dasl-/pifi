@@ -1,11 +1,15 @@
 import numpy as np
 import random
 import time
+import math
 from lightness.logger import Logger
 from lightness.videoplayer import VideoPlayer
 from lightness.datastructure.appendonlycircularbuffer import AppendOnlyCircularBuffer
+from lightness.settings.gameoflifesettings import GameOfLifeSettings
 
 class GameOfLife:
+
+    __COLOR_CHANGE_FREQ = 0.05
 
     # GameOfLifeSettings
     __settings = None
@@ -14,6 +18,12 @@ class GameOfLife:
 
     # AppendOnlyCircularBuffer
     __last_num_live = None
+
+    __num_ticks = None
+
+    __color_gradient_offset = None
+
+    __game_color_mode = None
 
     def __init__(self, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -44,6 +54,7 @@ class GameOfLife:
             self.__tick_internal()
             is_game_in_progress = True
 
+        self.__num_ticks += 1
         time.sleep(self.__settings.tick_sleep)
         return is_game_in_progress
 
@@ -65,6 +76,12 @@ class GameOfLife:
     def __reset(self):
         self.__logger.info("Starting new game.")
         self.__last_num_live = AppendOnlyCircularBuffer(self.__settings.game_over_detection_lookback)
+        self.__num_ticks = 0
+        self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
+        if self.__settings.game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RANDOM:
+            self.__game_color_mode = random.choice(GameOfLifeSettings.GAME_COLOR_MODES)
+        else:
+            self.__game_color_mode = self.__settings.game_color_mode
         self.__seed()
 
     def __seed(self):
@@ -81,12 +98,42 @@ class GameOfLife:
 
     def __board_to_frame(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
-        rgb = [255, 255, 255]
+        rgb = self.__get_rgb()
         for x in range(self.__settings.display_width):
             for y in range(self.__settings.display_height):
                 if self.__board[y,x] == 1:
                     frame[y, x] = rgb
         return frame
+
+    def __get_rgb(self):
+        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RED:
+            return [255, 0, 0]
+        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_GREEN:
+            return [0, 255, 0]
+        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_BLUE:
+            return [0, 0, 255]
+        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_BW:
+            return [255, 255, 255]
+        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RAINBOW:
+            return self.__make_color_gradient()
+
+    # See: https://krazydad.com/tutorials/makecolors.php
+    def __make_color_gradient(
+        self, freq1 = None, freq2 = None, freq3 = None,
+        phase1 = 0, phase2 = 2 * math.pi / 3, phase3 = 4 * math.pi / 3,
+        center = 127.5, amplitude = 127.5
+    ):
+        if freq1 == None:
+            freq1 = self.__COLOR_CHANGE_FREQ
+        if freq2 == None:
+            freq2 = self.__COLOR_CHANGE_FREQ
+        if freq3 == None:
+            freq3 = self.__COLOR_CHANGE_FREQ
+
+        r = math.sin(self.__num_ticks * freq1 + phase1 + self.__color_gradient_offset) * amplitude + center
+        g = math.sin(self.__num_ticks * freq2 + phase2 + self.__color_gradient_offset) * amplitude + center
+        b = math.sin(self.__num_ticks * freq3 + phase3 + self.__color_gradient_offset) * amplitude + center
+        return [r, g, b]
 
     # Takes ~127-155ms on a 28x18 LED array
     def __tick_internal(self):

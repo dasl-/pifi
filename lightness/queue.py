@@ -21,17 +21,18 @@ class Queue:
     __playlist = None
     __config = None
     __logger = None
+    __should_play_game_of_life = None
 
     def __init__(self):
         self.__playlist = Playlist()
         self.__config = Config()
+        self.__should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__clear_screen()
         self.__playlist.clean_up_state()
 
     def run(self):
-        should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
-        if should_play_game_of_life:
+        if self.__should_play_game_of_life:
             game_of_life = GameOfLife(self.__get_game_of_life_settings())
             has_reset_game_since_last_video = True
 
@@ -39,9 +40,9 @@ class Queue:
             next_video = self.__playlist.get_next_video()
             if next_video:
                 self.__play_video(next_video)
-                if should_play_game_of_life:
+                if self.__should_play_game_of_life:
                     has_reset_game_since_last_video = False
-            elif should_play_game_of_life:
+            elif self.__should_play_game_of_life:
                 if has_reset_game_since_last_video:
                     force_reset = False
                 else:
@@ -170,9 +171,14 @@ class Queue:
         else:
             game_over_detection_lookback = GameOfLifeSettings.DEFAULT_GAME_OVER_DETECTION_LOOKBACK
 
+        if 'game_color_mode' in config:
+            game_color_mode = config['game_color_mode']
+        else:
+            game_color_mode = GameOfLifeSettings.GAME_COLOR_MODE_RANDOM
+
         return GameOfLifeSettings(
-            color_mode = GameOfLifeSettings.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
+            display_width = display_width, display_height = display_height,
             brightness = brightness, flip_x = flip_x, flip_y = flip_y, log_level = log_level,
             seed_liveness_probability = seed_liveness_probability, tick_sleep = tick_sleep,
-            game_over_detection_lookback = game_over_detection_lookback,
+            game_over_detection_lookback = game_over_detection_lookback, game_color_mode = game_color_mode,
         )
