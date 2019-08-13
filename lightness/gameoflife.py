@@ -2,28 +2,29 @@ import numpy as np
 import random
 import time
 import math
+import hashlib
 from lightness.logger import Logger
 from lightness.videoplayer import VideoPlayer
-from lightness.datastructure.appendonlycircularbuffer import AppendOnlyCircularBuffer
 from lightness.settings.gameoflifesettings import GameOfLifeSettings
+from lightness.datastructure.limitedsizedict import LimitedSizeDict
 
 class GameOfLife:
 
     __COLOR_CHANGE_FREQ = 0.05
+    __MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
 
     # GameOfLifeSettings
     __settings = None
 
     __board = None
 
-    # AppendOnlyCircularBuffer
-    __last_num_live = None
-
     __num_ticks = None
 
     __color_gradient_offset = None
 
     __game_color_mode = None
+
+    __prev_board_state_counts = None
 
     def __init__(self, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -46,42 +47,51 @@ class GameOfLife:
             # start the game
             self.__reset()
             is_game_in_progress = True
-        elif self.__is_game_over():
-            if should_loop:
-                self.__reset()
-            is_game_in_progress = False
         else:
             self.__tick_internal()
             is_game_in_progress = True
 
-        self.__num_ticks += 1
+        self.__do_tick_bookkeeping()
+
+        if self.__is_game_over():
+            if should_loop:
+                self.__reset()
+                self.__do_tick_bookkeeping()
+                is_game_in_progress = True
+            else:
+                is_game_in_progress = False
+
         time.sleep(self.__settings.tick_sleep)
+
         return is_game_in_progress
 
+    def __do_tick_bookkeeping(self):
+        self.__num_ticks += 1
+        board_hash = self.__get_board_hash()
+        if board_hash in self.__prev_board_state_counts:
+            self.__prev_board_state_counts[board_hash] += 1
+        else:
+            self.__prev_board_state_counts[board_hash] = 1
+
+    def __get_board_hash(self):
+        return hashlib.md5(self.__board).hexdigest()
+
     def __is_game_over(self):
-        if not self.__last_num_live.is_full():
-            return False
-
-        last_num_live = None
-        for i in range(0, len(self.__last_num_live)):
-            if last_num_live == None:
-                last_num_live = self.__last_num_live[i]
-            else:
-                if last_num_live != self.__last_num_live[i]:
-                    return False
-
-        self.__logger.info("Game over detected.")
-        return True
+        if self.__prev_board_state_counts[self.__get_board_hash()] > self.__MAX_STATE_REPETITIONS_FOR_GAME_OVER:
+            self.__logger.info(("Game over detected. Current board state has repeated at least {} times."
+                    .format(self.__MAX_STATE_REPETITIONS_FOR_GAME_OVER)))
+            return True
+        return False
 
     def __reset(self):
         self.__logger.info("Starting new game.")
-        self.__last_num_live = AppendOnlyCircularBuffer(self.__settings.game_over_detection_lookback)
         self.__num_ticks = 0
         self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
         if self.__settings.game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RANDOM:
             self.__game_color_mode = random.choice(GameOfLifeSettings.GAME_COLOR_MODES)
         else:
             self.__game_color_mode = self.__settings.game_color_mode
+        self.__prev_board_state_counts = LimitedSizeDict(capacity = self.__settings.game_over_detection_lookback)
         self.__seed()
 
     def __seed(self):
@@ -138,7 +148,6 @@ class GameOfLife:
     # Takes ~127-155ms on a 28x18 LED array
     def __tick_internal(self):
         new_board = np.zeros([self.__settings.display_height, self.__settings.display_width], np.uint8)
-        num_live = 0
 
         # no method calls in the main loop (performance reasons)
         for x in range(self.__settings.display_width):
@@ -177,7 +186,6 @@ class GameOfLife:
                 # 2. Any live cell with two or three live neighbours lives on to the next generation.
                 elif self.__board[y, x] == 1 and (num_live_neighbors == 2 or num_live_neighbors == 3):
                     new_board[y, x] = 1
-                    num_live += 1
 
                 # 3. Any live cell with more than three live neighbours dies, as if by overpopulation.
                 elif self.__board[y, x] == 1 and num_live_neighbors > 3:
@@ -186,8 +194,6 @@ class GameOfLife:
                 # 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
                 elif self.__board[y, x] == 0 and num_live_neighbors == 3:
                     new_board[y, x] = 1
-                    num_live += 1
 
-        self.__last_num_live.append(num_live)
         self.__board = new_board
         self.__show_board()
