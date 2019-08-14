@@ -29,7 +29,7 @@ class App extends React.Component {
       show_intro: props.is_new_session,
       show_search: !props.is_new_session,
       search_loading: false,
-      search_term: localStorage.getItem("last_search") || "",
+      search_term: props.is_new_session ? '' : (localStorage.getItem("last_search") || ""),
       search_results: SearchResultVideo.fromArray(stored_results),
       playlist_current_video: null,
       playlist_videos: [],
