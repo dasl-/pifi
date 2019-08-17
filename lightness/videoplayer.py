@@ -57,6 +57,7 @@ class VideoPlayer:
 
     def fade_to_frame(self, avg_color_frame):
         if (self.__current_frame is None):
+            self.__current_frame = avg_color_frame
             return self.play_frame(avg_color_frame)
 
         frame_steps = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.int8)
@@ -74,9 +75,10 @@ class VideoPlayer:
                         new_frame[y, x, rgb] = self.__current_frame[y, x, rgb] + (frame_steps[y, x, rgb] * current_step)
 
             # no need to sleep since the above calculation takes some small amount of time
-            self.__set_frame_pixels(new_frame, False)
+            self.__set_frame_pixels(new_frame)
             self.__pixels.show()
 
+        self.__current_frame = avg_color_frame
         self.__set_frame_pixels(avg_color_frame)
         self.__pixels.show()
 
@@ -101,10 +103,7 @@ class VideoPlayer:
     # In the nested for loop, function calls are to be avoided. Inlining them is more performant.
     #
     # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
-    def __set_frame_pixels(self, avg_color_frame, store_current = True):
-        if (store_current):
-            self.__current_frame = avg_color_frame
-
+    def __set_frame_pixels(self, avg_color_frame):
         if not (self.__led_settings.is_color_mode_rgb()):
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
 
