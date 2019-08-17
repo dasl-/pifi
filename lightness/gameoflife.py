@@ -100,11 +100,16 @@ class GameOfLife:
             for y in range(self.__settings.display_height):
                 if random.random() < self.__settings.seed_liveness_probability:
                     self.__board[y, x] = 1
+
         self.__show_board()
 
     def __show_board(self):
         frame = self.__board_to_frame()
-        self.__video_player.play_frame(frame)
+
+        if self.__settings.fade:
+            self.__video_player.fade_to_frame(frame)
+        else:
+            self.__video_player.play_frame(frame)
 
     def __board_to_frame(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
@@ -113,6 +118,7 @@ class GameOfLife:
             for y in range(self.__settings.display_height):
                 if self.__board[y,x] == 1:
                     frame[y, x] = rgb
+
         return frame
 
     def __get_rgb(self):
@@ -154,30 +160,22 @@ class GameOfLife:
             for y in range(self.__settings.display_height):
                 # calculate num live neighbors
                 num_live_neighbors = 0
-                if x > 0:
-                    if self.__board[y, x - 1] == 1:
-                        num_live_neighbors += 1
-                    if y > 0:
-                        if self.__board[y - 1, x - 1] == 1:
-                            num_live_neighbors += 1
-                    if (y + 1) < self.__settings.display_height:
-                        if self.__board[y + 1, x - 1] == 1:
-                            num_live_neighbors += 1
-                if (x + 1) < self.__settings.display_width:
-                    if self.__board[y, x + 1] == 1:
-                        num_live_neighbors += 1
-                    if y > 0:
-                        if self.__board[y - 1, x + 1] == 1:
-                            num_live_neighbors += 1
-                    if (y + 1) < self.__settings.display_height:
-                        if self.__board[y + 1, x + 1] == 1:
-                            num_live_neighbors += 1
-                if y > 0:
-                    if self.__board[y - 1, x] == 1:
-                        num_live_neighbors += 1
-                if (y + 1) < self.__settings.display_height:
-                    if self.__board[y + 1, x] == 1:
-                        num_live_neighbors += 1
+                #left
+                num_live_neighbors += (self.__board[y, x - 1] if x > 1 else 0)
+                #left-up
+                num_live_neighbors += (self.__board[y - 1, x - 1] if x > 1 and y > 1 else 0)
+                #left-down
+                num_live_neighbors += (self.__board[y + 1, x - 1] if x > 1 and y < (self.__settings.display_height - 1) else 0)
+                #right
+                num_live_neighbors += (self.__board[y, x + 1] if x < (self.__settings.display_width - 1) else 0)
+                #right-up
+                num_live_neighbors += (self.__board[y - 1, x + 1] if x < (self.__settings.display_width - 1) and y > 1 else 0)
+                #right-down
+                num_live_neighbors += (self.__board[y + 1, x + 1] if x < (self.__settings.display_width - 1) and y < (self.__settings.display_height - 1) else 0)
+                #up
+                num_live_neighbors += (self.__board[y - 1, x] if y > 1 else 0)
+                #down
+                num_live_neighbors += (self.__board[y + 1, x] if y < (self.__settings.display_height - 1) else 0)
 
                 # 1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
                 if self.__board[y, x] == 1 and num_live_neighbors < 2:

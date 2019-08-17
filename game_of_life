@@ -26,6 +26,8 @@ def parseArgs():
     parser.add_argument('--game-over-detection-lookback', dest='game_over_detection_lookback', action='store', type=int,
         default=GameOfLifeSettings.DEFAULT_GAME_OVER_DETECTION_LOOKBACK, metavar='N',
         help='Number of turns to look back to see if game has not changed (i.e. it is over).')
+    parser.add_argument('--fade', dest='fade', action='store_true', default=False,
+        help='fade between each tick')
 
     game_color_mode_help_str = ''
     for mode in GameOfLifeSettings.GAME_COLOR_MODES:
@@ -44,7 +46,8 @@ settings = GameOfLifeSettings(
     display_width = args.display_width, display_height = args.display_height,
     brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
     seed_liveness_probability = args.seed_liveness_probability, tick_sleep = args.tick_sleep,
-    game_over_detection_lookback = args.game_over_detection_lookback, game_color_mode = args.game_color_mode
+    game_over_detection_lookback = args.game_over_detection_lookback, game_color_mode = args.game_color_mode,
+    fade = args.fade
 )
 game = GameOfLife(settings)
 game.play(should_loop = args.should_loop)

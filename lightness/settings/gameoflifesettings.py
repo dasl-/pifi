@@ -29,6 +29,7 @@ class GameOfLifeSettings(LedSettings):
         brightness = None, flip_x = False, flip_y = False, log_level = None,
         seed_liveness_probability = None, tick_sleep = None,
         game_over_detection_lookback = None, game_color_mode = None,
+        fade = None
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
@@ -50,6 +51,8 @@ class GameOfLifeSettings(LedSettings):
         if game_color_mode == None:
             game_color_mode = self.GAME_COLOR_MODE_RANDOM
         self.__set_game_color_mode(game_color_mode)
+
+        self.fade = fade
 
     def __set_game_color_mode(self, game_color_mode):
         game_color_mode = game_color_mode.lower()

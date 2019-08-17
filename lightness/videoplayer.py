@@ -1,3 +1,4 @@
+import numpy as np
 import math
 import time
 from driver import apa102
@@ -25,6 +26,10 @@ class VideoPlayer:
     __scale_green_gamma_curves = None
     __scale_blue_gamma_curves = None
 
+    __current_frame = None
+
+    __FADE_STEPS = 5
+
     def __init__(self, led_settings):
         self.__led_settings = led_settings
         self.__gamma_controller = Gamma(self.__led_settings)
@@ -50,6 +55,31 @@ class VideoPlayer:
         self.__set_frame_pixels(avg_color_frame)
         self.__pixels.show()
 
+    def fade_to_frame(self, avg_color_frame):
+        if (self.__current_frame is None):
+            return self.play_frame(avg_color_frame)
+
+        frame_steps = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.int8)
+
+        for x in range(self.__led_settings.display_width):
+            for y in range(self.__led_settings.display_height):
+                for rgb in range(0,3):
+                    frame_steps[y, x, rgb] = ((avg_color_frame[y, x, rgb].astype(np.int16) - self.__current_frame[y, x, rgb].astype(np.int16)) / self.__FADE_STEPS).astype(np.int8)
+
+        for current_step in range(1, self.__FADE_STEPS):
+            new_frame = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.uint8)
+            for x in range(self.__led_settings.display_width):
+                for y in range(self.__led_settings.display_height):
+                    for rgb in range(0,3):
+                        new_frame[y, x, rgb] = self.__current_frame[y, x, rgb] + (frame_steps[y, x, rgb] * current_step)
+
+            # no need to sleep since the above calculation takes some small amount of time
+            self.__set_frame_pixels(new_frame, False)
+            self.__pixels.show()
+
+        self.__set_frame_pixels(avg_color_frame)
+        self.__pixels.show()
+
     def __setup_pixels(self):
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.__pixels = apa102.APA102(
@@ -71,7 +101,10 @@ class VideoPlayer:
     # In the nested for loop, function calls are to be avoided. Inlining them is more performant.
     #
     # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
-    def __set_frame_pixels(self, avg_color_frame):
+    def __set_frame_pixels(self, avg_color_frame, store_current = True):
+        if (store_current):
+            self.__current_frame = avg_color_frame
+
         if not (self.__led_settings.is_color_mode_rgb()):
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
 
