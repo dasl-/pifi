@@ -5,6 +5,8 @@ class GameOfLifeSettings(LedSettings):
     DEFAULT_SEED_LIVENESS_PROBABILITY = 1/3
     DEFAULT_TICK_SLEEP = 0
     DEFAULT_GAME_OVER_DETECTION_LOOKBACK = 10
+    DEFAULT_FADE = False
+    DEFAULT_INVERT = False
 
     GAME_COLOR_MODE_RANDOM = 'random'
     GAME_COLOR_MODE_RED = 'red'
@@ -23,13 +25,15 @@ class GameOfLifeSettings(LedSettings):
     tick_sleep = None # seconds
     game_over_detection_lookback = None
     game_color_mode = None
+    fade = None
+    invert = None
 
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False, log_level = None,
         seed_liveness_probability = None, tick_sleep = None,
         game_over_detection_lookback = None, game_color_mode = None,
-        fade = None
+        fade = None, invert = None
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
@@ -53,6 +57,7 @@ class GameOfLifeSettings(LedSettings):
         self.__set_game_color_mode(game_color_mode)
 
         self.fade = fade
+        self.invert = invert
 
     def __set_game_color_mode(self, game_color_mode):
         game_color_mode = game_color_mode.lower()

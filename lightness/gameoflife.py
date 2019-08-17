@@ -114,9 +114,11 @@ class GameOfLife:
     def __board_to_frame(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         rgb = self.__get_rgb()
+        on = 0 if self.__settings.invert else 1;
+
         for x in range(self.__settings.display_width):
             for y in range(self.__settings.display_height):
-                if self.__board[y,x] == 1:
+                if self.__board[y,x] == on:
                     frame[y, x] = rgb
 
         return frame

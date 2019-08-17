@@ -28,6 +28,8 @@ def parseArgs():
         help='Number of turns to look back to see if game has not changed (i.e. it is over).')
     parser.add_argument('--fade', dest='fade', action='store_true', default=False,
         help='fade between each tick')
+    parser.add_argument('--invert', dest='invert', action='store_true', default=False,
+        help='invert the board')
 
     game_color_mode_help_str = ''
     for mode in GameOfLifeSettings.GAME_COLOR_MODES:
@@ -47,7 +49,7 @@ settings = GameOfLifeSettings(
     brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
     seed_liveness_probability = args.seed_liveness_probability, tick_sleep = args.tick_sleep,
     game_over_detection_lookback = args.game_over_detection_lookback, game_color_mode = args.game_color_mode,
-    fade = args.fade
+    fade = args.fade, invert = args.invert
 )
 game = GameOfLife(settings)
 game.play(should_loop = args.should_loop)

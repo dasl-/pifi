@@ -176,9 +176,21 @@ class Queue:
         else:
             game_color_mode = GameOfLifeSettings.GAME_COLOR_MODE_RANDOM
 
+        if 'fade' in config:
+            fade = config['fade']
+        else:
+            fade = GameOfLifeSettings.DEFAULT_FADE
+
+        if 'invert' in config:
+            invert = config['invert']
+        else:
+            invert = GameOfLifeSettings.DEFAULT_INVERT
+
+
         return GameOfLifeSettings(
             display_width = display_width, display_height = display_height,
             brightness = brightness, flip_x = flip_x, flip_y = flip_y, log_level = log_level,
             seed_liveness_probability = seed_liveness_probability, tick_sleep = tick_sleep,
             game_over_detection_lookback = game_over_detection_lookback, game_color_mode = game_color_mode,
+            fade = fade, invert = invert
         )
