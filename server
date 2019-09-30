@@ -8,14 +8,17 @@ from lightness.playlist import Playlist
 from lightness.logger import Logger
 from lightness.config import Config
 from lightness.directoryutils import DirectoryUtils
+from lightness.volumecontroller import VolumeController
 
 class LightnessAPI():
     __playlist = Playlist()
+    __vol_controller = VolumeController()
 
     def get_queue(self):
         response_details = {}
         queue = self.__playlist.get_queue()
         response_details['queue'] = queue
+        response_details['vol_pct'] = self.__vol_controller.get_vol_pct()
         response_details['success'] = True
         return response_details
 
@@ -48,6 +51,15 @@ class LightnessAPI():
         response_details = {}
         response_details['success'] = True
         return response_details
+
+    def set_vol_pct(self, post_data):
+        vol_pct = int(post_data['vol_pct'])
+        self.__vol_controller.set_vol_pct(vol_pct)
+        return {
+            'vol_pct': vol_pct,
+            'success': True
+        }
+
 
 class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
@@ -121,6 +133,8 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.remove(post_data)
         elif path == 'clear':
             response = self.__api.clear()
+        elif path == 'vol_pct':
+            response = self.__api.set_vol_pct(post_data)
         else:
             self.__do_404()
             return

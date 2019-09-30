@@ -136,7 +136,6 @@ class VideoProcessor:
 
         fps = self.__calculate_fps()
         ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
-        self.__maybe_set_volume()
 
         if self.__maybe_skip_video():
             return
@@ -367,11 +366,6 @@ class VideoProcessor:
         fps = float(fps_parts[0]) / float(fps_parts[1])
         self.__logger.info('Calculated video fps: ' + str(fps))
         return fps
-
-    def __maybe_set_volume(self):
-        if self.__video_settings.should_play_audio:
-            self.__logger.info('Setting volume to 100%...')
-            subprocess.check_output(('amixer', 'cset', 'numid=1', '100%'))
 
     def __make_ffmpeg_to_python_fifo(self):
         make_fifo_cmd = (

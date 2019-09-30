@@ -13,6 +13,9 @@ import SearchResultVideo from 'dataobj/search_result_video';
 import './app.css';
 
 class App extends React.Component {
+
+  static QUEUE_POLL_INTERVAL_MS = 1000;
+
   constructor(props) {
     super(props);
 
@@ -35,7 +38,8 @@ class App extends React.Component {
       playlist_videos: [],
       color_mode: 'color',
       last_queued_videos: [],
-      last_queued_video_color_modes: []
+      last_queued_video_color_modes: [],
+      vol_pct: undefined
     };
 
     /* intro transition */
@@ -53,6 +57,7 @@ class App extends React.Component {
     this.nextVideo = this.nextVideo.bind(this);
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
+    this.setVolPct = this.setVolPct.bind(this);
   }
 
   componentDidMount() {
@@ -99,6 +104,8 @@ class App extends React.Component {
               nextVideo={this.nextVideo}
               clearQueue={this.clearQueue}
               removeVideo={this.removeVideo}
+              setVolPct={this.setVolPct}
+              vol_pct={this.state.vol_pct}
             />
           </div>
         </CSSTransition>
@@ -173,7 +180,7 @@ class App extends React.Component {
         .finally(() => {
           // need to do this on a timeout because the server isnt so great about
           // the currently playing video immediately after skipping
-          setTimeout(() => {this.getPlaylistQueue()}, 1000)
+          setTimeout(() => {this.getPlaylistQueue()}, App.QUEUE_POLL_INTERVAL_MS)
         })
     }
   }
@@ -191,6 +198,9 @@ class App extends React.Component {
       .removeVideo(video)
       .finally(() => this.getPlaylistQueue())
   }
+  setVolPct(vol_pct) {
+    return this.apiClient.setVolPct(vol_pct)
+  }
 
   cancelQueuePoll() {
     clearTimeout(this.queue_timeout);
@@ -198,7 +208,7 @@ class App extends React.Component {
   getPlaylistQueue() {
     if (this.state.playlist_loading) {
       this.cancelQueuePoll();
-      this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), 1000);
+      this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), App.QUEUE_POLL_INTERVAL_MS);
       return;
     }
 
@@ -209,6 +219,7 @@ class App extends React.Component {
       .then((data) => {
         if (data.success) {
           var playlist_videos = PlaylistVideo.fromArray(data.queue);
+          var vol_pct = +(data.vol_pct.toFixed(0));
           var playlist_current_video = this.state.playlist_current_video;
           var current_video = playlist_videos.find(function(video) {
             return video.status === 'STATUS_PLAYING';
@@ -234,14 +245,15 @@ class App extends React.Component {
 
           this.setState({
             playlist_current_video: playlist_current_video,
-            playlist_videos: playlist_videos
+            playlist_videos: playlist_videos,
+            vol_pct: vol_pct
           });
         }
 
         this.setState({ playlist_loading: false });
       })
       .finally((data) => {
-        this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), 1000);
+        this.queue_timeout = setTimeout(this.getPlaylistQueue.bind(this), App.QUEUE_POLL_INTERVAL_MS);
       });
   }
 

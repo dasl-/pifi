@@ -38,6 +38,12 @@ class APIClient {
     });
   }
 
+  setVolPct(vol_pct) {
+    return this.perform('post', '/vol_pct', {
+      vol_pct: vol_pct
+    });
+  }
+
   clearQueue() {
     return this.perform('post', '/clear');
   }

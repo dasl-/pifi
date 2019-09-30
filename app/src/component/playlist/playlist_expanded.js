@@ -25,6 +25,8 @@ class PlaylistExpanded extends React.Component {
             <LoadWithVideo video={this.props.current_video}>
               <CurrentlyPlaying
                 nextVideo={this.props.nextVideo}
+                setVolPct={this.props.setVolPct}
+                vol_pct={this.props.vol_pct}
                 clearQueue={this.props.clearQueue}
               />
             </LoadWithVideo>

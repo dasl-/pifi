@@ -83,6 +83,8 @@ class Content extends React.Component {
                   nextVideo={this.props.nextVideo}
                   clearQueue={this.props.clearQueue}
                   removeVideo={this.props.removeVideo}
+                  setVolPct={this.props.setVolPct}
+                  vol_pct={this.props.vol_pct}
                 />
               </div>
             </div>
@@ -108,6 +110,8 @@ class Content extends React.Component {
                 clearQueue={this.props.clearQueue}
                 removeVideo={this.props.removeVideo}
                 contractFooterPlaylist={this.contractFooterPlaylist}
+                setVolPct={this.props.setVolPct}
+                vol_pct={this.props.vol_pct}
               />
             </div>
           </div>

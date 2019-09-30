@@ -14,6 +14,7 @@ from lightness.videoplayer import VideoPlayer
 from lightness.videoprocessor import VideoProcessor
 from lightness.config import Config
 from lightness.gameoflife import GameOfLife
+from lightness.volumecontroller import VolumeController
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
@@ -28,7 +29,10 @@ class Queue:
         self.__config = Config()
         self.__should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+
+        # house keeping
         self.__clear_screen()
+        (VolumeController()).set_vol_pct(50)
         self.__playlist.clean_up_state()
 
     def run(self):
