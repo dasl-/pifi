@@ -15,11 +15,17 @@
     "react-scripts": "3.0.1",
     "react-transition-group": "^4.2.2",
     "redux": "^4.0.4",
-    "rc-slider": "8.6.1"
+    "rc-slider": "8.6.1",
+    "node-sass-chokidar": "^0.0.3",
+    "npm-run-all": "^4.1.2"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build-css": "node-sass-chokidar src/ -o src/",
+    "watch-css": "npm run build-css && node-sass-chokidar src/ -o src/ --watch --recursive",
+    "start": "npm-run-all -p watch-css start-react",
+    "start-react": "react-scripts start",
+    "build-react": "react-scripts build",
+    "build": "npm-run-all -s build-css build-react",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

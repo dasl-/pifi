@@ -6,7 +6,6 @@ import InvalidBuild from 'component/app/invalid_build';
 import utils from 'utils';
 
 import 'css/main.css';
-// import 'css/creative.min.css';
 import 'css/bootstrap.min.css';
 import 'css/custom-theme.css';
 
