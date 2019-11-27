@@ -40,7 +40,9 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `ssh-keygen -t rsa -b 4096 -C “your@email.com”`
 1. `eval "$(ssh-agent -s)"`
 1. `ssh-add ~/.ssh/id_rsa`
-1. `more ~/.ssh/id_rsa.pub` (copy to git)
+1. `more ~/.ssh/id_rsa.pub` (copy to git) 
+    1. https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
+    1. https://github.com/settings/keys
 
 ### Checkout Repo
 1. `git clone git@github.com:dasl-/lightness.git`
@@ -49,6 +51,8 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 ### Install
 1. `./install/install_dependencies.sh`
 1. `./install/install.sh`
+1. `./utils/make_db`
+1. optionally create a config file: [`config.json`](https://gist.github.com/dasl-/2081e697ab1c602a7b5dc02f100dd0a8)
 1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
 ### Static IP and DNS A record (optional):
