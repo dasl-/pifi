@@ -40,7 +40,9 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `ssh-keygen -t rsa -b 4096 -C “your@email.com”`
 1. `eval "$(ssh-agent -s)"`
 1. `ssh-add ~/.ssh/id_rsa`
-1. `more ~/.ssh/id_rsa.pub` (copy to git)
+1. `more ~/.ssh/id_rsa.pub` (copy to git) 
+    1. https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
+    1. https://github.com/settings/keys
 
 ### Checkout Repo
 1. `git clone git@github.com:dasl-/lightness.git`
