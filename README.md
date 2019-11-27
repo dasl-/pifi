@@ -23,10 +23,10 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
     }
 
 ### Enable ssh, Connect
-1. `touch ssh`
+1. create a file `/boot/wpa_supplicant.conf` to enable SSH on the raspberry pi
 1. plug in raspberry pi
-1. find its IP: `sudo arp-scan --interface=en0 --localnet`
-1. ssh in (u/p:pi/raspberry)
+1. find its IP: `sudo arp-scan --interface=en0 --localnet` or `sudo nmap -sS -p 22 192.168.1.0/24`
+1. ssh in `ssh pi@<ip.address>`, password: `raspberry`
 
 ### Setup Raspberry Pi
 1. `sudo raspi-config`
