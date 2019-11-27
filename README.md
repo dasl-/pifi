@@ -51,6 +51,8 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 ### Install
 1. `./install/install_dependencies.sh`
 1. `./install/install.sh`
+1. `./utils/make_db`
+1. optionally create a config file: `[config.json](https://gist.github.com/dasl-/2081e697ab1c602a7b5dc02f100dd0a8)`
 1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
 ### Static IP and DNS A record (optional):
