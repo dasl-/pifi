@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import time
-from driver import apa102
+from apa102_pi.driver import apa102
 from lightness.gamma import Gamma
 from lightness.settings.ledsettings import LedSettings
 
