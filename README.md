@@ -56,7 +56,9 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
 ### Static IP and DNS A record (optional):
-1. Setup static IP for raspberry pi via: https://raspberrypi.stackexchange.com/a/74428
+1. Setup static IP for raspberry pi via: https://raspberrypi.stackexchange.com/a/74428 . Basically the steps are:
+    1. Add [these lines](https://gist.github.com/dasl-/33f81e0c193424c3c378b08c2d0d5da7) to the end of your `/etc/dhcpcd.conf`
+    1. reboot: `sudo shutdown -r now`
 1. Optionally reserve the chosen IP on your router (if it supports this) to avoid conflicts
 1. Note if you choose 192.168.1.100 for the static IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :) ([other options](https://www.devside.net/wamp-server/accessing-websites-on-a-local-network-lan-web-server) for accessing the pi via a domain name)
 
