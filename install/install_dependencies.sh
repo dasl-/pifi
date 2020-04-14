@@ -16,6 +16,11 @@ sudo apt-get -y dist-upgrade
 
 sudo pip3 install --upgrade youtube_dl numpy opencv-python sharedmem HTTPServer apa102-pi pytz
 
+# Just in case the youtube-dl cache got polluted, as it has before...
+# https://github.com/ytdl-org/youtube-dl/issues/24780
+sudo youtube-dl --rm-cache-dir
+youtube-dl --rm-cache-dir
+
 # The `apt-get install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
 sudo npm install npm@latest -g
 
