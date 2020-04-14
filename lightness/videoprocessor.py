@@ -134,7 +134,13 @@ class VideoProcessor:
 
         self.__do_pre_cleanup()
 
-        fps = self.__calculate_fps()
+        fps = None
+        try:
+            fps = self.__calculate_fps()
+        except subprocess.CalledProcessError as ex:
+            self.__logger.error("Got an error calculating fps: " + str(ex))
+            return
+
         ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
 
         if self.__maybe_skip_video():
@@ -174,7 +180,7 @@ class VideoProcessor:
                     avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
                 )
 
-            if not vid_start_time:
+            if vid_start_time is None:
                 # video has not started being processed yet
                 pass
             else:
@@ -210,9 +216,13 @@ class VideoProcessor:
             raise Exception('Expected {} bytes from ffmpeg output, but got {}.'.format(bytes_per_frame, len(ffmpeg_output)))
         if not ffmpeg_output:
             self.__logger.info("no ffmpeg_output, end of video processing.")
+            if vid_start_time is None:
+                # under rare circumstances, youtube-dl might fail and we end up in this code path.
+                self.__logger.error("No vid_start_time set. Possible yt-dl crash. See: https://github.com/ytdl-org/youtube-dl/issues/24780")
+                vid_start_time = 0 # set this so that __process_and_play_video doesn't endlessly loop
             return [True, vid_start_time]
 
-        if not vid_start_time:
+        if vid_start_time is None:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
             # first audio data at around the same time so they stay in sync.
             # Add time for better audio / video sync
@@ -360,7 +370,7 @@ class VideoProcessor:
 
         fps_parts = (subprocess
             .check_output(('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries',
-                'stream=r_frame_rate', video_path))
+                'stream=r_frame_rate', video_path), stderr=subprocess.STDOUT)
             .decode("utf-8"))
         fps_parts = fps_parts.split('/')
         fps = float(fps_parts[0]) / float(fps_parts[1])
