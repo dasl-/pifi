@@ -373,7 +373,21 @@ class VideoProcessor:
                 'stream=r_frame_rate', video_path), stderr=subprocess.STDOUT)
             .decode("utf-8"))
         fps_parts = fps_parts.split('/')
-        fps = float(fps_parts[0]) / float(fps_parts[1])
+        fps = None
+        try:
+            # "Live" streams on youtube may fail here with an error:
+            #   could not convert string to float: '1\n\n15'
+            fps = float(fps_parts[0]) / float(fps_parts[1])
+        except ValueError as ex:
+            self.__logger.error("Got an error dividing fps parts: " + str(ex))
+            video_info = self.__get_video_info()
+            if video_info['fps'] is not None:
+                self.__logger.error("Using fps approximation from video_info['fps']: " + str(video_info['fps']) + " fps.")
+                fps = float(video_info['fps'])
+            else:
+                self.__logger.error("Assuming 30 fps for this video.")
+                fps = 30
+
         self.__logger.info('Calculated video fps: ' + str(fps))
         return fps
 
