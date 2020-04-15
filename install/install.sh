@@ -63,7 +63,7 @@ fi
 
 # setup logging: syslog
 sudo mkdir -p /var/log/pifi
-sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log
+sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/update_youtube-dl.log
 sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
 sudo systemctl restart rsyslog
 
@@ -80,6 +80,11 @@ sudo chmod 644 /etc/systemd/system/pifi_*.service
 sudo systemctl enable /etc/systemd/system/pifi_*.service
 sudo systemctl daemon-reload
 sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
+
+# setup youtube-dl update cron
+sudo $BASE_DIR/install/pifi_cron.sh
+sudo chown root:root /etc/cron.d/pifi
+sudo chmod 644 /etc/cron.d/pifi
 
 # build the web app
 sudo npm run build --prefix "$BASE_DIR"/app
