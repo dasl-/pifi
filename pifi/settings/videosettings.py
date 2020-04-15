@@ -1,4 +1,4 @@
-from lightness.settings.ledsettings import LedSettings
+from pifi.settings.ledsettings import LedSettings
 
 class VideoSettings(LedSettings):
 

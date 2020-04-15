@@ -1,6 +1,6 @@
 import sqlite3
-from lightness.logger import Logger
-from lightness.directoryutils import DirectoryUtils
+from pifi.logger import Logger
+from pifi.directoryutils import DirectoryUtils
 
 def dict_factory(cursor, row):
     d = {}
@@ -21,7 +21,7 @@ class Playlist:
 
     def __init__(self):
         # `isolation_level = None` specifies autocommit mode
-        self.__conn = sqlite3.connect(DirectoryUtils().root_dir + '/lightness.db', isolation_level = None)
+        self.__conn = sqlite3.connect(DirectoryUtils().root_dir + '/pifi.db', isolation_level = None)
         self.__conn.row_factory = dict_factory
         self.__cursor = self.__conn.cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)

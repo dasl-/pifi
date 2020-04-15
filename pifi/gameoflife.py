@@ -3,10 +3,10 @@ import random
 import time
 import math
 import hashlib
-from lightness.logger import Logger
-from lightness.videoplayer import VideoPlayer
-from lightness.settings.gameoflifesettings import GameOfLifeSettings
-from lightness.datastructure.limitedsizedict import LimitedSizeDict
+from pifi.logger import Logger
+from pifi.videoplayer import VideoPlayer
+from pifi.settings.gameoflifesettings import GameOfLifeSettings
+from pifi.datastructure.limitedsizedict import LimitedSizeDict
 
 class GameOfLife:
 

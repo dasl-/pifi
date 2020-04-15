@@ -4,6 +4,6 @@ import sys
 
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
-from lightness.playlist import Playlist
+from pifi.playlist import Playlist
 
 Playlist().construct()

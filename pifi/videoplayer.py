@@ -2,8 +2,8 @@ import numpy as np
 import math
 import time
 from apa102_pi.driver import apa102
-from lightness.gamma import Gamma
-from lightness.settings.ledsettings import LedSettings
+from pifi.gamma import Gamma
+from pifi.settings.ledsettings import LedSettings
 
 class VideoPlayer:
     __led_settings = None
@@ -102,7 +102,7 @@ class VideoPlayer:
     #
     # In the nested for loop, function calls are to be avoided. Inlining them is more performant.
     #
-    # See: https://github.com/dasl-/lightness/commit/9640268084acb0c46b2624178f350017ab666d41
+    # See: https://github.com/dasl-/pifi/commit/9640268084acb0c46b2624178f350017ab666d41
     def __set_frame_pixels(self, avg_color_frame):
         if not (self.__led_settings.is_color_mode_rgb()):
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)

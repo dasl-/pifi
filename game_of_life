@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse
-from lightness.settings.gameoflifesettings import GameOfLifeSettings
-from lightness.gameoflife import GameOfLife
+from pifi.settings.gameoflifesettings import GameOfLifeSettings
+from pifi.gameoflife import GameOfLife
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="Conway's game of life.")

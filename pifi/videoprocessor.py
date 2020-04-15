@@ -5,11 +5,11 @@ import os
 import time
 import sys
 import re
-from lightness.logger import Logger
-from lightness.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
-from lightness.settings.videosettings import VideoSettings
-from lightness.directoryutils import DirectoryUtils
-from lightness.playlist import Playlist
+from pifi.logger import Logger
+from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
+from pifi.settings.videosettings import VideoSettings
+from pifi.directoryutils import DirectoryUtils
+from pifi.playlist import Playlist
 import youtube_dl
 import subprocess
 import math
@@ -46,7 +46,7 @@ class VideoProcessor:
     __DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
-    __FFMPEG_TO_PYTHON_FIFO_PREFIX = 'lightness_ffmpeg_to_python_fifo__'
+    __FFMPEG_TO_PYTHON_FIFO_PREFIX = 'pifi_ffmpeg_to_python_fifo__'
 
     __FRAMES_BUFFER_LENGTH = 1024
 

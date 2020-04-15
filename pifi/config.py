@@ -1,7 +1,7 @@
 import os
 import json
-from lightness.logger import Logger
-from lightness.directoryutils import DirectoryUtils
+from pifi.logger import Logger
+from pifi.directoryutils import DirectoryUtils
 
 class Config:
 

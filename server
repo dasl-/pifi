@@ -4,13 +4,13 @@ from io import BytesIO
 import json
 import subprocess
 import ssl
-from lightness.playlist import Playlist
-from lightness.logger import Logger
-from lightness.config import Config
-from lightness.directoryutils import DirectoryUtils
-from lightness.volumecontroller import VolumeController
+from pifi.playlist import Playlist
+from pifi.logger import Logger
+from pifi.config import Config
+from pifi.directoryutils import DirectoryUtils
+from pifi.volumecontroller import VolumeController
 
-class LightnessAPI():
+class PifiAPI():
     __playlist = Playlist()
     __vol_controller = VolumeController()
 
@@ -61,7 +61,7 @@ class LightnessAPI():
         }
 
 
-class LightnessServerRequestHandler(BaseHTTPRequestHandler):
+class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     __root_dir = None
     __api = None
@@ -69,7 +69,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
         self.__root_dir = DirectoryUtils().root_dir + "/app/build"
-        self.__api = LightnessAPI()
+        self.__api = PifiAPI()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
@@ -182,7 +182,7 @@ class LightnessServerRequestHandler(BaseHTTPRequestHandler):
         self.__logger.info("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format%args))
 
 
-class LightnessServer:
+class PifiServer:
 
     __secure = False
     __server = None
@@ -192,9 +192,9 @@ class LightnessServer:
         self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:
-            self.__server = HTTPServer(('0.0.0.0', 80), LightnessServerRequestHandler)
+            self.__server = HTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
         else:
-            self.__server = HTTPServer(('0.0.0.0', 443), LightnessServerRequestHandler)
+            self.__server = HTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
             self.__server.socket = ssl.wrap_socket(self.__server.socket,
                                                    keyfile=self.__config.get_server_config('keyfile', ""),
                                                    certfile=self.__config.get_server_config('certfile', ""),
@@ -203,5 +203,5 @@ class LightnessServer:
     def serve_forever(self):
         self.__server.serve_forever()
 
-server = LightnessServer()
+server = PifiServer()
 server.serve_forever()

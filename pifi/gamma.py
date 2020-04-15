@@ -1,5 +1,5 @@
 import numpy as np
-from lightness.settings.ledsettings import LedSettings
+from pifi.settings.ledsettings import LedSettings
 
 class Gamma:
 
@@ -34,7 +34,7 @@ class Gamma:
         # calibrated with:
         #   * --brightness of 3 (i think?)
         #   * black and white video
-        #   * using opencv LED color averaging rather than ffmpeg (https://github.com/dasl-/lightness/commit/8a4703fb479421160b9c119dc718b747a8627b4f#commitcomment-34206224)
+        #   * using opencv LED color averaging rather than ffmpeg (https://github.com/dasl-/pifi/commit/8a4703fb479421160b9c119dc718b747a8627b4f#commitcomment-34206224)
         gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
 
         if gamma_index < 0:

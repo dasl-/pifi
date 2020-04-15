@@ -5,16 +5,16 @@ import subprocess
 import time
 import json
 import shlex
-from lightness.playlist import Playlist
-from lightness.logger import Logger
-from lightness.settings.ledsettings import LedSettings
-from lightness.settings.videosettings import VideoSettings
-from lightness.settings.gameoflifesettings import GameOfLifeSettings
-from lightness.videoplayer import VideoPlayer
-from lightness.videoprocessor import VideoProcessor
-from lightness.config import Config
-from lightness.gameoflife import GameOfLife
-from lightness.volumecontroller import VolumeController
+from pifi.playlist import Playlist
+from pifi.logger import Logger
+from pifi.settings.ledsettings import LedSettings
+from pifi.settings.videosettings import VideoSettings
+from pifi.settings.gameoflifesettings import GameOfLifeSettings
+from pifi.videoplayer import VideoPlayer
+from pifi.videoprocessor import VideoProcessor
+from pifi.config import Config
+from pifi.gameoflife import GameOfLife
+from pifi.volumecontroller import VolumeController
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:

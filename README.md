@@ -1,6 +1,6 @@
-# lightness
+# pifi
 ## About
-[![Lightness](https://lh3.googleusercontent.com/50Q5aQS7kWFsroNjzMIAM1pqVv42ulz_HItEhe2L8xTaOFm2AilcrGnE-fDCPQp0yWgW7cwHRb4f-xewnBwltcw0uFNSf3Cr0rMYlcJwHqVRCap3w8IQ9M4Udi9wRc-mVDdev1I8Z1JBOG5AVuqcpQL0BAIBUWdLRRDBOrXLuQQfYntW8PVBvr-2BXv88lZlFz9a98cHZDFcW3UobFMXGKrZEOd7sEE4KwrNQNgNni3hd3RgLs3CQui1WWuphBTj1ddxzoNUOCPpue26bYFjQI7KKeAtExC5gzQTYki1wMvaugi7My8W9DhBoENevYFDAXuJ2FuiEFPkTMy47ZFDx6QmSwBIuDtG55FqVjlnKj4HoJl8z8peLmV2ZVBte_6BA5geY5U9XT8Euhd93t3XrMs0O7N4VdcbA7SGetj7OKzlw1Fbj3K7wl0mSvEuomQAnSjVwIxnT9V9WuEe0Dy1h7dQ1EtqMJdcmCVf9pvzxMUiUIW3I1K82uS1liqHHd_aLaijgTdSYhus0pgKOIexfpGxEfghjXF6Ye8Va4xyggpkZ9qIQxr5aTkkVeabTrtnBA-CC8g3YmJcIGIjlxd5CY_I3OzzQ6OjdFl4DF-dP6Wu1MjafiTT_LH2wifY4iyigNCLZ322vk2_vJTymZkjIBnCR7HvgDIdSbIMw6CBuzW-42C-n6qulXQ7nyYc0YNt4GXGti4iacyy48hFgpuzBljU=w1125-h625-no)](https://photos.app.goo.gl/hCSq6Vcvd1VbCVPs8)
+[![pifi](https://lh3.googleusercontent.com/50Q5aQS7kWFsroNjzMIAM1pqVv42ulz_HItEhe2L8xTaOFm2AilcrGnE-fDCPQp0yWgW7cwHRb4f-xewnBwltcw0uFNSf3Cr0rMYlcJwHqVRCap3w8IQ9M4Udi9wRc-mVDdev1I8Z1JBOG5AVuqcpQL0BAIBUWdLRRDBOrXLuQQfYntW8PVBvr-2BXv88lZlFz9a98cHZDFcW3UobFMXGKrZEOd7sEE4KwrNQNgNni3hd3RgLs3CQui1WWuphBTj1ddxzoNUOCPpue26bYFjQI7KKeAtExC5gzQTYki1wMvaugi7My8W9DhBoENevYFDAXuJ2FuiEFPkTMy47ZFDx6QmSwBIuDtG55FqVjlnKj4HoJl8z8peLmV2ZVBte_6BA5geY5U9XT8Euhd93t3XrMs0O7N4VdcbA7SGetj7OKzlw1Fbj3K7wl0mSvEuomQAnSjVwIxnT9V9WuEe0Dy1h7dQ1EtqMJdcmCVf9pvzxMUiUIW3I1K82uS1liqHHd_aLaijgTdSYhus0pgKOIexfpGxEfghjXF6Ye8Va4xyggpkZ9qIQxr5aTkkVeabTrtnBA-CC8g3YmJcIGIjlxd5CY_I3OzzQ6OjdFl4DF-dP6Wu1MjafiTT_LH2wifY4iyigNCLZ322vk2_vJTymZkjIBnCR7HvgDIdSbIMw6CBuzW-42C-n6qulXQ7nyYc0YNt4GXGti4iacyy48hFgpuzBljU=w1125-h625-no)](https://photos.app.goo.gl/hCSq6Vcvd1VbCVPs8)
 
 ## Setting up from Scratch
 ### Install Raspian Lite
@@ -40,13 +40,13 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 1. `ssh-keygen -t rsa -b 4096 -C “your@email.com”`
 1. `eval "$(ssh-agent -s)"`
 1. `ssh-add ~/.ssh/id_rsa`
-1. `more ~/.ssh/id_rsa.pub` (copy to git) 
+1. `more ~/.ssh/id_rsa.pub` (copy to git)
     1. https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
     1. https://github.com/settings/keys
 
 ### Checkout Repo
-1. `git clone git@github.com:dasl-/lightness.git`
-1. `cd lightness`
+1. `git clone git@github.com:dasl-/pifi.git`
+1. `cd pifi`
 
 ### Install
 1. `./install/install_dependencies.sh`
@@ -81,7 +81,7 @@ It might mean the pi is getting throttled because it's either overheating or has
 
 Test running a command like this (video obtained via [youtube](https://www.youtube.com/watch?v=4aeETEoNfOg)):
 ```
-vcgencmd measure_temp && vcgencmd get_throttled && time ffmpeg -threads 1 -i "/home/pi/lightness/data/The Smashing Pumpkins - 1979 (Official Video)@480x360.mp4" -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt gray pipe:1 > /dev/null && vcgencmd measure_temp && vcgencmd get_throttled
+vcgencmd measure_temp && vcgencmd get_throttled && time ffmpeg -threads 1 -i "/home/pi/pifi/data/The Smashing Pumpkins - 1979 (Official Video)@480x360.mp4" -filter:v scale=28x18 -c:a copy -f rawvideo -pix_fmt gray pipe:1 > /dev/null && vcgencmd measure_temp && vcgencmd get_throttled
 ```
 
 If all is going well, ffmpeg should convert it in ~6x speed. If you're getting throttled, it might only run at ~3x speed.
