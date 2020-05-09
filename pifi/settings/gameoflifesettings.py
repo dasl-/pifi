@@ -1,4 +1,5 @@
 from pifi.settings.ledsettings import LedSettings
+from pifi.games.gamecolorhelper import GameColorHelper
 
 class GameOfLifeSettings(LedSettings):
 
@@ -7,19 +8,6 @@ class GameOfLifeSettings(LedSettings):
     DEFAULT_GAME_OVER_DETECTION_LOOKBACK = 16
     DEFAULT_FADE = False
     DEFAULT_INVERT = False
-
-    GAME_COLOR_MODE_RANDOM = 'random'
-    GAME_COLOR_MODE_RED = 'red'
-    GAME_COLOR_MODE_GREEN = 'green'
-    GAME_COLOR_MODE_BLUE = 'blue'
-    GAME_COLOR_MODE_BW = 'bw'
-    GAME_COLOR_MODE_RAINBOW = 'rainbow'
-
-    # Lists all modes except GAME_COLOR_MODE_RANDOM
-    GAME_COLOR_MODES = [
-        GAME_COLOR_MODE_RED, GAME_COLOR_MODE_GREEN, GAME_COLOR_MODE_BLUE,
-        GAME_COLOR_MODE_BW, GAME_COLOR_MODE_RAINBOW
-    ]
 
     seed_liveness_probability = None
     tick_sleep = None # seconds
@@ -52,16 +40,8 @@ class GameOfLifeSettings(LedSettings):
             game_over_detection_lookback = self.DEFAULT_GAME_OVER_DETECTION_LOOKBACK
         self.game_over_detection_lookback = game_over_detection_lookback
 
-        if game_color_mode == None:
-            game_color_mode = self.GAME_COLOR_MODE_RANDOM
-        self.__set_game_color_mode(game_color_mode)
+        game_color_helper = GameColorHelper()
+        game_color_helper.set_game_color_mode(self, game_color_mode)
 
         self.fade = fade
         self.invert = invert
-
-    def __set_game_color_mode(self, game_color_mode):
-        game_color_mode = game_color_mode.lower()
-        if game_color_mode in self.GAME_COLOR_MODES or game_color_mode == self.GAME_COLOR_MODE_RANDOM:
-            self.game_color_mode = game_color_mode
-        else:
-            raise Exception("Unknown game_color_mode: {}".format(game_color_mode))

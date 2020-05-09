@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import argparse
 from pifi.settings.gameoflifesettings import GameOfLifeSettings
-from pifi.gameoflife import GameOfLife
+from pifi.games.gameoflife import GameOfLife
+from pifi.games.gamecolorhelper import GameColorHelper
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="Conway's game of life.")
@@ -32,12 +33,12 @@ def parseArgs():
         help='invert the board')
 
     game_color_mode_help_str = ''
-    for mode in GameOfLifeSettings.GAME_COLOR_MODES:
+    for mode in GameColorHelper.GAME_COLOR_MODES:
         game_color_mode_help_str += "'{}', ".format(mode)
-    game_color_mode_help_str += "or '{}'".format(GameOfLifeSettings.GAME_COLOR_MODE_RANDOM)
-    parser.add_argument('--game-color-mode', dest='game_color_mode', action='store', default=GameOfLifeSettings.GAME_COLOR_MODE_RANDOM,
+    game_color_mode_help_str += "or '{}'".format(GameColorHelper.GAME_COLOR_MODE_RANDOM)
+    parser.add_argument('--game-color-mode', dest='game_color_mode', action='store', default=GameColorHelper.GAME_COLOR_MODE_RANDOM,
         help=("one of: {}. Default is '{}'."
-            .format(game_color_mode_help_str, GameOfLifeSettings.GAME_COLOR_MODE_RANDOM))
+            .format(game_color_mode_help_str, GameColorHelper.GAME_COLOR_MODE_RANDOM))
     )
 
     args = parser.parse_args()

@@ -1,12 +1,12 @@
 import numpy as np
 import random
 import time
-import math
 import hashlib
 from pifi.logger import Logger
 from pifi.videoplayer import VideoPlayer
 from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
+from pifi.games.gamecolorhelper import GameColorHelper
 
 class GameOfLife:
 
@@ -20,17 +20,18 @@ class GameOfLife:
 
     __num_ticks = None
 
-    __color_gradient_offset = None
-
     __game_color_mode = None
 
     __prev_board_state_counts = None
+
+    __game_color_helper = None
 
     def __init__(self, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
         self.__video_player = VideoPlayer(self.__settings)
         self.__logger.info("Doing init with GameOfLifeSettings: {}".format(vars(self.__settings)))
+        self.__game_color_helper = GameColorHelper()
 
     def play(self, should_loop = False):
         if should_loop:
@@ -86,11 +87,8 @@ class GameOfLife:
     def __reset(self):
         self.__logger.info("Starting new game.")
         self.__num_ticks = 0
-        self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
-        if self.__settings.game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RANDOM:
-            self.__game_color_mode = random.choice(GameOfLifeSettings.GAME_COLOR_MODES)
-        else:
-            self.__game_color_mode = self.__settings.game_color_mode
+        self.__game_color_helper.reset()
+        self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
         self.__prev_board_state_counts = LimitedSizeDict(capacity = self.__settings.game_over_detection_lookback)
         self.__seed()
 
@@ -113,7 +111,7 @@ class GameOfLife:
 
     def __board_to_frame(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
-        rgb = self.__get_rgb()
+        rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self.__num_ticks)
         on = 0 if self.__settings.invert else 1;
 
         for x in range(self.__settings.display_width):
@@ -122,36 +120,6 @@ class GameOfLife:
                     frame[y, x] = rgb
 
         return frame
-
-    def __get_rgb(self):
-        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RED:
-            return [255, 0, 0]
-        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_GREEN:
-            return [0, 255, 0]
-        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_BLUE:
-            return [0, 0, 255]
-        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_BW:
-            return [255, 255, 255]
-        if self.__game_color_mode == GameOfLifeSettings.GAME_COLOR_MODE_RAINBOW:
-            return self.__make_color_gradient()
-
-    # See: https://krazydad.com/tutorials/makecolors.php
-    def __make_color_gradient(
-        self, freq1 = None, freq2 = None, freq3 = None,
-        phase1 = 0, phase2 = 2 * math.pi / 3, phase3 = 4 * math.pi / 3,
-        center = 127.5, amplitude = 127.5
-    ):
-        if freq1 == None:
-            freq1 = self.__COLOR_CHANGE_FREQ
-        if freq2 == None:
-            freq2 = self.__COLOR_CHANGE_FREQ
-        if freq3 == None:
-            freq3 = self.__COLOR_CHANGE_FREQ
-
-        r = math.sin(self.__num_ticks * freq1 + phase1 + self.__color_gradient_offset) * amplitude + center
-        g = math.sin(self.__num_ticks * freq2 + phase2 + self.__color_gradient_offset) * amplitude + center
-        b = math.sin(self.__num_ticks * freq3 + phase3 + self.__color_gradient_offset) * amplitude + center
-        return [r, g, b]
 
     # Takes ~127-155ms on a 28x18 LED array
     def __tick_internal(self):

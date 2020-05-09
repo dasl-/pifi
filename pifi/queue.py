@@ -13,8 +13,11 @@ from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
 from pifi.config import Config
-from pifi.gameoflife import GameOfLife
+from pifi.games.gameoflife import GameOfLife
+from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.volumecontroller import VolumeController
+from pifi.games.snake import Snake
+from pifi.settings.snakesettings import SnakeSettings
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
@@ -40,7 +43,18 @@ class Queue:
             game_of_life = GameOfLife(self.__get_game_of_life_settings())
             has_reset_game_since_last_video = True
 
+        snake_settings = SnakeSettings(
+            # display_width = args.display_width, display_height = args.display_height,
+            # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
+            # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
+            tick_sleep = 0.2
+        )
+        snake = Snake(snake_settings)
+
         while True:
+            if snake.newGameRequested():
+                snake.newGame()
+
             next_video = self.__playlist.get_next_video()
             if next_video:
                 self.__play_video(next_video)
@@ -178,7 +192,7 @@ class Queue:
         if 'game_color_mode' in config:
             game_color_mode = config['game_color_mode']
         else:
-            game_color_mode = GameOfLifeSettings.GAME_COLOR_MODE_RANDOM
+            game_color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
 
         if 'fade' in config:
             fade = config['fade']
