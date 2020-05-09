@@ -12,11 +12,12 @@ from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
+from pifi.games.gamecolorhelper import GameColorHelper
 
 class PifiAPI():
     __playlist = None
     __vol_controller = None
-    __cursor = None
+    __snake_db_cursor = None
     __logger = None
 
     def __init__(self):
@@ -38,6 +39,31 @@ class PifiAPI():
             post_data['url'], post_data['color_mode'], post_data['thumbnail'], post_data['title'], post_data['duration']
         )
         response_details = post_data
+        response_details['success'] = True
+        return response_details
+
+    def enqueue_game(self, post_data):
+        game_type = Playlist.TYPE_GAME
+        url = None
+        color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
+        thumbnail = 'https://www.sciencemag.org/sites/default/files/styles/article_main_large/public/images/cc_iStock_18996432_LARGE_16x9.jpg?itok=Xd6hKkof'
+        title = post_data['title']
+        duration = 'n/a'
+        game_playlist_video_id = self.__playlist.enqueue(
+            url, color_mode, thumbnail, title, duration, game_type
+        )
+
+        # skip videos in the queue until we get to the game
+        while True:
+            current_video = self.__playlist.get_current_video()
+            if current_video is None:
+                break
+            if current_video['playlist_video_id'] < game_playlist_video_id:
+                self.__playlist.skip(current_video['playlist_video_id'])
+            else:
+                break
+
+        response_details = {}
         response_details['success'] = True
         return response_details
 
@@ -79,16 +105,6 @@ class PifiAPI():
             response_details['success'] = True
         else:
             response_details['success'] = False
-        return response_details
-
-    def snake_new_game(self, post_data):
-        response_details = {}
-        try:
-            Path(Snake.LOCK_FILE).touch(exist_ok = False)
-        except FileExistsError as e:
-            response_details['success'] = False
-        else:
-            response_details['success'] = True
         return response_details
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
@@ -168,8 +184,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.set_vol_pct(post_data)
         elif path == 'snake_move':
             response = self.__api.snake_move(post_data)
-        elif path == 'snake_new_game':
-            response = self.__api.snake_new_game(post_data)
+        elif path == 'enqueue_game':
+            response = self.__api.enqueue_game(post_data)
         else:
             self.__do_404()
             return
@@ -188,7 +204,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if self.path == '/snake' or self.path == '/snake/':
             self.path = DirectoryUtils().root_dir + '/snake.html'
-        elif self.path == '/snake.gif' or self.path == '/snake-active.gif':
+        elif self.path == '/snake.png' or self.path == '/snake-active.png':
             self.path = DirectoryUtils().root_dir + self.path
         else:
             self.path = self.__root_dir + self.path

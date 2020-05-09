@@ -43,23 +43,15 @@ class Queue:
             game_of_life = GameOfLife(self.__get_game_of_life_settings())
             has_reset_game_since_last_video = True
 
-        snake_settings = SnakeSettings(
-            # display_width = args.display_width, display_height = args.display_height,
-            # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
-            # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
-            tick_sleep = 0.2
-        )
-        snake = Snake(snake_settings)
-
         while True:
-            if snake.newGameRequested():
-                snake.newGame()
-
-            next_video = self.__playlist.get_next_video()
-            if next_video:
-                self.__play_video(next_video)
-                if self.__should_play_game_of_life:
-                    has_reset_game_since_last_video = False
+            next_item = self.__playlist.get_next_playlist_item()
+            if next_item:
+                if next_item["type"] == Playlist.TYPE_VIDEO or next_item["type"] == Playlist.TYPE_GAME:
+                    self.__play_playlist_item(next_item)
+                    if self.__should_play_game_of_life:
+                        has_reset_game_since_last_video = False
+                else:
+                    raise Exception("Invalid playlist_item type: {}".format(next_item["type"]))
             elif self.__should_play_game_of_life:
                 if has_reset_game_since_last_video:
                     force_reset = False
@@ -70,17 +62,35 @@ class Queue:
             else:
                 time.sleep(0.050)
 
-    def __play_video(self, video_record):
-        if not self.__playlist.set_current_video(video_record["playlist_video_id"]):
-            # Someone deleted the video from the queue in between getting the video and starting it.
+    def __play_playlist_item(self, playlist_item):
+        if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
+            # Someone deleted the item from the queue in between getting the item and starting it.
             return
 
-        video_settings = self.__get_video_settings(video_record)
-        video_player = VideoPlayer(video_settings)
-        video_processor = VideoProcessor(video_settings, video_record['playlist_video_id'])
-        video_processor.process_and_play(url = video_record["url"], video_player = video_player)
+        exception_to_raise = None
+        if playlist_item["type"] == Playlist.TYPE_VIDEO:
+            video_settings = self.__get_video_settings(playlist_item)
+            video_player = VideoPlayer(video_settings)
+            video_processor = VideoProcessor(video_settings, playlist_item['playlist_video_id'])
+            video_processor.process_and_play(url = playlist_item["url"], video_player = video_player)
+        elif playlist_item["type"] == Playlist.TYPE_GAME:
+            if playlist_item["title"] == Snake.GAME_TITLE:
+                snake_settings = SnakeSettings(
+                    # display_width = args.display_width, display_height = args.display_height,
+                    # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
+                    # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
+                    tick_sleep = 0.2, should_check_playlist = True,
+                )
+                snake = Snake(snake_settings)
+                snake.newGame(playlist_video_id = playlist_item["playlist_video_id"])
+            else:
+                exception_to_raise = Exception("Invalid game title: {}".format(playlist_item["title"]))
+        else:
+            exception_to_raise = Exception("Invalid playlist_item type: {}".format(playlist_item["type"]))
 
-        self.__playlist.end_video(video_record["playlist_video_id"])
+        self.__playlist.end_video(playlist_item["playlist_video_id"])
+        if exception_to_raise is not None:
+            raise exception_to_raise
 
     def __clear_screen(self):
         # VIdeoPlayer.__init__() method will clear the screen
