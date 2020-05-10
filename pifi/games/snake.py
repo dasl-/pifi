@@ -78,9 +78,15 @@ class Snake:
 
         while True:
             time.sleep(self.__settings.tick_sleep)
-            self.__db_cursor.execute("SELECT move FROM snake_moves ORDER BY move_id DESC LIMIT 1")
+            """
+            CREATE TABLE snake_moves(move INTEGER, move_id INTEGER PRIMARY KEY AUTOINCREMENT, is_deleted INTEGER default 0);
+            CREATE TABLE sqlite_sequence(name,seq);
+            CREATE INDEX is_deleted_move_id_idx ON snake_moves (is_deleted, move_id);
+            """
+            self.__db_cursor.execute("SELECT move, move_id FROM snake_moves WHERE is_deleted = 0 ORDER BY move_id ASC LIMIT 1")
             move = self.__db_cursor.fetchone()
             if move is not None:
+                self.__db_cursor.execute("UPDATE snake_moves SET is_deleted = 1 WHERE move_id = " + str(move[1]))
                 new_direction = move[0]
                 if (
                     (self.__direction == self.UP or self.__direction == self.DOWN) and
