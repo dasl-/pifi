@@ -64,7 +64,7 @@ class Snake:
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
         self.__video_player = VideoPlayer(self.__settings)
-        self.__logger.info("Doing init with GameOfLifeSettings: {}".format(vars(self.__settings)))
+        self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
 
