@@ -47,9 +47,6 @@ class Snake:
     # set datastructure representing all the coordinate pairs in the snake
     __snake_set = None
 
-    # set datastructure representing all the coordinate pairs in the snake except the head
-    __snake_body_set = None
-
     __direction = None
 
     __apple = None
@@ -121,11 +118,9 @@ class Snake:
             old_tail = self.__snake[-1]
             del self.__snake[-1]
             self.__snake_set.remove(old_tail)
-            self.__snake_body_set.remove(old_tail)
 
         self.__snake.insert(0, new_head)
         self.__snake_set.add(new_head)
-        self.__snake_body_set.add((old_head_y, old_head_x))
 
         self.__show_board()
 
@@ -139,8 +134,7 @@ class Snake:
         self.__apple = (y, x)
 
     def __is_game_over(self):
-        snake_head = self.__snake[0]
-        return snake_head in self.__snake_body_set
+        return len(self.__snake_set) < len(self.__snake)
 
     def __show_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
@@ -168,8 +162,6 @@ class Snake:
             coordinate = (height_midpoint, width_midpoint - x)
             self.__snake.append(coordinate)
             self.__snake_set.add(coordinate)
-            if x != 0:
-                self.__snake_body_set.add(coordinate)
 
         self.__place_apple()
         self.__db_cursor.execute("DELETE FROM snake_moves")
@@ -178,7 +170,6 @@ class Snake:
         self.__snake = collections.deque()
         self.__apple = None
         self.__snake_set = set()
-        self.__snake_body_set = set()
 
     def __clear_board(self):
         self.__reset_datastructures()
