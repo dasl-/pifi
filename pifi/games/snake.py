@@ -7,6 +7,7 @@ import pprint
 import sqlite3
 import os
 import collections
+import select
 from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.videoplayer import VideoPlayer
@@ -31,6 +32,8 @@ class Snake:
     __SNAKE_COLOR_CHANGE_FREQ = 0.05
 
     __APPLE_COLOR_CHANGE_FREQ = 0.2
+
+    __logger = None
 
     # SnakeSettings
     __settings = None
@@ -59,7 +62,10 @@ class Snake:
 
     __playlist_video_id = None
 
-    def __init__(self, settings):
+    __unix_socket = None
+    __unix_socket_address = None
+
+    def __init__(self, settings, unix_socket):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
@@ -71,23 +77,28 @@ class Snake:
         db_conn = sqlite3.connect(self.DB_PATH, isolation_level = None)
         self.__db_cursor = db_conn.cursor()
 
+        self.__unix_socket = unix_socket
+
     def newGame(self, playlist_video_id = None):
         self.__reset()
         self.__show_board()
         self.__playlist_video_id = playlist_video_id
 
         while True:
-            time.sleep(self.__settings.tick_sleep)
-            """
-            CREATE TABLE snake_moves(move INTEGER, move_id INTEGER PRIMARY KEY AUTOINCREMENT, is_deleted INTEGER default 0);
-            CREATE TABLE sqlite_sequence(name,seq);
-            CREATE INDEX is_deleted_move_id_idx ON snake_moves (is_deleted, move_id);
-            """
-            self.__db_cursor.execute("SELECT move, move_id FROM snake_moves WHERE is_deleted = 0 ORDER BY move_id ASC LIMIT 1")
-            move = self.__db_cursor.fetchone()
+            time.sleep(0.05)#self.__settings.tick_sleep)
+
+            move = None
+            is_ready_to_read, ignore1, ignore2 = select.select([self.__unix_socket], [], [], 0)
+            if is_ready_to_read:
+                move, self.__unix_socket_address = self.__unix_socket.recvfrom(4096)
+                move = move.decode()
+                if move == "game_over":
+                    self.__end_game()
+                    break
+                move = int(move)
+
             if move is not None:
-                self.__db_cursor.execute("UPDATE snake_moves SET is_deleted = 1 WHERE move_id = " + str(move[1]))
-                new_direction = move[0]
+                new_direction = move
                 if (
                     (self.__direction == self.UP or self.__direction == self.DOWN) and
                     (new_direction == self.UP or new_direction == self.DOWN)
@@ -102,7 +113,7 @@ class Snake:
                     self.__direction = new_direction
             self.__tick()
             if self.__is_game_over() or self.__maybe_skip_game():
-                self.__clear_board()
+                self.__end_game()
                 break
 
     def __tick(self):
@@ -119,6 +130,12 @@ class Snake:
             new_head = (old_head_y, (old_head_x + 1) % self.__settings.display_width)
 
         if new_head == self.__apple:
+            # BUG: sometimes when snake eats apple, apple stays put and continues flashing.
+            # The snake body overlaps on the apple, but the apple has higher z-index.
+            #
+            # Last time i noticed this when the snake was moving DOWN to eat an apple
+            #
+            # New apple wasn't placed till i ate the apple a second time
             self.__place_apple()
         else:
             old_tail = self.__snake[-1]
@@ -177,9 +194,19 @@ class Snake:
         self.__apple = None
         self.__snake_set = set()
 
+    def __end_game(self):
+        self.__close_websocket()
+        self.__clear_board()
+
     def __clear_board(self):
         self.__reset_datastructures()
         self.__show_board()
+
+    def __close_websocket(self):
+        try:
+            sent = self.__unix_socket.sendto('close_websocket'.encode(), self.__unix_socket_address)
+        except Exception as e:
+            pass
 
     def __maybe_skip_game(self):
         if not self.__settings.should_check_playlist:

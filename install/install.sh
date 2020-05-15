@@ -63,7 +63,7 @@ fi
 
 # setup logging: syslog
 sudo mkdir -p /var/log/pifi
-sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/update_youtube-dl.log
+sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/websocket_server.log /var/log/pifi/update_youtube-dl.log
 sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
 sudo systemctl restart rsyslog
 
@@ -75,6 +75,7 @@ sudo chmod 644 /etc/logrotate.d/pifi_logrotate
 # setup systemd services
 sudo $BASE_DIR/install/pifi_queue_service.sh
 sudo $BASE_DIR/install/pifi_server_service.sh
+sudo $BASE_DIR/install/pifi_websocket_server_service.sh
 sudo chown root:root /etc/systemd/system/pifi_*.service
 sudo chmod 644 /etc/systemd/system/pifi_*.service
 sudo systemctl enable /etc/systemd/system/pifi_*.service

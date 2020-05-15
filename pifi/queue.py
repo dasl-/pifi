@@ -1,10 +1,12 @@
 import os
+import errno
 import sys
 import ast
 import subprocess
 import time
 import json
 import shlex
+import socket
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.ledsettings import LedSettings
@@ -22,6 +24,8 @@ from pifi.settings.snakesettings import SnakeSettings
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
 
+    UNIX_SOCKET_PATH = '/tmp/snake_socket'
+
     __playlist = None
     __config = None
     __logger = None
@@ -32,6 +36,8 @@ class Queue:
         self.__config = Config()
         self.__should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+
+        self.__setup_unix_socket()
 
         # house keeping
         self.__clear_screen()
@@ -81,7 +87,7 @@ class Queue:
                     # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
                     tick_sleep = 0.2, should_check_playlist = True,
                 )
-                snake = Snake(snake_settings)
+                snake = Snake(snake_settings, self.__unix_socket)
                 snake.newGame(playlist_video_id = playlist_item["playlist_video_id"])
             else:
                 exception_to_raise = Exception("Invalid game title: {}".format(playlist_item["title"]))
@@ -222,3 +228,12 @@ class Queue:
             game_over_detection_lookback = game_over_detection_lookback, game_color_mode = game_color_mode,
             fade = fade, invert = invert
         )
+
+    def __setup_unix_socket(self):
+        self.__unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        try:
+            os.remove(self.UNIX_SOCKET_PATH)
+        except OSError as e: # this would be "except OSError, e:" before Python 2.6
+            if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+                raise # re-raise exception if a different error occurred
+        self.__unix_socket.bind(self.UNIX_SOCKET_PATH)
