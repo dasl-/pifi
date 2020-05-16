@@ -1,9 +1,16 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
+// By default, include the port i.e. 'pifi.club:666' in the api host to
+// support running the pifi on a custom port
+var api_host = window.location.host;
+if (process.env.NODE_ENV === 'development') {
+  // API url should not include the :3000 port that is present in the development server url
+  api_host = window.location.hostname;
+}
 const client = axios.create({
- baseURL: "//" + window.location.host + "/api",
- json: true
+  baseURL: "//" + api_host + "/api",
+  json: true
 });
 
 //On load, called to load the auth2 library and API client library.
