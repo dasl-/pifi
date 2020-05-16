@@ -5,7 +5,6 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
-    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js'></script>
     <title>SNAKE</title>
 
     <style>
@@ -15,47 +14,90 @@
         padding:0;
         overflow:hidden;
       }
+      .menu {
+        z-index:3;
+        position:absolute;
+        left:2em;
+        top:2em;
+      }
+      .menu ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      .menu ul li {
+        display:inline-block;        
+        color:#7dd1e5;
+        padding:.6em;
+        margin:.2em;
+        border:1px solid #e07db2;
+        border-radius:4px;
+        font-family:monospace;
+        font-size:1em;
+        text-transform:uppercase;
+        box-shadow:0 0 5px #e07db2;
+        background-color:#2e3136;
+        cursor:default;
+        transition:box-shadow .5s ease;
+      }
+      .menu ul li:hover {
+        box-shadow:0 0 10px #e07db2;
+      }
       .wrapper {
         display:flex;
         flex-flow:column nowrap;
         justify-content:center;
         align-items:center;
-        height:90vh;
+        height:100vh;
         width:100vw;
         overflow:hidden;
       }
-
-/*
-      .topquad {
-        position:absolute;
-        display:block;
-        width:0;
-        height:0;
-        border-left:50vw solid transparent;
-        border-right:50vw solid transparent;
-        border-top:50vw solid #fff;
+      .quad { 
+        position:fixed;
+        display:block;         
+        width:50vh;
+        height:50vh;
         z-index:2;
+        transform:rotate(45deg);
+        background-color:transparent;   
       }
-
-*/
-
+      .topq {
+        top:-10vh;
+        left:calc(50vw - 25vh);
+      }
+      .leftq {   
+        top:25vh;
+        left:calc(50vw - 60vh);
+        }
+      .rightq {
+        top:25vh;
+        right:calc(50vw - 60vh);
+      }
+      .bottomq {
+        top:60vh;
+        left:calc(50vw - 25vh);
+        }
+        .button {
+          max-height:38vh;
+        }
 
       .button {
         width:100px;
         height:294px;
-        max-height:20vh;
+        max-width:7.5vh;
+        max-height:22vh;
         background-repeat: no-repeat;
         background-size: contain;
         background-position:center;
         background-image:url("snake.png");
       }
+
       .lrwrapper {
         display:flex;
-        justify-content:space-between;
-        max-width:100vw;
-        max-height:15vh;
-        width:300px;
-        margin-top:-5vh;
+        justify-content:center;
+        min-height: 100px;
+        margin-top:-50px;
+        margin-bottom:-50px;
       }
       .left {
         transform:rotate(-90deg);
@@ -66,37 +108,46 @@
       .down {
         transform:rotate(180deg);
       }
-      .new-game {
-        color:#fff;
+      .spacer {
+        width:250px;
+        max-width:35vw;
+        display:block;
       }
+
       @media screen and (min-width:500px) {
-        .wrapper {
-          height:100vh;
-        }
         .button {
           max-height:38vh;
+          max-width:12.7vh;
         }
         .lrwrapper {
-          min-width:60vh;
-          max-height:10vh;
-          margin-bottom:15vh;
           margin-top:-15vh;
+          margin-bottom:-15vh;
       }
     </style>
 
     <script>
       $(document).ready(function () {
         var web_socket = null;
-
+        /*
         $(".button").click(function() {
-          if (!web_socket) {
-            return;
-          }
-
           $(".button").css("background-image", "url('snake.png')");
           $(this).css("background-image", "url('snake-active.png')");
           var direction = $(this).data("direction");
+          $.post({
+            url: "/api/snake_move",
+            data: JSON.stringify({move: direction})
+          });
+        });
+        */
+        $(".quad").click(function() {
+          if (!web_socket) {
+            return;
+          }
+          var direction = $(this).data("direction");
           web_socket.send(direction);
+          $(".button").css("background-image", "url('snake.png')");
+          $(".button[data-direction='" + direction + "']").css("background-image", "url('snake-active.png')");
+          console.log(direction);
         });
 
         $(".new-game").click(function(){
@@ -123,30 +174,18 @@
 
         //Keyboard input
         $(document).keydown(function(e) {
-          if (!web_socket) {
-            return;
-          }
           var keyinput = e.keyCode;
           var direction;
-          if (keyinput == 38) {
-            direction = 1;
-          }
-          if (keyinput == 40) {
-            direction = 2;
-          }
-          if (keyinput == 37) {
-            direction = 3;
-          }
-          if (keyinput == 39) {
-            direction = 4;
-          }
+          if (keyinput == 38) { direction = 1; }
+          if (keyinput == 40) { direction = 2; }
+          if (keyinput == 37) { direction = 3; }
+          if (keyinput == 39) { direction = 4; }
           if(direction) {
+            web_socket.send(direction);
             $(".button").css("background-image", "url('snake.png')");
             $(".button[data-direction='" + direction + "']").css("background-image", "url('snake-active.png')");
-            web_socket.send(direction);
           }
         });
-
       });
     </script>
 
@@ -154,19 +193,30 @@
   </head>
   <body>
 
-  <div class="topquad"></div>
+    <nav class="menu">
+      <ul>
+        <li class="new-game">new game</li>
+        <li>Settings</li>
+        <a href="http://pifi.club"><li>Pi-Fi</li></a>
+      </ul>
+    </nav>
 
-  <div class="wrapper">
-    <div class="button up" data-direction="1"></div>
-    <div class="lrwrapper">
-      <div class="button left" data-direction="3"></div>
-      <div class="button right" data-direction="4"></div>
+    <div class="quad topq" data-direction="1"></div>
+    <div class="quad leftq" data-direction="3"></div>
+    <div class="quad rightq" data-direction="4"></div>
+    <div class="quad bottomq" data-direction="2"></div>
+
+
+    <div class="wrapper">
+      <div class="button up" data-direction="1"></div>
+      <div class="lrwrapper">
+        <div class="button left" data-direction="3"></div>
+        <div class="spacer"></div>
+        <div class="button right" data-direction="4"></div>
+      </div>
+      <div class="button down" data-direction="2"></div>
+
     </div>
-    <div class="button down" data-direction="2"></div>
 
-    <div class="new-game">new game</div>
-
-  </div>
-
-</body>
+  </body>
 </html>

@@ -195,6 +195,7 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self):
+        self.__logger.info("game over, score: {}.".format(len(self.__snake)))
         self.__close_websocket()
         self.__clear_board()
 
