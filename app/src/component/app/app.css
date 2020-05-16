@@ -19,6 +19,9 @@
   .content.lock {
     overflow: auto;
   }
+  .playlist-enter-done {
+    overflow-y: hidden;
+  }
 }
 
 
