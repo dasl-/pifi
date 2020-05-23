@@ -8,11 +8,18 @@
     <title>SNAKE</title>
 
     <style>
+      :root {
+        --bg-color:#1e1f23;
+        --mid-gray:#2e3136;
+        --blue:#7dd1e5;
+        --pink:#e07db2;
+      }
       body {
-        background-color:#1e1f23;
+        background-color:var(--bg-color);
         margin:0;
         padding:0;
         overflow:hidden;
+        font-family:monospace;
       }
       .menu {
         z-index:3;
@@ -26,22 +33,31 @@
         padding: 0;
       }
       .menu ul li {
-        display:inline-block;        
-        color:#7dd1e5;
+        display:inline-block;  
+      }
+      .menu ul li a {      
+        color:var(--blue);
         padding:.6em;
         margin:.2em;
-        border:1px solid #e07db2;
+        border:1px solid var(--pink);
         border-radius:4px;
-        font-family:monospace;
         font-size:1em;
         text-transform:uppercase;
-        box-shadow:0 0 5px #e07db2;
-        background-color:#2e3136;
+        box-shadow:0 0 5px var(--pink);
+        background-color:var(--mid-gray);
         cursor:default;
-        transition:box-shadow .5s ease;
+        transition:box-shadow .2s ease;
       }
-      .menu ul li:hover {
-        box-shadow:0 0 10px #e07db2;
+      .menu ul li a:hover {                
+        box-shadow:0 0 15px var(--pink);
+      }
+      .menu ul li ul {
+        display:none;
+        position:absolute;
+        background-color:var(--mid-gray);
+        color:var(--pink);
+        padding:1em;
+        margin-top:1em;
       }
       .wrapper {
         display:flex;
@@ -176,15 +192,30 @@
         $(document).keydown(function(e) {
           var keyinput = e.keyCode;
           var direction;
+          //Arrow key input
           if (keyinput == 38) { direction = 1; }
           if (keyinput == 40) { direction = 2; }
           if (keyinput == 37) { direction = 3; }
           if (keyinput == 39) { direction = 4; }
+          
+
+          //WASD input
+          
+          if (keyinput == 87) { direction = 1; }
+          if (keyinput == 83) { direction = 2; }
+          if (keyinput == 65) { direction = 3; }
+          if (keyinput == 68) { direction = 4; }
+          
+
           if(direction) {
             web_socket.send(direction);
             $(".button").css("background-image", "url('snake.png')");
             $(".button[data-direction='" + direction + "']").css("background-image", "url('snake-active.png')");
           }
+        });
+        $(".dropdown").click(function() {
+          $(this).find("ul").toggle("fast","swing");
+          //css("display", "block")
         });
       });
     </script>
@@ -195,9 +226,19 @@
 
     <nav class="menu">
       <ul>
-        <li class="new-game">new game</li>
-        <li>Settings</li>
-        <a href="http://pifi.club"><li>Pi-Fi</li></a>
+        <li><a class="new-game">new game</a></li>
+        <li class="dropdown">
+          <a>Settings</a>
+          <ul>
+            <li>Left handed (WASD)
+              <label class="switch">
+                <input type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </li>
+          </ul>
+        </li>
+        <li><a href="http://pifi.club">Pi-Fi</a></li>
       </ul>
     </nav>
 

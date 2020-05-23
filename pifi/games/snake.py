@@ -56,8 +56,6 @@ class Snake:
 
     __pp = None
 
-    __db_cursor = None
-
     __playlist = None
 
     __playlist_video_id = None
@@ -75,7 +73,6 @@ class Snake:
         self.__playlist = Playlist()
 
         db_conn = sqlite3.connect(self.DB_PATH, isolation_level = None)
-        self.__db_cursor = db_conn.cursor()
 
         self.__unix_socket = unix_socket
 
@@ -93,7 +90,7 @@ class Snake:
                 move, self.__unix_socket_address = self.__unix_socket.recvfrom(4096)
                 move = move.decode()
                 if move == "game_over":
-                    self.__end_game()
+                    self.__end_game("game over signal received in unix socket")
                     break
                 move = int(move)
 
@@ -112,8 +109,11 @@ class Snake:
                 else:
                     self.__direction = new_direction
             self.__tick()
-            if self.__is_game_over() or self.__maybe_skip_game():
-                self.__end_game()
+            if self.__is_game_over():
+                self.__end_game("game over detected from snake state")
+                break
+            if self.__maybe_skip_game():
+                self.__end_game("game skip was requested")
                 break
 
     def __tick(self):
@@ -187,15 +187,14 @@ class Snake:
             self.__snake_set.add(coordinate)
 
         self.__place_apple()
-        self.__db_cursor.execute("DELETE FROM snake_moves")
 
     def __reset_datastructures(self):
         self.__snake = collections.deque()
         self.__apple = None
         self.__snake_set = set()
 
-    def __end_game(self):
-        self.__logger.info("game over, score: {}.".format(len(self.__snake)))
+    def __end_game(self, reason):
+        self.__logger.info("game over. score: {}. Reason: {}".format(len(self.__snake), reason))
         self.__close_websocket()
         self.__clear_board()
 
