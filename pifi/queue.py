@@ -85,7 +85,7 @@ class Queue:
                     # display_width = args.display_width, display_height = args.display_height,
                     # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
                     # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
-                    tick_sleep = 0.2, should_check_playlist = True,
+                    tick_sleep = 0.2, should_check_playlist = True, flip_x = False,
                 )
                 snake = Snake(snake_settings, self.__unix_socket)
                 snake.newGame(playlist_video_id = playlist_item["playlist_video_id"])

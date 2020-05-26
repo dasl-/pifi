@@ -14,6 +14,7 @@ from pifi.videoplayer import VideoPlayer
 from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
+from pifi.games.scoredisplayer import ScoreDisplayer
 from pifi.directoryutils import DirectoryUtils
 
 class Snake:
@@ -25,7 +26,9 @@ class Snake:
 
     GAME_TITLE = "snake"
 
-    DB_PATH = DirectoryUtils().root_dir + "/snake.db"
+    __GAME_OVER_REASON_SNAKE_STATE = 'game_over_reason_snake_state'
+    __GAME_OVER_REASON_SKIP_REQUESTED = 'game_over_reason_skip_requested'
+    __GAME_OVER_REASON_SOCKET_SIGNAL = 'game_over_reason_socket_signal'
 
     __SNAKE_STARTING_LENGTH = 4
 
@@ -72,8 +75,6 @@ class Snake:
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
 
-        db_conn = sqlite3.connect(self.DB_PATH, isolation_level = None)
-
         self.__unix_socket = unix_socket
 
     def newGame(self, playlist_video_id = None):
@@ -90,7 +91,7 @@ class Snake:
                 move, self.__unix_socket_address = self.__unix_socket.recvfrom(4096)
                 move = move.decode()
                 if move == "game_over":
-                    self.__end_game("game over signal received in unix socket")
+                    self.__end_game(self.__GAME_OVER_REASON_SOCKET_SIGNAL)
                     break
                 move = int(move)
 
@@ -110,10 +111,10 @@ class Snake:
                     self.__direction = new_direction
             self.__tick()
             if self.__is_game_over():
-                self.__end_game("game over detected from snake state")
+                self.__end_game(self.__GAME_OVER_REASON_SNAKE_STATE)
                 break
             if self.__maybe_skip_game():
-                self.__end_game("game skip was requested")
+                self.__end_game(self.__GAME_OVER_REASON_SKIP_REQUESTED)
                 break
 
     def __tick(self):
@@ -194,13 +195,28 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
-        self.__logger.info("game over. score: {}. Reason: {}".format(len(self.__snake), reason))
-        self.__close_websocket()
+        score = len(self.__snake)
+        if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
+            time.sleep(0.3)
+            for x in range(1, 5):
+                self.__clear_board()
+                time.sleep(0.1)
+                self.__show_board()
+                time.sleep(0.1)
+
+            score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
+            score_displayer.display_score()
+            time.sleep(10)
+
         self.__clear_board()
 
-    def __clear_board(self):
+        self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
+        self.__close_websocket()
         self.__reset_datastructures()
-        self.__show_board()
+
+    def __clear_board(self):
+        frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
+        self.__video_player.play_frame(frame)
 
     def __close_websocket(self):
         try:

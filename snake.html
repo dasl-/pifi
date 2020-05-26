@@ -37,6 +37,7 @@
       }
       .menu ul li a {      
         color:var(--blue);
+        text-decoration:none;
         padding:.6em;
         margin:.2em;
         border:1px solid var(--pink);
@@ -58,6 +59,11 @@
         color:var(--pink);
         padding:1em;
         margin-top:1em;
+        width:20em;
+        padding:2em;
+      }
+      .menu ul li ul li {
+        display:block;
       }
       .wrapper {
         display:flex;
@@ -128,6 +134,26 @@
         width:250px;
         max-width:35vw;
         display:block;
+      }
+
+      .slider { 
+        -webkit-appearance: none;  /* Override default CSS styles */
+        appearance: none;
+        background-color:var(--mid-gray);
+        margin:15px;
+        border-radius:2px;
+        border:1px solid var(--pink);
+        height:1px;
+      }
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        background-color:var(--bg-color);
+        border:1px solid var(--blue);
+        box-shadow:0 0 5px var(--blue);
+        width:15px;
+        height:15px;
+        border-radius:5px;
       }
 
       @media screen and (min-width:500px) {
@@ -215,7 +241,6 @@
         });
         $(".dropdown").click(function() {
           $(this).find("ul").toggle("fast","swing");
-          //css("display", "block")
         });
       });
     </script>
@@ -230,12 +255,10 @@
         <li class="dropdown">
           <a>Settings</a>
           <ul>
-            <li>Left handed (WASD)
-              <label class="switch">
-                <input type="checkbox">
-                <span class="slider"></span>
-              </label>
+            <li>Difficulty
+              <input type="range" min="1" max="7" value="3" class="slider" id="difficulty">
             </li>
+            <li>Color</li>
           </ul>
         </li>
         <li><a href="http://pifi.club">Pi-Fi</a></li>

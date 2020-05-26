@@ -11,19 +11,16 @@ from pifi.logger import Logger
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
-from pifi.games.snake import Snake
 from pifi.games.gamecolorhelper import GameColorHelper
 
 class PifiAPI():
     __playlist = None
     __vol_controller = None
-    __snake_db_cursor = None
     __logger = None
 
     def __init__(self):
         self.__playlist = Playlist()
         self.__vol_controller = VolumeController()
-        self.__snake_db_cursor = sqlite3.connect(Snake.DB_PATH, isolation_level = None).cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def get_queue(self):
@@ -46,7 +43,7 @@ class PifiAPI():
         game_type = Playlist.TYPE_GAME
         url = None
         color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
-        thumbnail = 'https://www.sciencemag.org/sites/default/files/styles/article_main_large/public/images/cc_iStock_18996432_LARGE_16x9.jpg?itok=Xd6hKkof'
+        thumbnail = '/snake-thumbnail.png'
         title = post_data['title']
         duration = 'n/a'
         game_playlist_video_id = self.__playlist.enqueue(
@@ -96,16 +93,6 @@ class PifiAPI():
             'vol_pct': vol_pct,
             'success': True
         }
-
-    def snake_move(self, post_data):
-        move = int(post_data['move'])
-        response_details = {}
-        if move == Snake.UP or move == Snake.DOWN or move == Snake.LEFT or move == Snake.RIGHT:
-            self.__snake_db_cursor.execute("INSERT INTO snake_moves (move) VALUES (?)", [move])
-            response_details['success'] = True
-        else:
-            response_details['success'] = False
-        return response_details
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
@@ -182,8 +169,6 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.clear()
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
-        elif path == 'snake_move':
-            response = self.__api.snake_move(post_data)
         elif path == 'enqueue_game':
             response = self.__api.enqueue_game(post_data)
         else:
@@ -204,7 +189,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if self.path == '/snake' or self.path == '/snake/':
             self.path = DirectoryUtils().root_dir + '/snake.html'
-        elif self.path == '/snake.png' or self.path == '/snake-active.png':
+        elif self.path in ('/snake.png', '/snake-active.png', '/snake-thumbnail.png'):
             self.path = DirectoryUtils().root_dir + self.path
         else:
             self.path = self.__root_dir + self.path
