@@ -209,8 +209,10 @@ class Snake:
 
             score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
             score_displayer.display_score()
-            for i in range(1, 8):
-                time.sleep(1)
+            for i in range(1, 40):
+                # if someone clicks "New Game" while the score is being displayed, immediately start a new game
+                # instead of waiting for the score to stop being displayed
+                time.sleep(0.2)
                 if self.__should_skip_game():
                     break
 
