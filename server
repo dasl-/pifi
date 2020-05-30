@@ -188,9 +188,9 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.path = '/index.html'
 
         if self.path == '/snake' or self.path == '/snake/':
-            self.path = DirectoryUtils().root_dir + '/snake.html'
+            self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
         elif self.path in ('/snake.png', '/snake-active.png', '/snake-thumbnail.png'):
-            self.path = DirectoryUtils().root_dir + self.path
+            self.path = DirectoryUtils().root_dir + '/assets/snake' + self.path
         else:
             self.path = self.__root_dir + self.path
 

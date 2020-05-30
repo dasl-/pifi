@@ -31,6 +31,7 @@ class WebSocketServer:
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
+    # todo: automatically close old websockets when a new one is opened -- no reason to have multiple open.
     async def server_connect(self, websocket, path):
         uniq_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
         # create a logger local to this thread so that the namespace isn't clobbered by another thread

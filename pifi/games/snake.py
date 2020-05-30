@@ -8,6 +8,7 @@ import sqlite3
 import os
 import collections
 import select
+import simpleaudio
 from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.videoplayer import VideoPlayer
@@ -57,6 +58,8 @@ class Snake:
 
     __apple = None
 
+    __apple_sound = None
+
     __pp = None
 
     __playlist = None
@@ -74,6 +77,7 @@ class Snake:
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
+        self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
 
         self.__unix_socket = unix_socket
 
@@ -113,7 +117,7 @@ class Snake:
             if self.__is_game_over():
                 self.__end_game(self.__GAME_OVER_REASON_SNAKE_STATE)
                 break
-            if self.__maybe_skip_game():
+            if self.__should_skip_game():
                 self.__end_game(self.__GAME_OVER_REASON_SKIP_REQUESTED)
                 break
 
@@ -134,13 +138,17 @@ class Snake:
         self.__snake_set.add(new_head)
 
         if new_head == self.__apple:
-            self.__place_apple()
+            self.__eat_apple()
         else:
             old_tail = self.__snake_linked_list[-1]
             del self.__snake_linked_list[-1]
             self.__snake_set.remove(old_tail)
 
         self.__show_board()
+
+    def __eat_apple(self):
+        play_obj = self.__apple_sound.play()
+        self.__place_apple()
 
     def __place_apple(self):
         # TODO: make better
@@ -189,10 +197,11 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
+        self.__close_websocket()
         score = len(self.__snake_linked_list)
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             time.sleep(0.3)
-            for x in range(1, 5):
+            for x in range(1, 5): # bink board
                 self.__clear_board()
                 time.sleep(0.1)
                 self.__show_board()
@@ -200,12 +209,14 @@ class Snake:
 
             score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
             score_displayer.display_score()
-            time.sleep(10)
+            for i in range(1, 8):
+                time.sleep(1)
+                if self.__should_skip_game():
+                    break
 
         self.__clear_board()
 
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
-        self.__close_websocket()
         self.__reset_datastructures()
 
     def __clear_board(self):
@@ -218,7 +229,7 @@ class Snake:
         except Exception as e:
             pass
 
-    def __maybe_skip_game(self):
+    def __should_skip_game(self):
         if not self.__settings.should_check_playlist:
             return False
 
