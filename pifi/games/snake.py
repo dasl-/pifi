@@ -48,7 +48,7 @@ class Snake:
     __game_color_mode = None
 
     # doubly linked list representing all the coordinate pairs in the snake
-    __snake = None
+    __snake_linked_list = None
 
     # set datastructure representing all the coordinate pairs in the snake
     __snake_set = None
@@ -119,7 +119,7 @@ class Snake:
 
     def __tick(self):
         self.__num_ticks += 1
-        old_head_y, old_head_x = self.__snake[0]
+        old_head_y, old_head_x = self.__snake_linked_list[0]
 
         if self.__direction == self.UP:
             new_head = ((old_head_y - 1) % self.__settings.display_height, old_head_x)
@@ -130,21 +130,15 @@ class Snake:
         elif self.__direction == self.RIGHT:
             new_head = (old_head_y, (old_head_x + 1) % self.__settings.display_width)
 
+        self.__snake_linked_list.insert(0, new_head)
+        self.__snake_set.add(new_head)
+
         if new_head == self.__apple:
-            # BUG: sometimes when snake eats apple, apple stays put and continues flashing.
-            # The snake body overlaps on the apple, but the apple has higher z-index.
-            #
-            # Last time i noticed this when the snake was moving DOWN to eat an apple
-            #
-            # New apple wasn't placed till i ate the apple a second time
             self.__place_apple()
         else:
-            old_tail = self.__snake[-1]
-            del self.__snake[-1]
+            old_tail = self.__snake_linked_list[-1]
+            del self.__snake_linked_list[-1]
             self.__snake_set.remove(old_tail)
-
-        self.__snake.insert(0, new_head)
-        self.__snake_set.add(new_head)
 
         self.__show_board()
 
@@ -158,14 +152,14 @@ class Snake:
         self.__apple = (y, x)
 
     def __is_game_over(self):
-        return len(self.__snake_set) < len(self.__snake)
+        return len(self.__snake_set) < len(self.__snake_linked_list)
 
     def __show_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         snake_rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks)
         apple_rgb = self.__game_color_helper.get_rgb(GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks)
 
-        for (y, x) in self.__snake:
+        for (y, x) in self.__snake_linked_list:
             frame[y, x] = snake_rgb
 
         if self.__apple is not None:
@@ -184,18 +178,18 @@ class Snake:
 
         for x in range(self.__SNAKE_STARTING_LENGTH):
             coordinate = (height_midpoint, width_midpoint - x)
-            self.__snake.append(coordinate)
+            self.__snake_linked_list.append(coordinate)
             self.__snake_set.add(coordinate)
 
         self.__place_apple()
 
     def __reset_datastructures(self):
-        self.__snake = collections.deque()
+        self.__snake_linked_list = collections.deque()
         self.__apple = None
         self.__snake_set = set()
 
     def __end_game(self, reason):
-        score = len(self.__snake)
+        score = len(self.__snake_linked_list)
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             time.sleep(0.3)
             for x in range(1, 5):
