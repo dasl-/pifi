@@ -59,11 +59,13 @@ class Playlist:
         self.__cursor.execute("DROP INDEX IF EXISTS status_idx")
         self.__cursor.execute("CREATE INDEX status_type_idx ON playlist_videos (status, type ASC, playlist_video_id ASC)")
 
-    def enqueue(self, url, color_mode, thumbnail, title, duration, video_type = None):
-        if video_type is None:
-            video_type = self.TYPE_VIDEO
-        self.__cursor.execute("INSERT INTO playlist_videos (type, url, color_mode, thumbnail, title, duration, status) VALUES(?, ?, ?, ?, ?, ?, ?)",
-                          [video_type, url, color_mode, thumbnail, title, duration, self.STATUS_QUEUED])
+    def enqueue(self, url, color_mode, thumbnail, title, duration, video_type, settings):
+        self.__cursor.execute(
+            "INSERT INTO playlist_videos " + 
+                "(type, url, color_mode, thumbnail, title, duration, status, settings) " + 
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+            [video_type, url, color_mode, thumbnail, title, duration, self.STATUS_QUEUED, settings]
+        )
         return self.__cursor.lastrowid
 
     # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the

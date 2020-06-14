@@ -5,200 +5,36 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/snake/style.css">
+
     <title>SNAKE</title>
 
-    <style>
-      :root {
-        --bg-color:#1e1f23;
-        --mid-gray:#2e3136;
-        --blue:#7dd1e5;
-        --pink:#e07db2;
-      }
-      body {
-        background-color:var(--bg-color);
-        margin:0;
-        padding:0;
-        overflow:hidden;
-        font-family:monospace;
-      }
-      .menu {
-        z-index:3;
-        position:absolute;
-        left:2em;
-        top:2em;
-      }
-      .menu ul {
-        list-style-type: none;
-        margin: 0;
-        padding: 0;
-      }
-      .menu ul li {
-        display:inline-block;  
-      }
-      .menu ul li a {      
-        color:var(--blue);
-        text-decoration:none;
-        padding:.6em;
-        margin:.2em;
-        border:1px solid var(--pink);
-        border-radius:4px;
-        font-size:1em;
-        text-transform:uppercase;
-        box-shadow:0 0 5px var(--pink);
-        background-color:var(--mid-gray);
-        cursor:default;
-        transition:box-shadow .2s ease;
-      }
-      .menu ul li a:hover {                
-        box-shadow:0 0 15px var(--pink);
-      }
-      .menu ul li ul {
-        display:none;
-        position:absolute;
-        background-color:var(--mid-gray);
-        color:var(--pink);
-        padding:1em;
-        margin-top:1em;
-        width:20em;
-        padding:1.5em;
-        border-radius:5px;
-        box-shadow:0 0 3px var(--pink);
-        text-align:center;
-      }
-      .menu ul li ul li {
-        display:block;
-      }
-      .wrapper {
-        display:flex;
-        flex-flow:column nowrap;
-        justify-content:center;
-        align-items:center;
-        height:100vh;
-        width:100vw;
-        overflow:hidden;
-      }
-      .quad { 
-        position:fixed;
-        display:block;         
-        width:50vh;
-        height:50vh;
-        z-index:2;
-        transform:rotate(45deg);
-        background-color:transparent;   
-      }
-      .topq {
-        top:-10vh;
-        left:calc(50vw - 25vh);
-      }
-      .leftq {   
-        top:25vh;
-        left:calc(50vw - 60vh);
-        }
-      .rightq {
-        top:25vh;
-        right:calc(50vw - 60vh);
-      }
-      .bottomq {
-        top:60vh;
-        left:calc(50vw - 25vh);
-        }
-        .button {
-          max-height:38vh;
-        }
 
-      .button {
-        width:100px;
-        height:294px;
-        max-width:7.5vh;
-        max-height:22vh;
-        background-repeat: no-repeat;
-        background-size: contain;
-        background-position:center;
-        background-image:url("snake.png");
-      }
-
-      .lrwrapper {
-        display:flex;
-        justify-content:center;
-        min-height: 100px;
-        margin-top:-50px;
-        margin-bottom:-50px;
-      }
-      .left {
-        transform:rotate(-90deg);
-      }
-      .right {
-        transform:rotate(90deg);
-      }
-      .down {
-        transform:rotate(180deg);
-      }
-      .spacer {
-        width:250px;
-        max-width:35vw;
-        display:block;
-      }
-
-      .slider { 
-        -webkit-appearance: none;  /* Override default CSS styles */
-        appearance: none;
-        background-color:var(--mid-gray);
-        margin:15px;
-        border-radius:2px;
-        border:1px solid var(--pink);
-        height:1px;
-      }
-      .slider::-webkit-slider-thumb {
-        -webkit-appearance: none; /* Override default look */
-        appearance: none;
-        background-color:var(--bg-color);
-        border:1px solid var(--blue);
-        box-shadow:0 0 5px var(--blue);
-        width:15px;
-        height:15px;
-        border-radius:5px;
-      }
-
-      @media screen and (min-width:500px) {
-        .button {
-          max-height:38vh;
-          max-width:12.7vh;
-        }
-        .lrwrapper {
-          margin-top:-15vh;
-          margin-bottom:-15vh;
-      }
-    </style>
 
     <script>
       $(document).ready(function () {
         var web_socket = null;
-        /*
-        $(".button").click(function() {
-          $(".button").css("background-image", "url('snake.png')");
-          $(this).css("background-image", "url('snake-active.png')");
-          var direction = $(this).data("direction");
-          $.post({
-            url: "/api/snake_move",
-            data: JSON.stringify({move: direction})
-          });
-        });
-        */
+
         $(".quad").click(function() {
           if (!web_socket) {
             return;
           }
           var direction = $(this).data("direction");
           web_socket.send(direction);
-          $(".button").css("background-image", "url('snake.png')");
-          $(".button[data-direction='" + direction + "']").css("background-image", "url('snake-active.png')");
+          $(".button").css("background-image", "url('/assets/snake/snake.png')");
+          $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
           console.log(direction);
         });
 
         $(".new-game").click(function(){
+          var difficulty = $("#difficulty").val();
           $.post({
               url: "/api/enqueue_game",
-              data: JSON.stringify({title: 'snake'})
+              data: JSON.stringify({
+                title: 'snake',
+                difficulty: difficulty
+              })
           });
           var loc = window.location, new_uri;
           if (loc.protocol === "https:") {
@@ -226,52 +62,114 @@
           if (keyinput == 40) { direction = 2; }
           if (keyinput == 37) { direction = 3; }
           if (keyinput == 39) { direction = 4; }
-          
+
 
           //WASD input
-          
+
           if (keyinput == 87) { direction = 1; }
           if (keyinput == 83) { direction = 2; }
           if (keyinput == 65) { direction = 3; }
           if (keyinput == 68) { direction = 4; }
-          
+
 
           if(direction) {
             web_socket.send(direction);
-            $(".button").css("background-image", "url('snake.png')");
-            $(".button[data-direction='" + direction + "']").css("background-image", "url('snake-active.png')");
+            $(".button").css("background-image", "url('/assets/snake/snake.png')");
+            $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
           }
         });
-        $(".dropdown").click(function() {
-          $(this).find("ul").toggle("fast","swing");
+
+        //Menu button for mobile
+        $(".menubutton").click(function() {
+          $(".menu").slideToggle("fast");
         });
+
+        //Dropdown menu toggle
+        $(".dropdown").click(function() {
+          $(this).next("ul").toggle("fast","swing");
+        });
+
+        //Show/hide leaderboard
+        $("#leader").click(function() {
+          $(".leaderboard").fadeIn();
+        });
+        $(document).mouseup(function (e){
+          var container = $(".leaderboard");
+          if (!container.is(e.target) && container.has(e.target).length === 0){
+          container.fadeOut();
+        }
+        });
+
+        //Lower difficulty if mobile
+        var isTouchDevice = 'ontouchstart' in document.documentElement;
+        if ( isTouchDevice ) {
+        // do mobile handling
+          var difficulty = $('#difficulty');
+          difficulty.val('3');
+
+          $(".new-game").click(function() {
+            $(".menu").hide();
+          });
+
+        }
+
+        $('#difficulty').on('input', function() {
+          localStorage.setItem('difficulty', this.value);
+          document.getElementById('difficultyval').innerHTML = this.value;
+        });
+
+        var saved_difficulty = localStorage.getItem('difficulty');
+        if (saved_difficulty !== null && parseInt(saved_difficulty) == saved_difficulty && saved_difficulty > 0 && saved_difficulty < 10) {
+          $('#difficulty').val(saved_difficulty);
+        }
+
+        document.getElementById('difficultyval').innerHTML = document.getElementById('difficulty').value;
+
       });
     </script>
 
-
-  </head>
-  <body>
+    <span class="menubutton">Menu</span>
 
     <nav class="menu">
       <ul>
-        <li><a class="new-game">new game</a></li>
-        <li class="dropdown">
-          <a>Settings</a>
+        <li><a class="new-game">New Game</a></li>
+        <li>
+          <a class="dropdown">Settings</a>
           <ul>
-            <li>Difficulty
-              <input type="range" min="1" max="7" value="3" class="slider" id="difficulty">
+            <li><label>Difficulty</label>
+              <input type="range" min="1" max="9" value="7" class="slider" id="difficulty"><span id="difficultyval"></span>
             </li>
           </ul>
         </li>
+        <li><a id="leader">Hi-Score</a></li>
         <li><a href="http://pifi.club">Pi-Fi</a></li>
       </ul>
     </nav>
+
+  </head>
+  <body>
 
     <div class="quad topq" data-direction="1"></div>
     <div class="quad leftq" data-direction="3"></div>
     <div class="quad rightq" data-direction="4"></div>
     <div class="quad bottomq" data-direction="2"></div>
 
+    <div class="leaderboard">
+      <ol>
+        <li><span class="leaderinitial">DAL</span>.............<span class="leaderscore">0157</span></li>
+        <li><span class="leaderinitial">ADL</span>.............<span class="leaderscore">0117</span></li>
+      </ol>
+    </div>
+
+
+    <div class="initialinput">
+      <form action="scoreinput.py" method="POST">
+        <input type="text" name="initial1" value="A" />
+        <input type="text" name="initial2" value="A" />
+        <input type="text" name="initial3" value="A" />
+        <input type="submit" value="Submit">
+      </form>
+    </div>
 
     <div class="wrapper">
       <div class="button up" data-direction="1"></div>

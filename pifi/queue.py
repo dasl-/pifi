@@ -7,6 +7,7 @@ import time
 import json
 import shlex
 import socket
+import traceback
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.ledsettings import LedSettings
@@ -81,11 +82,19 @@ class Queue:
             video_processor.process_and_play(url = playlist_item["url"], video_player = video_player)
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
+                difficulty = SnakeSettings.DEFAULT_DIFFICULTY
+                try:
+                    difficulty = int(json.loads(playlist_item['settings'])['difficulty'])
+                    if difficulty < 0 or difficulty > 9:
+                        difficulty = SnakeSettings.DEFAULT_DIFFICULTY
+                except Exception as e:
+                    self.__logger.error('Exception: {}'.format(traceback.format_exc()))
+
                 snake_settings = SnakeSettings(
                     # display_width = args.display_width, display_height = args.display_height,
                     # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
                     # tick_sleep = args.tick_sleep, game_color_mode = args.game_color_mode,
-                    tick_sleep = 0.2, should_check_playlist = True, flip_x = False,
+                    should_check_playlist = True, flip_x = False, difficulty = difficulty
                 )
                 snake = Snake(snake_settings, self.__unix_socket)
                 snake.newGame(playlist_video_id = playlist_item["playlist_video_id"])

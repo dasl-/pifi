@@ -5,6 +5,7 @@ import json
 import subprocess
 import ssl
 import sqlite3
+import traceback
 from pathlib import Path
 from pifi.playlist import Playlist
 from pifi.logger import Logger
@@ -12,6 +13,7 @@ from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.gamecolorhelper import GameColorHelper
+from pifi.settings.snakesettings import SnakeSettings
 
 class PifiAPI():
     __playlist = None
@@ -33,7 +35,7 @@ class PifiAPI():
 
     def enqueue(self, post_data):
         self.__playlist.enqueue(
-            post_data['url'], post_data['color_mode'], post_data['thumbnail'], post_data['title'], post_data['duration']
+            post_data['url'], post_data['color_mode'], post_data['thumbnail'], post_data['title'], post_data['duration'], Playlist.TYPE_VIDEO, ''
         )
         response_details = post_data
         response_details['success'] = True
@@ -43,11 +45,15 @@ class PifiAPI():
         game_type = Playlist.TYPE_GAME
         url = None
         color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
-        thumbnail = '/snake-thumbnail.png'
+        thumbnail = '/snake/snake-thumbnail.png'
         title = post_data['title']
+        difficulty = int(post_data['difficulty'])
+        if difficulty < 0 or difficulty > 9:
+            difficulty = SnakeSettings.DEFAULT_DIFFICULTY
+        settings = json.dumps({ 'difficulty': difficulty })
         duration = 'n/a'
         game_playlist_video_id = self.__playlist.enqueue(
-            url, color_mode, thumbnail, title, duration, game_type
+            url, color_mode, thumbnail, title, duration, game_type, settings
         )
 
         # skip videos in the queue until we get to the game
@@ -121,16 +127,15 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
             return self.__serve_static_asset()
         except Exception as e:
-            self.log_error('Exception: ' + str(e))
+            self.log_error('Exception: {}'.format(traceback.format_exc()))
 
     def do_POST(self):
         try:
             if self.path[:4] == "/api":
                 return self.__do_api_POST(self.path[5:])
-
             return self.__serve_static_asset()
         except Exception as e:
-            self.log_error('Exception: ' + str(e))
+            self.log_error('Exception: {}'.format(traceback.format_exc()))
 
     def __do_404(self):
         self.send_response(404)
@@ -189,8 +194,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if self.path == '/snake' or self.path == '/snake/':
             self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
-        elif self.path in ('/snake.png', '/snake-active.png', '/snake-thumbnail.png'):
-            self.path = DirectoryUtils().root_dir + '/assets/snake' + self.path
+        elif self.path.startswith('/assets/'):
+            self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
         else:
             self.path = self.__root_dir + self.path
 
@@ -199,6 +204,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.send_response(200)
         except Exception as e:
             self.__logger.error(str(e))
+            self.log_error('Exception: {}'.format(traceback.format_exc()))
             file_to_open = "File not found"
             self.__do_404()
             return
@@ -217,10 +223,10 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         self.log_message('[REQUEST] "%s" %s %s', self.requestline, str(code), str(size))
 
     def log_error(self, format, *args):
-        self.__logger.error("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format%args))
+        self.__logger.error("%s - - %s" % (self.client_address[0], format%args))
 
     def log_message(self, format, *args):
-        self.__logger.info("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), format%args))
+        self.__logger.info("%s - - %s" % (self.client_address[0], format%args))
 
 
 class PifiServer:

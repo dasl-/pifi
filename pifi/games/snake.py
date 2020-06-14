@@ -87,7 +87,7 @@ class Snake:
         self.__playlist_video_id = playlist_video_id
 
         while True:
-            time.sleep(0.05)#self.__settings.tick_sleep)
+            time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
             move = None
             is_ready_to_read, ignore1, ignore2 = select.select([self.__unix_socket], [], [], 0)
@@ -198,7 +198,7 @@ class Snake:
 
     def __end_game(self, reason):
         self.__close_websocket()
-        score = len(self.__snake_linked_list)
+        score = len(self.__snake_linked_list) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             time.sleep(0.3)
             for x in range(1, 5): # bink board
@@ -225,6 +225,12 @@ class Snake:
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         self.__video_player.play_frame(frame)
 
+    # TODO: when clicking "new game" when there's already a game in progress:
+    # 1) JS creates a new websocket
+    # 2) backend ends the game and we execute __close_websocket here
+    # 3) this results in the web socket server exiting
+    # 4) the websocket created in (1) closes
+    # 5) thus the websocket is closed for the new game, game is unresponsive
     def __close_websocket(self):
         try:
             sent = self.__unix_socket.sendto('close_websocket'.encode(), self.__unix_socket_address)
