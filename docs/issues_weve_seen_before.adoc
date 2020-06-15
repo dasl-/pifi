@@ -1,5 +1,6 @@
 # Issues we've seen before
 :toc:
+:toclevels: 5
 
 ## CPU throttling
 If you see log lines like this:
@@ -42,3 +43,6 @@ After replacing the SD card, the pi would no longer randomly reboot itself. See 
 
 ## Youtube API 403 errors
 https://stackoverflow.com/questions/40355794/access-not-configured-youtube-data-api-has-not-been-used-in-project-60894180825
+
+## Unable to ssh onto pi / hit pifi web page
+https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11
