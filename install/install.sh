@@ -32,27 +32,6 @@ set -x
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 
-# clean up deprecated stuff:
-# todo: delete this eventually
-sudo systemctl stop lightness_queue.service
-sudo systemctl stop lightness_server.service
-sudo systemctl disable lightness_queue.service
-sudo systemctl disable lightness_server.service
-sudo rm -rf /etc/systemd/system/lightness*
-sudo systemctl daemon-reload
-sudo systemctl reset-failed
-sudo rm -rf /var/log/lightness
-sudo rm -rf /etc/rsyslog.d/lightness*
-sudo rm -rf /etc/logrotate.d/lightness*
-sudo mv $BASE_DIR/lightness.db $BASE_DIR/pifi.db
-if [[ "$BASE_DIR" == */lightness ]]; then
-  NEW_BASE_DIR=$(dirname $BASE_DIR)"/pifi"
-  sudo mv $BASE_DIR $NEW_BASE_DIR
-  BASE_DIR=$NEW_BASE_DIR
-else
-  echo "BASE_DIR didnt end with /lightness, skipping rename to /pifi"
-fi
-
 # generate loading screens
 if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
     "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
