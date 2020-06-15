@@ -68,3 +68,16 @@ sudo chmod 644 /etc/cron.d/pifi
 
 # build the web app
 sudo npm run build --prefix "$BASE_DIR"/app
+
+# Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
+# See: https://www.raspberrypi.org/documentation/remote-access/ip-address.md "Resolving raspberrypi.local with mDNS"
+if [[ $(cat /etc/hostname) != pifi ]]; then
+  echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
+  sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
+  is_restart_required=true
+fi
+
+if [ "$is_restart_required" = true ] ; then
+    echo "Restarting..."
+    sudo shutdown -r now
+fi
