@@ -63,7 +63,8 @@ https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 ### Vanity domain name (optional):
 1. After running [./install/install.sh](https://github.com/dasl-/pifi/blob/f4b16dfa625211d5aa9666b420e60834bb05e93e/install/install.sh#L72-L78), you can SSH onto the pi or hit the pifi webpage via `pifi.local` (i.e.: `ssh pi@pifi.local` and http://pifi.local )
 1. Optionally reserve an IP address for the pifi on your router (if it supports this)
-1. Note if you choose 192.168.1.100 for the reserved IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :) ([other options](https://www.devside.net/wamp-server/accessing-websites-on-a-local-network-lan-web-server) for accessing the pi via a domain name)
+1. Note if you choose 192.168.1.100 for the reserved IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :)
+    1. [other options](https://www.devside.net/wamp-server/accessing-websites-on-a-local-network-lan-web-server) for accessing the pi via a domain name
 
 ### Connect GPIO Pins
 (pinout: https://pinout.xyz/)
