@@ -45,7 +45,7 @@ class PifiAPI():
         game_type = Playlist.TYPE_GAME
         url = None
         color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
-        thumbnail = '/snake/snake-thumbnail.png'
+        thumbnail = '/assets/snake/snake-thumbnail.png'
         title = post_data['title']
         difficulty = int(post_data['difficulty'])
         if difficulty < 0 or difficulty > 9:
