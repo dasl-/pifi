@@ -52,7 +52,8 @@ class Playlist:
                 duration VARCHAR(20),
                 color_mode VARCHAR(20),
                 status VARCHAR(20),
-                is_skip_requested INTEGER DEFAULT 0
+                is_skip_requested INTEGER DEFAULT 0,
+                settings TEXT DEFAULT ''
             )"""
         )
 
@@ -61,8 +62,8 @@ class Playlist:
 
     def enqueue(self, url, color_mode, thumbnail, title, duration, video_type, settings):
         self.__cursor.execute(
-            "INSERT INTO playlist_videos " + 
-                "(type, url, color_mode, thumbnail, title, duration, status, settings) " + 
+            "INSERT INTO playlist_videos " +
+                "(type, url, color_mode, thumbnail, title, duration, status, settings) " +
                 "VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
             [video_type, url, color_mode, thumbnail, title, duration, self.STATUS_QUEUED, settings]
         )
