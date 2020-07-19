@@ -10,3 +10,7 @@ __pycache__/
 config.json
 loading_screen_color.npy
 loading_screen_monochrome.npy
+
+# these css files are built via scss
+app/src/css/custom-theme.css
+app/src/css/themes/*.css
