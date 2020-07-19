@@ -95,8 +95,7 @@ class ScoreDisplayer:
                     frame[y + 1 + digit_component_length + 1 + digit_component_length, x + i + 1] = rgb
 
     def __get_digit_component_length(self):
-        return 3
         return min(
-            round(4 * self.__settings.display_width / 28),
-            round(4 * self.__settings.display_height / 18)
+            round(3 * self.__settings.display_width / 28),
+            round(3 * self.__settings.display_height / 18)
         )
