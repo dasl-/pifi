@@ -66,12 +66,14 @@ class Playlist:
             "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ? AND playlist_video_id = ?",
             [self.STATUS_PLAYING, playlist_video_id]
         )
+        return self.__cursor.rowcount >= 1
 
     def remove(self, playlist_video_id):
         self.__cursor.execute(
-            "UPDATE playlist_videos set status = ? WHERE playlist_video_id = ?",
-            [self.STATUS_DELETED, playlist_video_id]
+            "UPDATE playlist_videos set status = ? WHERE playlist_video_id = ? AND status = ?",
+            [self.STATUS_DELETED, playlist_video_id, self.STATUS_QUEUED]
         )
+        return self.__cursor.rowcount >= 1
 
     def clear(self):
         self.__cursor.execute("UPDATE playlist_videos set status = ? WHERE status = ?",

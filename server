@@ -71,18 +71,17 @@ class PifiAPI():
         return response_details
 
     def skip(self, post_data):
-        self.__playlist.skip(post_data['playlist_video_id'])
+        success = self.__playlist.skip(post_data['playlist_video_id'])
 
         response_details = {}
-        response_details['success'] = True
+        response_details['success'] = success
         return response_details
 
     def remove(self, post_data):
-        # todo: if you remove the current video it should be equivalent to a skip, currently it is not
-        self.__playlist.remove(post_data['playlist_video_id'])
+        success = self.__playlist.remove(post_data['playlist_video_id'])
 
         response_details = {}
-        response_details['success'] = True
+        response_details['success'] = success
         return response_details
 
     def clear(self):
