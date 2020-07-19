@@ -16,6 +16,7 @@ from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scoredisplayer import ScoreDisplayer
+from pifi.games.highscores import HighScores
 from pifi.directoryutils import DirectoryUtils
 
 class Snake:
@@ -66,6 +67,8 @@ class Snake:
 
     __playlist_video_id = None
 
+    __highscores = None
+
     __unix_socket = None
     __unix_socket_address = None
 
@@ -77,6 +80,7 @@ class Snake:
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
+        self.__highscores = HighScores()
         self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
 
         self.__unix_socket = unix_socket
@@ -87,6 +91,8 @@ class Snake:
         self.__playlist_video_id = playlist_video_id
 
         while True:
+            # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
+            # lead to more consistent tick durations?
             time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
             move = None
@@ -197,9 +203,19 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
-        self.__close_websocket()
         score = len(self.__snake_linked_list) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
+            is_high_score = self.__highscores.is_high_score(score, self.GAME_TITLE)
+            high_score_id = self.__highscores.insert_score(score, self.GAME_TITLE)
+            if is_high_score:
+                try:
+                    sent = self.__unix_socket.sendto(
+                        'high_score: {}'.format(high_score_id).encode(),
+                        self.__unix_socket_address
+                    )
+                except Exception as e:
+                    pass
+
             time.sleep(0.3)
             for x in range(1, 5): # bink board
                 self.__clear_board()
@@ -216,6 +232,7 @@ class Snake:
                 if self.__should_skip_game():
                     break
 
+        self.__close_websocket()
         self.__clear_board()
 
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))

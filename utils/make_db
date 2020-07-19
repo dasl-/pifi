@@ -2,8 +2,12 @@
 import os
 import sys
 
+from pifi.playlist import Playlist
+from pifi.games.highscores import HighScores
+
+# TODO what are these next two lines for? is it necessary?
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
-from pifi.playlist import Playlist
 
 Playlist().construct()
+HighScores().construct()

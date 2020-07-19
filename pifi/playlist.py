@@ -1,12 +1,6 @@
 import sqlite3
 from pifi.logger import Logger
-from pifi.directoryutils import DirectoryUtils
-
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
+from pifi.database import Database
 
 class Playlist:
 
@@ -28,15 +22,11 @@ class Playlist:
     TYPE_VIDEO = 'TYPE_VIDEO'
     TYPE_GAME = 'TYPE_GAME'
 
-    __conn = None
     __cursor = None
     __logger = None
 
     def __init__(self):
-        # `isolation_level = None` specifies autocommit mode
-        self.__conn = sqlite3.connect(DirectoryUtils().root_dir + '/pifi.db', isolation_level = None)
-        self.__conn.row_factory = dict_factory
-        self.__cursor = self.__conn.cursor()
+        self.__cursor = Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def construct(self):
