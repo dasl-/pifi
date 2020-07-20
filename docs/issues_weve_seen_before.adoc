@@ -60,3 +60,5 @@ Traceback (most recent call last):
 sqlite3.OperationalError: disk I/O error
 ```
 Sometimes even though it reports a failure, it seems like all the rows got written successfully. Other times, it seems like the commit fails and nothing gets written. Perhaps this is due to SD card flakiness -- the issue seems transient and a retry often works. Potentially we can address this by backing up the DB before hand and restoring the backup if the schema change fails, then retrying a few times. Or get a better SD card.
+
+Maybe using WAL mode would help? https://www.sqlite.org/wal.html
