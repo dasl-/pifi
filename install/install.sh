@@ -52,9 +52,9 @@ sudo chown root:root /etc/logrotate.d/pifi_logrotate
 sudo chmod 644 /etc/logrotate.d/pifi_logrotate
 
 # setup systemd services
-sudo $BASE_DIR/install/pifi_queue_service.sh
-sudo $BASE_DIR/install/pifi_server_service.sh
-sudo $BASE_DIR/install/pifi_websocket_server_service.sh
+sudo "$BASE_DIR/install/pifi_queue_service.sh"
+sudo "$BASE_DIR/install/pifi_server_service.sh"
+sudo "$BASE_DIR/install/pifi_websocket_server_service.sh"
 sudo chown root:root /etc/systemd/system/pifi_*.service
 sudo chmod 644 /etc/systemd/system/pifi_*.service
 sudo systemctl enable /etc/systemd/system/pifi_*.service
@@ -62,9 +62,12 @@ sudo systemctl daemon-reload
 sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
 
 # setup youtube-dl update cron
-sudo $BASE_DIR/install/pifi_cron.sh
+sudo "$BASE_DIR/install/pifi_cron.sh"
 sudo chown root:root /etc/cron.d/pifi
 sudo chmod 644 /etc/cron.d/pifi
+
+# Update database schema (if necessary)
+sudo "$BASE_DIR"/utils/make_db
 
 # build the web app
 sudo npm run build --prefix "$BASE_DIR"/app

@@ -1,6 +1,6 @@
 import sqlite3
 from pifi.logger import Logger
-from pifi.database import Database
+import pifi.database
 
 class HighScores:
 
@@ -10,7 +10,7 @@ class HighScores:
     __logger = None
 
     def __init__(self):
-        self.__cursor = Database().get_cursor()
+        self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def construct(self):
@@ -18,7 +18,7 @@ class HighScores:
         # TODO: get rid of autoincrement?
         self.__cursor.execute("""
             CREATE TABLE high_scores (
-                score_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                score_id INTEGER PRIMARY KEY,
                 score INTEGER,
                 initials VARCHAR(100) DEFAULT '',
                 create_date DATETIME DEFAULT CURRENT_TIMESTAMP,

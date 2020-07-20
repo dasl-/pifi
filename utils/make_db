@@ -1,13 +1,11 @@
 #!/usr/bin/python3
+# This is called in the ./install/install.sh script
 import os
 import sys
 
-from pifi.playlist import Playlist
-from pifi.games.highscores import HighScores
-
-# TODO what are these next two lines for? is it necessary?
+# This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-Playlist().construct()
-HighScores().construct()
+from pifi.database import Database
+Database().construct()

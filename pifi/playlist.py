@@ -1,6 +1,6 @@
 import sqlite3
 from pifi.logger import Logger
-from pifi.database import Database
+import pifi.database
 
 class Playlist:
 
@@ -26,14 +26,14 @@ class Playlist:
     __logger = None
 
     def __init__(self):
-        self.__cursor = Database().get_cursor()
+        self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS playlist_videos")
         self.__cursor.execute("""
             CREATE TABLE playlist_videos (
-                playlist_video_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                playlist_video_id INTEGER PRIMARY KEY,
                 type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
                 create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
                 url TEXT,
