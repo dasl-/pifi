@@ -46,3 +46,17 @@ https://stackoverflow.com/questions/40355794/access-not-configured-youtube-data-
 
 ## Unable to ssh onto pi / hit pifi web page
 https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11
+
+## Schema changes fail due to disk errors
+Something like this:
+```
+2020-07-20T01:01:51.256742+00:00 [info] [Database] current_schema_version: -1
+2020-07-20T01:01:51.257580+00:00 [info] [Database] Constructing database schema from scratch...
+Traceback (most recent call last):
+  File "./utils/make_db", line 11, in <module>
+    Database().construct()
+  File "/home/pi/development/pifi/pifi/database.py", line 90, in construct
+    self.__cursor.execute("COMMIT")
+sqlite3.OperationalError: disk I/O error
+```
+Sometimes even though it reports a failure, it seems like all the rows got written successfully. Other times, it seems like the commit fails and nothing gets written. Perhaps this is due to SD card flakiness -- the issue seems transient and a retry often works. Potentially we can address this by backing up the DB before hand and restoring the backup if the schema change fails, then retrying a few times. Or get a better SD card.
