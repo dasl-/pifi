@@ -209,7 +209,7 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
-        score = len(self.__snake_linked_list) * self.__settings.difficulty
+        score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             is_high_score = self.__highscores.is_high_score(score, self.GAME_TITLE)
             high_score_id = self.__highscores.insert_score(score, self.GAME_TITLE)
