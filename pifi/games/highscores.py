@@ -15,7 +15,6 @@ class HighScores:
 
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS high_scores")
-        # TODO: get rid of autoincrement?
         self.__cursor.execute("""
             CREATE TABLE high_scores (
                 score_id INTEGER PRIMARY KEY,
