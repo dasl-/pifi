@@ -104,6 +104,7 @@ class Database:
     # Updates schema from v0 to v1.
     # Changes the PKs from autoincrement to non-autoincrement for slight perf boost: https://www.sqlite.org/autoinc.html
     # (autoincrement is not usually necessary).
+    # TODO: hack my own DB to get rid of sqlite_sequence table
     def __update_schema_to_v1(self):
         # change PK for playlist_videos
         self.__cursor.execute("""
