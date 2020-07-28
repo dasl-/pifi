@@ -40,6 +40,9 @@ if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
     "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode color
 fi
 
+# set timezone
+sudo timedatectl set-timezone UTC
+
 # setup logging: syslog
 sudo mkdir -p /var/log/pifi
 sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/websocket_server.log /var/log/pifi/update_youtube-dl.log
