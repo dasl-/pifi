@@ -20,6 +20,7 @@ import select
 import signal
 import random
 import string
+import traceback
 
 class VideoProcessor:
 
@@ -106,7 +107,42 @@ class VideoProcessor:
             'restrictfilenames': True, # get rid of a warning ytdl gives about special chars in file names
         }
         ydl = youtube_dl.YoutubeDL(ydl_opts)
-        self.__video_info = ydl.extract_info(self.__url, download = False)
+
+        # Automatically try to update youtube-dl and retry failed youtube-dl operations when we get a youtube-dl
+        # error.
+        #
+        # The youtube-dl package needs updating periodically when youtube make updates. This is
+        # handled on a cron once a day: https://github.com/dasl-/pifi/blob/a614b33e1be093f6ee3bb62b036ee6472ffe5132/install/pifi_cron.sh#L5
+        #
+        # But we also attempt to update it on the fly here if we get youtube-dl errors when trying to play
+        # a video.
+        #
+        # Example of how this would look in logs: https://gist.github.com/dasl-/09014dca55a2e31bb7d27f1398fd8155
+        max_attempts = 2
+        for attempt in range(1, 3):
+            try:
+                self.__video_info = ydl.extract_info(self.__url, download = False)
+            except Exception as e:
+                caught_or_raising = "Raising"
+                if attempt < max_attempts:
+                    caught_or_raising = "Caught"
+                self.__logger.warning("Problem downloading video info during attempt {} of {}. {} exception: {}"
+                    .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
+                if attempt < max_attempts:
+                    self.__logger.warning("Attempting to update youtube-dl before retrying download...")
+                    update_youtube_dl_output = (subprocess
+                        .check_output(
+                            'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                            shell = True,
+                            executable = '/bin/bash',
+                            stderr = subprocess.STDOUT
+                        )
+                        .decode("utf-8"))
+                    self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+                else:
+                    self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
+                    raise e
+
         self.__logger.info("Done downloading and populating video metadata.")
 
         video_type = 'video_only'
