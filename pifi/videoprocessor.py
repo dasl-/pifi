@@ -119,7 +119,7 @@ class VideoProcessor:
         #
         # Example of how this would look in logs: https://gist.github.com/dasl-/09014dca55a2e31bb7d27f1398fd8155
         max_attempts = 2
-        for attempt in range(1, 3):
+        for attempt in range(1, (max_attempts + 1)):
             try:
                 self.__video_info = ydl.extract_info(self.__url, download = False)
             except Exception as e:
