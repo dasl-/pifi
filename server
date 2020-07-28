@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from http.server import HTTPServer, BaseHTTPRequestHandler, HTTPStatus
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPStatus
 from io import BytesIO
 import json
 import subprocess
@@ -240,9 +240,9 @@ class PifiServer:
         self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:
-            self.__server = HTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
+            self.__server = ThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
         else:
-            self.__server = HTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
+            self.__server = ThreadingHTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
             self.__server.socket = ssl.wrap_socket(self.__server.socket,
                                                    keyfile=self.__config.get_server_config('keyfile', ""),
                                                    certfile=self.__config.get_server_config('certfile', ""),
