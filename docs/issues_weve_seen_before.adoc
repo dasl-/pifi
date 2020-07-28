@@ -47,6 +47,9 @@ https://stackoverflow.com/questions/40355794/access-not-configured-youtube-data-
 ## Unable to ssh onto pi / hit pifi web page
 https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11
 
+## Takes a while (~30 seconds) to load the pifi webpage
+https://github.com/dasl-/pifi/commit/b15c1cc33410f730dc7ca6723e1fead284878b85
+
 ## Schema changes fail due to disk errors
 Something like this:
 ```
