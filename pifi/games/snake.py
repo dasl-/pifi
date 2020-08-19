@@ -9,6 +9,7 @@ import os
 import collections
 import select
 import simpleaudio
+from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.videoplayer import VideoPlayer
@@ -60,6 +61,7 @@ class Snake:
     __apple = None
 
     __apple_sound = None
+    __background_music = None
 
     __pp = None
 
@@ -81,7 +83,9 @@ class Snake:
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
         self.__highscores = HighScores()
-        self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
+
+        mixer.init(frequency = 22050, buffer = 512)
+        self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
         self.__unix_socket = unix_socket
 
@@ -89,6 +93,12 @@ class Snake:
         self.__reset()
         self.__show_board()
         self.__playlist_video_id = playlist_video_id
+
+        # TODO:
+        #   export this as one loop that i can infinitely loop
+        #   randomly choose a dragon quest 4 soundtrack
+        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/04 Solitary Warrior.wav")
+        self.__background_music.play(loops = -1)
 
         while True:
             # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
@@ -209,6 +219,7 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
+        self.__background_music.fadeout(500)
         score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             is_high_score = self.__highscores.is_high_score(score, self.GAME_TITLE)
@@ -240,6 +251,7 @@ class Snake:
 
         self.__close_websocket()
         self.__clear_board()
+        mixer.quit()
 
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
         self.__reset_datastructures()
