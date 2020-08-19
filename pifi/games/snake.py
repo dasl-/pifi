@@ -84,6 +84,7 @@ class Snake:
         self.__playlist = Playlist()
         self.__highscores = HighScores()
 
+        # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
         self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
