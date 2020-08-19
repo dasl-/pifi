@@ -49,6 +49,8 @@ mixer.init(frequency = 22050, buffer = 512)
 
 apple_sound_slow = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
 apple_sound_fast = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
+
+# play background music during sound test so that if stuttering / dropouts occurs, it is more noticeable
 background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/04 Solitary Warrior.wav")
 background_music.play(loops = -1)
 
