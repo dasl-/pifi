@@ -9,6 +9,7 @@ import os
 import collections
 import select
 import simpleaudio
+import json
 from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
@@ -226,9 +227,11 @@ class Snake:
             is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
             score_id = self.__scores.insert_score(score, self.GAME_TITLE)
             if is_high_score:
+                highscore_message = json.dumps({ 'message_type': 'high_score', 'score_id' : score_id }).encode()
+                self.__logger.info("high score message: {}. ".format(highscore_message))
                 try:
                     sent = self.__unix_socket.sendto(
-                        'high_score: {}'.format(score_id).encode(),
+                        highscore_message,
                         self.__unix_socket_address
                     )
                 except Exception as e:

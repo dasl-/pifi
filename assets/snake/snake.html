@@ -51,7 +51,18 @@
             web_socket = null;
             console.log("WebSocket is closed.");
           };
+
+          web_socket.onmessage = function(event) {
+            console.log(event.data);
+            var message = JSON.parse(event.data);
+            if(message.message_type == "high_score") {
+              var score_id = message.score_id;
+              console.log("Score_Id" + score_id);
+            }
+          };
+
         });
+
 
         //Keyboard input
         $(document).keydown(function(e) {
@@ -74,6 +85,8 @@
 
           if(direction) {
             web_socket.send(direction);
+
+            //change to pre-loaded images
             $(".button").css("background-image", "url('/assets/snake/snake.png')");
             $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
           }

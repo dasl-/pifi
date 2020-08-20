@@ -72,7 +72,7 @@ class WebSocketServer:
                 if result == 'close_websocket':
                     logger.info("got message: {} from: {}".format(result, address))
                     break
-                elif result.startswith("high_score"):
+                else:
                     await websocket.send(result)
 
         unix_socket.shutdown(socket.SHUT_RDWR)
