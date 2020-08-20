@@ -17,7 +17,7 @@ from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scoredisplayer import ScoreDisplayer
-from pifi.games.highscores import HighScores
+from pifi.games.scores import Scores
 from pifi.directoryutils import DirectoryUtils
 
 class Snake:
@@ -69,7 +69,7 @@ class Snake:
 
     __playlist_video_id = None
 
-    __highscores = None
+    __scores = None
 
     __unix_socket = None
     __unix_socket_address = None
@@ -82,7 +82,7 @@ class Snake:
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
         self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
-        self.__highscores = HighScores()
+        self.__scores = Scores()
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
@@ -223,12 +223,12 @@ class Snake:
         self.__background_music.fadeout(500)
         score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
-            is_high_score = self.__highscores.is_high_score(score, self.GAME_TITLE)
-            high_score_id = self.__highscores.insert_score(score, self.GAME_TITLE)
+            is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
+            score_id = self.__scores.insert_score(score, self.GAME_TITLE)
             if is_high_score:
                 try:
                     sent = self.__unix_socket.sendto(
-                        'high_score: {}'.format(high_score_id).encode(),
+                        'high_score: {}'.format(score_id).encode(),
                         self.__unix_socket_address
                     )
                 except Exception as e:

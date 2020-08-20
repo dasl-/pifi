@@ -3,7 +3,7 @@ import sqlite3
 from pifi.directoryutils import DirectoryUtils
 from pifi.logger import Logger
 import pifi.playlist
-import pifi.games.highscores
+import pifi.games.scores
 
 def dict_factory(cursor, row):
     d = {}
@@ -64,7 +64,7 @@ class Database:
 
 
     # Schema change how-to:
-    # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), HighScores.construct())
+    # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), Scores.construct())
     # 2) Increment self.__SCHEMA_VERSION
     # 3) Implement self.__update_schema_to_vN for the incremented SCHEMA_VERSION, call this method in
     #   the below for loop.
@@ -84,7 +84,7 @@ class Database:
             self.__logger.info("Constructing database schema from scratch...")
             self.__construct_pifi_schema_version()
             pifi.playlist.Playlist().construct()
-            pifi.games.highscores.HighScores().construct()
+            pifi.games.scores.Scores().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
                 "Database schema is outdated. Updating from version {} to {}."
