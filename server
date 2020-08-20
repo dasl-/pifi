@@ -216,6 +216,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if self.path.endswith('.js'):
             self.send_header("Content-Type", "text/javascript")
+        elif self.path.endswith('.css'):
+            self.send_header("Content-Type", "text/css")
         self.end_headers()
 
         if type(file_to_open) is bytes:
