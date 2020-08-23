@@ -224,41 +224,69 @@ class Snake:
         self.__background_music.fadeout(500)
         score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
-            is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
-            score_id = self.__scores.insert_score(score, self.GAME_TITLE)
-            if is_high_score:
-                highscore_message = json.dumps({ 'message_type': 'high_score', 'score_id' : score_id }).encode()
-                self.__logger.info("high score message: {}. ".format(highscore_message))
-                try:
-                    sent = self.__unix_socket.sendto(
-                        highscore_message,
-                        self.__unix_socket_address
-                    )
-                except Exception as e:
-                    pass
-
-            time.sleep(0.3)
-            for x in range(1, 5): # bink board
-                self.__clear_board()
-                time.sleep(0.1)
-                self.__show_board()
-                time.sleep(0.1)
-
-            score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
-            score_displayer.display_score()
-            for i in range(1, 40):
-                # if someone clicks "New Game" while the score is being displayed, immediately start a new game
-                # instead of waiting for the score to stop being displayed
-                time.sleep(0.2)
-                if self.__should_skip_game():
-                    break
+            self.__do_scoring(score)
 
         self.__close_websocket()
         self.__clear_board()
         mixer.quit()
+        simpleaudio.stop_all()
 
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
         self.__reset_datastructures()
+
+    def __do_scoring(self, score):
+        simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()
+        is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
+        score_id = self.__scores.insert_score(score, self.GAME_TITLE)
+        if is_high_score:
+            highscore_message = json.dumps({
+                'message_type': 'high_score',
+                'score_id' : score_id
+            }).encode()
+            try:
+                sent = self.__unix_socket.sendto(highscore_message, self.__unix_socket_address)
+            except Exception as e:
+                pass
+
+        time.sleep(0.3)
+        for x in range(1, 9): # blink board
+            self.__clear_board()
+            time.sleep(0.1)
+            self.__show_board()
+            time.sleep(0.1)
+
+        score_color = [255, 0, 0] # red
+        score_tick = 0
+        if is_high_score:
+            score_color = self.__game_color_helper.get_rgb(
+                game_color_mode = GameColorHelper.GAME_COLOR_MODE_RAINBOW,
+                color_change_freq = 0.2,
+                num_ticks = score_tick
+            )
+            (simpleaudio.WaveObject
+                .from_wave_file(DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav")
+                .play())
+        score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
+        score_displayer.display_score(score_color)
+
+        for i in range(1, 100):
+            # if someone clicks "New Game" while the score is being displayed, immediately start a new game
+            # instead of waiting for the score to stop being displayed
+            #
+            # also make the score display in rainbow if it was a high score.
+            time.sleep(0.05)
+
+            if is_high_score:
+                score_tick += 1
+                score_color = self.__game_color_helper.get_rgb(
+                    game_color_mode = GameColorHelper.GAME_COLOR_MODE_RAINBOW,
+                    color_change_freq = 0.2,
+                    num_ticks = score_tick
+                )
+                score_displayer.display_score(score_color)
+
+            if i % 5 == 0 and self.__should_skip_game():
+                break
 
     def __clear_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)

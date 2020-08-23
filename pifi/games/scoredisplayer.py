@@ -44,7 +44,7 @@ class ScoreDisplayer:
         self.__score = score
 
     # TODO: validate if score too big
-    def display_score(self):
+    def display_score(self, rgb = [255, 0, 0]):
         score_string = str(self.__score)
         digit_component_length = self.__get_digit_component_length()
 
@@ -60,7 +60,6 @@ class ScoreDisplayer:
         x = round((self.__settings.display_width - score_width) / 2)
         y = round((self.__settings.display_height - digit_height) / 2)
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
-        rgb = [255, 0, 0] # red
         for i in range(0, num_digits):
             self.__write_digit(x, y, int(score_string[i]), digit_component_length, frame, rgb)
             x = x + digit_width
