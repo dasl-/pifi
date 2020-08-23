@@ -50,3 +50,11 @@ class Scores:
             [game_type, self.__HIGHSCORE_CUTOFF]
         )
         return self.__cursor.fetchall()
+
+    def update_initials(self, score_id, initials):
+        self.__cursor.execute(
+            "UPDATE scores set initials = ? WHERE score_id = ?",
+            [initials, score_id]
+        )
+        return self.__cursor.rowcount >= 1
+

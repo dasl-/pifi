@@ -13,6 +13,7 @@ from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.gamecolorhelper import GameColorHelper
+from pifi.games.scores import Scores
 from pifi.settings.snakesettings import SnakeSettings
 
 class PifiAPI():
@@ -69,6 +70,15 @@ class PifiAPI():
         response_details = {}
         response_details['success'] = True
         return response_details
+
+    def submit_game_score_initials(self, post_data):
+        if len(post_data['initials']) != 3:
+            return {'success': False}
+        score_id = int(post_data['score_id'])
+        initials = post_data['initials'].upper()
+        scores = Scores()
+        success = scores.update_initials(score_id, initials)
+        return {'success': success}
 
     def skip(self, post_data):
         success = self.__playlist.skip(post_data['playlist_video_id'])
@@ -181,6 +191,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.set_vol_pct(post_data)
         elif path == 'enqueue_game':
             response = self.__api.enqueue_game(post_data)
+        elif path == 'submit_game_score_initials':
+            response = self.__api.submit_game_score_initials(post_data)
         else:
             self.__do_404()
             return

@@ -15,6 +15,7 @@
     <script>
       $(document).ready(function () {
         var web_socket = null;
+        var last_high_score_id;
 
         $(".quad").click(function() {
           if (!web_socket) {
@@ -56,8 +57,9 @@
             console.log(event.data);
             var message = JSON.parse(event.data);
             if(message.message_type == "high_score") {
-              var score_id = message.score_id;
-              console.log("Score_Id" + score_id);
+              last_high_score_id = message.score_id;
+              console.log("Score_Id" + last_high_score_id);
+              $(".initialinput").show();
             }
           };
 
@@ -138,6 +140,17 @@
 
         document.getElementById('difficultyval').innerHTML = document.getElementById('difficulty').value;
 
+        $('#initials-submit').click(function() {
+          var initials = $('#initials').val();
+          $.post({
+              url: "/api/submit_game_score_initials",
+              data: JSON.stringify({
+                score_id: last_high_score_id,
+                initials: initials
+              })
+          });
+        });
+
       });
     </script>
 
@@ -176,11 +189,9 @@
 
 
     <div class="initialinput">
-      <form action="scoreinput.py" method="POST">
-        <input type="text" name="initial1" value="A" />
-        <input type="text" name="initial2" value="A" />
-        <input type="text" name="initial3" value="A" />
-        <input type="submit" value="Submit">
+      <form>
+        <input id="initials" type="text" name="initials" value="ABC" />
+        <input id="initials-submit" type="button" value="Submit">
       </form>
     </div>
 
