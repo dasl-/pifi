@@ -230,14 +230,13 @@ class Snake:
         simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()
         is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
         score_id = self.__scores.insert_score(score, self.GAME_TITLE)
-        is_high_score = True
         if is_high_score:
             highscore_message = json.dumps({
                 'message_type': 'high_score',
                 'score_id' : score_id
             })
             try:
-                sent = self.__unix_socket_helper.send_msg(highscore_message)
+                self.__unix_socket_helper.send_msg(highscore_message)
             except Exception as e:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
