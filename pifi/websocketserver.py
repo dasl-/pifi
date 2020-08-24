@@ -1,15 +1,13 @@
-import socket
 import string
 import random
 import asyncio
 import websockets
-import select
 import time
 import subprocess
-import os
-import shlex
+import traceback
 from pifi.logger import Logger
 from pifi.queue import Queue
+from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException
 
 class WebSocketServer:
 
@@ -20,11 +18,8 @@ class WebSocketServer:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-        # cleanup
-        cleanup_cmd = 'sudo rm -rf {}*'.format(shlex.quote(self.__get_unix_socket_path_prefix()))
-        subprocess.check_output(cleanup_cmd, shell = True, executable = '/bin/bash')
 
-    def run (self):
+    def run(self):
         local_ip = self.__get_local_ip()
         self.__logger.info("Starting websocket server at {}:{}".format(local_ip, self.__PORT))
         start_server = websockets.serve(self.server_connect, local_ip, self.__PORT)
@@ -36,10 +31,8 @@ class WebSocketServer:
         uniq_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
         # create a logger local to this thread so that the namespace isn't clobbered by another thread
         logger = Logger().set_namespace(self.__class__.__name__ + '__' + uniq_id)
-        unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        unix_socket_path = self.__get_unix_socket_path_prefix() + uniq_id
-        unix_socket.bind(unix_socket_path)
         logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
+        unix_socket_helper = UnixSocketHelper().connect(Queue.UNIX_SOCKET_PATH)
 
         while True:
             move = None
@@ -55,7 +48,6 @@ class WebSocketServer:
                 pass
             except Exception as e2:
                 logger.info("Exception reading from websocket. Ending game. Exception: " + str(e2))
-                sent = unix_socket.sendto("game_over".encode(), Queue.UNIX_SOCKET_PATH)
                 break
 
             elapsed = time.time() - start
@@ -63,21 +55,22 @@ class WebSocketServer:
                 logger.info("reading from websocket took: {}".format(elapsed))
 
             if move is not None:
-                sent = unix_socket.sendto(move.encode(), Queue.UNIX_SOCKET_PATH)
+                try:
+                    unix_socket_helper.send_msg(move)
+                except Exception as e:
+                    logger.error('Unable to send move: {}'.format(traceback.format_exc()))
 
-            is_ready_to_read, ignore1, ignore2 = select.select([unix_socket], [], [], 0)
-            if is_ready_to_read:
-                result, address = unix_socket.recvfrom(4096)
-                result = result.decode()
-                if result == 'close_websocket':
-                    logger.info("got message: {} from: {}".format(result, address))
-                    break
-                else:
-                    await websocket.send(result)
+            if unix_socket_helper.is_ready_to_read():
+                msg = None
+                try:
+                    msg = unix_socket_helper.recv_msg()
+                except (SocketClosedException, ConnectionResetError) as e:
+                    logger.info("got socket closed ex")
+                    break # server detected game over and closed the socket
 
-        unix_socket.shutdown(socket.SHUT_RDWR)
-        unix_socket.close()
-        os.remove(unix_socket_path)
+                await websocket.send(msg)
+
+        unix_socket_helper.close()
         logger.info("ending ws server_connect")
 
     def __get_local_ip(self):
@@ -88,6 +81,3 @@ class WebSocketServer:
             )
             .decode("utf-8")
             .strip())
-
-    def __get_unix_socket_path_prefix(self):
-        return Queue.UNIX_SOCKET_PATH + '_'

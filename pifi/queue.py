@@ -1,12 +1,5 @@
-import os
-import errno
-import sys
-import ast
-import subprocess
 import time
 import json
-import shlex
-import socket
 import traceback
 from pifi.playlist import Playlist
 from pifi.logger import Logger
@@ -18,6 +11,7 @@ from pifi.videoprocessor import VideoProcessor
 from pifi.config import Config
 from pifi.games.gameoflife import GameOfLife
 from pifi.games.gamecolorhelper import GameColorHelper
+from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
 from pifi.settings.snakesettings import SnakeSettings
@@ -25,20 +19,20 @@ from pifi.settings.snakesettings import SnakeSettings
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
 
-    UNIX_SOCKET_PATH = '/tmp/snake_socket'
+    UNIX_SOCKET_PATH = '/tmp/queue_unix_socket'
 
     __playlist = None
     __config = None
     __logger = None
     __should_play_game_of_life = None
+    __unix_socket = None
 
     def __init__(self):
         self.__playlist = Playlist()
         self.__config = Config()
         self.__should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__setup_unix_socket()
+        self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
 
         # house keeping
         self.__clear_screen()
@@ -90,6 +84,7 @@ class Queue:
                 except Exception as e:
                     self.__logger.error('Exception: {}'.format(traceback.format_exc()))
 
+                # TODO: flip video settings
                 snake_settings = SnakeSettings(
                     # display_width = args.display_width, display_height = args.display_height,
                     # brightness = args.brightness, flip_x = args.flip_x, flip_y = args.flip_y, log_level = None,
@@ -237,12 +232,3 @@ class Queue:
             game_over_detection_lookback = game_over_detection_lookback, game_color_mode = game_color_mode,
             fade = fade, invert = invert
         )
-
-    def __setup_unix_socket(self):
-        self.__unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-        try:
-            os.remove(self.UNIX_SOCKET_PATH)
-        except OSError as e: # this would be "except OSError, e:" before Python 2.6
-            if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
-                raise # re-raise exception if a different error occurred
-        self.__unix_socket.bind(self.UNIX_SOCKET_PATH)

@@ -1,24 +1,18 @@
 import numpy as np
 import random
 import time
-import math
-import hashlib
-import pprint
-import sqlite3
-import os
 import collections
-import select
 import simpleaudio
+import traceback
 import json
 from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.videoplayer import VideoPlayer
-from pifi.settings.gameoflifesettings import GameOfLifeSettings
-from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scoredisplayer import ScoreDisplayer
 from pifi.games.scores import Scores
+from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException
 from pifi.directoryutils import DirectoryUtils
 
 class Snake:
@@ -32,7 +26,7 @@ class Snake:
 
     __GAME_OVER_REASON_SNAKE_STATE = 'game_over_reason_snake_state'
     __GAME_OVER_REASON_SKIP_REQUESTED = 'game_over_reason_skip_requested'
-    __GAME_OVER_REASON_SOCKET_SIGNAL = 'game_over_reason_socket_signal'
+    __GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL = 'game_over_reason_client_socket_signal'
 
     __SNAKE_STARTING_LENGTH = 4
 
@@ -64,16 +58,13 @@ class Snake:
     __apple_sound = None
     __background_music = None
 
-    __pp = None
-
     __playlist = None
 
     __playlist_video_id = None
 
     __scores = None
 
-    __unix_socket = None
-    __unix_socket_address = None
+    __unix_socket_helper = None
 
     def __init__(self, settings, unix_socket):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -81,20 +72,19 @@ class Snake:
         self.__game_color_helper = GameColorHelper()
         self.__video_player = VideoPlayer(self.__settings)
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
-        self.__pp = pprint.PrettyPrinter(indent=4)
         self.__playlist = Playlist()
         self.__scores = Scores()
+        self.__unix_socket_helper = UnixSocketHelper().set_server_socket(unix_socket)
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
         self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
-        self.__unix_socket = unix_socket
-
     def newGame(self, playlist_video_id = None):
         self.__reset()
         self.__show_board()
         self.__playlist_video_id = playlist_video_id
+        self.__unix_socket_helper.accept()
 
         # TODO:
         #   export this as one loop that i can infinitely loop
@@ -108,14 +98,16 @@ class Snake:
             time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
             move = None
-            is_ready_to_read, ignore1, ignore2 = select.select([self.__unix_socket], [], [], 0)
-            if is_ready_to_read:
-                move, self.__unix_socket_address = self.__unix_socket.recvfrom(4096)
-                move = move.decode()
-                if move == "game_over":
-                    self.__end_game(self.__GAME_OVER_REASON_SOCKET_SIGNAL)
+            if self.__unix_socket_helper.is_ready_to_read():
+                try:
+                    move = self.__unix_socket_helper.recv_msg()
+                except (SocketClosedException, ConnectionResetError) as e:
+                    self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
                     break
+
                 move = int(move)
+                if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
+                    move = self.UP
 
             if move is not None:
                 new_direction = move
@@ -226,7 +218,7 @@ class Snake:
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             self.__do_scoring(score)
 
-        self.__close_websocket()
+        self.__unix_socket_helper.close()
         self.__clear_board()
         mixer.quit()
         simpleaudio.stop_all()
@@ -238,15 +230,16 @@ class Snake:
         simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()
         is_high_score = self.__scores.is_high_score(score, self.GAME_TITLE)
         score_id = self.__scores.insert_score(score, self.GAME_TITLE)
+        is_high_score = True
         if is_high_score:
             highscore_message = json.dumps({
                 'message_type': 'high_score',
                 'score_id' : score_id
-            }).encode()
+            })
             try:
-                sent = self.__unix_socket.sendto(highscore_message, self.__unix_socket_address)
+                sent = self.__unix_socket_helper.send_msg(highscore_message)
             except Exception as e:
-                pass
+                self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
         for x in range(1, 9): # blink board
@@ -291,18 +284,6 @@ class Snake:
     def __clear_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         self.__video_player.play_frame(frame)
-
-    # TODO: when clicking "new game" when there's already a game in progress:
-    # 1) JS creates a new websocket
-    # 2) backend ends the game and we execute __close_websocket here
-    # 3) this results in the web socket server exiting
-    # 4) the websocket created in (1) closes
-    # 5) thus the websocket is closed for the new game, game is unresponsive
-    def __close_websocket(self):
-        try:
-            sent = self.__unix_socket.sendto('close_websocket'.encode(), self.__unix_socket_address)
-        except Exception as e:
-            pass
 
     def __should_skip_game(self):
         if not self.__settings.should_check_playlist:

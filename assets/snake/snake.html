@@ -17,6 +17,22 @@
         var web_socket = null;
         var last_high_score_id;
 
+        function onWebSocketOpen(event) {
+          console.log("WebSocket is open.");
+        }
+        function onWebSocketClose(event) {
+          console.log("WebSocket is closed.");
+        }
+        function onWebSocketMessage(event) {
+          console.log(event.data);
+          var message = JSON.parse(event.data);
+          if(message.message_type == "high_score") {
+            last_high_score_id = message.score_id;
+            console.log("score_id: " + last_high_score_id);
+            $(".initialinput").show();
+          }
+        }
+
         $(".quad").click(function() {
           if (!web_socket) {
             return;
@@ -44,25 +60,18 @@
             new_uri = "ws:";
           }
           new_uri += "//" + loc.hostname + ":8765/";
+
+          // prevent memory leaks from the previous games' listeners hanging around?
+          if (web_socket) {
+            web_socket.removeEventListener('open', onWebSocketOpen);
+            web_socket.removeEventListener('close', onWebSocketClose);
+            web_socket.removeEventListener('message', onWebSocketMessage);
+          }
+
           web_socket = new WebSocket(new_uri);
-          web_socket.onopen = function(event) {
-            console.log("WebSocket is open.");
-          };
-          web_socket.onclose = function(event) {
-            web_socket = null;
-            console.log("WebSocket is closed.");
-          };
-
-          web_socket.onmessage = function(event) {
-            console.log(event.data);
-            var message = JSON.parse(event.data);
-            if(message.message_type == "high_score") {
-              last_high_score_id = message.score_id;
-              console.log("Score_Id" + last_high_score_id);
-              $(".initialinput").show();
-            }
-          };
-
+          web_socket.addEventListener('open', onWebSocketOpen);
+          web_socket.addEventListener('close', onWebSocketClose);
+          web_socket.addEventListener('message', onWebSocketMessage);
         });
 
 
