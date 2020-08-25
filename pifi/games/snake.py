@@ -285,9 +285,6 @@ class Snake:
         self.__video_player.play_frame(frame)
 
     def __should_skip_game(self):
-        if not self.__settings.should_check_playlist:
-            return False
-
         if self.__playlist.should_skip_video_id(self.__playlist_video_id):
             return True
         return False;
