@@ -17,8 +17,73 @@
         var web_socket = null;
         var last_high_score_id;
 
+        var is_new_game_request_in_progress = false;
+        var new_game_promises, web_socket_connect_resolve, web_socket_connect_reject;
+        $(".new-game").click(function(){
+          if (is_new_game_request_in_progress) {
+            return;
+          }
+
+          is_new_game_request_in_progress = true;
+          new_game_promises = [];
+
+          new_game_promises.push($.post({
+            url: "/api/enqueue_game",
+            data: JSON.stringify({
+              title: 'snake',
+              difficulty: $("#difficulty").val()
+            })
+          }));
+
+          new_game_promises.push(new Promise(function(resolve, reject) {
+            web_socket_connect_resolve = resolve;
+            web_socket_connect_reject = reject;
+          }));
+
+          var new_uri;
+          if (window.location.protocol === "https:") {
+            new_uri = "wss:";
+          } else {
+            new_uri = "ws:";
+          }
+          new_uri += "//" + window.location.hostname + ":8765/";
+
+          // prevent memory leaks from the previous games' listeners hanging around?
+          if (web_socket) {
+            web_socket.close(1000, "closing because new game");
+            web_socket.removeEventListener('open', onWebSocketOpen);
+            web_socket.removeEventListener('close', onWebSocketClose);
+            web_socket.removeEventListener('error', onWebSocketError);
+            web_socket.removeEventListener('message', onWebSocketMessage);
+          }
+
+          var pending_web_socket = new WebSocket(new_uri);
+          pending_web_socket.addEventListener('open', onWebSocketOpen);
+          pending_web_socket.addEventListener('close', onWebSocketClose);
+          pending_web_socket.addEventListener('error', onWebSocketError);
+          pending_web_socket.addEventListener('message', onWebSocketMessage);
+
+          Promise.all(new_game_promises).then(function(args) {
+            console.log("resolve args.", args);
+            // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
+            pending_web_socket.send(JSON.stringify({
+              playlist_video_id: args[0].playlist_video_id,
+            }));
+            web_socket = pending_web_socket;
+            is_new_game_request_in_progress = false;
+          }, function(err) {
+              console.log("Error waiting for new game promises.", err);
+              is_new_game_request_in_progress = false;
+          });
+        });
+
         function onWebSocketOpen(event) {
           console.log("WebSocket is open.");
+          web_socket_connect_resolve("websocket opened");
+        }
+        function onWebSocketError(event) {
+          console.log("WebSocket errored.");
+          web_socket_connect_reject("websocket errored");
         }
         function onWebSocketClose(event) {
           console.log("WebSocket is closed.");
@@ -44,39 +109,11 @@
           console.log(direction);
         });
 
-        $(".new-game").click(function(){
-          var difficulty = $("#difficulty").val();
-          $.post({
-              url: "/api/enqueue_game",
-              data: JSON.stringify({
-                title: 'snake',
-                difficulty: difficulty
-              })
-          });
-          var loc = window.location, new_uri;
-          if (loc.protocol === "https:") {
-            new_uri = "wss:";
-          } else {
-            new_uri = "ws:";
-          }
-          new_uri += "//" + loc.hostname + ":8765/";
-
-          // prevent memory leaks from the previous games' listeners hanging around?
-          if (web_socket) {
-            web_socket.removeEventListener('open', onWebSocketOpen);
-            web_socket.removeEventListener('close', onWebSocketClose);
-            web_socket.removeEventListener('message', onWebSocketMessage);
-          }
-
-          web_socket = new WebSocket(new_uri);
-          web_socket.addEventListener('open', onWebSocketOpen);
-          web_socket.addEventListener('close', onWebSocketClose);
-          web_socket.addEventListener('message', onWebSocketMessage);
-        });
-
-
         //Keyboard input
         $(document).keydown(function(e) {
+          if (!web_socket) {
+            return;
+          }
           var keyinput = e.keyCode;
           var direction;
           //Arrow key input
