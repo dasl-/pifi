@@ -13,6 +13,7 @@ class Scores:
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
+    # TODO: indices
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS scores")
         self.__cursor.execute("""
