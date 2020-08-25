@@ -12,7 +12,7 @@ from pifi.videoplayer import VideoPlayer
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scoredisplayer import ScoreDisplayer
 from pifi.games.scores import Scores
-from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException
+from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException, SocketConnectionHandshakeException
 from pifi.directoryutils import DirectoryUtils
 
 class Snake:
@@ -66,25 +66,27 @@ class Snake:
 
     __unix_socket_helper = None
 
-    def __init__(self, settings, unix_socket):
+    def __init__(self, settings, unix_socket, playlist_video_id):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
         self.__video_player = VideoPlayer(self.__settings)
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(self.__settings)))
-        self.__playlist = Playlist()
         self.__scores = Scores()
         self.__unix_socket_helper = UnixSocketHelper().set_server_socket(unix_socket)
+        self.__playlist = Playlist()
+        self.__playlist_video_id = playlist_video_id
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
         self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
-    def newGame(self, playlist_video_id = None):
+    def newGame(self):
         self.__reset()
         self.__show_board()
-        self.__playlist_video_id = playlist_video_id
-        self.__unix_socket_helper.accept()
+
+        if not self.__accept_socket():
+            return
 
         # TODO:
         #   export this as one loop that i can infinitely loop
@@ -213,7 +215,8 @@ class Snake:
         self.__snake_set = set()
 
     def __end_game(self, reason):
-        self.__background_music.fadeout(500)
+        if self.__background_music:
+            self.__background_music.fadeout(500)
         score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
         if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             self.__do_scoring(score)
@@ -288,3 +291,43 @@ class Snake:
         if self.__playlist.should_skip_video_id(self.__playlist_video_id):
             return True
         return False;
+
+    def __accept_socket(self):
+        while True:
+            try:
+                self.__unix_socket_helper.accept()
+            except SocketConnectionHandshakeException as e:
+                # Error during handshake, there may be other websocket initiated connections in the backlog that want accepting.
+                # Try again to avoid a situation where we accidentally had more backlogged requests than we ever call
+                # accept on. For example, if people spam the "new game" button, we may have several websockets that called
+                # `connect` on the unix socket, but only one instance of the snake process will ever call `accept` (the rest got
+                # skipped by the playlist). Thus, if we did not loop through and accept all these queued requests, we would never
+                # eliminate this backlog of queued stale requests.
+                self.__logger.info('Calling accept again due to handshake error: {}'.format(traceback.format_exc()))
+                continue
+            except Exception as e2:
+                # Error during `accept`, so no indication that there are other connections that want accepting.
+                # The backlog is probably empty.
+                self.__logger.error('Caught exception during accept: {}'.format(traceback.format_exc()))
+                self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
+                return False
+
+            # Sanity check that the client that ended up connected to our socket is the one that was actually intended.
+            # This could be mismatched if two client new game requests happened in quick succession.
+            # 1) First "new game" request opens websocket and calls `connect` on the unix socket
+            # 2) second "new game" request opens websocket and calls `connect` on unix socket
+            # 3) First "new game" queues up in the playlist table
+            # 4) Second "new game" queues up in the playlist table, causing the one queued in (3) to be skipped
+            # 5) Snake process starts running, corresponding to the playlist item queued up in (4)
+            # 6) Snake calls `accept` and is now connected via the unix socket to the websocket from (1)
+            # 7) observe that client is from first "new game" request and server is from second "new game" request. Mismatch.
+            try:
+                client_playlist_video_id = json.loads(self.__unix_socket_helper.recv_msg())['playlist_video_id']
+                if client_playlist_video_id != self.__playlist_video_id:
+                    raise Exception("Server was playing playlist_video_id: {}, but client was playing playlist_video_id: {}."
+                        .format(self.__playlist_video_id, client_playlist_video_id))
+            except Exception as e:
+                self.__logger.info('Calling accept again due to playlist_video_id mismatch error: {}'.format(traceback.format_exc()))
+                continue
+
+            return True

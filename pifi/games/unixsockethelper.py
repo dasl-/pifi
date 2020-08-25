@@ -7,6 +7,8 @@ import select
 # unix stream socket toy example: https://gist.github.com/dasl-/e220fedee43ac16dc212fd053775e4e9
 class UnixSocketHelper:
 
+    __CONNECTION_HANDSHAKE_MSG = 'connection_handshake_msg'
+
     # fixed message length encoding scheme
     __MSG_LENGTH = 256
 
@@ -45,15 +47,19 @@ class UnixSocketHelper:
         self.__connection_socket = socket
         return self
 
-    # raises socket.timeout
+    # raises socket.timeout, SocketConnectionHandshakeException, and others
     def accept(self):
         self.__connection_socket, unused_address = self.__server_socket.accept()
+        self.__connection_socket.settimeout(self.__SOCKET_TIMEOUT_S)
+        self.__exchange_connection_handshake_messages()
 
-    # raises socket.timeout
+
+    # raises socket.timeout, SocketConnectionHandshakeException, and others
     def connect(self, socket_path):
         self.__connection_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__connection_socket.settimeout(self.__SOCKET_TIMEOUT_S)
         self.__connection_socket.connect(socket_path)
+        self.__exchange_connection_handshake_messages()
         return self
 
     def is_ready_to_read(self):
@@ -86,8 +92,31 @@ class UnixSocketHelper:
         return msg.decode().rstrip()
 
     def close(self):
+        if self.__connection_socket == None:
+            return
         self.__connection_socket.shutdown(socket.SHUT_RDWR)
         self.__connection_socket.close()
 
+    # A client calling `connect` can return before the server has called `accept` on the corresponding connection.
+    # The client won't know whether the server has actually accepted its connection until trying to send / receive
+    # some data. Sending alone can also return immediately with no indication of error.
+    #
+    # For an example of this scenario, see: https://gist.github.com/dasl-/90ff02273aa11416e85117eba2ecb05e
+    #
+    # Thus, force both ends of the connection to send and receive a handshake message after calling `accept` and
+    # `connect`. We will know if the connection failed immediately.
+    def __exchange_connection_handshake_messages(self):
+        try:
+            self.send_msg(self.__CONNECTION_HANDSHAKE_MSG)
+            if self.recv_msg() != self.__CONNECTION_HANDSHAKE_MSG:
+                raise SocketConnectionHandshakeException("didn't receive expected connection handshake message.")
+        except SocketConnectionHandshakeException as e:
+            raise e
+        except Exception as e2:
+            raise SocketConnectionHandshakeException("Wrapping original exception: {}".format(e2))
+
 class SocketClosedException(Exception):
+    pass
+
+class SocketConnectionHandshakeException(Exception):
     pass

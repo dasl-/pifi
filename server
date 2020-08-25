@@ -67,9 +67,10 @@ class PifiAPI():
             else:
                 break
 
-        response_details = {}
-        response_details['success'] = True
-        return response_details
+        return {
+            'success': True,
+            'playlist_video_id': game_playlist_video_id,
+        }
 
     def submit_game_score_initials(self, post_data):
         if len(post_data['initials']) != 3:

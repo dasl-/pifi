@@ -32,9 +32,16 @@ class WebSocketServer:
         # create a logger local to this thread so that the namespace isn't clobbered by another thread
         logger = Logger().set_namespace(self.__class__.__name__ + '__' + uniq_id)
         logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
-        unix_socket_helper = UnixSocketHelper().connect(Queue.UNIX_SOCKET_PATH)
 
-        while True:
+        was_connected_to_unix_socket = True
+        unix_socket_helper = UnixSocketHelper()
+        try:
+            unix_socket_helper.connect(Queue.UNIX_SOCKET_PATH)
+        except Exception as e:
+            was_connected_to_unix_socket = False
+            logger.error('Caught exception: {}'.format(traceback.format_exc()))
+
+        while was_connected_to_unix_socket:
             move = None
 
             # figure this shit out...
@@ -59,13 +66,14 @@ class WebSocketServer:
                     unix_socket_helper.send_msg(move)
                 except Exception as e:
                     logger.error('Unable to send move: {}'.format(traceback.format_exc()))
+                    break
 
             if unix_socket_helper.is_ready_to_read():
                 msg = None
                 try:
                     msg = unix_socket_helper.recv_msg()
                 except (SocketClosedException, ConnectionResetError) as e:
-                    logger.info("got socket closed ex")
+                    logger.info("Unix socket was closed")
                     break # server detected game over and closed the socket
 
                 await websocket.send(msg)
