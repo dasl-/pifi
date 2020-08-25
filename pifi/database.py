@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 
 from pifi.directoryutils import DirectoryUtils
 from pifi.logger import Logger
@@ -11,6 +12,9 @@ def dict_factory(cursor, row):
         d[col[0]] = row[idx]
     return d
 
+
+thread_local = threading.local()
+
 class Database:
 
     __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
@@ -18,50 +22,11 @@ class Database:
     # Zero indexed schema_version (first version is v0).
     __SCHEMA_VERSION = 1
 
-    # static vars
-    __static_conn = None
-    __static_cursor = None
-
     # instance vars
     __logger = None
 
     def __init__(self):
-        # Ensure we only ever have one database conn because it holds locks.
-        # Having multiple database conns could theoretically lead to deadlocks.
-        if Database.__static_conn == None:
-            # `isolation_level = None` specifies autocommit mode.
-            # `check_same_thread = False` is necessary to support usage of ThreadingHTTPServer --
-            # it avoids the following error:
-            #
-            #       sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in
-            #       that same thread. The object was created in thread id 1978561632 and this is
-            #       thread id 1947202656.
-            #
-            # Should be safe because we are using `isolation_level = None` which ensures
-            # writes will take effect immediately if we do not manually start a transaction.
-            #
-            # See: https://bugs.python.org/issue27113#msg267010
-            #
-            # WARNING: This could get racey if we manually start a transaction in one webserver
-            # thread, and another webserver thread does some writes -- they will all get mixed into
-            # the same transaction, so do not use transactions in a webserver
-            # context. Alternatives: could use a separate sqlite connection per thread
-            # if transactions are needed.
-            #
-            # Racey example:
-            #
-            # 1) web request 1: BEGIN TRANSACTION
-            # 2) web request 1: INSERT some rows
-            # 3) web request 2: INSERT some rows
-            # 4) web request 1: COMMIT
-            #
-            # In (4), we will actually commit the writes from both web requests: (2) and (3).
-            Database.__static_conn = sqlite3.connect(self.__DB_PATH, isolation_level = None, check_same_thread = False)
-            Database.__static_conn.row_factory = dict_factory
-            Database.__static_cursor = Database.__static_conn.cursor()
-
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-
 
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), Scores.construct())
@@ -70,10 +35,10 @@ class Database:
     #   the below for loop.
     # 4) Run ./install/install.sh
     def construct(self):
-        Database.__static_cursor.execute("BEGIN TRANSACTION")
+        self.get_cursor().execute("BEGIN TRANSACTION")
         try:
-            Database.__static_cursor.execute("SELECT version FROM pifi_schema_version")
-            current_schema_version = int(Database.__static_cursor.fetchone()['version'])
+            self.get_cursor().execute("SELECT version FROM pifi_schema_version")
+            current_schema_version = int(self.get_cursor().fetchone()['version'])
         except Exception as e:
             current_schema_version = -1
 
@@ -100,7 +65,7 @@ class Database:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
                     raise Exception(msg)
-                Database.__static_cursor.execute("UPDATE pifi_schema_version set version = ?", [i])
+                self.get_cursor().execute("UPDATE pifi_schema_version set version = ?", [i])
         elif current_schema_version == self.__SCHEMA_VERSION:
             self.__logger.info("Database schema is already up to date!")
             return
@@ -111,16 +76,24 @@ class Database:
             self.__logger.error(msg)
             raise Exception(msg)
 
-        Database.__static_cursor.execute("COMMIT")
+        self.get_cursor().execute("COMMIT")
         self.__logger.info("Database schema constructed successfully.")
 
     def get_cursor(self):
-        return Database.__static_cursor;
+        return self.__get_conn().cursor()
+
+    def __get_conn(self):
+        conn = getattr(thread_local, 'database_conn', None)
+        if conn is None:
+            conn = sqlite3.connect(self.__DB_PATH, isolation_level = None)
+            conn.row_factory = dict_factory
+            thread_local.database_conn = conn
+        return conn
 
     def __construct_pifi_schema_version(self):
-        Database.__static_cursor.execute("DROP TABLE IF EXISTS pifi_schema_version")
-        Database.__static_cursor.execute("CREATE TABLE pifi_schema_version (version INTEGER)")
-        Database.__static_cursor.execute(
+        self.get_cursor().execute("DROP TABLE IF EXISTS pifi_schema_version")
+        self.get_cursor().execute("CREATE TABLE pifi_schema_version (version INTEGER)")
+        self.get_cursor().execute(
             "INSERT INTO pifi_schema_version (version) VALUES(?)",
             [self.__SCHEMA_VERSION]
         )
@@ -132,7 +105,7 @@ class Database:
     # the sqlite_sequence DB hangs around anyway
     def __update_schema_to_v1(self):
         # change PK for playlist_videos
-        Database.__static_cursor.execute("""
+        self.get_cursor().execute("""
             CREATE TEMPORARY TABLE playlist_videos_backup (
                 playlist_video_id INTEGER PRIMARY KEY,
                 type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
@@ -147,9 +120,9 @@ class Database:
                 settings TEXT DEFAULT ''
             )"""
         )
-        Database.__static_cursor.execute("INSERT INTO playlist_videos_backup SELECT * FROM playlist_videos")
-        Database.__static_cursor.execute("DROP TABLE playlist_videos")
-        Database.__static_cursor.execute("""
+        self.get_cursor().execute("INSERT INTO playlist_videos_backup SELECT * FROM playlist_videos")
+        self.get_cursor().execute("DROP TABLE playlist_videos")
+        self.get_cursor().execute("""
             CREATE TABLE playlist_videos (
                 playlist_video_id INTEGER PRIMARY KEY,
                 type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
@@ -164,11 +137,11 @@ class Database:
                 settings TEXT DEFAULT ''
             )"""
         )
-        Database.__static_cursor.execute("INSERT INTO playlist_videos SELECT * FROM playlist_videos_backup")
-        Database.__static_cursor.execute("DROP TABLE playlist_videos_backup")
+        self.get_cursor().execute("INSERT INTO playlist_videos SELECT * FROM playlist_videos_backup")
+        self.get_cursor().execute("DROP TABLE playlist_videos_backup")
 
         # change PK for high_scores
-        Database.__static_cursor.execute("""
+        self.get_cursor().execute("""
             CREATE TEMPORARY TABLE high_scores_backup (
                 score_id INTEGER PRIMARY KEY,
                 score INTEGER,
@@ -177,9 +150,9 @@ class Database:
                 game_type VARCHAR(100)
             )"""
         )
-        Database.__static_cursor.execute("INSERT INTO high_scores_backup SELECT * FROM high_scores")
-        Database.__static_cursor.execute("DROP TABLE high_scores")
-        Database.__static_cursor.execute("""
+        self.get_cursor().execute("INSERT INTO high_scores_backup SELECT * FROM high_scores")
+        self.get_cursor().execute("DROP TABLE high_scores")
+        self.get_cursor().execute("""
             CREATE TABLE high_scores (
                 score_id INTEGER PRIMARY KEY,
                 score INTEGER,
@@ -188,5 +161,5 @@ class Database:
                 game_type VARCHAR(100)
             )"""
         )
-        Database.__static_cursor.execute("INSERT INTO high_scores SELECT * FROM high_scores_backup")
-        Database.__static_cursor.execute("DROP TABLE high_scores_backup")
+        self.get_cursor().execute("INSERT INTO high_scores SELECT * FROM high_scores_backup")
+        self.get_cursor().execute("DROP TABLE high_scores_backup")
