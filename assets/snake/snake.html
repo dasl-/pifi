@@ -63,18 +63,20 @@
           pending_web_socket.addEventListener('error', onWebSocketError);
           pending_web_socket.addEventListener('message', onWebSocketMessage);
 
-          Promise.all(new_game_promises).then(function(args) {
-            console.log("resolve args.", args);
-            // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
-            pending_web_socket.send(JSON.stringify({
-              playlist_video_id: args[0].playlist_video_id,
-            }));
-            web_socket = pending_web_socket;
-            is_new_game_request_in_progress = false;
-          }, function(err) {
+          Promise.all(new_game_promises).then(
+            function(args) {
+              // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
+              pending_web_socket.send(JSON.stringify({
+                playlist_video_id: args[0].playlist_video_id,
+              }));
+              web_socket = pending_web_socket;
+              is_new_game_request_in_progress = false;
+            },
+            function(err) {
               console.log("Error waiting for new game promises.", err);
               is_new_game_request_in_progress = false;
-          });
+            }
+          );
         });
 
         function onWebSocketOpen(event) {
@@ -89,11 +91,9 @@
           console.log("WebSocket is closed.");
         }
         function onWebSocketMessage(event) {
-          console.log(event.data);
           var message = JSON.parse(event.data);
           if(message.message_type == "high_score") {
             last_high_score_id = message.score_id;
-            console.log("score_id: " + last_high_score_id);
             $(".initialinput").show();
           }
         }
@@ -106,7 +106,6 @@
           web_socket.send(direction);
           $(".button").css("background-image", "url('/assets/snake/snake.png')");
           $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
-          console.log(direction);
         });
 
         //Keyboard input

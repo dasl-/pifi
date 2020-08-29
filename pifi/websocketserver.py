@@ -33,15 +33,15 @@ class WebSocketServer:
         logger = Logger().set_namespace(self.__class__.__name__ + '__' + uniq_id)
         logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
 
-        was_connected_to_unix_socket = True
+        is_connect_success = True
         unix_socket_helper = UnixSocketHelper()
         try:
             unix_socket_helper.connect(Queue.UNIX_SOCKET_PATH)
         except Exception as e:
-            was_connected_to_unix_socket = False
+            is_connect_success = False
             logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
-        while was_connected_to_unix_socket:
+        while is_connect_success:
             move = None
 
             # figure this shit out...

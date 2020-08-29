@@ -80,15 +80,14 @@ class Database:
         self.__logger.info("Database schema constructed successfully.")
 
     def get_cursor(self):
-        return self.__get_conn().cursor()
-
-    def __get_conn(self):
-        conn = getattr(thread_local, 'database_conn', None)
-        if conn is None:
+        cursor = getattr(thread_local, 'database_cursor', None)
+        if cursor is None:
+            # `isolation_level = None` specifies autocommit mode.
             conn = sqlite3.connect(self.__DB_PATH, isolation_level = None)
             conn.row_factory = dict_factory
-            thread_local.database_conn = conn
-        return conn
+            cursor = conn.cursor()
+            thread_local.database_cursor = cursor
+        return cursor
 
     def __construct_pifi_schema_version(self):
         self.get_cursor().execute("DROP TABLE IF EXISTS pifi_schema_version")

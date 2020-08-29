@@ -86,6 +86,7 @@ class Snake:
         self.__show_board()
 
         if not self.__accept_socket():
+            self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
             return
 
         # TODO:
@@ -307,9 +308,8 @@ class Snake:
                 continue
             except Exception as e2:
                 # Error during `accept`, so no indication that there are other connections that want accepting.
-                # The backlog is probably empty.
+                # The backlog is probably empty. Could have been timeout waiting for client to connect.
                 self.__logger.error('Caught exception during accept: {}'.format(traceback.format_exc()))
-                self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
                 return False
 
             # Sanity check that the client that ended up connected to our socket is the one that was actually intended.
