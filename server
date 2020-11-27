@@ -6,6 +6,7 @@ import subprocess
 import ssl
 import sqlite3
 import traceback
+import urllib
 from pathlib import Path
 from pifi.playlist import Playlist
 from pifi.logger import Logger
@@ -80,6 +81,15 @@ class PifiAPI():
         scores = Scores()
         success = scores.update_initials(score_id, initials)
         return {'success': success}
+
+    def get_high_scores(self, post_data):
+        game_type = post_data['game_type']
+        scores = Scores()
+        high_scores = scores.get_high_scores(game_type)
+        return {
+            'success': True,
+            'high_scores': high_scores,
+        }
 
     def skip(self, post_data):
         success = self.__playlist.skip(post_data['playlist_video_id'])
@@ -158,8 +168,15 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def __do_api_GET(self, path):
-        if path == 'queue':
+        parsed_path = urllib.parse.urlparse(path)
+        get_data = urllib.parse.unquote(parsed_path.query)
+        if get_data:
+            get_data = json.loads(get_data)
+
+        if parsed_path.path == 'queue':
             response = self.__api.get_queue()
+        elif parsed_path.path == 'get_high_scores':
+            response = self.__api.get_high_scores(get_data)
         else:
             self.__do_404()
             return

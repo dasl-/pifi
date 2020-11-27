@@ -13,9 +13,22 @@
 
 
     <script>
+      var web_socket = null;
+      var last_high_score_id;
+
+      function GetHighScores() {
+        $.get({
+          url: "/api/get_high_scores",
+          data: JSON.stringify({
+            game_type: 'snake'
+          })
+        });
+      }
+
       $(document).ready(function () {
-        var web_socket = null;
-        var last_high_score_id;
+
+        $(".initialcontainer").hide();
+
 
         var is_new_game_request_in_progress = false;
         var new_game_promises, web_socket_connect_resolve, web_socket_connect_reject;
@@ -94,7 +107,8 @@
           var message = JSON.parse(event.data);
           if(message.message_type == "high_score") {
             last_high_score_id = message.score_id;
-            $(".initialinput").show();
+            $(".initialcontainer").show();
+            $("#init1").focus();
           }
         }
 
@@ -108,9 +122,10 @@
           $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
         });
 
+
         //Keyboard input
         $(document).keydown(function(e) {
-          if (!web_socket) {
+          if (!web_socket || web_socket.readyState != WebSocket.OPEN) {
             return;
           }
           var keyinput = e.keyCode;
@@ -152,6 +167,7 @@
         //Show/hide leaderboard
         $("#leader").click(function() {
           $(".leaderboard").fadeIn();
+          return GetHighScores();
         });
         $(document).mouseup(function (e){
           var container = $(".leaderboard");
@@ -185,16 +201,6 @@
 
         document.getElementById('difficultyval').innerHTML = document.getElementById('difficulty').value;
 
-        $('#initials-submit').click(function() {
-          var initials = $('#initials').val();
-          $.post({
-              url: "/api/submit_game_score_initials",
-              data: JSON.stringify({
-                score_id: last_high_score_id,
-                initials: initials
-              })
-          });
-        });
 
       });
     </script>
@@ -233,12 +239,38 @@
     </div>
 
 
-    <div class="initialinput">
-      <form>
-        <input id="initials" type="text" name="initials" value="ABC" />
-        <input id="initials-submit" type="button" value="Submit">
-      </form>
+        <div class="initialcontainer">
+
+      <div id="init1" class="initwrap" tabindex="1">
+        <span class="arrowup"></span>
+        <div class="initialinput">
+          <div class="initiallist"></div>
+        </div>
+        <span class="arrowdown"></span>
+      </div>
+
+      <div id="init2" class="initwrap" tabindex="2">
+        <span class="arrowup"></span>
+        <div class="initialinput">
+          <div class="initiallist"></div>
+        </div>
+        <span class="arrowdown"></span>
+      </div>
+
+      <div id="init3" class="initwrap" tabindex="3">
+        <span class="arrowup"></span>
+        <div class="initialinput">
+          <div class="initiallist"></div>
+        </div>
+        <span class="arrowdown"></span>
+      </div>
+
+      <div id="initials-submit" class="enterinit" tabindex="4">
+        Enter
+      </div>
+
     </div>
+
 
     <div class="wrapper">
       <div class="button up" data-direction="1"></div>
@@ -251,5 +283,10 @@
 
     </div>
 
+
+    <script type="text/javascript" src="/assets/snake/highscore-initials.js"></script>
   </body>
+
 </html>
+
+
