@@ -17,11 +17,32 @@
       var last_high_score_id;
 
       function GetHighScores() {
+        $("#leaderrow").html("Loading...");
         $.get({
           url: "/api/get_high_scores",
           data: JSON.stringify({
             game_type: 'snake'
-          })
+          }),
+          success: function(response) {
+            console.log(response);
+            var high_scores = response.high_scores;
+            var rank;
+            $("#leaderrow").html("");
+            high_scores.forEach((high_score, index) => {
+              // high_score.initials
+              // high_score.score
+              rank = index + 1;
+              $("#leaderrow").append("<li><span class='leaderinitial rank-" + rank + "'></span> .............<span class='leaderscore rank-" + rank + "'></span></li>");
+              $("#leaderrow .leaderinitial.rank-" + rank).text(high_score.initials);
+              $("#leaderrow .leaderscore.rank-" + rank).text(high_score.score);
+
+            });
+
+
+              // high_score => function(console.lo))
+              // $("#leaderrow").innerHTML("");
+            return response;
+          }
         });
       }
 
@@ -167,7 +188,7 @@
         //Show/hide leaderboard
         $("#leader").click(function() {
           $(".leaderboard").fadeIn();
-          return GetHighScores();
+          GetHighScores();
         });
         $(document).mouseup(function (e){
           var container = $(".leaderboard");
@@ -232,9 +253,8 @@
     <div class="quad bottomq" data-direction="2"></div>
 
     <div class="leaderboard">
-      <ol>
-        <li><span class="leaderinitial">DAL</span>.............<span class="leaderscore">0157</span></li>
-        <li><span class="leaderinitial">ADL</span>.............<span class="leaderscore">0117</span></li>
+      <ol id="leaderrow">
+        Loading...
       </ol>
     </div>
 
