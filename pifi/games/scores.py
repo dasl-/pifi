@@ -4,7 +4,7 @@ import pifi.database
 
 class Scores:
 
-    __HIGHSCORE_CUTOFF = 25
+    __HIGHSCORE_CUTOFF = 10
 
     __cursor = None
     __logger = None
@@ -29,9 +29,9 @@ class Scores:
     def insert_score(self, score, game_type):
         self.__cursor.execute(
             "INSERT INTO scores " +
-                "(score, game_type) " +
-                "VALUES(?, ?)",
-            [score, game_type]
+                "(score, initials, game_type) " +
+                "VALUES(?, ?, ?)",
+            [score, "AAA", game_type]
         )
         return self.__cursor.lastrowid
 

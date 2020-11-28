@@ -189,7 +189,7 @@
         position:absolute;
         left: 50%;
         transform: translateX(-50%);
-        height:90vh;
+        min-width:200px;
         max-width:100vw;
         margin-top:5vh;
         background-color:var(--mid-gray);
@@ -199,6 +199,7 @@
         font-size:.8em;
         border:3px solid var(--blue);
         box-shadow: 0 0 10px var(--blue);
+        text-align:center;
       }
       .leaderboard ol {
         margin-left:2em;
