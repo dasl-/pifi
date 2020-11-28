@@ -86,7 +86,7 @@ var high_score_inputter = (() => {
     	});
 
     	//keyboard input
-    	$(document).keydown(function(e) {
+    	$(document).on('keydown.high-score-inputter', function(e) {
             var $focused = $(':focus');
             if (!$focused.hasClass('high-score-input-focusable')) {
                 return;
@@ -102,22 +102,24 @@ var high_score_inputter = (() => {
     			$focused.prev().focus();
     		}
 
-    		//Scroll through letters with up and down
-         	var list = $focused.find(".initiallist");
-         	if (keyinput == 38) {
-        		LetterScroll(list, "up", letteroffset);
-    			$focused.find(".arrowup").css("bottom","3px");
-    			$focused.keyup(function(e) {
-    				$focused.find(".arrowup").css("bottom","unset");
-    			});
-         	}
-        	if (keyinput == 40) {
-        		LetterScroll(list, "down", letteroffset);
-    			$focused.find(".arrowdown").css("top","3px");
-    			$focused.keyup(function(e) {
-    				$focused.find(".arrowdown").css("top","unset");
-    			});
-        	}
+            if ($focused.hasClass('initwrap')) {
+                //Scroll through letters with up and down
+                var list = $focused.find(".initiallist");
+                if (keyinput == 38) {
+                    LetterScroll(list, "up", letteroffset);
+                    $focused.find(".arrowup").css("bottom","3px");
+                    $focused.keyup(function(e) {
+                        $focused.find(".arrowup").css("bottom","unset");
+                    });
+                }
+                if (keyinput == 40) {
+                    LetterScroll(list, "down", letteroffset);
+                    $focused.find(".arrowdown").css("top","3px");
+                    $focused.keyup(function(e) {
+                        $focused.find(".arrowdown").css("top","unset");
+                    });
+                }
+            }
 
         	//submit on enter key
         	if (keyinput == 13) {
@@ -138,7 +140,7 @@ var high_score_inputter = (() => {
                     score_id: score_id,
                     initials: initials
                 }),
-                  success: function() {
+                success: function() {
                     $(".initialcontainer").hide();
                     page.showLeaderboard();
                 }
@@ -153,7 +155,7 @@ var high_score_inputter = (() => {
         $(".enterinit").off("click");
 
         // Keyboard input
-        $(document).off("keydown");
+        $(document).off("keydown.high-score-inputter");
     }
 
     return {

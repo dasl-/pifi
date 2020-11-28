@@ -36,6 +36,12 @@ class PifiAPI():
         response_details['success'] = True
         return response_details
 
+    def get_volume(self):
+        response_details = {}
+        response_details['vol_pct'] = self.__vol_controller.get_vol_pct()
+        response_details['success'] = True
+        return response_details
+
     def enqueue(self, post_data):
         self.__playlist.enqueue(
             post_data['url'], post_data['color_mode'], post_data['thumbnail'], post_data['title'], post_data['duration'], Playlist.TYPE_VIDEO, ''
@@ -83,8 +89,8 @@ class PifiAPI():
         success = scores.update_initials(score_id, initials)
         return {'success': success}
 
-    def get_high_scores(self, post_data):
-        game_type = post_data['game_type']
+    def get_high_scores(self, get_data):
+        game_type = get_data['game_type']
         scores = Scores()
         high_scores = scores.get_high_scores(game_type)
         return {
@@ -176,7 +182,9 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if parsed_path.path == 'queue':
             response = self.__api.get_queue()
-        elif parsed_path.path == 'get_high_scores':
+        elif parsed_path.path == 'vol_pct':
+            response = self.__api.get_volume()
+        elif parsed_path.path == 'high_scores':
             response = self.__api.get_high_scores(get_data)
         else:
             self.__do_404()

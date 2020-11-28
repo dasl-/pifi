@@ -96,7 +96,7 @@ var snake_runner = (() => {
         });
 
         // Keyboard input
-        $(document).keydown(function(e) {
+        $(document).on('keydown.snake-runner', function(e) {
             var keyinput = e.keyCode;
             var direction;
             //Arrow key input
@@ -122,7 +122,7 @@ var snake_runner = (() => {
         $(".quad").off("click");
 
         // Keyboard input
-        $(document).off("keydown");
+        $(document).off("keydown.snake-runner");
     }
 
     function sendDirection(direction) {
