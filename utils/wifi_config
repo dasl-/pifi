@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+import argparse
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='Configure /boot/wpa_supplicant.conf ' +
+        'with a given network name and password such that the pifi will automatically ' +
+        'attempt to join that network upon its next reboot. See: ' +
+        'https://raspberrypi.stackexchange.com/a/57023')
+    parser.add_argument('--network-name', dest='network_name', action='store', required = True,
+        help='Name of the network to join')
+    parser.add_argument('--password', dest='password', action='store', required = True,
+        help='Password of the network to join')
+    parser.add_argument('--country-code', dest='country_code', action='store', default='US',
+        help='Your ISO-3166-1 two-letter country code. Default: %(default)s. See: ' +
+        'https://www.iso.org/obp/ui/#search')
+
+    args = parser.parse_args()
+    return args
+
+args = parseArgs()
+f = None
+try:
+    f = open("/boot/wpa_supplicant.conf", "w")
+except PermissionError as e:
+    print("This script must be run as sudo")
+    exit(1)
+
+f.write("""country={}
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+network={{
+  ssid="{}"
+  psk="{}"
+  key_mgmt=WPA-PSK
+}}""".format(args.country_code, args.network_name, args.password))
+f.close()

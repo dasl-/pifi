@@ -28,6 +28,10 @@ https://raspberrypi.stackexchange.com/a/57023[`/boot/wpa_supplicant.conf`]:
       key_mgmt=WPA-PSK
     }
 
+Note: after this repo has been cloned, wifi may be set up via link:utils/wifi_config[`utils/wifi_config`]:
+
+    sudo ./utils/wifi_config --network-name <name> --password <password>
+
 ### Enable ssh, Connect
 1. create a file `/boot/ssh` to enable SSH on the raspberry pi
 1. plug in raspberry pi
