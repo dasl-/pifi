@@ -64,6 +64,11 @@ var page = (() => {
         document.getElementById('difficultyval').innerHTML = document.getElementById('difficulty').value;
 
         setupVolume();
+
+        // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
+        if (window.__firefox__) {
+            window.__firefox__.NightMode.setEnabled(false);
+        }
     }
 
     function showLeaderboard() {
@@ -131,7 +136,7 @@ var page = (() => {
                     success: function(response) {
                         var volume = Math.round(response.vol_pct);
                         $('#volume').val(volume);
-                        document.getElementById('volumeval').innerHTML = volume.toString().padStart(3, 0);
+                        document.getElementById('volumeval').innerHTML = volume;
                     }
                 });
             },
@@ -141,7 +146,7 @@ var page = (() => {
         // happens many times while the slider is dragged
         $('#volume').on('input', function() {
             grabVolMutex();
-            document.getElementById('volumeval').innerHTML = this.value.toString().padStart(3, 0);
+            document.getElementById('volumeval').innerHTML = this.value;
             $.post({
                 url: "/api/vol_pct",
                 data: JSON.stringify({

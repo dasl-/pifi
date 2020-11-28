@@ -58,6 +58,11 @@ class App extends React.Component {
     this.clearQueue = this.clearQueue.bind(this);
     this.removeVideo = this.removeVideo.bind(this);
     this.setVolPct = this.setVolPct.bind(this);
+
+    // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
+    if (window.__firefox__) {
+        window.__firefox__.NightMode.setEnabled(false);
+    }
   }
 
   componentDidMount() {
