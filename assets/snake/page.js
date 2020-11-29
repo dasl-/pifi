@@ -23,9 +23,16 @@ var page = (() => {
         });
 
         $(document).mouseup(function (e) {
-            var container = $(".leaderboard");
-            if (!container.is(e.target) && container.has(e.target).length === 0){
+            var $leaderboard_container = $(".leaderboard");
+            if (!$leaderboard_container.is(e.target) && $leaderboard_container.has(e.target).length === 0){
                 hideLeaderboard();
+            }
+
+            var $dropdown_container = $(".dropdown").siblings('ul');
+            if (!$dropdown_container.is(e.target) && $dropdown_container.has(e.target).length === 0 &&
+                !$('.dropdown').is(e.target)
+            ){
+                hideDropdown();
             }
         });
 
@@ -104,7 +111,8 @@ var page = (() => {
                     var score = high_score.score.toString().padStart(3, '0');
                     rank = index + 1;
                     $("#leaderrow").append("<li><span class='leaderinitial rank-" + rank + "'></span>" +
-                        " .............<span class='leaderscore rank-" + rank + "'></span></li>");
+                        "<div class='scorespacer'> .............</div>" +
+                        "<span class='leaderscore rank-" + rank + "'></span></li>");
                     $("#leaderrow .leaderinitial.rank-" + rank).text(high_score.initials);
                     $("#leaderrow .leaderscore.rank-" + rank).text(score);
                 });
