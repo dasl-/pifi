@@ -111,7 +111,7 @@ var page = (() => {
                     var score = high_score.score.toString().padStart(3, '0');
                     rank = index + 1;
                     $("#leaderrow").append("<li><span class='leaderinitial rank-" + rank + "'></span>" +
-                        "<div class='scorespacer'> .............</div>" +
+                        "<div class='scorespacer'>&nbsp;............</div>" +
                         "<span class='leaderscore rank-" + rank + "'></span></li>");
                     $("#leaderrow .leaderinitial.rank-" + rank).text(high_score.initials);
                     $("#leaderrow .leaderscore.rank-" + rank).text(score);
