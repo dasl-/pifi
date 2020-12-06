@@ -5,6 +5,7 @@ import collections
 import simpleaudio
 import traceback
 import json
+import secrets
 from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
@@ -57,6 +58,13 @@ class Snake:
 
     __apple_sound = None
     __background_music = None
+    __background_music_options = [
+        'dragon_quest4_05_town.wav',
+        'dragon_quest4_04_solitary_warrior.wav',
+        'dragon_quest4_19_a_pleasant_casino.wav',
+        'radia_senki_reimei_hen_06_unknown_village_elfas.wav', #todo: has a blip in the loop
+        'ultima_exodus_07_a_peacerful_town.wav',
+    ]
 
     __playlist = None
 
@@ -65,6 +73,7 @@ class Snake:
     __scores = None
 
     __unix_socket_helper = None
+
 
     def __init__(self, settings, unix_socket, playlist_video_id):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -89,10 +98,9 @@ class Snake:
             self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
             return
 
-        # TODO:
-        #   export this as one loop that i can infinitely loop
-        #   randomly choose a dragon quest 4 soundtrack
-        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/04 Solitary Warrior.wav")
+
+        background_music_file = secrets.choice(self.__background_music_options)
+        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__background_music.play(loops = -1)
 
         while True:
