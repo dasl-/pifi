@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import argparse, sys, os, subprocess, shlex, time
-from pygame import mixer
 
 # This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -25,7 +24,6 @@ args = parseArgs()
 input_file = args.input_file
 output_file = args.output_file
 SAMPLE_RATE = 44100
-print('')
 """
 0x18    32 bits     Total # samples
 0x1C    32 bits     Loop offset
@@ -99,6 +97,7 @@ print(vgm2wav_output)
 os.remove('tmp_perfect_loop.vgm')
 
 print("Success! Playing perfect loop on repeat. Press ctrl + c to exit...")
+from pygame import mixer
 mixer.init(frequency = 22050, buffer = 512)
 
 loop_test = mixer.Sound(output_file)
