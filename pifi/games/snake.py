@@ -63,7 +63,7 @@ class Snake:
         'dragon_quest4_04_solitary_warrior.wav',
         'dragon_quest4_19_a_pleasant_casino.wav',
         'radia_senki_reimei_hen_06_unknown_village_elfas.wav', #todo: has a blip in the loop
-        'ultima_exodus_07_a_peacerful_town.wav',
+        'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
     ]
 
     __playlist = None
