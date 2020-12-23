@@ -73,6 +73,7 @@ class Snake:
 
     __scores = None
 
+    # List of unix socket helpers per player
     __unix_socket_helpers = None
 
     __server_unix_socket = None
@@ -203,25 +204,62 @@ class Snake:
 
     def __is_game_over(self):
         for i in range(len(self.__snake_linked_lists)):
-            snake_linked_list = self.__snake_linked_lists[i]
-            snake_set = self.__snake_sets[i]
-            if len(snake_set) < len(snake_linked_list):
-                return True
+            this_snake_head = self.__snake_linked_lists[i][0]
+            for j in range(len(self.__snake_linked_lists)):
+                if i == j:
+                    # Check if this snake overlapped itself
+                    if len(self.__snake_sets[i]) < len(self.__snake_linked_lists[i]):
+                        return True
+                else:
+                    # Check if this snake's head overlapped that snake (any other snake)
+                    that_snake_set = self.__snake_sets[j]
+                    if this_snake_head in that_snake_set:
+                        return True
+
         return False
 
     def __show_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
-        snake_rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks)
+
+        snake_rgb_per_player = self.__get_snake_rgb_per_player()
+        for i in range(len(self.__snake_linked_lists)):
+            for (y, x) in self.__snake_linked_lists[i]:
+                frame[y, x] = snake_rgb_per_player[i]
+
         apple_rgb = self.__game_color_helper.get_rgb(GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks)
-
-        for snake_linked_list in self.__snake_linked_lists:
-            for (y, x) in snake_linked_list:
-                frame[y, x] = snake_rgb
-
         if self.__apple is not None:
             frame[self.__apple[0], self.__apple[1]] = apple_rgb
 
         self.__video_player.play_frame(frame)
+
+    def __get_snake_rgb_per_player(self):
+        num_players = len(self.__snake_linked_lists)
+        snake_rgb_per_player = []
+        if num_players <= 1:
+            snake_rgb_per_player.append(self.__game_color_helper.get_rgb(self.__game_color_mode, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks))
+        if num_players > 1:
+            for i in range(num_players):
+                if i == 0:
+                    snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
+                        GameColorHelper.GAME_COLOR_MODE_GREEN, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
+                    ))
+                elif i == 1:
+                    snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
+                        GameColorHelper.GAME_COLOR_MODE_BLUE, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
+                    ))
+                elif i == 2:
+                    snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
+                        GameColorHelper.GAME_COLOR_MODE_RED, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
+                    ))
+                elif i == 3:
+                    snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
+                        GameColorHelper.GAME_COLOR_MODE_BW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
+                    ))
+                else:
+                    snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
+                        GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
+                    ))
+        return snake_rgb_per_player
 
     def __reset(self, num_players):
         self.__num_ticks = 0
@@ -229,6 +267,16 @@ class Snake:
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
         self.__reset_datastructures(num_players)
 
+        # Set starting position of the snakes
+        # If one snake, place it's head in the center pixel, with it's body going to the left.
+        #
+        # If more than one snake, divide the grid into three columns. Alternate placing snake
+        # heads on the left and right borders of the middle column. Snakes heads placed on the
+        # left border will have their bodies jut to the left. Snake heads placed on the right
+        # border will have their bodies jut to the right.
+        #
+        # When placing N snakes, divide the grid into N + 1 rows. Snakes will placed one per
+        # row border.
         num_players = len(self.__snake_linked_lists)
         for i in range(num_players):
             starting_height = int(round((i + 1) * (self.__settings.display_height / (num_players + 1)), 1))
