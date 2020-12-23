@@ -93,8 +93,8 @@ class Snake:
         mixer.init(frequency = 22050, buffer = 512)
         self.__apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
-    def newGame(self, num_players = 1):
-        self.__reset(num_players)
+    def newGame(self):
+        self.__reset()
         self.__show_board()
 
         if not self.__accept_sockets():
@@ -111,9 +111,8 @@ class Snake:
             # lead to more consistent tick durations?
             time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
-            for i in range(len(self.__snake_linked_lists)):
+            for i in range(self.__settings.num_players):
                 move = None
-                # for i in range(len(self.__snake_linked_lists)):
                 if self.__unix_socket_helpers[i].is_ready_to_read():
                     try:
                         move = self.__unix_socket_helpers[i].recv_msg()
@@ -150,7 +149,7 @@ class Snake:
 
     def __tick(self):
         self.__num_ticks += 1
-        for i in range(len(self.__snake_linked_lists)):
+        for i in range(self.__settings.num_players):
             snake_linked_list = self.__snake_linked_lists[i]
             snake_set = self.__snake_sets[i]
             direction = self.__directions[i]
@@ -203,9 +202,9 @@ class Snake:
         self.__apple = (y, x)
 
     def __is_game_over(self):
-        for i in range(len(self.__snake_linked_lists)):
+        for i in range(self.__settings.num_players):
             this_snake_head = self.__snake_linked_lists[i][0]
-            for j in range(len(self.__snake_linked_lists)):
+            for j in range(self.__settings.num_players):
                 if i == j:
                     # Check if this snake overlapped itself
                     if len(self.__snake_sets[i]) < len(self.__snake_linked_lists[i]):
@@ -222,7 +221,7 @@ class Snake:
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
 
         snake_rgb_per_player = self.__get_snake_rgb_per_player()
-        for i in range(len(self.__snake_linked_lists)):
+        for i in range(self.__settings.num_players):
             for (y, x) in self.__snake_linked_lists[i]:
                 frame[y, x] = snake_rgb_per_player[i]
 
@@ -233,12 +232,11 @@ class Snake:
         self.__video_player.play_frame(frame)
 
     def __get_snake_rgb_per_player(self):
-        num_players = len(self.__snake_linked_lists)
         snake_rgb_per_player = []
-        if num_players <= 1:
+        if self.__settings.num_players <= 1:
             snake_rgb_per_player.append(self.__game_color_helper.get_rgb(self.__game_color_mode, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks))
-        if num_players > 1:
-            for i in range(num_players):
+        if self.__settings.num_players > 1:
+            for i in range(self.__settings.num_players):
                 if i == 0:
                     snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
                         GameColorHelper.GAME_COLOR_MODE_GREEN, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
@@ -261,11 +259,11 @@ class Snake:
                     ))
         return snake_rgb_per_player
 
-    def __reset(self, num_players):
+    def __reset(self):
         self.__num_ticks = 0
         self.__game_color_helper.reset()
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
-        self.__reset_datastructures(num_players)
+        self.__reset_datastructures()
 
         # Set starting position of the snakes
         # If one snake, place it's head in the center pixel, with it's body going to the left.
@@ -277,10 +275,9 @@ class Snake:
         #
         # When placing N snakes, divide the grid into N + 1 rows. Snakes will placed one per
         # row border.
-        num_players = len(self.__snake_linked_lists)
-        for i in range(num_players):
-            starting_height = int(round((i + 1) * (self.__settings.display_height / (num_players + 1)), 1))
-            if num_players == 1:
+        for i in range(self.__settings.num_players):
+            starting_height = int(round((i + 1) * (self.__settings.display_height / (self.__settings.num_players + 1)), 1))
+            if self.__settings.num_players == 1:
                 starting_width = int(round(self.__settings.display_width / 2, 1))
             else:
                 if i % 2 == 0:
@@ -303,13 +300,13 @@ class Snake:
 
         self.__place_apple()
 
-    def __reset_datastructures(self, num_players = 1):
+    def __reset_datastructures(self):
         self.__apple = None
         self.__snake_linked_lists = []
         self.__snake_sets = []
         self.__unix_socket_helpers = []
         self.__directions = []
-        for i in range(num_players):
+        for i in range(self.__settings.num_players):
             self.__snake_linked_lists.append(collections.deque())
             self.__snake_sets.append(set())
             self.__unix_socket_helpers.append(UnixSocketHelper().set_server_socket(self.__server_unix_socket))
@@ -320,7 +317,7 @@ class Snake:
             self.__background_music.fadeout(500)
 
         score = None
-        if len(self.__snake_linked_lists) == 1: # only do scoring in single player
+        if self.__settings.num_players == 1: # only do scoring in single player
             score = (len(self.__snake_linked_lists[0]) - self.__SNAKE_STARTING_LENGTH) * self.__settings.difficulty
             if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
                 self.__do_scoring(score)
@@ -398,7 +395,7 @@ class Snake:
         return False;
 
     def __accept_sockets(self):
-        for i in range(len(self.__snake_linked_lists)):
+        for i in range(self.__settings.num_players):
             while True:
                 try:
                     self.__unix_socket_helpers[i].accept()
