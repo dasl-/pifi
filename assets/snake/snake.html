@@ -16,31 +16,30 @@
   </head>
 
   <body>
-    <div class="menu-container">
+    <nav class="menu-container">
       <span class="new-game">New Game</span>
       <span class="menubutton">Menu</span>
-    <nav class="menu">
-      <ul>
-        <li>
-          <a class="dropdown">Settings</a>
-          <ul>
-            <li><label>Volume</label>
-              <input type="range" min="0" max="100" value="50" class="slider" id="volume"><span id="volumeval"></span>
-            </li>
-            <li><label>Difficulty</label>
-              <input type="range" min="1" max="9" value="7" class="slider" id="difficulty"><span id="difficultyval"></span>
-            </li>
-            <li><label>Players</label>
-              <input type="range" min="1" max="4" value="1" class="slider" id="num_players"><span id="num_players_val"></span>
-            </li>
-          </ul>
-        </li>
-        <li><a id="leader">Hi-Score</a></li>
-        <li><a href="/">Pi-Fi</a></li>
-      </ul>
+      <section class="menu">
+        <ul>
+          <li>
+            <a class="settings_dropdown">Settings</a>
+            <ul>
+              <li><label>Volume</label>
+                <input type="range" min="0" max="100" value="50" class="slider" id="volume"><span id="volumeval"></span>
+              </li>
+              <li><label>Difficulty</label>
+                <input type="range" min="1" max="9" value="7" class="slider" id="difficulty"><span id="difficultyval"></span>
+              </li>
+              <li><label>Players</label>
+                <input type="range" min="1" max="4" value="1" class="slider" id="num_players"><span id="num_players_val"></span>
+              </li>
+            </ul>
+          </li>
+          <li><a id="leader">Hi-Score</a></li>
+          <li><a href="/">Pi-Fi</a></li>
+        </ul>
+      </section>
     </nav>
-
-    </div>
 
     <div class="quad topq" data-direction="1"></div>
     <div class="quad leftq" data-direction="3"></div>

@@ -2,7 +2,9 @@ var snake_runner = (() => {
 
     var is_new_game_request_in_progress = false;
     var new_game_promises, web_socket_connect_resolve, web_socket_connect_reject;
-    var web_socket = null;
+    var web_sockets = []; // web socket per player
+    var player_counter = 0;
+    var playlist_video_id = null;
 
     function newGame() {
         if (is_new_game_request_in_progress) {
@@ -10,18 +12,19 @@ var snake_runner = (() => {
         }
 
         is_new_game_request_in_progress = true;
-        unregisterEventListeners();
         new_game_promises = [];
+        var num_players = $("#num_players").val();
 
         new_game_promises.push($.post({
             url: "/api/enqueue_or_join_game",
             data: JSON.stringify({
                 title: 'snake',
                 difficulty: $("#difficulty").val(),
-                num_players: $("#num_players").val()
+                num_players: num_players
             })
         }));
 
+        // TODO: confirm this still works with multiple websockets??
         new_game_promises.push(new Promise(function(resolve, reject) {
             web_socket_connect_resolve = resolve;
             web_socket_connect_reject = reject;
@@ -35,15 +38,6 @@ var snake_runner = (() => {
         }
         new_uri += "//" + window.location.hostname + ":8765/";
 
-        // prevent memory leaks from the previous games' listeners hanging around?
-        if (web_socket) {
-            web_socket.close(1000, "closing because new game");
-            web_socket.removeEventListener('open', onWebSocketOpen);
-            web_socket.removeEventListener('close', onWebSocketClose);
-            web_socket.removeEventListener('error', onWebSocketError);
-            web_socket.removeEventListener('message', onWebSocketMessage);
-        }
-
         var pending_web_socket = new WebSocket(new_uri);
         pending_web_socket.addEventListener('open', onWebSocketOpen);
         pending_web_socket.addEventListener('close', onWebSocketClose);
@@ -52,20 +46,41 @@ var snake_runner = (() => {
 
         Promise.all(new_game_promises).then(
             function(args) {
-                console.log("sending playlist_video_id: ", args[0].playlist_video_id);
-                // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
-                pending_web_socket.send(JSON.stringify({
-                    playlist_video_id: args[0].playlist_video_id,
-                }));
-                web_socket = pending_web_socket;
-                is_new_game_request_in_progress = false;
-                registerEventListeners();
+                handle_new_game_promises_success(args[0], args[1], pending_web_socket);
             },
             function(err) {
                 console.log("Error waiting for new game promises.", err);
                 is_new_game_request_in_progress = false;
             }
         );
+    }
+
+    function handle_new_game_promises_success(enqueue_or_join_game_response, websocket_response, pending_web_socket) {
+        var new_playlist_video_id = enqueue_or_join_game_response.playlist_video_id;
+        if (playlist_video_id !== new_playlist_video_id) {
+            // This client is starting / joining a game that it hasn't been a part of before
+            playlist_video_id = new_playlist_video_id;
+            unregisterEventListeners();
+            player_counter = 0;
+            web_sockets = [];
+        }
+
+        // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
+        console.log("sending playlist_video_id: ", playlist_video_id);
+        pending_web_socket.send(JSON.stringify({
+            playlist_video_id: playlist_video_id,
+        }));
+        web_sockets[player_counter] = pending_web_socket;
+        is_new_game_request_in_progress = false;
+        registerEventListeners(player_counter);
+        player_counter += 1;
+        if((player_counter >= 2 && !page.is_touch_device) ||
+            (player_counter >= 1 && page.is_touch_device)
+        ) {
+            var $new_game = $(".new-game");
+            $new_game.addClass("disabled-button");
+            $new_game.off("click");
+        }
     }
 
     function onWebSocketOpen(event) {
@@ -90,33 +105,61 @@ var snake_runner = (() => {
         }
     }
 
-    function registerEventListeners() {
-        // mouse input
-        $(".quad").click(function() {
-            var direction = $(this).data("direction");
-            sendDirection(direction);
-        });
+    function registerEventListeners(player_index) {
+        if (player_index === 0) {
+            // mouse input
+            $(".quad").click(function() {
+                var direction = $(this).data("direction");
+                sendDirection(direction, player_index);
+            });
 
-        // Keyboard input
-        $(document).on('keydown.snake-runner', function(e) {
-            var keyinput = e.keyCode;
-            var direction;
-            //Arrow key input
-            if (keyinput == 38) { direction = 1; }
-            if (keyinput == 40) { direction = 2; }
-            if (keyinput == 37) { direction = 3; }
-            if (keyinput == 39) { direction = 4; }
+            // Keyboard input
+            $(document).on('keydown.snake-runner.player-' + player_index, function(e) {
+                var keyinput = e.keyCode;
+                var direction;
+                //Arrow key input
+                if (keyinput == 38) { direction = 1; }
+                if (keyinput == 40) { direction = 2; }
+                if (keyinput == 37) { direction = 3; }
+                if (keyinput == 39) { direction = 4; }
 
-            //WASD input
-            if (keyinput == 87) { direction = 1; }
-            if (keyinput == 83) { direction = 2; }
-            if (keyinput == 65) { direction = 3; }
-            if (keyinput == 68) { direction = 4; }
+                if(direction) {
+                    sendDirection(direction, player_index);
+                }
+            });
+            $(document).on('keydown.snake-runner.player-' + player_index + ".wasd", function(e) {
+                var keyinput = e.keyCode;
+                var direction;
 
-            if(direction) {
-                sendDirection(direction);
-            }
-        });
+                //WASD input
+                if (keyinput == 87) { direction = 1; }
+                if (keyinput == 83) { direction = 2; }
+                if (keyinput == 65) { direction = 3; }
+                if (keyinput == 68) { direction = 4; }
+
+                if(direction) {
+                    sendDirection(direction, player_index);
+                }
+            });
+        } else if (player_index === 1) {
+            // Unregister WASD from the first player
+            $(document).off("keydown.snake-runner.player-0.wasd");
+
+            // Keyboard input
+            $(document).on('keydown.snake-runner.player-' + player_index, function(e) {
+                var keyinput = e.keyCode;
+                var direction;
+                //WASD input
+                if (keyinput == 87) { direction = 1; }
+                if (keyinput == 83) { direction = 2; }
+                if (keyinput == 65) { direction = 3; }
+                if (keyinput == 68) { direction = 4; }
+
+                if(direction) {
+                    sendDirection(direction, player_index);
+                }
+            });
+        }
     }
 
     function unregisterEventListeners() {
@@ -125,13 +168,25 @@ var snake_runner = (() => {
 
         // Keyboard input
         $(document).off("keydown.snake-runner");
+
+        // prevent memory leaks from the previous games' listeners hanging around?
+        web_sockets.forEach(web_socket => {
+            web_socket.close(1000, "closing because new game");
+            web_socket.removeEventListener('open', onWebSocketOpen);
+            web_socket.removeEventListener('close', onWebSocketClose);
+            web_socket.removeEventListener('error', onWebSocketError);
+            web_socket.removeEventListener('message', onWebSocketMessage);
+        });
     }
 
-    function sendDirection(direction) {
-        web_socket.send(direction);
-        //change to pre-loaded images
-        $(".button").css("background-image", "url('/assets/snake/snake.png')");
-        $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
+    function sendDirection(direction, player_index) {
+        console.log("yoyo");
+        web_sockets[player_index].send(direction);
+        if (player_index === 0) {
+            //change to pre-loaded images
+            $(".button").css("background-image", "url('/assets/snake/snake.png')");
+            $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
+        }
     }
 
     return {

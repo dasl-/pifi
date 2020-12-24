@@ -47,7 +47,7 @@ label {
 
 .menu {
   display: none;
-  margin-top:4em;
+  margin-top:2em;
 }
 
 .menu ul {
@@ -92,6 +92,13 @@ label {
   align-items:center;
   justify-content: space-between;
 }
+
+.disabled-button {
+  color:var(--light-gray);
+  border:1px solid var(--light-gray);
+  box-shadow:0 0 5px var(--light-gray);
+}
+
 .wrapper {
   display:flex;
   flex-flow:column nowrap;

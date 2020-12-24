@@ -4,12 +4,13 @@ var page = (() => {
 
     var is_game_joinable = true;
 
+    var is_touch_device = 'ontouchstart' in document.documentElement;
+
     function init() {
         $(".initialcontainer").hide();
 
-        var is_touch_device = 'ontouchstart' in document.documentElement;
-        setupUiHandlers(is_touch_device);
-        setupDifficultyInput(is_touch_device);
+        setupUiHandlers();
+        setupDifficultyInput();
         setupNumPlayersInput();
 
         // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
@@ -22,18 +23,16 @@ var page = (() => {
         setupPolling();
     }
 
-    function setupUiHandlers(is_touch_device) {
-        $(".new-game").click(function(){
-            snake_runner.newGame();
-        });
+    function setupUiHandlers() {
+        setupNewGameButton();
 
         //Menu button for mobile
         $(".menubutton").click(function() {
             $(".menu").slideToggle("fast");
         });
 
-        //Dropdown menu toggle
-        $(".dropdown").click(function() {
+        //Settings dropdown menu toggle
+        $(".settings_dropdown").click(function() {
             $(this).next("ul").toggle("fast","swing");
         });
 
@@ -48,18 +47,25 @@ var page = (() => {
                 hideLeaderboard();
             }
 
-            var $dropdown_container = $(".dropdown").siblings('ul');
-            if (!$dropdown_container.is(e.target) && $dropdown_container.has(e.target).length === 0 &&
-                !$('.dropdown').is(e.target)
+            var $settings_dropdown_container = $(".settings_dropdown").siblings('ul');
+            if (!$settings_dropdown_container.is(e.target) && $settings_dropdown_container.has(e.target).length === 0 &&
+                !$('.settings_dropdown').is(e.target)
             ){
-                hideDropdown();
+                hideSettingsDropdown();
+            }
+
+            var $menu_container = $(".menu");
+            if (!$menu_container.is(e.target) && $menu_container.has(e.target).length === 0 &&
+                !$('.menubutton').is(e.target) && is_touch_device
+            ){
+                hideMenu();
             }
         });
 
         $(document).on('keydown.page', function(e) {
             if(e.keyCode == 27) { // esc
                 hideLeaderboard();
-                hideDropdown();
+                hideSettingsDropdown();
             }
         });
 
@@ -71,7 +77,7 @@ var page = (() => {
         }
     }
 
-    function setupDifficultyInput(is_touch_device) {
+    function setupDifficultyInput() {
         var $difficulty_input = $('#difficulty');
         if (is_touch_device) {
             $difficulty_input.val(3);
@@ -124,8 +130,18 @@ var page = (() => {
         $(".leaderboard").fadeOut();
     }
 
-    function hideDropdown() {
-        $('.dropdown').next("ul").hide("fast","swing");
+    function hideSettingsDropdown() {
+        $('.settings_dropdown').next("ul").hide("fast","swing");
+    }
+
+    function hideMenu() {
+        $('.menu').hide("fast","swing");
+    }
+
+    function setupNewGameButton() {
+        $(".new-game").click(function(){
+            snake_runner.newGame();
+        });
     }
 
     function getHighScores() {
@@ -162,12 +178,15 @@ var page = (() => {
             $(".new-game").html("Join Game&nbsp;" + game_joinable_countdown_s.toString().padStart(2, "0"));
         } else {
             $(".new-game").html("New Game");
+            $(".new-game").removeClass("disabled-button");
+            setupNewGameButton();
         }
     }
 
     return {
         init: init,
-        showLeaderboard: showLeaderboard
+        showLeaderboard: showLeaderboard,
+        is_touch_device: is_touch_device
     };
 
 })();
