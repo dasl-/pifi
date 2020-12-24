@@ -101,43 +101,23 @@ class Snake:
             self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
             return
 
-
         background_music_file = secrets.choice(self.__background_music_options)
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__background_music.play(loops = -1)
 
+        has_game_been_ended = False
         while True:
             # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
             # lead to more consistent tick durations?
             time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
             for i in range(self.__settings.num_players):
-                move = None
-                if self.__unix_socket_helpers[i].is_ready_to_read():
-                    try:
-                        move = self.__unix_socket_helpers[i].recv_msg()
-                    except (SocketClosedException, ConnectionResetError) as e:
-                        self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
-                        break
+                if not self.__read_move_and_set_direction(i):
+                    has_game_been_ended = True
+                    break
 
-                    move = int(move)
-                    if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
-                        move = self.UP
-
-                if move is not None:
-                    new_direction = move
-                    if (
-                        (self.__directions[i] == self.UP or self.__directions[i] == self.DOWN) and
-                        (new_direction == self.UP or new_direction == self.DOWN)
-                    ):
-                        pass
-                    elif (
-                        (self.__directions[i] == self.LEFT or self.__directions[i] == self.RIGHT) and
-                        (new_direction == self.LEFT or new_direction == self.RIGHT)
-                    ):
-                        pass
-                    else:
-                        self.__directions[i] = new_direction
+            if has_game_been_ended:
+                break
 
             self.__tick()
             if self.__is_game_over():
@@ -146,6 +126,37 @@ class Snake:
             if self.__should_skip_game():
                 self.__end_game(self.__GAME_OVER_REASON_SKIP_REQUESTED)
                 break
+
+    # Returns True on success and False on failure (game will be ended on failure)
+    def __read_move_and_set_direction(self, player_index):
+        move = None
+        if self.__unix_socket_helpers[player_index].is_ready_to_read():
+            try:
+                move = self.__unix_socket_helpers[player_index].recv_msg()
+            except (SocketClosedException, ConnectionResetError) as e:
+                self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
+                return False
+
+            move = int(move)
+            if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
+                move = self.UP
+
+        if move is not None:
+            new_direction = move
+            if (
+                (self.__directions[player_index] == self.UP or self.__directions[player_index] == self.DOWN) and
+                (new_direction == self.UP or new_direction == self.DOWN)
+            ):
+                pass
+            elif (
+                (self.__directions[player_index] == self.LEFT or self.__directions[player_index] == self.RIGHT) and
+                (new_direction == self.LEFT or new_direction == self.RIGHT)
+            ):
+                pass
+            else:
+                self.__directions[player_index] = new_direction
+
+        return True
 
     def __tick(self):
         self.__num_ticks += 1
@@ -396,6 +407,13 @@ class Snake:
 
     def __accept_sockets(self):
         for i in range(self.__settings.num_players):
+            if i == 1:
+                # Give people longer than the default 3s to join a multiplayer game. We only have to set this on one player because
+                # the rest of the players share a reference to the same server socket.
+                #
+                # Make sure to reset back to the default before returning from this method.
+                self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.MULTIPLAYER_JOIN_GAME_SOCKET_TIMEOUT_S)
+
             while True:
                 try:
                     self.__unix_socket_helpers[i].accept()
@@ -412,6 +430,7 @@ class Snake:
                     # Error during `accept`, so no indication that there are other connections that want accepting.
                     # The backlog is probably empty. Could have been timeout waiting for client to connect.
                     self.__logger.error('Caught exception during accept: {}'.format(traceback.format_exc()))
+                    self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.DEFAULT_SOCKET_TIMEOUT_S)
                     return False
 
                 # Sanity check that the client that ended up connected to our socket is the one that was actually intended.
@@ -433,4 +452,7 @@ class Snake:
                     continue
                 break
 
+        self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.DEFAULT_SOCKET_TIMEOUT_S)
+        if self.__settings.num_players > 1:
+            return self.__playlist.set_all_players_ready(self.__playlist_video_id)
         return True

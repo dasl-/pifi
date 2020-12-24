@@ -35,20 +35,24 @@ label {
   width:150px;
   text-align:left;
 }
-.menu {
-  display: none;
-  margin-top:4em;
-}
-.menu, .menubutton {
+
+
+.menu-container {
   z-index:3;
   position:absolute;
   left:2em;
   top:2em;
   font-size:.75em;
 }
+
+.menu {
+  display: none;
+  margin-top:4em;
+}
+
 .menu ul {
   list-style-type: none;
-  margin: 0 .5em;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-flow: column wrap;
@@ -56,7 +60,7 @@ label {
 .menu ul li {
   margin:1em .25em;
 }
-.menu ul li a, .menubutton {
+.menu ul li a, .menubutton, .new-game {
   color:var(--blue);
   text-decoration:none;
   padding:.6em .75em;
@@ -69,7 +73,7 @@ label {
   cursor:default;
   transition:box-shadow .2s ease;
 }
-.menu ul li a:hover {
+.menu ul li a:hover, .new-game:hover {
   box-shadow:0 0 15px var(--pink);
 }
 .menu ul li ul {
@@ -395,7 +399,7 @@ label {
 
       @media screen and (min-width:500px) {
         .menu {
-          display:block;
+          display:inline-block;
           margin-top:0;
         }
         .menu ul {

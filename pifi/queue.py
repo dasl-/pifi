@@ -63,12 +63,11 @@ class Queue:
                 time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
-        if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
-            # Someone deleted the item from the queue in between getting the item and starting it.
-            return
-
         exception_to_raise = None
         if playlist_item["type"] == Playlist.TYPE_VIDEO:
+            if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
+                # Someone deleted the item from the queue in between getting the item and starting it.
+                return
             video_settings = VideoSettings().from_playlist_item_in_queue(playlist_item)
             video_player = VideoPlayer(video_settings)
             video_processor = VideoProcessor(video_settings, playlist_item['playlist_video_id'])
@@ -76,6 +75,12 @@ class Queue:
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
                 snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
+                status2 = Playlist.STATUS2_PLAYING
+                if snake_settings.num_players > 1:
+                    status2 = Playlist.STATUS2_WAITING_FOR_PLAYERS
+                if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], status2):
+                    # Someone deleted the item from the queue in between getting the item and starting it.
+                    return
                 snake = Snake(snake_settings, self.__unix_socket, playlist_item["playlist_video_id"])
                 try:
                     snake.newGame()

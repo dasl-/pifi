@@ -16,6 +16,8 @@ from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scores import Scores
+from pifi.games.snake import Snake
+from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.settings.snakesettings import SnakeSettings
 
 class PifiAPI():
@@ -28,6 +30,7 @@ class PifiAPI():
         self.__vol_controller = VolumeController()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
+    # get all the data that we poll for every second in the pifi
     def get_queue(self):
         response_details = {}
         queue = self.__playlist.get_queue()
@@ -35,6 +38,26 @@ class PifiAPI():
         response_details['vol_pct'] = self.__vol_controller.get_vol_pct()
         response_details['success'] = True
         return response_details
+
+    # get all the data that we poll for every second in snake
+    def get_snake_data(self):
+        is_game_joinable = False
+        game_joinable_countdown_s = None
+        current_video = self.__playlist.get_current_video()
+        if current_video and current_video['title'] == Snake.GAME_TITLE and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
+            is_game_joinable = True
+            current_video_create_date = time.mktime(time.strptime(current_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
+            game_joinable_countdown_s = max(
+                round(UnixSocketHelper.MULTIPLAYER_JOIN_GAME_SOCKET_TIMEOUT_S - (time.time() - current_video_create_date), 0),
+                0
+            )
+
+        return {
+            'is_game_joinable': is_game_joinable,
+            'game_joinable_countdown_s': game_joinable_countdown_s,
+            'vol_pct': self.__vol_controller.get_vol_pct(),
+            'success': True
+        }
 
     def get_volume(self):
         response_details = {}
@@ -50,34 +73,51 @@ class PifiAPI():
         response_details['success'] = True
         return response_details
 
-    def enqueue_game(self, post_data):
-        game_type = Playlist.TYPE_GAME
-        url = None
-        color_mode = GameColorHelper.GAME_COLOR_MODE_RANDOM
-        thumbnail = '/assets/snake/snake-thumbnail.png'
+    def enqueue_or_join_game(self, post_data):
         title = post_data['title']
-        difficulty = int(post_data['difficulty'])
-        if difficulty < 0 or difficulty > 9:
-            difficulty = SnakeSettings.DEFAULT_DIFFICULTY
-        settings = json.dumps({ 'difficulty': difficulty })
-        duration = 'n/a'
-        game_playlist_video_id = self.__playlist.enqueue(
-            url, color_mode, thumbnail, title, duration, game_type, settings
-        )
+        game_playlist_video_id = None
+        did_join_existing_game = None
 
-        # skip videos in the queue until we get to the game
-        while True:
-            current_video = self.__playlist.get_current_video()
-            if current_video is None:
-                break
-            if current_video['playlist_video_id'] < game_playlist_video_id:
-                self.__playlist.skip(current_video['playlist_video_id'])
-            else:
-                break
+        current_video = self.__playlist.get_current_video()
+        if current_video and current_video['title'] == title and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
+            # join game
+            game_playlist_video_id = current_video['playlist_video_id']
+            did_join_existing_game = True
+        else:
+            # enqueue game
+            game_type = Playlist.TYPE_GAME
+            url = None
+            thumbnail = '/assets/snake/snake-thumbnail.png'
+            num_players = int(post_data['num_players'])
+            settings = json.dumps({
+                'difficulty': int(post_data['difficulty']),
+                'num_players': num_players
+            })
+            duration = 'n/a'
+
+            # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
+            color_mode = Playlist.STATUS2_PLAYING
+            if num_players > 1:
+                color_mode = Playlist.STATUS2_WAITING_FOR_PLAYERS
+            game_playlist_video_id = self.__playlist.enqueue(
+                url, color_mode, thumbnail, title, duration, game_type, settings
+            )
+            did_join_existing_game = False
+
+            # skip videos in the queue until we get to the game
+            while True:
+                current_video = self.__playlist.get_current_video()
+                if current_video is None:
+                    break
+                if current_video['playlist_video_id'] < game_playlist_video_id:
+                    self.__playlist.skip(current_video['playlist_video_id'])
+                else:
+                    break
 
         return {
             'success': True,
             'playlist_video_id': game_playlist_video_id,
+            'did_join_existing_game': did_join_existing_game,
         }
 
     def submit_game_score_initials(self, post_data):
@@ -186,6 +226,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_volume()
         elif parsed_path.path == 'high_scores':
             response = self.__api.get_high_scores(get_data)
+        elif parsed_path.path == 'snake':
+            response = self.__api.get_snake_data()
         else:
             self.__do_404()
             return
@@ -216,8 +258,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.clear()
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
-        elif path == 'enqueue_game':
-            response = self.__api.enqueue_game(post_data)
+        elif path == 'enqueue_or_join_game':
+            response = self.__api.enqueue_or_join_game(post_data)
         elif path == 'submit_game_score_initials':
             response = self.__api.submit_game_score_initials(post_data)
         else:

@@ -1,8 +1,28 @@
 var page = (() => {
 
+    var POLL_INTERVAL_MS = 1000;
+
+    var is_game_joinable = true;
+
     function init() {
         $(".initialcontainer").hide();
 
+        var is_touch_device = 'ontouchstart' in document.documentElement;
+        setupUiHandlers(is_touch_device);
+        setupDifficultyInput(is_touch_device);
+        setupNumPlayersInput();
+
+        // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
+        if (window.__firefox__) {
+            window.__firefox__.NightMode.setEnabled(false);
+        }
+
+        volume.init(false);
+
+        setupPolling();
+    }
+
+    function setupUiHandlers(is_touch_device) {
         $(".new-game").click(function(){
             snake_runner.newGame();
         });
@@ -43,39 +63,56 @@ var page = (() => {
             }
         });
 
-        //Lower difficulty if mobile
-        var isTouchDevice = 'ontouchstart' in document.documentElement;
-        if ( isTouchDevice ) {
+        if ( is_touch_device ) {
             // do mobile handling
-            var difficulty = $('#difficulty');
-            difficulty.val('3');
-
             $(".new-game").click(function() {
                 $(".menu").hide();
             });
         }
+    }
 
-        // set difficulty from saved value per browser
-        $('#difficulty').on('input', function() {
+    function setupDifficultyInput(is_touch_device) {
+        var $difficulty_input = $('#difficulty');
+        if (is_touch_device) {
+            $difficulty_input.val(3);
+        }
+
+        $difficulty_input.on('input', function() {
             localStorage.setItem('difficulty', this.value);
             document.getElementById('difficultyval').innerHTML = this.value;
         });
 
+        // set difficulty from saved value per browser
         var saved_difficulty = localStorage.getItem('difficulty');
         if (saved_difficulty !== null && parseInt(saved_difficulty) == saved_difficulty &&
             saved_difficulty > 0 && saved_difficulty < 10
         ) {
-            $('#difficulty').val(saved_difficulty);
+            $difficulty_input.val(saved_difficulty);
         }
 
         document.getElementById('difficultyval').innerHTML = document.getElementById('difficulty').value;
+    }
 
-        // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
-        if (window.__firefox__) {
-            window.__firefox__.NightMode.setEnabled(false);
-        }
+    function setupNumPlayersInput() {
+        $('#num_players').on('input', function() {
+            document.getElementById('num_players_val').innerHTML = this.value;
+        });
+        document.getElementById('num_players_val').innerHTML = document.getElementById('num_players').value;
+    }
 
-        volume.init();
+    function setupPolling() {
+        window.setInterval(
+            function() {
+                $.get({
+                    url: "/api/snake",
+                    success: function(response) {
+                        updateNewGameButton(response.is_game_joinable, response.game_joinable_countdown_s);
+                        volume.maybeUpdateVolume(Math.round(response.vol_pct));
+                    }
+                });
+            },
+            POLL_INTERVAL_MS
+        );
     }
 
     function showLeaderboard() {
@@ -118,6 +155,14 @@ var page = (() => {
                 });
             }
         });
+    }
+
+    function updateNewGameButton(is_game_joinable, game_joinable_countdown_s) {
+        if (is_game_joinable) {
+            $(".new-game").html("Join Game&nbsp;" + game_joinable_countdown_s.toString().padStart(2, "0"));
+        } else {
+            $(".new-game").html("New Game");
+        }
     }
 
     return {

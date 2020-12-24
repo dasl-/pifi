@@ -14,10 +14,11 @@ var snake_runner = (() => {
         new_game_promises = [];
 
         new_game_promises.push($.post({
-            url: "/api/enqueue_game",
+            url: "/api/enqueue_or_join_game",
             data: JSON.stringify({
                 title: 'snake',
-                difficulty: $("#difficulty").val()
+                difficulty: $("#difficulty").val(),
+                num_players: $("#num_players").val()
             })
         }));
 
@@ -51,6 +52,7 @@ var snake_runner = (() => {
 
         Promise.all(new_game_promises).then(
             function(args) {
+                console.log("sending playlist_video_id: ", args[0].playlist_video_id);
                 // Send the playlist_video_id we expect to the websocket to be connected to on the server for validation.
                 pending_web_socket.send(JSON.stringify({
                     playlist_video_id: args[0].playlist_video_id,

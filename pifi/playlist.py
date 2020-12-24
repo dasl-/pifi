@@ -9,6 +9,10 @@ class Playlist:
     STATUS_PLAYING = 'STATUS_PLAYING'
     STATUS_DONE = 'STATUS_DONE'
 
+    # A sub-status of STATUS_PLAYING
+    STATUS2_WAITING_FOR_PLAYERS = 'STATUS2_WAITING_FOR_PLAYERS'
+    STATUS2_PLAYING = 'STATUS2_PLAYING'
+
     """
     The Playlist DB holds a queue of playlist items to play. These items can be either videos or games, such as snake.
     When a game is requested, we insert a new row in the playlist DB. This gets an autoincremented playlist_video_id,
@@ -106,10 +110,27 @@ class Playlist:
     #   1) Next video in the queue is retrieved
     #   2) Someone deletes the video from the queue
     #   3) We attempt to set the video to "playing" status
-    def set_current_video(self, playlist_video_id):
+    def set_current_video(self, playlist_video_id, status2 = None):
+        if status2:
+            # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
+            self.__cursor.execute(
+                "UPDATE playlist_videos set status = ?, color_mode = ? WHERE status = ? AND playlist_video_id = ?",
+                [self.STATUS_PLAYING, status2, self.STATUS_QUEUED, playlist_video_id]
+            )
+        else:
+            self.__cursor.execute(
+                "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
+                [self.STATUS_PLAYING, self.STATUS_QUEUED, playlist_video_id]
+            )
+        if self.__cursor.rowcount == 1:
+            return True
+        return False
+
+    def set_all_players_ready(self, playlist_video_id):
+        # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
         self.__cursor.execute(
-            "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
-            [self.STATUS_PLAYING, self.STATUS_QUEUED, playlist_video_id]
+            "UPDATE playlist_videos set color_mode = ? WHERE status = ? AND playlist_video_id = ?",
+            [self.STATUS2_PLAYING, self.STATUS_PLAYING, playlist_video_id]
         )
         if self.__cursor.rowcount == 1:
             return True
