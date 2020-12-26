@@ -6,6 +6,7 @@ import simpleaudio
 import traceback
 import json
 import secrets
+import socket
 from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
@@ -69,7 +70,7 @@ class Snake:
 
     __playlist = None
 
-    __playlist_video_id = None
+    __playlist_video = None
 
     __scores = None
 
@@ -78,7 +79,7 @@ class Snake:
 
     __server_unix_socket = None
 
-    def __init__(self, settings, unix_socket, playlist_video_id):
+    def __init__(self, settings, unix_socket, playlist_video):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
@@ -87,7 +88,7 @@ class Snake:
         self.__scores = Scores()
         self.__server_unix_socket = unix_socket
         self.__playlist = Playlist()
-        self.__playlist_video_id = playlist_video_id
+        self.__playlist_video = playlist_video
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
@@ -401,23 +402,28 @@ class Snake:
         self.__video_player.play_frame(frame)
 
     def __should_skip_game(self):
-        if self.__playlist.should_skip_video_id(self.__playlist_video_id):
+        if self.__playlist.should_skip_video_id(self.__playlist_video['playlist_video_id']):
             return True
         return False;
 
     def __accept_sockets(self):
+        playlist_video_create_date_epoch = time.mktime(time.strptime(self.__playlist_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
+        max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_SINGLE_PLAYER_JOIN_TIME_S
+        if self.__settings.num_players > 1:
+            max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S + 1 # give a 1s extra buffer
         for i in range(self.__settings.num_players):
-            if i == 1:
-                # Give people longer than the default 3s to join a multiplayer game. We only have to set this on one player because
-                # the rest of the players share a reference to the same server socket.
-                #
-                # Make sure to reset back to the default before returning from this method.
-                self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.MULTIPLAYER_JOIN_GAME_SOCKET_TIMEOUT_S)
-
             while True:
+                if (time.time() - playlist_video_create_date_epoch) > max_accept_sockets_wait_time_s:
+                    # Make sure we don't wait indefinitely for players to join the game
+                    self.__logger.info('Not all players joined within the time limit for game joining.')
+                    return False
+
                 try:
                     self.__unix_socket_helpers[i].accept()
-                except SocketConnectionHandshakeException as e:
+                except socket.timeout as e1:
+                    # Keep trying to accept until max_accept_sockets_wait_time_s expires...
+                    continue
+                except SocketConnectionHandshakeException as e2:
                     # Error during handshake, there may be other websocket initiated connections in the backlog that want accepting.
                     # Try again to avoid a situation where we accidentally had more backlogged requests than we ever call
                     # accept on. For example, if people spam the "new game" button, we may have several websockets that called
@@ -426,11 +432,10 @@ class Snake:
                     # eliminate this backlog of queued stale requests.
                     self.__logger.info('Calling accept again due to handshake error: {}'.format(traceback.format_exc()))
                     continue
-                except Exception as e2:
+                except Exception as e3:
                     # Error during `accept`, so no indication that there are other connections that want accepting.
-                    # The backlog is probably empty. Could have been timeout waiting for client to connect.
+                    # The backlog is probably empty. Not sure what would trigger this error.
                     self.__logger.error('Caught exception during accept: {}'.format(traceback.format_exc()))
-                    self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.DEFAULT_SOCKET_TIMEOUT_S)
                     return False
 
                 # Sanity check that the client that ended up connected to our socket is the one that was actually intended.
@@ -444,15 +449,14 @@ class Snake:
                 # 7) observe that client is from first "new game" request and server is from second "new game" request. Mismatch.
                 try:
                     client_playlist_video_id = json.loads(self.__unix_socket_helpers[i].recv_msg())['playlist_video_id']
-                    if client_playlist_video_id != self.__playlist_video_id:
+                    if client_playlist_video_id != self.__playlist_video['playlist_video_id']:
                         raise Exception("Server was playing playlist_video_id: {}, but client was playing playlist_video_id: {}."
-                            .format(self.__playlist_video_id, client_playlist_video_id))
+                            .format(self.__playlist_video['playlist_video_id'], client_playlist_video_id))
                 except Exception as e:
                     self.__logger.info('Calling accept again due to playlist_video_id mismatch error: {}'.format(traceback.format_exc()))
                     continue
                 break
 
-        self.__unix_socket_helpers[i].set_server_socket_timeout(UnixSocketHelper.DEFAULT_SOCKET_TIMEOUT_S)
         if self.__settings.num_players > 1:
-            return self.__playlist.set_all_players_ready(self.__playlist_video_id)
+            return self.__playlist.set_all_players_ready(self.__playlist_video['playlist_video_id'])
         return True

@@ -7,9 +7,18 @@ import select
 # unix stream socket toy example: https://gist.github.com/dasl-/e220fedee43ac16dc212fd053775e4e9
 class UnixSocketHelper:
 
-    MULTIPLAYER_JOIN_GAME_SOCKET_TIMEOUT_S = 11
+    # How long to wait for connection to be established in single player game
+    MAX_SINGLE_PLAYER_JOIN_TIME_S = 3
 
-    DEFAULT_SOCKET_TIMEOUT_S = 3
+    # How long to wait for connection to be established in multiplayer game. All players must join
+    # within this timer, which starts ticking when the game is queued up.
+    MAX_MULTI_PLAYER_JOIN_TIME_S = 11
+
+    # How long to block on sending / receiving messages
+    __CONNECTION_SOCKET_TIMEOUT_S = 3
+
+    # how long to block on accept
+    __SERVER_SOCKET_TIMEOUT_S = 0.5
 
     __CONNECTION_HANDSHAKE_MSG = 'connection_handshake_msg'
 
@@ -37,7 +46,7 @@ class UnixSocketHelper:
 
         # don't let socket.accept() block indefinitely if something goes wrong
         # https://docs.python.org/3/library/socket.html#notes-on-socket-timeouts
-        unix_socket.settimeout(self.DEFAULT_SOCKET_TIMEOUT_S)
+        unix_socket.settimeout(self.__SERVER_SOCKET_TIMEOUT_S)
         unix_socket.listen(16)
         return unix_socket
 
@@ -55,14 +64,13 @@ class UnixSocketHelper:
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def accept(self):
         self.__connection_socket, unused_address = self.__server_socket.accept()
-        self.__connection_socket.settimeout(self.DEFAULT_SOCKET_TIMEOUT_S)
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__exchange_connection_handshake_messages()
-
 
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def connect(self, socket_path):
         self.__connection_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.__connection_socket.settimeout(self.DEFAULT_SOCKET_TIMEOUT_S)
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__connection_socket.connect(socket_path)
         self.__exchange_connection_handshake_messages()
         return self

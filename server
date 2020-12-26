@@ -48,7 +48,7 @@ class PifiAPI():
             is_game_joinable = True
             current_video_create_date = time.mktime(time.strptime(current_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
             game_joinable_countdown_s = max(
-                round(UnixSocketHelper.MULTIPLAYER_JOIN_GAME_SOCKET_TIMEOUT_S - (time.time() - current_video_create_date), 0),
+                round(UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S - (time.time() - current_video_create_date), 0),
                 0
             )
 

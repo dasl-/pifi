@@ -81,7 +81,7 @@ class Queue:
                 if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], status2):
                     # Someone deleted the item from the queue in between getting the item and starting it.
                     return
-                snake = Snake(snake_settings, self.__unix_socket, playlist_item["playlist_video_id"])
+                snake = Snake(snake_settings, self.__unix_socket, playlist_item)
                 try:
                     snake.newGame()
                 except Exception as e:
