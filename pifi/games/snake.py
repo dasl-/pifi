@@ -224,7 +224,11 @@ class Snake:
         self.__apple = (y, x)
 
     def __maybe_eliminate_snakes(self):
-        eliminated_snakes = set()
+        for i in self.__eliminated_snakes:
+            self.__eliminated_snakes[i] += 1
+
+        eliminated_snakes = {}
+
         for i in range(self.__settings.num_players):
             if i in self.__eliminated_snakes:
                 continue
@@ -237,12 +241,19 @@ class Snake:
                 if i == j:
                     # Check if this snake overlapped itself
                     if len(self.__snake_sets[i]) < len(self.__snake_linked_lists[i]):
-                        eliminated_snakes.add(i)
+                        eliminated_snakes[i] = 0
                 else:
                     # Check if this snake's head overlapped that snake (any other snake)
                     that_snake_set = self.__snake_sets[j]
                     if this_snake_head in that_snake_set:
-                        eliminated_snakes.add(i)
+                        eliminated_snakes[i] = 0
+
+        if len(eliminated_snakes) > 0:
+            for x in range(4): # blink board
+                self.__show_board()
+                time.sleep(0.1)
+                self.__show_board(eliminated_snakes)
+                time.sleep(0.1)
 
         self.__eliminated_snakes.update(eliminated_snakes)
 
@@ -256,12 +267,17 @@ class Snake:
 
         return False
 
-    def __show_board(self):
+    def __show_board(self, eliminated_snakes = {}):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
 
         snake_rgb_per_player = self.__get_snake_rgb_per_player()
         for i in range(self.__settings.num_players):
-            if i in self.__eliminated_snakes:
+            # if (
+            #     (i in self.__eliminated_snakes and
+            #         (self.__eliminated_snakes[i] % 2 == 1 or self.__eliminated_snakes[i] >= 7)) or
+            #     (i in eliminated_snakes)
+            # ):
+            if i in self.__eliminated_snakes or i in eliminated_snakes:
                 continue
 
             for (y, x) in self.__snake_linked_lists[i]:
@@ -346,7 +362,7 @@ class Snake:
         self.__apple = None
         self.__snake_linked_lists = []
         self.__snake_sets = []
-        self.__eliminated_snakes = set()
+        self.__eliminated_snakes = {}
         self.__unix_socket_helpers = []
         self.__directions = []
         for i in range(self.__settings.num_players):
