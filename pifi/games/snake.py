@@ -53,6 +53,9 @@ class Snake:
     # List of set datastructure per player, representing all the coordinate pairs in the snake
     __snake_sets = None
 
+    # Set of eliminated snake indexes
+    __eliminated_snakes = None
+
     # List of current direction per player
     __directions = None
 
@@ -121,6 +124,7 @@ class Snake:
                 break
 
             self.__tick()
+            self.__maybe_eliminate_snakes()
             if self.__is_game_over():
                 self.__end_game(self.__GAME_OVER_REASON_SNAKE_STATE)
                 break
@@ -162,6 +166,9 @@ class Snake:
     def __tick(self):
         self.__num_ticks += 1
         for i in range(self.__settings.num_players):
+            if i in self.__eliminated_snakes:
+                continue
+
             snake_linked_list = self.__snake_linked_lists[i]
             snake_set = self.__snake_sets[i]
             direction = self.__directions[i]
@@ -205,27 +212,47 @@ class Snake:
             x = random.randint(0, self.__settings.display_width - 1)
             y = random.randint(0, self.__settings.display_height - 1)
             is_coordinate_occupied_by_a_snake = False
-            for snake_set in self.__snake_sets:
-                if (y, x) in snake_set:
+            for i in range(self.__settings.num_players):
+                if i in self.__eliminated_snakes:
+                    continue
+
+                if (y, x) in self.__snake_sets[i]:
                     is_coordinate_occupied_by_a_snake = True
                     break
             if not is_coordinate_occupied_by_a_snake:
                 break
         self.__apple = (y, x)
 
-    def __is_game_over(self):
+    def __maybe_eliminate_snakes(self):
+        eliminated_snakes = set()
         for i in range(self.__settings.num_players):
+            if i in self.__eliminated_snakes:
+                continue
+
             this_snake_head = self.__snake_linked_lists[i][0]
             for j in range(self.__settings.num_players):
+                if j in self.__eliminated_snakes:
+                    continue
+
                 if i == j:
                     # Check if this snake overlapped itself
                     if len(self.__snake_sets[i]) < len(self.__snake_linked_lists[i]):
-                        return True
+                        eliminated_snakes.add(i)
                 else:
                     # Check if this snake's head overlapped that snake (any other snake)
                     that_snake_set = self.__snake_sets[j]
                     if this_snake_head in that_snake_set:
-                        return True
+                        eliminated_snakes.add(i)
+
+        self.__eliminated_snakes.update(eliminated_snakes)
+
+    def __is_game_over(self):
+        if self.__settings.num_players > 1:
+            if len(self.__eliminated_snakes) >= (self.__settings.num_players - 1):
+                return True
+        elif self.__settings.num_players == 1:
+            if len(self.__eliminated_snakes) > 0:
+                return True
 
         return False
 
@@ -234,6 +261,9 @@ class Snake:
 
         snake_rgb_per_player = self.__get_snake_rgb_per_player()
         for i in range(self.__settings.num_players):
+            if i in self.__eliminated_snakes:
+                continue
+
             for (y, x) in self.__snake_linked_lists[i]:
                 frame[y, x] = snake_rgb_per_player[i]
 
@@ -316,6 +346,7 @@ class Snake:
         self.__apple = None
         self.__snake_linked_lists = []
         self.__snake_sets = []
+        self.__eliminated_snakes = set()
         self.__unix_socket_helpers = []
         self.__directions = []
         for i in range(self.__settings.num_players):
@@ -358,6 +389,7 @@ class Snake:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
+        # TODO: broke blink with eliminated players
         for x in range(1, 9): # blink board
             self.__clear_board()
             time.sleep(0.1)
