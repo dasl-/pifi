@@ -1,10 +1,13 @@
 var snake_runner = (() => {
 
+    var $new_game_button = $(".new-game");
     var is_new_game_request_in_progress = false;
+    var last_new_game_request_finish_time = null; // see updateNewGameButton in page.js
     var new_game_promises, web_socket_connect_resolve, web_socket_connect_reject;
     var web_sockets = []; // web socket per player
-    var player_counter = 0;
+    var player_counter = 0; // how many players are joined from this client
     var playlist_video_id = null;
+
 
     function newGame() {
         if (is_new_game_request_in_progress) {
@@ -12,6 +15,7 @@ var snake_runner = (() => {
         }
 
         is_new_game_request_in_progress = true;
+        disableNewGameButton();
         new_game_promises = [];
         var num_players = $("#num_players").val();
 
@@ -44,15 +48,20 @@ var snake_runner = (() => {
         pending_web_socket.addEventListener('error', onWebSocketError);
         pending_web_socket.addEventListener('message', onWebSocketMessage);
 
-        Promise.all(new_game_promises).then(
-            function(args) {
-                handle_new_game_promises_success(args[0], args[1], pending_web_socket);
-            },
-            function(err) {
-                console.log("Error waiting for new game promises.", err);
+        Promise.all(new_game_promises)
+            .then(
+                function(args) {
+                    handle_new_game_promises_success(args[0], args[1], pending_web_socket);
+                },
+                function(err) {
+                    console.log("Error waiting for new game promises.", err);
+                    enableNewGameButton();
+                }
+            )
+            .finally(function() {
+                last_new_game_request_finish_time = Math.round(Date.now() / 1000);
                 is_new_game_request_in_progress = false;
-            }
-        );
+            });
     }
 
     function handle_new_game_promises_success(enqueue_or_join_game_response, websocket_response, pending_web_socket) {
@@ -71,15 +80,17 @@ var snake_runner = (() => {
             playlist_video_id: playlist_video_id,
         }));
         web_sockets[player_counter] = pending_web_socket;
-        is_new_game_request_in_progress = false;
         registerEventListeners(player_counter);
         player_counter += 1;
         if((player_counter >= 2 && !page.is_touch_device) ||
             (player_counter >= 1 && page.is_touch_device)
         ) {
-            var $new_game = $(".new-game");
-            $new_game.addClass("disabled-button");
-            $new_game.off("click");
+            // Keep the new game button disabled to prevent it from showing a multiplayer game as "joinable"
+            // even after the max number of players has joined from this client. In multiplayer games, mobile
+            // clients support one player joining from the device, and desktop clients support two players
+            // joining from the device. The polling in page.js will re-enable it eventually.
+        } else {
+            enableNewGameButton();
         }
     }
 
@@ -189,8 +200,27 @@ var snake_runner = (() => {
         }
     }
 
+    function enableNewGameButton() {
+        $new_game_button.removeClass("disabled-button");
+    }
+
+    function disableNewGameButton() {
+        $new_game_button.addClass("disabled-button");
+    }
+
+    function isNewGameRequestInProgress() {
+        return is_new_game_request_in_progress;
+    }
+
+    function getLastNewGameRequestFinishTime() {
+        return last_new_game_request_finish_time;
+    }
+
     return {
-        newGame: newGame
+        newGame: newGame,
+        enableNewGameButton: enableNewGameButton,
+        isNewGameRequestInProgress: isNewGameRequestInProgress,
+        getLastNewGameRequestFinishTime: getLastNewGameRequestFinishTime
     };
 
 })();

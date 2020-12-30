@@ -2,9 +2,11 @@ var page = (() => {
 
     var POLL_INTERVAL_MS = 1000;
 
-    var is_game_joinable = true;
-
     var is_touch_device = 'ontouchstart' in document.documentElement;
+    var is_poll_in_progress = false;
+    var last_poll_start_time = null;
+    var $new_game_button = $(".new-game");
+
 
     function init() {
         $(".initialcontainer").hide();
@@ -24,7 +26,12 @@ var page = (() => {
     }
 
     function setupUiHandlers() {
-        setupNewGameButton();
+        $new_game_button.click(function(){
+            if ($new_game_button.hasClass("disabled-button")) {
+                return;
+            }
+            snake_runner.newGame();
+        });
 
         //Menu button for mobile
         $(".menubutton").click(function() {
@@ -71,7 +78,7 @@ var page = (() => {
 
         if ( is_touch_device ) {
             // do mobile handling
-            $(".new-game").click(function() {
+            $new_game_button.click(function() {
                 $(".menu").hide();
             });
         }
@@ -109,13 +116,21 @@ var page = (() => {
     function setupPolling() {
         window.setInterval(
             function() {
+                if (is_poll_in_progress) {
+                    return;
+                }
+                is_poll_in_progress = true;
+                last_poll_start_time = Math.round(Date.now() / 1000);
                 $.get({
                     url: "/api/snake",
-                    success: function(response) {
+                })
+                    .done(function(response) {
                         updateNewGameButton(response.is_game_joinable, response.game_joinable_countdown_s);
                         volume.maybeUpdateVolume(Math.round(response.vol_pct));
-                    }
-                });
+                    })
+                    .always(function(response) {
+                        is_poll_in_progress = false;
+                    });
             },
             POLL_INTERVAL_MS
         );
@@ -136,12 +151,6 @@ var page = (() => {
 
     function hideMenu() {
         $('.menu').hide("fast","swing");
-    }
-
-    function setupNewGameButton() {
-        $(".new-game").click(function(){
-            snake_runner.newGame();
-        });
     }
 
     function getHighScores() {
@@ -175,11 +184,36 @@ var page = (() => {
 
     function updateNewGameButton(is_game_joinable, game_joinable_countdown_s) {
         if (is_game_joinable) {
-            $(".new-game").html("Join Game&nbsp;" + game_joinable_countdown_s.toString().padStart(2, "0"));
+            $new_game_button.html("Join Game&nbsp;" + game_joinable_countdown_s.toString().padStart(2, "0"));
         } else {
-            $(".new-game").html("New Game");
-            $(".new-game").removeClass("disabled-button");
-            setupNewGameButton();
+            $new_game_button.html("New Game");
+            /*
+                Prevent a race condition:
+                1) new game button clicked, button is disabled, new game promise reuests are fired
+                2) we wait for new game promises, JS event loop allows something else to execute meanwhile.
+                3) snake polling api request fired (once per second)
+                4) snake api request sees no game is joinable yet (i.e. new game button text should be "New Game" and it should be enabled)
+                5) new game promise request from (1) updates the game to "joinable" on the server
+                6) new game promises from (1) return, and they leave button disabled bc we have the max number of players for this client
+                    (one player joined from mobile)
+                7) snake api request from (3) returns, and we call updateNewGameButton
+                    a) set button text to "new game"
+                    b) if no new game request is in progressm, enable the button (there is no new game request in progress after (6))
+                8) another snake polling api request is fired, returns, and updates the text to "Join Game" (it stays enabled)
+
+                At the end of this, the button will say "Join Game", and it will be enabled, even if one player has already joined from
+                the mobile client. This is because the polling snake api request info we based our enabling of the button on had
+                information that was out of date by the time we got around to trying to enable the button. Since that information was
+                obtained, a game was created and joinable. Thus, we add a check:
+
+                    `last_poll_start_time > snake_runner.getLastNewGameRequestFinishTime()`
+
+                This ensures we only update based on our polling info if the polling info is more recent than whenever the last time
+                someone clicked and finished executing the "New Game" button logic.
+             */
+            if (!snake_runner.isNewGameRequestInProgress() && last_poll_start_time > snake_runner.getLastNewGameRequestFinishTime()) {
+                snake_runner.enableNewGameButton();
+            }
         }
     }
 

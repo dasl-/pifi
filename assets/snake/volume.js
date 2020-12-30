@@ -1,6 +1,7 @@
 var volume = (() => {
 
     var VOL_POLL_INTERVAL_MS = 1000;
+    var is_poll_in_progress = false;
     var is_vol_locked = false;
     var is_vol_lock_releasable = true;
     var vol_lock_marked_releasable_time = 0;
@@ -11,6 +12,11 @@ var volume = (() => {
         if (should_setup_polling) {
             window.setInterval(
                 function() {
+                    if (is_poll_in_progress) {
+                        return;
+                    }
+                    is_poll_in_progress = true;
+
                     if (is_vol_locked && is_vol_lock_releasable) {
                         var millis_since_vol_locked_marked_releasable = (new Date()).getTime() - vol_lock_marked_releasable_time;
                         if (millis_since_vol_locked_marked_releasable > (VOL_POLL_INTERVAL_MS + 500)) {
@@ -23,13 +29,16 @@ var volume = (() => {
                     }
 
                     $.get({
-                        url: "/api/vol_pct",
-                        success: function(response) {
+                        url: "/api/vol_pct"
+                    })
+                        .done(function(response) {
                             var volume = Math.round(response.vol_pct);
                             $('#volume').val(volume);
                             document.getElementById('volumeval').innerHTML = volume;
-                        }
-                    });
+                        })
+                        .always(function(response) {
+                            is_poll_in_progress = false;
+                        });
                 },
                 VOL_POLL_INTERVAL_MS
             );

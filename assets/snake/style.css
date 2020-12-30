@@ -98,6 +98,9 @@ label {
   border:1px solid var(--light-gray);
   box-shadow:0 0 5px var(--light-gray);
 }
+.disabled-button:hover {
+  box-shadow:0 0 5px var(--light-gray);
+}
 
 .wrapper {
   display:flex;
