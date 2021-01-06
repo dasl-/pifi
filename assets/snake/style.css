@@ -149,6 +149,16 @@ label {
   background-size: contain;
   background-position:center;
   background-image:url("/assets/snake/snake.png");
+  position: relative;
+}
+
+.button-active {
+  background-size: contain;
+  background-position:center;
+  background-image: url("/assets/snake/snake-active.png");
+  position:absolute;
+  width:100%;
+  height:100%;
 }
 
 .lrwrapper {

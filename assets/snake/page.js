@@ -10,6 +10,7 @@ var page = (() => {
 
     function init() {
         $(".initialcontainer").hide();
+        $(".button-active").hide();
 
         setupUiHandlers();
         setupDifficultyInput();

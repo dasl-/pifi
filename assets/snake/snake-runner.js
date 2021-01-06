@@ -194,9 +194,8 @@ var snake_runner = (() => {
         console.log("yoyo");
         web_sockets[player_index].send(direction);
         if (player_index === 0) {
-            //change to pre-loaded images
-            $(".button").css("background-image", "url('/assets/snake/snake.png')");
-            $(".button[data-direction='" + direction + "']").css("background-image", "url('/assets/snake/snake-active.png')");
+            $(".button-active").hide();
+            $(".button-active[data-direction='" + direction + "']").show();
         }
     }
 
