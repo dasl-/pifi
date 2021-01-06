@@ -9,6 +9,7 @@ class SnakeSettings(LedSettings):
 
     DEFAULT_DIFFICULTY = 7
     DEFAULT_NUM_PLAYERS = 1
+    DEFAULT_APPLE_COUNT = 15
 
     game_color_mode = None
     difficulty = None
@@ -17,7 +18,7 @@ class SnakeSettings(LedSettings):
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False, log_level = None,
-        game_color_mode = None, difficulty = None, num_players = None
+        game_color_mode = None, difficulty = None, num_players = None, apple_count = None
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
@@ -26,6 +27,7 @@ class SnakeSettings(LedSettings):
 
         self.__set_difficulty(difficulty)
         self.__set_num_players(num_players)
+        self.__set_apple_count(apple_count)
         GameColorHelper().set_game_color_mode(self, game_color_mode)
 
     def from_config(self):
@@ -49,6 +51,10 @@ class SnakeSettings(LedSettings):
             self.__set_num_players(int(snake_record_settings['num_players']))
         except Exception as e:
             self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
+        try:
+            self.__set_apple_count(int(snake_record_settings['apple_count']))
+        except Exception as e:
+            self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
         return self.from_config()
 
@@ -66,3 +72,10 @@ class SnakeSettings(LedSettings):
         if num_players > 4:
             num_players = 4
         self.num_players = num_players
+
+    def __set_apple_count(self, apple_count):
+        if apple_count == None or apple_count < 1:
+            apple_count = self.DEFAULT_APPLE_COUNT
+        if apple_count > 999:
+            apple_count = 999
+        self.apple_count = apple_count

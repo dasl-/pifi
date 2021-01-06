@@ -91,7 +91,8 @@ class PifiAPI():
             num_players = int(post_data['num_players'])
             settings = json.dumps({
                 'difficulty': int(post_data['difficulty']),
-                'num_players': num_players
+                'num_players': num_players,
+                'apple_count': int(post_data['apple_count']),
             })
             duration = 'n/a'
 

@@ -24,7 +24,8 @@ var snake_runner = (() => {
             data: JSON.stringify({
                 title: 'snake',
                 difficulty: $("#difficulty").val(),
-                num_players: num_players
+                num_players: num_players,
+                apple_count: $("#apple_count").val()
             })
         }));
 

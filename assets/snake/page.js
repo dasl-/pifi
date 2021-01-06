@@ -15,6 +15,7 @@ var page = (() => {
         setupUiHandlers();
         setupDifficultyInput();
         setupNumPlayersInput();
+        setupAppleCountInput();
 
         // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
         if (window.__firefox__) {
@@ -112,6 +113,13 @@ var page = (() => {
             document.getElementById('num_players_val').innerHTML = this.value;
         });
         document.getElementById('num_players_val').innerHTML = document.getElementById('num_players').value;
+    }
+
+    function setupAppleCountInput() {
+        $('#apple_count').on('input', function() {
+            document.getElementById('apple_count_val').innerHTML = this.value;
+        });
+        document.getElementById('apple_count_val').innerHTML = document.getElementById('apple_count').value;
     }
 
     function setupPolling() {
