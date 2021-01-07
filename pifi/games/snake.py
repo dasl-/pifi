@@ -151,7 +151,7 @@ class Snake:
         if self.__unix_socket_helpers[player_index].is_ready_to_read():
             try:
                 move = self.__unix_socket_helpers[player_index].recv_msg()
-            except (SocketClosedException, ConnectionResetError) as e:
+            except (SocketClosedException, ConnectionResetError):
                 self.__logger.info("socket closed for player: {}".format(player_index))
                 if self.__settings.num_players > 1:
                     # TODO: close the player's socket so we dont hypothetically run out of memory if the player keeps sending moves that
@@ -224,7 +224,7 @@ class Snake:
 
     def __eat_apple(self):
         self.__apples_eaten_count += 1
-        play_obj = self.__apple_sound.play()
+        self.__apple_sound.play()
         self.__place_apple()
 
     def __place_apple(self):
@@ -472,11 +472,11 @@ class Snake:
         if is_high_score:
             highscore_message = json.dumps({
                 'message_type': 'high_score',
-                'score_id' : score_id
+                'score_id': score_id
             })
             try:
                 self.__unix_socket_helpers[0].send_msg(highscore_message)
-            except Exception as e:
+            except Exception:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
@@ -534,7 +534,7 @@ class Snake:
     def __should_skip_game(self):
         if self.__playlist.should_skip_video_id(self.__playlist_video['playlist_video_id']):
             return True
-        return False;
+        return False
 
     def __accept_sockets(self):
         playlist_video_create_date_epoch = time.mktime(time.strptime(self.__playlist_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
@@ -550,10 +550,10 @@ class Snake:
 
                 try:
                     self.__unix_socket_helpers[i].accept()
-                except socket.timeout as e1:
+                except socket.timeout:
                     # Keep trying to accept until max_accept_sockets_wait_time_s expires...
                     continue
-                except SocketConnectionHandshakeException as e2:
+                except SocketConnectionHandshakeException:
                     # Error during handshake, there may be other websocket initiated connections in the backlog that want accepting.
                     # Try again to avoid a situation where we accidentally had more backlogged requests than we ever call
                     # accept on. For example, if people spam the "new game" button, we may have several websockets that called
@@ -562,7 +562,7 @@ class Snake:
                     # eliminate this backlog of queued stale requests.
                     self.__logger.info('Calling accept again due to handshake error: {}'.format(traceback.format_exc()))
                     continue
-                except Exception as e3:
+                except Exception:
                     # Error during `accept`, so no indication that there are other connections that want accepting.
                     # The backlog is probably empty. Not sure what would trigger this error.
                     self.__logger.error('Caught exception during accept: {}'.format(traceback.format_exc()))
@@ -582,7 +582,7 @@ class Snake:
                     if client_playlist_video_id != self.__playlist_video['playlist_video_id']:
                         raise Exception("Server was playing playlist_video_id: {}, but client was playing playlist_video_id: {}."
                             .format(self.__playlist_video['playlist_video_id'], client_playlist_video_id))
-                except Exception as e:
+                except Exception:
                     self.__logger.info('Calling accept again due to playlist_video_id mismatch error: {}'.format(traceback.format_exc()))
                     continue
                 break
