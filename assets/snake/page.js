@@ -12,6 +12,10 @@ var page = (() => {
         $(".initialcontainer").hide();
         $(".button-active").hide();
 
+        if($('#num_players').val() == 1) {
+            $(".multiplayer-option").hide();
+        }
+
         setupUiHandlers();
         setupDifficultyInput();
         setupNumPlayersInput();
@@ -111,6 +115,12 @@ var page = (() => {
     function setupNumPlayersInput() {
         $('#num_players').on('input', function() {
             document.getElementById('num_players_val').innerHTML = this.value;
+            if (this.value == 1) {
+                $('.multiplayer-option').slideUp('fast');
+            }
+            else {
+                $('.multiplayer-option').slideDown('fast');
+            }
         });
         document.getElementById('num_players_val').innerHTML = document.getElementById('num_players').value;
     }
