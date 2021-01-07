@@ -347,8 +347,10 @@ class Snake:
                     if i in self.__eliminated_snakes:
                         continue
                     snake_length = len(self.__snake_linked_lists[i])
-                    if longest_snake_length == None or snake_length >= longest_snake_length:
+                    if longest_snake_length is None or snake_length > longest_snake_length:
                         longest_snake_length = snake_length
+                        longest_snake_indexes = [i]
+                    elif snake_length == longest_snake_length:
                         longest_snake_indexes.append(i)
                 for i in longest_snake_indexes:
                     snake_rgb_per_player[i] = self.__game_color_helper.get_rgb(
