@@ -3,7 +3,7 @@ var snake_runner = (() => {
     var $new_game_button = $(".new-game");
     var is_new_game_request_in_progress = false;
     var last_new_game_request_finish_time = null; // see updateNewGameButton in page.js
-    var new_game_promises, web_socket_connect_resolve, web_socket_connect_reject;
+    var web_socket_connect_resolve, web_socket_connect_reject;
     var web_sockets = []; // web socket per player
     var player_counter = 0; // how many players are joined from this client
     var playlist_video_id = null;
@@ -16,7 +16,7 @@ var snake_runner = (() => {
 
         is_new_game_request_in_progress = true;
         disableNewGameButton();
-        new_game_promises = [];
+        var new_game_promises = [];
         var num_players = $("#num_players").val();
 
         new_game_promises.push($.post({
@@ -29,7 +29,6 @@ var snake_runner = (() => {
             })
         }));
 
-        // TODO: confirm this still works with multiple websockets??
         new_game_promises.push(new Promise(function(resolve, reject) {
             web_socket_connect_resolve = resolve;
             web_socket_connect_reject = reject;
@@ -126,7 +125,7 @@ var snake_runner = (() => {
             });
 
             // Keyboard input
-            $(document).on('keydown.snake-runner.player-' + player_index, function(e) {
+            $(document).on('keydown.snake-runner', function(e) {
                 var keyinput = e.keyCode;
                 var direction;
                 //Arrow key input
@@ -139,39 +138,25 @@ var snake_runner = (() => {
                     sendDirection(direction, player_index);
                 }
             });
-            $(document).on('keydown.snake-runner.player-' + player_index + ".wasd", function(e) {
-                var keyinput = e.keyCode;
-                var direction;
-
-                //WASD input
-                if (keyinput == 87) { direction = 1; }
-                if (keyinput == 83) { direction = 2; }
-                if (keyinput == 65) { direction = 3; }
-                if (keyinput == 68) { direction = 4; }
-
-                if(direction) {
-                    sendDirection(direction, player_index);
-                }
-            });
         } else if (player_index === 1) {
             // Unregister WASD from the first player
-            $(document).off("keydown.snake-runner.player-0.wasd");
-
-            // Keyboard input
-            $(document).on('keydown.snake-runner.player-' + player_index, function(e) {
-                var keyinput = e.keyCode;
-                var direction;
-                //WASD input
-                if (keyinput == 87) { direction = 1; }
-                if (keyinput == 83) { direction = 2; }
-                if (keyinput == 65) { direction = 3; }
-                if (keyinput == 68) { direction = 4; }
-
-                if(direction) {
-                    sendDirection(direction, player_index);
-                }
-            });
+            $(document).off("keydown.snake-runner.wasd");
         }
+
+        // register WASD
+        $(document).on('keydown.snake-runner.wasd', function(e) {
+            var keyinput = e.keyCode;
+            var direction;
+
+            if (keyinput == 87) { direction = 1; }
+            if (keyinput == 83) { direction = 2; }
+            if (keyinput == 65) { direction = 3; }
+            if (keyinput == 68) { direction = 4; }
+
+            if(direction) {
+                sendDirection(direction, player_index);
+            }
+        });
     }
 
     function unregisterEventListeners() {
@@ -183,7 +168,7 @@ var snake_runner = (() => {
 
         // prevent memory leaks from the previous games' listeners hanging around?
         web_sockets.forEach(web_socket => {
-            web_socket.close(1000, "closing because new game");
+            web_socket.close(1000, "closing because new game or high score");
             web_socket.removeEventListener('open', onWebSocketOpen);
             web_socket.removeEventListener('close', onWebSocketClose);
             web_socket.removeEventListener('error', onWebSocketError);
@@ -192,7 +177,6 @@ var snake_runner = (() => {
     }
 
     function sendDirection(direction, player_index) {
-        console.log("yoyo");
         web_sockets[player_index].send(direction);
         if (player_index === 0) {
             $(".button-active").hide();
