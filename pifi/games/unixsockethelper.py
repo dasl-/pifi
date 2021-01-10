@@ -32,8 +32,8 @@ class UnixSocketHelper:
     __connection_socket = None
 
     def __init__(self):
-        __server_socket = None
-        __connection_socket = None
+        self.__server_socket = None
+        self.__connection_socket = None
 
     def create_server_unix_socket(self, socket_path):
         unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -105,10 +105,11 @@ class UnixSocketHelper:
         return msg.decode().rstrip()
 
     def close(self):
-        if self.__connection_socket == None:
+        if self.__connection_socket is None:
             return
         self.__connection_socket.shutdown(socket.SHUT_RDWR)
         self.__connection_socket.close()
+        self.__connection_socket = None
 
     # A client calling `connect` can return before the server has called `accept` on the corresponding connection.
     # The client won't know whether the server has actually accepted its connection until trying to send / receive

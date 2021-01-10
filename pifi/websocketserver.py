@@ -18,7 +18,6 @@ class WebSocketServer:
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-
     def run(self):
         local_ip = self.__get_local_ip()
         self.__logger.info("Starting websocket server at {}:{}".format(local_ip, self.__PORT))
@@ -36,7 +35,7 @@ class WebSocketServer:
         unix_socket_helper = UnixSocketHelper()
         try:
             unix_socket_helper.connect(Queue.UNIX_SOCKET_PATH)
-        except Exception as e:
+        except Exception:
             is_connect_success = False
             logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
@@ -50,7 +49,7 @@ class WebSocketServer:
             start = time.time()
             try:
                 move = await asyncio.wait_for(websocket.recv(), 0.01)
-            except asyncio.TimeoutError as e:
+            except asyncio.TimeoutError:
                 pass
             except Exception as e2:
                 logger.info("Exception reading from websocket. Ending game. Exception: " + str(e2))
@@ -63,7 +62,7 @@ class WebSocketServer:
             if move is not None:
                 try:
                     unix_socket_helper.send_msg(move)
-                except Exception as e:
+                except Exception:
                     logger.error('Unable to send move: {}'.format(traceback.format_exc()))
                     break
 
@@ -71,7 +70,7 @@ class WebSocketServer:
                 msg = None
                 try:
                     msg = unix_socket_helper.recv_msg()
-                except (SocketClosedException, ConnectionResetError) as e:
+                except (SocketClosedException, ConnectionResetError):
                     logger.info("Unix socket was closed")
                     break # server detected game over and closed the socket
 

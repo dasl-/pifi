@@ -65,6 +65,9 @@ class Snake:
 
     __last_eliminated_snake_sound = None
 
+    # Set of indices of the multiplayer winner(s)
+    __multiplayer_winners = None
+
     # List of current direction per player
     __directions = None
 
@@ -80,6 +83,7 @@ class Snake:
         'radia_senki_reimei_hen_06_unknown_village_elfas.wav', #todo: has a blip in the loop
         'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
     ]
+    __victory_sound_file = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"
 
     __playlist = None
 
@@ -119,19 +123,13 @@ class Snake:
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__background_music.play(loops = -1)
 
-        has_game_been_ended = False
         while True:
             # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
             # lead to more consistent tick durations?
             self.__tick_sleep()
 
             for i in range(self.__settings.num_players):
-                if not self.__read_move_and_set_direction(i):
-                    has_game_been_ended = True
-                    break
-
-            if has_game_been_ended:
-                break
+                self.__read_move_and_set_direction(i)
 
             self.__tick()
             self.__maybe_eliminate_snakes()
@@ -142,10 +140,9 @@ class Snake:
                 self.__end_game(self.__GAME_OVER_REASON_SKIP_REQUESTED)
                 break
 
-    # Returns True on success and False on failure (game will be ended on failure)
     def __read_move_and_set_direction(self, player_index):
         if player_index in self.__eliminated_snakes:
-            return True
+            return
 
         move = None
         if self.__unix_socket_helpers[player_index].is_ready_to_read():
@@ -153,14 +150,8 @@ class Snake:
                 move = self.__unix_socket_helpers[player_index].recv_msg()
             except (SocketClosedException, ConnectionResetError):
                 self.__logger.info("socket closed for player: {}".format(player_index))
-                if self.__settings.num_players > 1:
-                    # TODO: close the player's socket so we dont hypothetically run out of memory if the player keeps sending moves that
-                    # we no longer read
-                    self.__snakes_marked_for_elimination.add(player_index)
-                    return True
-                else:
-                    self.__end_game(self.__GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL)
-                    return False
+                self.__snakes_marked_for_elimination.add(player_index)
+                return
 
             move = int(move)
             if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
@@ -180,8 +171,6 @@ class Snake:
                 pass
             else:
                 self.__directions[player_index] = new_direction
-
-        return True
 
     def __tick(self):
         self.__increment_tick_counters()
@@ -228,7 +217,7 @@ class Snake:
         self.__place_apple()
 
     def __place_apple(self):
-        # TODO: make better
+        # TODO: make better?
         while True:
             x = random.randint(0, self.__settings.display_width - 1)
             y = random.randint(0, self.__settings.display_height - 1)
@@ -246,6 +235,8 @@ class Snake:
 
     def __maybe_eliminate_snakes(self):
         eliminated_snakes = {}
+
+        # Eliminate snakes that overlapped themselves / other snakes
         for i in range(self.__settings.num_players):
             if i in self.__eliminated_snakes:
                 continue
@@ -265,12 +256,15 @@ class Snake:
                     if this_snake_head in that_snake_set:
                         eliminated_snakes[i] = 0
 
-        for marked_snake_index in self.__snakes_marked_for_elimination:
-            if marked_snake_index not in eliminated_snakes:
-                eliminated_snakes[marked_snake_index] = 0
+        # Eliminate snakes that had previously been marked for elimination
+        for i in self.__snakes_marked_for_elimination:
+            if i not in eliminated_snakes:
+                eliminated_snakes[i] = 0
         self.__snakes_marked_for_elimination = set()
 
         self.__eliminated_snakes.update(eliminated_snakes)
+
+        # Play snake death sound in multiplayer if any snakes were eliminated
         if len(eliminated_snakes) > 0 and self.__settings.num_players > 1:
             self.__last_eliminated_snake_sound = simpleaudio.WaveObject.from_wave_file(
                 DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()
@@ -296,13 +290,17 @@ class Snake:
                 i in self.__eliminated_snakes and
                 (self.__eliminated_snakes[i] % 2 == 0 or self.__eliminated_snakes[i] >= self.__ELIMINATED_SNAKE_BLINK_TICK_COUNT)
             ):
+                # Blink snakes for the first few ticks after they are eliminated.
+                # TODO: move this into new Player class (Player::should_display or something)
                 continue
 
             for (y, x) in self.__snake_linked_lists[i]:
                 frame[y, x] = snake_rgb_per_player[i]
 
-        apple_rgb = self.__game_color_helper.get_rgb(GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks)
         if self.__apple is not None:
+            apple_rgb = self.__game_color_helper.get_rgb(
+                GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks
+            )
             frame[self.__apple[0], self.__apple[1]] = apple_rgb
 
         self.__video_player.play_frame(frame)
@@ -333,26 +331,9 @@ class Snake:
                     snake_rgb_per_player.append(self.__game_color_helper.get_rgb(
                         GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__num_ticks
                     ))
-            if self.__settings.num_players == len(self.__eliminated_snakes) + 1:
-                # We have a multiplayer  winner!!!!
-                for i in range(self.__settings.num_players):
-                    if i not in self.__eliminated_snakes:
-                        snake_rgb_per_player[i] = self.__game_color_helper.get_rgb(
-                            GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ, self.__num_ticks
-                        )
-            elif self.__apples_eaten_count >= self.__settings.apple_count:
-                longest_snake_length = None
-                longest_snake_indexes = []
-                for i in range(self.__settings.num_players):
-                    if i in self.__eliminated_snakes:
-                        continue
-                    snake_length = len(self.__snake_linked_lists[i])
-                    if longest_snake_length is None or snake_length > longest_snake_length:
-                        longest_snake_length = snake_length
-                        longest_snake_indexes = [i]
-                    elif snake_length == longest_snake_length:
-                        longest_snake_indexes.append(i)
-                for i in longest_snake_indexes:
+
+            if len(self.__multiplayer_winners) > 0:
+                for i in self.__multiplayer_winners:
                     snake_rgb_per_player[i] = self.__game_color_helper.get_rgb(
                         GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ, self.__num_ticks
                     )
@@ -407,6 +388,7 @@ class Snake:
         self.__snake_sets = []
         self.__eliminated_snakes = {}
         self.__snakes_marked_for_elimination = set()
+        self.__multiplayer_winners = set()
         self.__last_eliminated_snake_sound = None
         self.__unix_socket_helpers = []
         self.__directions = []
@@ -427,32 +409,43 @@ class Snake:
                 self.__do_scoring(score)
         elif self.__settings.num_players > 1 and reason == self.__GAME_OVER_REASON_SNAKE_STATE:
             if len(self.__eliminated_snakes) == self.__settings.num_players:
-                # TODO: this happens in a two player game when they are playing on one keyboard and the tab closes. Should not
-                # blink in that case.
-
                 # The last N players died at the same time in a head to head collision. There was no winner.
-                # If we only have one non-eliminated snake, that snake automatically wins and the game is over.
                 for i in range(self.__ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1):
                     self.__tick_sleep()
                     self.__show_board()
                     self.__increment_tick_counters()
                 self.__tick_sleep()
-            else: # there is a winner
+            else:
+                # We have a winner / winners
+                self.__determine_multiplayer_winners()
                 did_play_victory_sound = False
                 victory_sound = None
                 while_counter = 0
+                max_loops = 100
                 while True:
                     self.__tick_sleep()
                     self.__show_board()
                     self.__increment_tick_counters()
-                    if not did_play_victory_sound and (self.__last_eliminated_snake_sound is None or not self.__last_eliminated_snake_sound.is_playing()):
+                    if (
+                        not did_play_victory_sound and
+                        (self.__last_eliminated_snake_sound is None or not self.__last_eliminated_snake_sound.is_playing())
+                    ):
+                        # Wait for eliminated snake sound to finish before playing victory sound
                         victory_sound = (simpleaudio.WaveObject
-                            .from_wave_file(DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav")
+                            .from_wave_file(self.__victory_sound_file)
                             .play())
                         did_play_victory_sound = True
 
-                    # wait a minimum of this many loops before breaking out after sounds
-                    if did_play_victory_sound and not victory_sound.is_playing() and while_counter > (2 * self.__ELIMINATED_SNAKE_BLINK_TICK_COUNT):
+                    # Exit after playing the victory sound and waiting for the snakes to blink enough times, whichever
+                    # takes longer.
+                    if (
+                        (
+                            did_play_victory_sound and
+                            not victory_sound.is_playing() and
+                            while_counter > (2 * self.__ELIMINATED_SNAKE_BLINK_TICK_COUNT)
+                        ) or
+                        (while_counter > max_loops)
+                    ):
                         break
                     while_counter += 1
 
@@ -477,6 +470,8 @@ class Snake:
             try:
                 self.__unix_socket_helpers[0].send_msg(highscore_message)
             except Exception:
+                # If game ended due to the player closing the tab, we will be unable to send the message to their websocket.
+                # We will still insert their high score into the DB, and their initials will be "AAA".
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
@@ -495,7 +490,7 @@ class Snake:
                 num_ticks = score_tick
             )
             (simpleaudio.WaveObject
-                .from_wave_file(DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav")
+                .from_wave_file(self.__victory_sound_file)
                 .play())
         score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
         score_displayer.display_score(score_color)
@@ -518,6 +513,31 @@ class Snake:
 
             if i % 5 == 0 and self.__should_skip_game():
                 break
+
+    # Win a multiplayer game by either:
+    # 1) Being the last player remaining or
+    # 2) Eating the most apples out of the non-eliminated snakes. In this case, there may be more than one winner.
+    def __determine_multiplayer_winners(self):
+        if self.__settings.num_players == len(self.__eliminated_snakes) + 1:
+            # Case 1
+            for i in range(self.__settings.num_players):
+                if i not in self.__eliminated_snakes:
+                    self.__multiplayer_winners.add(i)
+                    break
+        elif self.__apples_eaten_count >= self.__settings.apple_count:
+            # Case 2
+            longest_snake_length = None
+            longest_snake_indexes = []
+            for i in range(self.__settings.num_players):
+                if i in self.__eliminated_snakes:
+                    continue
+                snake_length = len(self.__snake_linked_lists[i])
+                if longest_snake_length is None or snake_length > longest_snake_length:
+                    longest_snake_length = snake_length
+                    longest_snake_indexes = [i]
+                elif snake_length == longest_snake_length:
+                    longest_snake_indexes.append(i)
+            self.__multiplayer_winners.update(longest_snake_indexes)
 
     def __clear_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
