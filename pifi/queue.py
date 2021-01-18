@@ -83,8 +83,8 @@ class Queue:
                     return
                 snake = Snake(snake_settings, self.__unix_socket, playlist_item)
                 try:
-                    snake.newGame()
-                except Exception as e:
+                    snake.play_snake()
+                except Exception:
                     self.__logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
             else:

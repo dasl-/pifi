@@ -82,7 +82,7 @@ class Snake:
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
 
-    def newGame(self):
+    def play_snake(self):
         for i in range(self.__settings.num_players):
             self.__players[i].place_snake_at_starting_location()
         self.__place_apple()
