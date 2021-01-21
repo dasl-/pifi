@@ -104,7 +104,6 @@ class SnakePlayer:
                 self.__logger.info("socket closed for player")
                 self.__is_marked_for_elimination = True
                 self.__unix_socket_helper.close()
-                self.__is_socket_closed = True
                 return
 
             move = int(move)
@@ -311,7 +310,9 @@ class SnakePlayer:
                     'player_index': self.__player_index
                 })
                 try:
-                    self.send_socket_msg(player_index_message)
+                    if not self.send_socket_msg(player_index_message):
+                        self.__logger.info('Could not send player_index_message, call returned False.')
+                        return False
                 except Exception:
                     self.__logger.info('Could not send player_index_message: {}'.format(traceback.format_exc()))
                     return False

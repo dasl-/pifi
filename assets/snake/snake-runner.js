@@ -13,6 +13,7 @@ var snake_runner = (() => {
         if (is_new_game_request_in_progress) {
             return;
         }
+
         is_new_game_request_in_progress = true;
         disableNewGameButton();
         var new_game_promises = [];
@@ -87,6 +88,7 @@ var snake_runner = (() => {
         registerEventListeners(player_counter);
         player_counter += 1;
         if(player_counter == 1) {
+            // Only necessary to do this once, even if two players are joining from a single browser, hence the player_counter check.
             var apple_count = enqueue_or_join_game_response.apple_count;
             setupScores(num_players, apple_count);
         }
@@ -125,6 +127,8 @@ var snake_runner = (() => {
                 high_score_inputter.enterInitials(message.score_id);
                 break;
             case 'multi_player_score':
+                // Scores are sent to each player's websocket. Thus in a multiplayer game where two players have joined from a single
+                // browser, scores will be updated with identical values twice. Oh well, nbd.
                 $("#apple-scoring").text(message.apples_left);
                 /* falls through */
             case 'single_player_score':
@@ -134,11 +138,12 @@ var snake_runner = (() => {
                 });
                 break;
             case 'player_index_message':
+                // At game start, server sends client a message telling them what player number they are. This allows the
+                // client to place a marker on the scoreboard next to their player number
                 var player = message.player_index + 1;
                 $("dt.p" + player + "-color").css("border-left", "2px solid");
                 break;
         }
-
     }
 
     function registerEventListeners(player_index) {
