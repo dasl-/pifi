@@ -31,6 +31,8 @@ class UnixSocketHelper:
     # a socket we can send and receive data on
     __connection_socket = None
 
+    __is_connection_socket_open = False
+
     def __init__(self):
         self.__server_socket = None
         self.__connection_socket = None
@@ -66,6 +68,7 @@ class UnixSocketHelper:
         self.__connection_socket, unused_address = self.__server_socket.accept()
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__exchange_connection_handshake_messages()
+        self.__is_connection_socket_open = True
 
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def connect(self, socket_path):
@@ -73,6 +76,7 @@ class UnixSocketHelper:
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__connection_socket.connect(socket_path)
         self.__exchange_connection_handshake_messages()
+        self.__is_connection_socket_open = True
         return self
 
     def is_ready_to_read(self):
@@ -110,6 +114,10 @@ class UnixSocketHelper:
         self.__connection_socket.shutdown(socket.SHUT_RDWR)
         self.__connection_socket.close()
         self.__connection_socket = None
+        self.__is_connection_socket_open = False
+
+    def is_connection_socket_open(self):
+        return self.__is_connection_socket_open
 
     # A client calling `connect` can return before the server has called `accept` on the corresponding connection.
     # The client won't know whether the server has actually accepted its connection until trying to send / receive

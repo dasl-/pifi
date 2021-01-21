@@ -77,26 +77,35 @@ class PifiAPI():
         title = post_data['title']
         game_playlist_video_id = None
         did_join_existing_game = None
+        num_players = None
+        apple_count = None
 
         current_video = self.__playlist.get_current_video()
         if current_video and current_video['title'] == title and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
             # join game
             game_playlist_video_id = current_video['playlist_video_id']
             did_join_existing_game = True
+            try:
+                settings = json.loads(current_video['settings'])
+                num_players = settings['num_players']
+                apple_count = settings['apple_count']
+            except Exception:
+                self.__logger.error("Couldn't load settings from database: {}".format(current_video['settings']))
         else:
             # enqueue game
             game_type = Playlist.TYPE_GAME
             url = None
             thumbnail = '/assets/snake/snake-thumbnail.png'
             num_players = int(post_data['num_players'])
+            apple_count = int(post_data['apple_count'])
             settings = json.dumps({
                 'difficulty': int(post_data['difficulty']),
                 'num_players': num_players,
-                'apple_count': int(post_data['apple_count']),
+                'apple_count': apple_count,
             })
             duration = 'n/a'
 
-            # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
+            # TODO HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
             color_mode = Playlist.STATUS2_PLAYING
             if num_players > 1:
                 color_mode = Playlist.STATUS2_WAITING_FOR_PLAYERS
@@ -119,6 +128,8 @@ class PifiAPI():
             'success': True,
             'playlist_video_id': game_playlist_video_id,
             'did_join_existing_game': did_join_existing_game,
+            'num_players': num_players,
+            'apple_count': apple_count
         }
 
     def submit_game_score_initials(self, post_data):
@@ -300,6 +311,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/javascript")
         elif self.path.endswith('.css'):
             self.send_header("Content-Type", "text/css")
+        elif self.path.endswith('.svg') or self.path.endswith('.svgz'):
+            self.send_header("Content-Type", "image/svg+xml")
         self.end_headers()
 
         if type(file_to_open) is bytes:

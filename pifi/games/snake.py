@@ -130,8 +130,8 @@ class Snake:
         self.__increment_tick_counters()
         was_apple_eaten = False
         for i in range(self.__settings.num_players):
-            was_apple_eaten = self.__players[i].tick() or was_apple_eaten
-
+            if(self.__players[i].tick()):
+                was_apple_eaten = True
         if was_apple_eaten:
             self.__eat_apple()
 
@@ -141,6 +141,29 @@ class Snake:
         self.__apples_eaten_count += 1
         self.__apple_sound.play()
         self.__place_apple()
+        player_scores = []
+        for i in range(self.__settings.num_players):
+            player_scores.append(self.__players[i].get_score())
+
+        score_message = None
+        if self.__settings.num_players <= 1:
+            score_message = json.dumps({
+                'message_type': 'single_player_score',
+                'player_scores': player_scores,
+            })
+        else:
+            apples_left = self.__settings.apple_count - self.__apples_eaten_count
+            score_message = json.dumps({
+                'message_type': 'multi_player_score',
+                'player_scores': player_scores,
+                'apples_left': apples_left,
+            })
+
+        for i in range(self.__settings.num_players):
+            try:
+                self.__players[i].send_socket_msg(score_message)
+            except Exception:
+                self.__logger.info('Unable to send score message to player {}'.format(i))
 
     def __place_apple(self):
         # TODO: make better?

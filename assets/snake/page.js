@@ -36,7 +36,7 @@ var page = (() => {
             if ($new_game_button.hasClass("disabled-button")) {
                 return;
             }
-            snake_runner.newGame();
+            snake_runner.newGameOrJoinGame();
         });
 
         //Menu button for mobile

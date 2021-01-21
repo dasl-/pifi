@@ -9,11 +9,10 @@ var snake_runner = (() => {
     var playlist_video_id = null;
 
 
-    function newGame() {
+    function newGameOrJoinGame() {
         if (is_new_game_request_in_progress) {
             return;
         }
-
         is_new_game_request_in_progress = true;
         disableNewGameButton();
         var new_game_promises = [];
@@ -51,7 +50,9 @@ var snake_runner = (() => {
         Promise.all(new_game_promises)
             .then(
                 function(args) {
-                    handle_new_game_promises_success(args[0], args[1], pending_web_socket);
+                    handleNewGamePromisesSuccess(
+                        args[0], args[1], pending_web_socket
+                    );
                 },
                 function(err) {
                     console.log("Error waiting for new game promises.", err);
@@ -64,8 +65,11 @@ var snake_runner = (() => {
             });
     }
 
-    function handle_new_game_promises_success(enqueue_or_join_game_response, websocket_response, pending_web_socket) {
+    function handleNewGamePromisesSuccess(
+        enqueue_or_join_game_response, websocket_response, pending_web_socket
+    ) {
         var new_playlist_video_id = enqueue_or_join_game_response.playlist_video_id;
+        var num_players = enqueue_or_join_game_response.num_players;
         if (playlist_video_id !== new_playlist_video_id) {
             // This client is starting / joining a game that it hasn't been a part of before
             playlist_video_id = new_playlist_video_id;
@@ -82,6 +86,10 @@ var snake_runner = (() => {
         web_sockets[player_counter] = pending_web_socket;
         registerEventListeners(player_counter);
         player_counter += 1;
+        if(player_counter == 1) {
+            var apple_count = enqueue_or_join_game_response.apple_count;
+            setupScores(num_players, apple_count);
+        }
         if((player_counter >= 2 && !page.is_touch_device) ||
             (player_counter >= 1 && page.is_touch_device)
         ) {
@@ -110,10 +118,27 @@ var snake_runner = (() => {
 
     function onWebSocketMessage(event) {
         var message = JSON.parse(event.data);
-        if(message.message_type == "high_score") {
-            unregisterEventListeners();
-            high_score_inputter.enterInitials(message.score_id);
+        switch (message.message_type) {
+            case 'high_score':
+                // unregister keyboard listeners so we can use them for initial inputter
+                unregisterEventListeners();
+                high_score_inputter.enterInitials(message.score_id);
+                break;
+            case 'multi_player_score':
+                $("#apple-scoring").text(message.apples_left);
+                /* falls through */
+            case 'single_player_score':
+                message.player_scores.forEach(function(score, player_index) {
+                    var player = player_index + 1;
+                    $("#p" + player + "-score").text(score);
+                });
+                break;
+            case 'player_index_message':
+                var player = message.player_index + 1;
+                $("dt.p" + player + "-color").css("border-left", "2px solid");
+                break;
         }
+
     }
 
     function registerEventListeners(player_index) {
@@ -200,8 +225,29 @@ var snake_runner = (() => {
         return last_new_game_request_finish_time;
     }
 
+    function setupScores(num_players, apple_count) {
+        $(".playerscore").remove();
+        if(num_players > 1) {
+            $("#singleplayer-scores").hide();
+            var player_content = "";
+            $("#multiplayer-scores").fadeIn().css("display", "grid");
+            $("#multiplayer-scores .playerscore").remove();
+            for (var i = 1; i <= num_players; i++) {
+                player_content += "<dt class='p" + i + "-color playerscore'>P" + i +  "</dt>" +
+                    "<dd id='p" + i + "-score' class='p" + i +"-color playerscore'>0</dd>";
+            }
+            $("#multiplayer-scores").prepend(player_content);
+            $("#apple-scoring").text(apple_count);
+        }
+        else {
+            $("#multiplayer-scores").hide();
+            $("#singleplayer-scores").fadeIn().css("display", "grid");
+            $("#singleplayer-scores").append("<dd id='p1-score' class='playerscore'>0</dd>");
+        }
+    }
+
     return {
-        newGame: newGame,
+        newGameOrJoinGame: newGameOrJoinGame,
         enableNewGameButton: enableNewGameButton,
         isNewGameRequestInProgress: isNewGameRequestInProgress,
         getLastNewGameRequestFinishTime: getLastNewGameRequestFinishTime

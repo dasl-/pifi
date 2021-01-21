@@ -64,7 +64,12 @@ class SnakePlayer:
         return True
 
     def get_score(self):
-        return (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__snake_game.get_settings().difficulty
+        score = 0
+        if (self.__snake_game.get_settings().num_players == 1):
+            score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__snake_game.get_settings().difficulty
+        else:
+            score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH)
+        return score
 
     def get_snake_linked_list(self):
         return self.__snake_linked_list
@@ -98,6 +103,8 @@ class SnakePlayer:
             except (SocketClosedException, ConnectionResetError):
                 self.__logger.info("socket closed for player")
                 self.__is_marked_for_elimination = True
+                self.__unix_socket_helper.close()
+                self.__is_socket_closed = True
                 return
 
             move = int(move)
@@ -243,8 +250,13 @@ class SnakePlayer:
         # https://rushter.com/blog/python-garbage-collector/
         self.__snake_game = None
 
+    # Returns true on success, false if the socket is closed. If we were unable to send the message,
+    # may also throw an exception.
     def send_socket_msg(self, msg):
-        self.__unix_socket_helper.send_msg(msg)
+        if self.__unix_socket_helper.is_connection_socket_open():
+            self.__unix_socket_helper.send_msg(msg)
+            return True
+        return False
 
     # returns boolean success
     def accept_socket(self, playlist_video_id, playlist_video_create_date_epoch, max_accept_sockets_wait_time_s):
@@ -291,4 +303,17 @@ class SnakePlayer:
             except Exception:
                 self.__logger.info('Calling accept again due to playlist_video_id mismatch error: {}'.format(traceback.format_exc()))
                 continue
+
+            # send client msg indicating its player index
+            if (self.__snake_game.get_settings().num_players > 1):
+                player_index_message = json.dumps({
+                    'message_type': 'player_index_message',
+                    'player_index': self.__player_index
+                })
+                try:
+                    self.send_socket_msg(player_index_message)
+                except Exception:
+                    self.__logger.info('Could not send player_index_message: {}'.format(traceback.format_exc()))
+                    return False
+
             return True
