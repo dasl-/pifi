@@ -274,7 +274,7 @@ class Snake:
                 # We have a winner / winners
                 winners = self.__determine_multiplayer_winners()
                 winner_message = json.dumps({
-                    'message_type': 'multi_player_winners',
+                    'message_type': 'multiplayer_winners',
                     'winners': winners,
                 })
                 for i in range(self.__settings.num_players):

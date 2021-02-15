@@ -143,21 +143,21 @@ var snake_runner = (() => {
                 var player = message.player_index + 1;
                 $("dt.p" + player + "-color").css("border-left", "2px solid");
                 break;
-            case 'multi_player_winners':
-                //Display winner at end of game
+            case 'multiplayer_winners':
+                //Display winner at end of multiplayer game
                 //Check first if winners have already been displayed
-                if($(".winner").length != 0) {
+                if($(".multiplayer_winner").length != 0) {
                     break;
                 }
-                winner_data = "";
-                $(".winnerboard").fadeIn();
+                var winner_data = "";
+                $(".multiplayer_winnerboard").fadeIn();
                 message.winners.forEach(winner => {
-                    winner_data += "<div class='winner'>P" + (winner + 1) + "</div>";
+                    winner_data += "<div class='multiplayer_winner'>P" + (winner + 1) + "</div>";
                 });
-                $(".winnerboard").append(winner_data);
+                $(".multiplayer_winnerboard").append(winner_data);
                 if(message.winners.length > 1) {
                     var font_size = Math.round(4 / message.winners.length) + "em";
-                    $(".winner").css("font-size", font_size);
+                    $(".multiplayer_winner").css("font-size", font_size);
                 }
                 break;
         }

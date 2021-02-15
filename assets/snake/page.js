@@ -60,9 +60,9 @@ var page = (() => {
                 hideLeaderboard();
             }
 
-            var $winner_container = $(".winnerboard");
-            if (!$winner_container.is(e.target) && $winner_container.has(e.target).length === 0){
-                hideWinner();
+            var $multiplayer_winner_container = $(".multiplayer_winnerboard");
+            if (!$multiplayer_winner_container.is(e.target) && $multiplayer_winner_container.has(e.target).length === 0){
+                hideMultiplayerWinner();
             }
 
             var $settings_dropdown_container = $(".settings_dropdown").siblings('ul');
@@ -84,7 +84,7 @@ var page = (() => {
             if(e.keyCode == 27) { // esc
                 hideLeaderboard();
                 hideSettingsDropdown();
-                hideWinner();
+                hideMultiplayerWinner();
             }
         });
 
@@ -170,9 +170,9 @@ var page = (() => {
         $(".leaderboard").fadeOut();
     }
 
-    function hideWinner() {
-        $(".winnerboard").fadeOut();
-        $(".winner").remove();
+    function hideMultiplayerWinner() {
+        $(".multiplayer_winnerboard").fadeOut();
+        $(".multiplayer_winner").remove();
     }
 
     function hideSettingsDropdown() {
