@@ -60,6 +60,11 @@ var page = (() => {
                 hideLeaderboard();
             }
 
+            var $winner_container = $(".winnerboard");
+            if (!$winner_container.is(e.target) && $winner_container.has(e.target).length === 0){
+                hideWinner();
+            }
+
             var $settings_dropdown_container = $(".settings_dropdown").siblings('ul');
             if (!$settings_dropdown_container.is(e.target) && $settings_dropdown_container.has(e.target).length === 0 &&
                 !$('.settings_dropdown').is(e.target)
@@ -79,6 +84,7 @@ var page = (() => {
             if(e.keyCode == 27) { // esc
                 hideLeaderboard();
                 hideSettingsDropdown();
+                hideWinner();
             }
         });
 
@@ -162,6 +168,11 @@ var page = (() => {
 
     function hideLeaderboard() {
         $(".leaderboard").fadeOut();
+    }
+
+    function hideWinner() {
+        $(".winnerboard").fadeOut();
+        $(".winner").remove();
     }
 
     function hideSettingsDropdown() {

@@ -252,7 +252,7 @@ label {
 }
 
 /* Leaderboard styling */
-.leaderboard {
+.leaderboard, .winnerboard {
   display:none;
   position:absolute;
   left: 50%;
@@ -269,6 +269,17 @@ label {
   box-shadow: 0 0 10px var(--blue);
   text-align:center;
 }
+.winnerboard {
+  margin-top:calc(50vh - 150px);
+  height:300px;
+  font-size:1.5em;
+  max-width:80vw;
+  width:400px;
+}
+.winnerboard img {
+  height:100px;
+  margin-top:1em;
+}
 .leaderboard ol {
   margin-left:2.7em;
   margin-right:2em;
@@ -276,13 +287,18 @@ label {
 .leaderboard li {
   line-height:clamp(1em,7vh,2.5em);
 }
-.leaderinitial, .leaderscore {
+.leaderinitial, .leaderscore, .winner {
   color:var(--blue);
   text-shadow:0 0 5px var(--blue);
 }
 .scorespacer {
   display:inline-block;
   vertical-align: bottom;
+}
+
+.winner {
+  font-size:4em;
+  padding-left:.2em;
 }
 
 /* Multiplayer Scores */
@@ -529,6 +545,13 @@ svg { display: block; height: 0; width: 0; }
   }
   #singleplayer-scores {
     grid-template-columns: 5em 3em;
+  }
+  .winnerboard {
+    font-size:80%;
+    height:200px;
+  }
+  .winnerboard img {
+    height:80px;
   }
 }
 

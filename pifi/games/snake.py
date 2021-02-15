@@ -272,7 +272,17 @@ class Snake:
                 self.__tick_sleep()
             else:
                 # We have a winner / winners
-                self.__determine_multiplayer_winners()
+                winners = self.__determine_multiplayer_winners()
+                winner_message = json.dumps({
+                    'message_type': 'multi_player_winners',
+                    'winners': winners,
+                })
+                for i in range(self.__settings.num_players):
+                    try:
+                        self.__players[i].send_socket_msg(winner_message)
+                    except Exception:
+                        self.__logger.info('Unable to send winner message to player {}'.format(i))
+
                 did_play_victory_sound = False
                 victory_sound = None
                 while_counter = 0
@@ -374,11 +384,13 @@ class Snake:
     # 1) Being the last player remaining or
     # 2) Eating the most apples out of the non-eliminated snakes. In this case, there may be more than one winner.
     def __determine_multiplayer_winners(self):
+        winners = []
         if self.__settings.num_players == self.__eliminated_snake_count + 1:
             # Case 1
             for i in range(self.__settings.num_players):
                 if not self.__players[i].is_eliminated():
                     self.__players[i].set_multiplayer_winner()
+                    winners.append(i)
                     break
         elif self.__apples_eaten_count >= self.__settings.apple_count:
             # Case 2
@@ -395,6 +407,8 @@ class Snake:
                     longest_snake_indexes.append(i)
             for i in longest_snake_indexes:
                 self.__players[i].set_multiplayer_winner()
+                winners.append(i)
+        return winners
 
     def __clear_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
