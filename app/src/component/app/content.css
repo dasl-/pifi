@@ -35,3 +35,19 @@
 .playlist-exit-done {
   max-height: 0;
 }
+
+ul.menu {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+ul.menu li {
+  margin: 0;
+  padding: 8px 10px 0 0;
+}
+.logo-wrapper.expanded {
+  margin-top:2px !important;
+}
+.logo-wrapper.expanded .badge {
+  text-align:left;
+}

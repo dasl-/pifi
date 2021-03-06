@@ -144,6 +144,10 @@ class App extends React.Component {
 
     this.apiClient.searchYoutube(this.state.search_term)
       .then((data) => {
+        if (!data) {
+          return;
+        }
+        
         localStorage.setItem("latest_results", JSON.stringify(data));
         this.setState({
           search_results: SearchResultVideo.fromArray(data),
