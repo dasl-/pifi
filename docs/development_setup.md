@@ -14,3 +14,9 @@ rsync -avz --delete --exclude '*.swp' --exclude '.git' --exclude '.tags' --exclu
   --exclude 'data/' --exclude '__pycache__/' --exclude '*.npy' \
   pi@192.168.1.100:~/development/ ~/pi/development
 ```
+
+### Starting the development server
+From your local checkout directory:
+```
+$ npm start --prefix app
+```
