@@ -105,8 +105,8 @@ export default {
     var existing_session_id = getCookie("sessionid");
     var last_search = (localStorage.getItem("last_search") || "");
 
-    // create or extend the session
-    setCookie("sessionid", Date.now(), 12)
+    // create or extend the session (one year in hours)
+    setCookie("sessionid", Date.now(), 8760);
 
     return (existing_session_id !== '' && last_search !== '');
   },
