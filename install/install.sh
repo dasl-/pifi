@@ -73,7 +73,7 @@ sudo chmod 644 /etc/cron.d/pifi
 sudo "$BASE_DIR"/utils/make_db
 
 # build the web app
-sudo npm run build --prefix "$BASE_DIR"/app
+npm run build --prefix "$BASE_DIR"/app
 
 # Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
 # See: https://www.raspberrypi.org/documentation/remote-access/ip-address.md "Resolving raspberrypi.local with mDNS"
