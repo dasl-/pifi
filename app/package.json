@@ -7,7 +7,7 @@
     "rc-slider: there's a bug in later versions that prevents us from upgrading: https://github.com/react-component/slider/issues/492"
   ],
   "dependencies": {
-    "axios": "0.19.0",
+    "axios": "0.21.1",
     "gapi-client": "0.0.3",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
