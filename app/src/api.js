@@ -51,6 +51,12 @@ class APIClient {
     });
   }
 
+  setScreensaverEnabled(is_enabled) {
+    return this.perform('post', '/screensaver', {
+      is_screensaver_enabled: is_enabled
+    });
+  }
+
   clearQueue() {
     return this.perform('post', '/clear');
   }

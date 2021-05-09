@@ -2,17 +2,16 @@ import time
 import traceback
 from pifi.playlist import Playlist
 from pifi.logger import Logger
-from pifi.settings.ledsettings import LedSettings
 from pifi.settings.videosettings import VideoSettings
 from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
 from pifi.config import Config
 from pifi.games.gameoflife import GameOfLife
-from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
+from pifi.settings.settingsdb import SettingsDb
 from pifi.settings.snakesettings import SnakeSettings
 
 # The Queue is responsible for playing the next video in the Playlist
@@ -21,15 +20,21 @@ class Queue:
     UNIX_SOCKET_PATH = '/tmp/queue_unix_socket'
 
     __playlist = None
+    __settings_db = None
     __config = None
     __logger = None
-    __should_play_game_of_life = None
+    __game_of_life = None
+    __is_game_of_life_enabled = None
+    __last_settings_db_check_time = None
     __unix_socket = None
 
     def __init__(self):
         self.__playlist = Playlist()
+        self.__settings_db = SettingsDb()
         self.__config = Config()
-        self.__should_play_game_of_life = self.__config.get_queue_config('should_play_game_of_life', True)
+        self.__game_of_life = GameOfLife(GameOfLifeSettings().from_config())
+        self.__is_game_of_life_enabled = True
+        self.__last_settings_db_check_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
 
@@ -39,28 +44,19 @@ class Queue:
         self.__playlist.clean_up_state()
 
     def run(self):
-        if self.__should_play_game_of_life:
-            game_of_life = GameOfLife(GameOfLifeSettings().from_config())
-            has_reset_game_since_last_video = True
-
+        is_game_reset_needed = False
         while True:
             next_item = self.__playlist.get_next_playlist_item()
             if next_item:
                 if next_item["type"] == Playlist.TYPE_VIDEO or next_item["type"] == Playlist.TYPE_GAME:
                     self.__play_playlist_item(next_item)
-                    if self.__should_play_game_of_life:
-                        has_reset_game_since_last_video = False
+                    is_game_reset_needed = True
                 else:
                     raise Exception("Invalid playlist_item type: {}".format(next_item["type"]))
-            elif self.__should_play_game_of_life:
-                if has_reset_game_since_last_video:
-                    force_reset = False
-                else:
-                    force_reset = True
-                    has_reset_game_since_last_video = True
-                game_of_life.tick(should_loop = True, force_reset = force_reset)
-            else:
+            if not self.__maybe_play_game_of_life(is_game_reset_needed):
+                # don't sleep if we're playing GoL (let GoL run as fast as possible).
                 time.sleep(0.050)
+            is_game_reset_needed = False
 
     def __play_playlist_item(self, playlist_item):
         exception_to_raise = None
@@ -95,6 +91,23 @@ class Queue:
         self.__playlist.end_video(playlist_item["playlist_video_id"])
         if exception_to_raise is not None:
             raise exception_to_raise
+
+    def __maybe_play_game_of_life(self, is_game_reset_needed):
+        if (time.time() - self.__last_settings_db_check_time) > 1:
+            # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
+            old_is_enabled = self.__is_game_of_life_enabled
+            self.__is_game_of_life_enabled = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
+            if old_is_enabled != self.__is_game_of_life_enabled:
+                if self.__is_game_of_life_enabled:
+                    is_game_reset_needed = True
+                else:
+                    self.__clear_screen()
+            self.__last_settings_db_check_time = time.time()
+
+        if self.__is_game_of_life_enabled:
+            self.__game_of_life.tick(should_loop = True, force_reset = is_game_reset_needed)
+
+        return self.__is_game_of_life_enabled
 
     def __clear_screen(self):
         # VideoPlayer.__init__() method will clear the screen

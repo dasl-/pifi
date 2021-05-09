@@ -1,4 +1,3 @@
-import sqlite3
 from pifi.logger import Logger
 import pifi.database
 

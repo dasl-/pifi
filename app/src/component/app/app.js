@@ -39,7 +39,8 @@ class App extends React.Component {
       color_mode: 'color',
       last_queued_videos: [],
       last_queued_video_color_modes: [],
-      vol_pct: undefined
+      vol_pct: undefined,
+      is_screensaver_enabled: true
     };
 
     /* intro transition */
@@ -111,6 +112,7 @@ class App extends React.Component {
               removeVideo={this.removeVideo}
               setVolPct={this.setVolPct}
               vol_pct={this.state.vol_pct}
+              is_screensaver_enabled={this.state.is_screensaver_enabled}
             />
           </div>
         </CSSTransition>
@@ -147,7 +149,7 @@ class App extends React.Component {
         if (!data) {
           return;
         }
-        
+
         localStorage.setItem("latest_results", JSON.stringify(data));
         this.setState({
           search_results: SearchResultVideo.fromArray(data),
@@ -255,7 +257,8 @@ class App extends React.Component {
           this.setState({
             playlist_current_video: playlist_current_video,
             playlist_videos: playlist_videos,
-            vol_pct: vol_pct
+            vol_pct: vol_pct,
+            is_screensaver_enabled: data.is_screensaver_enabled
           });
         }
 

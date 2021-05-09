@@ -19,7 +19,9 @@ class SearchBar extends React.Component {
           <div className='input-group-wrapper'>
             <div className='input-group-append'>
               <span className='input-group-text input-left'>
-                <Menu />
+                <Menu
+                  is_screensaver_enabled={this.props.is_screensaver_enabled}
+                />
 
               </span>
             </div>

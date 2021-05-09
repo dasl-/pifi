@@ -51,6 +51,7 @@ class Content extends React.Component {
                 onSearchTermChange={this.props.setSearchTerm}
                 onSubmit={this.props.search}
                 queueVideo={this.props.queueVideo}
+                is_screensaver_enabled={this.props.is_screensaver_enabled}
               />
 
               <LoadWithVideo video={this.props.playlist_current_video}>
@@ -73,6 +74,7 @@ class Content extends React.Component {
                     onSearchTermChange={this.props.setSearchTerm}
                     onSubmit={this.props.search}
                     queueVideo={this.props.queueVideo}
+                    is_screensaver_enabled={this.props.is_screensaver_enabled}
                   />
                 </div>
 

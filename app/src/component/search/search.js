@@ -13,6 +13,7 @@ class Search extends React.Component {
           search_term={this.props.search_term}
           onSearchTermChange={this.props.onSearchTermChange}
           onSubmit={this.props.onSubmit}
+          is_screensaver_enabled={this.props.is_screensaver_enabled}
         />
         <SearchResults
           loading={this.props.search_loading}

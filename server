@@ -2,32 +2,30 @@
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPStatus
 from io import BytesIO
 import json
-import subprocess
 import ssl
-import sqlite3
 import traceback
 import urllib
 import time
-from pathlib import Path
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
-from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scores import Scores
 from pifi.games.snake import Snake
 from pifi.games.unixsockethelper import UnixSocketHelper
-from pifi.settings.snakesettings import SnakeSettings
+from pifi.settings.settingsdb import SettingsDb
 
 class PifiAPI():
     __playlist = None
     __vol_controller = None
+    __settings_db = None
     __logger = None
 
     def __init__(self):
         self.__playlist = Playlist()
         self.__vol_controller = VolumeController()
+        self.__settings_db = SettingsDb()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     # get all the data that we poll for every second in the pifi
@@ -36,6 +34,7 @@ class PifiAPI():
         queue = self.__playlist.get_queue()
         response_details['queue'] = queue
         response_details['vol_pct'] = self.__vol_controller.get_vol_pct()
+        response_details[SettingsDb.SCREENSAVER_SETTING] = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
         response_details['success'] = True
         return response_details
 
@@ -152,24 +151,19 @@ class PifiAPI():
 
     def skip(self, post_data):
         success = self.__playlist.skip(post_data['playlist_video_id'])
-
-        response_details = {}
-        response_details['success'] = success
-        return response_details
+        return {'success': success}
 
     def remove(self, post_data):
         success = self.__playlist.remove(post_data['playlist_video_id'])
-
-        response_details = {}
-        response_details['success'] = success
-        return response_details
+        return {'success': success}
 
     def clear(self):
         self.__playlist.clear()
+        return {'success': True}
 
-        response_details = {}
-        response_details['success'] = True
-        return response_details
+    def set_screensaver_enabled(self, post_data):
+        self.__settings_db.set(SettingsDb.SCREENSAVER_SETTING, bool(post_data[SettingsDb.SCREENSAVER_SETTING]))
+        return {'success': True}
 
     # TODO : race conditions when setting volume, bigger surface area after converting to ThreadingHTTPServer.
     # Options:
@@ -268,6 +262,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.remove(post_data)
         elif path == 'clear':
             response = self.__api.clear()
+        elif path == 'screensaver':
+            response = self.__api.set_screensaver_enabled(post_data)
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
         elif path == 'enqueue_or_join_game':

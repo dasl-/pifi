@@ -5,6 +5,7 @@ from pifi.directoryutils import DirectoryUtils
 from pifi.logger import Logger
 import pifi.playlist
 import pifi.games.scores
+import pifi.settings.settingsdb
 
 def dict_factory(cursor, row):
     d = {}
@@ -50,6 +51,7 @@ class Database:
             self.__construct_pifi_schema_version()
             pifi.playlist.Playlist().construct()
             pifi.games.scores.Scores().construct()
+            pifi.settings.settingsdb.SettingsDb().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
                 "Database schema is outdated. Updating from version {} to {}."
@@ -98,67 +100,5 @@ class Database:
         )
 
     # Updates schema from v0 to v1.
-    # Changes the PKs from autoincrement to non-autoincrement for slight perf boost: https://www.sqlite.org/autoinc.html
-    # (autoincrement is not usually necessary).
-    # TODO: hack the next schema change to use v1 -- this wasnt really a compatible schema change anyway bc removing AUTOINCREMENT
-    # the sqlite_sequence DB hangs around anyway
     def __update_schema_to_v1(self):
-        # change PK for playlist_videos
-        self.get_cursor().execute("""
-            CREATE TEMPORARY TABLE playlist_videos_backup (
-                playlist_video_id INTEGER PRIMARY KEY,
-                type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
-                create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
-                url TEXT,
-                thumbnail TEXT,
-                title TEXT,
-                duration VARCHAR(20),
-                color_mode VARCHAR(20),
-                status VARCHAR(20),
-                is_skip_requested INTEGER DEFAULT 0,
-                settings TEXT DEFAULT ''
-            )"""
-        )
-        self.get_cursor().execute("INSERT INTO playlist_videos_backup SELECT * FROM playlist_videos")
-        self.get_cursor().execute("DROP TABLE playlist_videos")
-        self.get_cursor().execute("""
-            CREATE TABLE playlist_videos (
-                playlist_video_id INTEGER PRIMARY KEY,
-                type VARCHAR(20) DEFAULT 'TYPE_VIDEO',
-                create_date DATETIME  DEFAULT CURRENT_TIMESTAMP,
-                url TEXT,
-                thumbnail TEXT,
-                title TEXT,
-                duration VARCHAR(20),
-                color_mode VARCHAR(20),
-                status VARCHAR(20),
-                is_skip_requested INTEGER DEFAULT 0,
-                settings TEXT DEFAULT ''
-            )"""
-        )
-        self.get_cursor().execute("INSERT INTO playlist_videos SELECT * FROM playlist_videos_backup")
-        self.get_cursor().execute("DROP TABLE playlist_videos_backup")
-
-        # change PK for high_scores
-        self.get_cursor().execute("""
-            CREATE TEMPORARY TABLE high_scores_backup (
-                score_id INTEGER PRIMARY KEY,
-                score INTEGER,
-                initials VARCHAR(100) DEFAULT '',
-                create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                game_type VARCHAR(100)
-            )"""
-        )
-        self.get_cursor().execute("INSERT INTO high_scores_backup SELECT * FROM high_scores")
-        self.get_cursor().execute("DROP TABLE high_scores")
-        self.get_cursor().execute("""
-            CREATE TABLE high_scores (
-                score_id INTEGER PRIMARY KEY,
-                score INTEGER,
-                initials VARCHAR(100) DEFAULT '',
-                create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                game_type VARCHAR(100)
-            )"""
-        )
-        self.get_cursor().execute("INSERT INTO high_scores SELECT * FROM high_scores_backup")
-        self.get_cursor().execute("DROP TABLE high_scores_backup")
+        pifi.settings.settingsdb.SettingsDb().construct()
