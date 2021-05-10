@@ -1,5 +1,7 @@
 import time
 import traceback
+import simpleaudio
+from pifi.directoryutils import DirectoryUtils
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
@@ -99,8 +101,14 @@ class Queue:
             self.__is_game_of_life_enabled = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
             if old_is_enabled != self.__is_game_of_life_enabled:
                 if self.__is_game_of_life_enabled:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
+                    ).play()
                     is_game_reset_needed = True
                 else:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
+                    ).play()
                     self.__clear_screen()
             self.__last_settings_db_check_time = time.time()
 
