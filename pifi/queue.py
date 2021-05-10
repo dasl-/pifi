@@ -35,7 +35,7 @@ class Queue:
         self.__settings_db = SettingsDb()
         self.__config = Config()
         self.__game_of_life = GameOfLife(GameOfLifeSettings().from_config())
-        self.__is_game_of_life_enabled = True
+        self.__is_game_of_life_enabled = None
         self.__last_settings_db_check_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
@@ -99,7 +99,7 @@ class Queue:
             # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
             old_is_enabled = self.__is_game_of_life_enabled
             self.__is_game_of_life_enabled = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
-            if old_is_enabled != self.__is_game_of_life_enabled:
+            if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
                 if self.__is_game_of_life_enabled:
                     simpleaudio.WaveObject.from_wave_file(
                         DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
