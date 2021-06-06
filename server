@@ -15,6 +15,7 @@ from pifi.games.scores import Scores
 from pifi.games.snake import Snake
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.settings.settingsdb import SettingsDb
+from pifi.database import Database
 
 class PifiAPI():
     __playlist = None
@@ -45,7 +46,7 @@ class PifiAPI():
         current_video = self.__playlist.get_current_video()
         if current_video and current_video['title'] == Snake.GAME_TITLE and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
             is_game_joinable = True
-            current_video_create_date = time.mktime(time.strptime(current_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
+            current_video_create_date = Database.database_date_to_unix_time(current_video['create_date'])
             game_joinable_countdown_s = max(
                 round(UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S - (time.time() - current_video_create_date), 0),
                 0

@@ -24,13 +24,15 @@ class SettingsDb:
             CREATE TABLE settings (
                 key VARCHAR(200) PRIMARY KEY,
                 value VARCHAR(200),
-                create_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                update_date DATETIME DEFAULT CURRENT_TIMESTAMP
             )"""
         )
 
     def set(self, key, value):
         self.__cursor.execute(
-            "INSERT INTO settings (key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            "INSERT INTO settings (key, value, update_date) VALUES(?, ?, datetime()) ON CONFLICT(key) DO " +
+                "UPDATE SET value=excluded.value, update_date=excluded.update_date",
             [key, value]
         )
         return self.__cursor.lastrowid
@@ -43,6 +45,13 @@ class SettingsDb:
         if res is None:
             return default
         return res['value']
+
+    # This may return None if the row doesn't exist.
+    def getRow(self, key):
+        self.__cursor.execute(
+            "SELECT * FROM settings WHERE key = ?", [key]
+        )
+        return self.__cursor.fetchone()
 
     def isEnabled(self, key, default = False):
         res = self.get(key, default)

@@ -1,5 +1,6 @@
 import sqlite3
 import threading
+import time
 
 from pifi.directoryutils import DirectoryUtils
 from pifi.logger import Logger
@@ -21,13 +22,17 @@ class Database:
     __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
 
     # Zero indexed schema_version (first version is v0).
-    __SCHEMA_VERSION = 1
+    __SCHEMA_VERSION = 2
 
     # instance vars
     __logger = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
+
+    @staticmethod
+    def database_date_to_unix_time(database_date):
+        return time.mktime(time.strptime(database_date, '%Y-%m-%d  %H:%M:%S'))
 
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), Scores.construct())
@@ -63,6 +68,8 @@ class Database:
                 )
                 if i == 1:
                     self.__update_schema_to_v1()
+                elif i == 2:
+                    self.__update_schema_to_v2()
                 else:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
@@ -101,4 +108,11 @@ class Database:
 
     # Updates schema from v0 to v1.
     def __update_schema_to_v1(self):
+        pifi.settings.settingsdb.SettingsDb().construct()
+
+    # Updates schema from v1 to v2.
+    def __update_schema_to_v2(self):
+        # Adding the update_date column. Trying to set the column's default value to CURRENT_TIMESTAMP results in:
+        #   sqlite3.OperationalError: Cannot add a column with non-constant default
+        # Thus, just blow the table away and re-create it.
         pifi.settings.settingsdb.SettingsDb().construct()

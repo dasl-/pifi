@@ -15,6 +15,7 @@ from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
 from pifi.settings.settingsdb import SettingsDb
 from pifi.settings.snakesettings import SnakeSettings
+from pifi.database import Database
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
@@ -95,20 +96,33 @@ class Queue:
             raise exception_to_raise
 
     def __maybe_play_game_of_life(self, is_game_reset_needed):
-        if (time.time() - self.__last_settings_db_check_time) > 1:
-            # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
+        # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
+        num_seconds_between_settings_db_queries = 1
+        if (time.time() - self.__last_settings_db_check_time) > num_seconds_between_settings_db_queries:
             old_is_enabled = self.__is_game_of_life_enabled
-            self.__is_game_of_life_enabled = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
+            setting = self.__settings_db.getRow(SettingsDb.SCREENSAVER_SETTING)
+            if (setting is None or setting['value'] == '1'):
+                self.__is_game_of_life_enabled = True
+            else:
+                self.__is_game_of_life_enabled = False
+            seconds_since_setting_updated = 0
+            if setting is not None:
+                seconds_since_setting_updated = time.time() - Database.database_date_to_unix_time(setting['update_date'])
             if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
+                # don't play the sound if they changed the value of the setting a while ago,
+                # perhaps while a video was playing
+                should_play_sound = seconds_since_setting_updated < (num_seconds_between_settings_db_queries + 2)
                 if self.__is_game_of_life_enabled:
-                    simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
-                    ).play()
+                    if should_play_sound:
+                        simpleaudio.WaveObject.from_wave_file(
+                            DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
+                        ).play()
                     is_game_reset_needed = True
                 else:
-                    simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
-                    ).play()
+                    if should_play_sound:
+                        simpleaudio.WaveObject.from_wave_file(
+                            DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
+                        ).play()
                     self.__clear_screen()
             self.__last_settings_db_check_time = time.time()
 

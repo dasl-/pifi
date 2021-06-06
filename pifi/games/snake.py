@@ -15,6 +15,7 @@ from pifi.games.scores import Scores
 from pifi.games.snakeplayer import SnakePlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.directoryutils import DirectoryUtils
+from pifi.database import Database
 
 class Snake:
 
@@ -429,8 +430,7 @@ class Snake:
 
     # returns boolean success
     def __accept_sockets(self):
-        # todo: database util method to share logic for date conversion
-        playlist_video_create_date_epoch = time.mktime(time.strptime(self.__playlist_video['create_date'], '%Y-%m-%d  %H:%M:%S'))
+        playlist_video_create_date_epoch = Database.database_date_to_unix_time(self.__playlist_video['create_date'])
         max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_SINGLE_PLAYER_JOIN_TIME_S
         if self.__settings.num_players > 1:
             max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S + 1 # give a 1s extra buffer
