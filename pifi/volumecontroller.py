@@ -6,7 +6,7 @@ class VolumeController:
 
     """
     sudo amixer cset numid=1 96.24%
-    numid=1,iface=MIXER,name='PCM Playback Volume'
+    numid=1,iface=MIXER,name='Headphone Playback Volume'
       ; type=INTEGER,access=rw---R--,values=1,min=-10239,max=400,step=0
       : values=0
       | dBscale-min=-102.39dB,step=0.01dB,mute=1
@@ -20,10 +20,11 @@ class VolumeController:
     __GLOBAL_MAX_VOL_VAL = 400
 
     # gets a perceptual loudness %
+    # returns a float in the range [0, 100]
     def get_vol_pct(self):
         res = subprocess.check_output(('amixer', 'cget', 'numid=1')).decode("utf-8")
         m = re.search(" values=(-?\d+)", res, re.MULTILINE)
-        if m == None:
+        if m is None:
             return 0
 
         vol_val = int(m.group(1))
@@ -38,7 +39,8 @@ class VolumeController:
             vol_pct = min(100, vol_pct)
         return vol_pct
 
-    # takes a perceptual loudness %
+    # takes a perceptual loudness %.
+    # vol_pct should be a float in the range [0, 100]
     def set_vol_pct(self, vol_pct):
         if (vol_pct <= 0):
             db_level = self.__GLOBAL_MIN_VOL_VAL / 100
@@ -47,7 +49,7 @@ class VolumeController:
             # see: http://www.sengpielaudio.com/calculator-levelchange.htm
             db_level = 10 * math.log(vol_pct / 100, 2)
 
-        db_level = max(self.__GLOBAL_MIN_VOL_VAL/100, db_level)
+        db_level = max(self.__GLOBAL_MIN_VOL_VAL / 100, db_level)
         db_level = min(self.__LIMITED_MAX_VOL_VAL, db_level)
 
         pct_to_set = (((db_level * 100) - self.__GLOBAL_MIN_VOL_VAL) / (self.__GLOBAL_MAX_VOL_VAL - self.__GLOBAL_MIN_VOL_VAL)) * 100
