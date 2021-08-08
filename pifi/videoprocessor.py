@@ -233,7 +233,7 @@ class VideoProcessor:
         video_info = self.__get_video_info()
 
         return (
-            'youtube-dl ' +
+            'yt-dlp ' +
             '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
@@ -353,7 +353,7 @@ class VideoProcessor:
         if not sys.stderr.isatty():
             log_opts = '--newline '
         return (
-            'youtube-dl ' +
+            'yt-dlp ' +
             '--output - ' + # output to stdout
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding

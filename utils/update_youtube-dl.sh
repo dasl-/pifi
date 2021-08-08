@@ -7,15 +7,19 @@
 set -x
 
 echo "starting update_youtube-dl at $(date -u)"
-sudo pip3 install --upgrade youtube_dl
+sudo pip3 install --upgrade youtube_dl yt-dlp
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
 sudo -u root youtube-dl --rm-cache-dir
 sudo -u pi youtube-dl --rm-cache-dir
+sudo -u root yt-dlp --rm-cache-dir
+sudo -u pi yt-dlp --rm-cache-dir
 
 # repopulate the cache that we just deleted? /shrug
 sudo -u root youtube-dl --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
 sudo -u pi youtube-dl --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
+sudo -u root yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
+sudo -u pi yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
 
 echo "finished update_youtube-dl at $(date -u)"
