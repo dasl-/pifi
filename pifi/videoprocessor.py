@@ -234,6 +234,7 @@ class VideoProcessor:
 
         return (
             'yt-dlp ' +
+            '--extractor-args youtube:player_client=android ' + # workaround for download speed throttling problem: https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
@@ -354,6 +355,7 @@ class VideoProcessor:
             log_opts = '--newline '
         return (
             'yt-dlp ' +
+            '--extractor-args youtube:player_client=android ' + # workaround for download speed throttling problem: https://github.com/ytdl-org/youtube-dl/issues/29326#issuecomment-879256177
             '--output - ' + # output to stdout
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
