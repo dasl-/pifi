@@ -49,7 +49,7 @@ class VideoPlayer:
         self.__setup_pixels()
 
     def clear_screen(self):
-        self.__pixels.clear_strip();
+        self.__pixels.clear_strip()
 
     def play_frame(self, avg_color_frame):
         self.__set_frame_pixels(avg_color_frame)
@@ -86,11 +86,11 @@ class VideoPlayer:
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.__pixels = apa102.APA102(
             num_led=(self.__led_settings.display_width * self.__led_settings.display_height + 8),
-            global_brightness=self.__led_settings.brightness,
             mosi=self.__MOSI_PIN,
             sclk=self.__SCLK_PIN,
             order=self.__LED_ORDER
         )
+        self.__pixels.set_global_brightness(self.__led_settings.brightness)
         self.__pixels.clear_strip()
         return self.__pixels
 
