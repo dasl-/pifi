@@ -238,6 +238,7 @@ class VideoProcessor:
             '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            '--retries infinite ' + # in case downloading has transient errors
             shlex.quote(video_info['webpage_url']) # url to download
         )
 
@@ -359,6 +360,7 @@ class VideoProcessor:
             '--output - ' + # output to stdout
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            '--retries infinite ' + # in case downloading has transient errors
             log_level +
             log_opts +
             shlex.quote(video_info['webpage_url']) # url to download
