@@ -41,6 +41,7 @@ class Queue:
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
+        self.__video_player = VideoPlayer(VideoSettings().from_playlist_item_in_queue())
 
         # house keeping
         self.__clear_screen()
@@ -140,5 +141,4 @@ class Queue:
         return self.__is_game_of_life_enabled
 
     def __clear_screen(self):
-        # VideoPlayer.__init__() method will clear the screen
-        VideoPlayer(VideoSettings().from_playlist_item_in_queue())
+        self.__video_player.clear_screen()
