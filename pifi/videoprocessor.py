@@ -187,6 +187,9 @@ class VideoProcessor:
         process_and_play_vid_proc = subprocess.Popen(
             process_and_play_vid_cmd, shell = True, executable = '/bin/bash', start_new_session = True
         )
+        # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
+        # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
+        process_and_play_vid_proc_pgid = os.getpgid(process_and_play_vid_proc.pid)
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
@@ -196,7 +199,7 @@ class VideoProcessor:
 
         vid_start_time = None
         last_skip_check_time = 0
-        frame_length =  1 / fps
+        frame_length = 1 / fps
         last_frame = None
         vid_processing_lag_counter = 0
         is_ffmpeg_done_outputting = False
@@ -205,7 +208,7 @@ class VideoProcessor:
         while True:
             t = time.time()
             if (t - last_skip_check_time) > 0.100:
-                if self.__maybe_skip_video(process_and_play_vid_proc):
+                if self.__maybe_skip_video(process_and_play_vid_proc_pgid):
                     break
                 last_skip_check_time = t
 
@@ -475,13 +478,13 @@ class VideoProcessor:
         self.__logger.info("Deleting incomplete video downloads...")
         subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
 
-    def __maybe_skip_video(self, process_and_play_vid_proc = None):
+    def __maybe_skip_video(self, process_and_play_vid_proc_pgid = None):
         if not self.__video_settings.should_check_playlist:
             return False
 
         if self.__playlist.should_skip_video_id(self.__playlist_video_id):
-            if process_and_play_vid_proc:
-                os.killpg(os.getpgid(process_and_play_vid_proc.pid), signal.SIGTERM)
+            if process_and_play_vid_proc_pgid:
+                os.killpg(os.getpgid(process_and_play_vid_proc_pgid), signal.SIGTERM)
             self.__was_video_skipped = True
             return True
 
