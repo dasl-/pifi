@@ -484,7 +484,7 @@ class VideoProcessor:
 
         if self.__playlist.should_skip_video_id(self.__playlist_video_id):
             if process_and_play_vid_proc_pgid:
-                os.killpg(os.getpgid(process_and_play_vid_proc_pgid), signal.SIGTERM)
+                os.killpg(process_and_play_vid_proc_pgid, signal.SIGTERM)
             self.__was_video_skipped = True
             return True
 
