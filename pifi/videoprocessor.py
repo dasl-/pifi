@@ -484,7 +484,11 @@ class VideoProcessor:
 
         if self.__playlist.should_skip_video_id(self.__playlist_video_id):
             if process_and_play_vid_proc_pgid:
-                os.killpg(process_and_play_vid_proc_pgid, signal.SIGTERM)
+                try:
+                    os.killpg(process_and_play_vid_proc_pgid, signal.SIGTERM)
+                except Exception:
+                    # might raise: `ProcessLookupError: [Errno 3] No such process`
+                    pass
             self.__was_video_skipped = True
             return True
 
