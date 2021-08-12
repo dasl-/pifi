@@ -11,8 +11,9 @@ then
 fi
 
 sudo apt update
-sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm \
-    libsdl2-mixer-2.0-0 # needed for pygame
+# libsdl2-mixer: needed for pygame
+# parallel: needed for update_youtube-dl.sh script
+sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 parallel
 sudo apt -y full-upgrade
 
 sudo pip3 install --upgrade youtube_dl yt-dlp numpy HTTPServer apa102-pi pytz websockets simpleaudio pygame
