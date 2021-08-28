@@ -23,7 +23,7 @@ sudo pip3 install --upgrade youtube_dl yt-dlp numpy HTTPServer apa102-pi pytz we
 # shellcheck disable=SC1083
 parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root pi ::: youtube-dl yt-dlp
 
-# The `apt-get install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
+# The `apt install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
 sudo npm install npm@latest -g
 
 # Install app dependencies
