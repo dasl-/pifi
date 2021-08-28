@@ -20,10 +20,8 @@ sudo pip3 install --upgrade youtube_dl yt-dlp numpy HTTPServer apa102-pi pytz we
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
-sudo youtube-dl --rm-cache-dir
-youtube-dl --rm-cache-dir
-sudo yt-dlp --rm-cache-dir
-yt-dlp --rm-cache-dir
+# shellcheck disable=SC1083
+parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root pi ::: youtube-dl yt-dlp
 
 # The `apt-get install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
 sudo npm install npm@latest -g
