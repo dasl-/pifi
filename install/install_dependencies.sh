@@ -5,8 +5,7 @@ BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 &&
 
 # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
 # when the version changed between `apt install npm` and `npm install npm@latest -g`
-if ! which npm
-then
+if ! which npm >/dev/null ; then
     is_restart_required=true
 fi
 
