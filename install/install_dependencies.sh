@@ -15,7 +15,7 @@ sudo apt update
 sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 parallel
 sudo apt -y full-upgrade
 
-sudo pip3 install --upgrade youtube_dl yt-dlp numpy HTTPServer apa102-pi pytz websockets simpleaudio pygame
+sudo pip3 install --upgrade youtube_dl yt-dlp numpy apa102-pi pytz websockets simpleaudio pygame
 
 # Just in case the youtube-dl cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
