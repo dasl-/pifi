@@ -21,7 +21,7 @@ class Menu extends React.Component {
         <span className='menu-wrapper'>
           <span className='glyphicon glyphicon-menu-hamburger bg-dark-text' onClick={this.onExpand}></span>
           <ul className={this.state.expanded ? 'menu expanded' : 'menu'}>
-            <li><a href='/snake'>🐍 Snake</a></li>
+            <li><span role='img' aria-label='snake'>🐍</span> <a href='/snake'>Snake</a></li>
             <li>
               <a href='#' onClick={this.onClickScreensaver}>
                 <span className='glyphicon glyphicon-off bg-dark-text' onClick={this.onExpand}></span> {this.props.is_screensaver_enabled ? 'Disable' : 'Enable'} screensaver
