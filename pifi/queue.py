@@ -103,7 +103,7 @@ class Queue:
         now = time.time()
         if (now - self.__last_settings_db_check_time) > num_seconds_between_settings_db_queries:
             old_is_enabled = self.__is_game_of_life_enabled
-            setting = self.__settings_db.getRow(SettingsDb.SCREENSAVER_SETTING)
+            setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
             if (setting is None or setting['value'] == '1'):
                 self.__is_game_of_life_enabled = True
             else:

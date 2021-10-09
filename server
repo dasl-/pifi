@@ -35,7 +35,7 @@ class PifiAPI():
         queue = self.__playlist.get_queue()
         response_details['queue'] = queue
         response_details['vol_pct'] = self.__vol_controller.get_vol_pct()
-        response_details[SettingsDb.SCREENSAVER_SETTING] = self.__settings_db.isEnabled(SettingsDb.SCREENSAVER_SETTING, True)
+        response_details[SettingsDb.SCREENSAVER_SETTING] = self.__settings_db.is_enabled(SettingsDb.SCREENSAVER_SETTING, True)
         response_details['success'] = True
         return response_details
 

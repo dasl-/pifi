@@ -11,9 +11,6 @@ class SettingsDb:
     # game of life screensaver
     SCREENSAVER_SETTING = 'is_screensaver_enabled'
 
-    __cursor = None
-    __logger = None
-
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -26,13 +23,12 @@ class SettingsDb:
                 value VARCHAR(200),
                 create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
                 update_date DATETIME DEFAULT CURRENT_TIMESTAMP
-            )"""
-        )
+            )""")
 
     def set(self, key, value):
         self.__cursor.execute(
-            "INSERT INTO settings (key, value, update_date) VALUES(?, ?, datetime()) ON CONFLICT(key) DO " +
-                "UPDATE SET value=excluded.value, update_date=excluded.update_date",
+            ("INSERT INTO settings (key, value, update_date) VALUES(?, ?, datetime()) ON CONFLICT(key) DO " +
+                "UPDATE SET value=excluded.value, update_date=excluded.update_date"),
             [key, value]
         )
         return self.__cursor.lastrowid
@@ -47,13 +43,13 @@ class SettingsDb:
         return res['value']
 
     # This may return None if the row doesn't exist.
-    def getRow(self, key):
+    def get_row(self, key):
         self.__cursor.execute(
             "SELECT * FROM settings WHERE key = ?", [key]
         )
         return self.__cursor.fetchone()
 
-    def isEnabled(self, key, default = False):
+    def is_enabled(self, key, default = False):
         res = self.get(key, default)
         if res is True or res == '1':
             return True
