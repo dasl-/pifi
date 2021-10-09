@@ -411,6 +411,7 @@ class VideoProcessor:
         else:
             video_path = self.__get_video_info()['url']
 
+        # TODO: https://github.com/dasl-/pifi/issues/13
         fps_parts = (subprocess
             .check_output(('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries',
                 'stream=r_frame_rate', video_path), stderr=subprocess.STDOUT)
