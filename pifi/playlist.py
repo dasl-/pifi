@@ -25,9 +25,6 @@ class Playlist:
     TYPE_VIDEO = 'TYPE_VIDEO'
     TYPE_GAME = 'TYPE_GAME'
 
-    __cursor = None
-    __logger = None
-
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -47,20 +44,26 @@ class Playlist:
                 status VARCHAR(20),
                 is_skip_requested INTEGER DEFAULT 0,
                 settings TEXT DEFAULT ''
-            )"""
-        )
+            )""")
 
         self.__cursor.execute("DROP INDEX IF EXISTS status_idx")
         self.__cursor.execute("CREATE INDEX status_type_idx ON playlist_videos (status, type ASC, playlist_video_id ASC)")
 
     def enqueue(self, url, color_mode, thumbnail, title, duration, video_type, settings):
         self.__cursor.execute(
-            "INSERT INTO playlist_videos " +
+            ("INSERT INTO playlist_videos " +
                 "(type, url, color_mode, thumbnail, title, duration, status, settings) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)"),
             [video_type, url, color_mode, thumbnail, title, duration, self.STATUS_QUEUED, settings]
         )
         return self.__cursor.lastrowid
+
+    def reenqueue(self, playlist_video_id):
+        self.__cursor.execute(
+            "UPDATE playlist_videos set status = ? WHERE playlist_video_id = ?",
+            [self.STATUS_QUEUED, playlist_video_id]
+        )
+        return self.__cursor.rowcount >= 1
 
     # Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the
     # video that the user intended to skip.
@@ -104,6 +107,10 @@ class Playlist:
             [self.STATUS_PLAYING, self.STATUS_QUEUED]
         )
         return self.__cursor.fetchall()
+
+    def get_playlist_item_by_id(self, playlist_video_id):
+        self.__cursor.execute("SELECT * FROM playlist_videos WHERE playlist_video_id = ? LIMIT 1", [playlist_video_id])
+        return self.__cursor.fetchone()
 
     # Atomically set the requested video to "playing" status. This may fail if in a scenario like:
     #   1) Next video in the queue is retrieved
@@ -153,9 +160,9 @@ class Playlist:
         current_video = self.get_current_video()
         if current_video and current_video['playlist_video_id'] != playlist_video_id:
             self.__logger.warning(
-                "Database and current process disagree about which playlist item is currently playing. " +
+                ("Database and current process disagree about which playlist item is currently playing. " +
                 "Database says playlist_video_id: {}, whereas current process says playlist_video_id: {}."
-                    .format(current_video['playlist_video_id'], playlist_video_id)
+                    .format(current_video['playlist_video_id'], playlist_video_id))
             )
             return False
 

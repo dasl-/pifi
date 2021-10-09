@@ -34,6 +34,29 @@ class Database:
     def database_date_to_unix_time(database_date):
         return time.mktime(time.strptime(database_date, '%Y-%m-%d  %H:%M:%S'))
 
+    # returns False on error
+    @staticmethod
+    def video_duration_to_unix_time(video_duration):
+        # video durations are of the form HH:MM:SS, may have leading zeroes, etc
+        parts = video_duration.split(':')
+        num_parts = len(parts)
+        if num_parts == 1: # just seconds
+            try:
+                return int(parts[0])
+            except Exception:
+                return False
+        if num_parts == 2: # minutes and seconds
+            try:
+                return int(parts[0]) * 60 + int(parts[1])
+            except Exception:
+                return False
+        if num_parts == 3: # hours, minutes, and seconds
+            try:
+                return int(parts[0]) * 60 * 60 + int(parts[1]) * 60 + int(parts[2])
+            except Exception:
+                return False
+        return False
+
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), Scores.construct())
     # 2) Increment self.__SCHEMA_VERSION
