@@ -430,14 +430,14 @@ class Snake:
 
     # returns boolean success
     def __accept_sockets(self):
-        playlist_video_create_date_epoch = Database.database_date_to_unix_time(self.__playlist_video['create_date'])
         max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_SINGLE_PLAYER_JOIN_TIME_S
+        accept_loop_start_time = time.time()
         if self.__settings.num_players > 1:
             max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S + 1 # give a 1s extra buffer
         for i in range(self.__settings.num_players):
             if not (
                 self.__players[i].accept_socket(
-                    self.__playlist_video['playlist_video_id'], playlist_video_create_date_epoch, max_accept_sockets_wait_time_s
+                    self.__playlist_video['playlist_video_id'], accept_loop_start_time, max_accept_sockets_wait_time_s
                 )
             ):
                 return False

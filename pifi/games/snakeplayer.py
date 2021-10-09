@@ -258,9 +258,9 @@ class SnakePlayer:
         return False
 
     # returns boolean success
-    def accept_socket(self, playlist_video_id, playlist_video_create_date_epoch, max_accept_sockets_wait_time_s):
+    def accept_socket(self, playlist_video_id, accept_loop_start_time, max_accept_sockets_wait_time_s):
         while True:
-            if (time.time() - playlist_video_create_date_epoch) > max_accept_sockets_wait_time_s:
+            if (time.time() - accept_loop_start_time) > max_accept_sockets_wait_time_s:
                 # Make sure we don't wait indefinitely for players to join the game
                 self.__logger.info('Not all players joined within the time limit for game joining.')
                 return False

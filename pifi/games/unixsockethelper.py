@@ -14,7 +14,14 @@ class UnixSocketHelper:
     # within this timer, which starts ticking when the game is queued up.
     MAX_MULTI_PLAYER_JOIN_TIME_S = 11
 
-    # How long to block on sending / receiving messages
+    # How long to block on sending / receiving messages during the connection handshake phase.
+    # This can take longer than after the handshake phase, because various initialization
+    # logic may have to run before one end of the socket is even ready to start the handshake.
+    # For instance, one end may be ready to receive the handshake, but the other end is blocked on
+    # unrelated slow DB operations, etc.
+    __CONNECTION_SOCKET_HANDSHAKE_TIMEOUT_S = 10
+
+    # How long to block on sending / receiving messages after the connection handshake phase
     __CONNECTION_SOCKET_TIMEOUT_S = 3
 
     # how long to block on accept
@@ -66,16 +73,18 @@ class UnixSocketHelper:
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def accept(self):
         self.__connection_socket, unused_address = self.__server_socket.accept()
-        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_HANDSHAKE_TIMEOUT_S)
         self.__exchange_connection_handshake_messages()
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__is_connection_socket_open = True
 
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def connect(self, socket_path):
         self.__connection_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_HANDSHAKE_TIMEOUT_S)
         self.__connection_socket.connect(socket_path)
         self.__exchange_connection_handshake_messages()
+        self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
         self.__is_connection_socket_open = True
         return self
 

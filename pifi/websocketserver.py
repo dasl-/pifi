@@ -34,7 +34,9 @@ class WebSocketServer:
         is_connect_success = True
         unix_socket_helper = UnixSocketHelper()
         try:
+            logger.info("Calling unix_socket_helper.connect")
             unix_socket_helper.connect(Queue.UNIX_SOCKET_PATH)
+            logger.info("Done calling unix_socket_helper.connect")
         except Exception:
             is_connect_success = False
             logger.error('Caught exception: {}'.format(traceback.format_exc()))
