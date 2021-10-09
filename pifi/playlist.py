@@ -60,8 +60,8 @@ class Playlist:
 
     def reenqueue(self, playlist_video_id):
         self.__cursor.execute(
-            "UPDATE playlist_videos set status = ? WHERE playlist_video_id = ?",
-            [self.STATUS_QUEUED, playlist_video_id]
+            "UPDATE playlist_videos set status = ?, is_skip_requested = ? WHERE playlist_video_id = ?",
+            [self.STATUS_QUEUED, 0, playlist_video_id]
         )
         return self.__cursor.rowcount >= 1
 

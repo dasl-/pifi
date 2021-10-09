@@ -110,7 +110,7 @@ class Queue:
             pass
         else: # The current playlist item is a video
             was_current_video_skipped_shortly_after_starting = False
-            duration_current_video_was_playing = current_playlist_item_start_date - time.time()
+            duration_current_video_was_playing = time.time() - current_playlist_item_start_date
             video_duration = Database.video_duration_to_unix_time(current_playlist_item['duration'])
             if video_duration:
                 if duration_current_video_was_playing > 120:
@@ -126,6 +126,8 @@ class Queue:
                     # based on the duration it had been playing. Need to reload it from the DB to get the latest state.
                     current_playlist_item = self.__playlist.get_playlist_item_by_id(current_playlist_item['playlist_video_id'])
                     if current_playlist_item['is_skip_requested']:
+                        self.__logger.debug("Re-enqueuing current video because it was skipped shortly after starting due " +
+                            "to a game")
                         self.__playlist.reenqueue(current_playlist_item['playlist_video_id'])
                         return
 
