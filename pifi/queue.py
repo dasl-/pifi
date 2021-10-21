@@ -56,7 +56,6 @@ class Queue:
 
     def __play_playlist_item(self, playlist_item):
         exception_to_raise = None
-        playlist_item_start_date = time.time()
         if playlist_item["type"] == Playlist.TYPE_VIDEO:
             if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
                 # Someone deleted the item from the queue in between getting the item and starting it.
@@ -86,7 +85,7 @@ class Queue:
             exception_to_raise = Exception("Invalid playlist_item type: {}".format(playlist_item["type"]))
 
         self.__reenqueue_or_end_playlist_item(
-            playlist_item, playlist_item_start_date, force_end = (exception_to_raise is not None)
+            playlist_item, force_end = (exception_to_raise is not None)
         )
         if exception_to_raise is not None:
             raise exception_to_raise
@@ -96,40 +95,23 @@ class Queue:
     succession could therefore cause the playlist queue to become depleted without the videos even having had a
     chance to play.
 
-    Thus, when we are skipping a video that was skipped shortly after starting, we check if a game is the
-    next item in the queue. If so, we reenqueue the video so as not to deplete the queue when a lot of
-    games are being played.
-
-    A video is considered to have been skipped shortly after starting if all of the following conditions are
-    satisfied:
-    1) it was skipped before two minutes
-    2) it was skipped before the halfway mark
+    Thus, when we are skipping a video, we check if a game is the next item in the queue. If so, we reenqueue the
+    video so as not to deplete the queue when a lot of games are being played.
     """
-    def __reenqueue_or_end_playlist_item(self, current_playlist_item, current_playlist_item_start_date, force_end):
+    def __reenqueue_or_end_playlist_item(self, current_playlist_item, force_end):
         if force_end or current_playlist_item["type"] != Playlist.TYPE_VIDEO:
             pass
         else: # The current playlist item is a video
-            was_current_video_skipped_shortly_after_starting = False
-            duration_current_video_was_playing = time.time() - current_playlist_item_start_date
-            video_duration = Database.video_duration_to_unix_time(current_playlist_item['duration'])
-            if video_duration:
-                if duration_current_video_was_playing > 120:
-                    was_current_video_skipped_shortly_after_starting = False
-                elif duration_current_video_was_playing < (0.5 * video_duration):
-                    was_current_video_skipped_shortly_after_starting = True
-
-            if was_current_video_skipped_shortly_after_starting:
-                # Only hit the DB with these queries if we really have to
-                next_playlist_item = self.__playlist.get_next_playlist_item()
-                if next_playlist_item and next_playlist_item["type"] == Playlist.TYPE_GAME:
-                    # Verify that the current playlist item was actually skipped. Above, we were assuming that it was
-                    # based on the duration it had been playing. Need to reload it from the DB to get the latest state.
-                    current_playlist_item = self.__playlist.get_playlist_item_by_id(current_playlist_item['playlist_video_id'])
-                    if current_playlist_item['is_skip_requested']:
-                        self.__logger.debug("Re-enqueuing current video because it was skipped shortly after starting due " +
-                            "to a game")
-                        self.__playlist.reenqueue(current_playlist_item['playlist_video_id'])
-                        return
+            next_playlist_item = self.__playlist.get_next_playlist_item()
+            if next_playlist_item and next_playlist_item["type"] == Playlist.TYPE_GAME:
+                # Check if the current playlist item was actually skipped -- need to reload it from the DB to get the
+                # latest state.
+                current_playlist_item = self.__playlist.get_playlist_item_by_id(current_playlist_item['playlist_video_id'])
+                if current_playlist_item['is_skip_requested']:
+                    self.__logger.debug("Re-enqueuing current video because it was skipped due " +
+                        "to a game")
+                    self.__playlist.reenqueue(current_playlist_item['playlist_video_id'])
+                    return
 
         self.__playlist.end_video(current_playlist_item["playlist_video_id"])
 
