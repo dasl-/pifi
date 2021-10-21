@@ -230,15 +230,13 @@ class VideoProcessor:
         self.__do_post_cleanup(process_and_play_vid_proc)
 
     def __download_youtube_video(self):
-        video_info = self.__get_video_info()
-
         return (
             'yt-dlp ' +
             '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
-            '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            '--format ' + shlex.quote(self.__YOUTUBE_DL_FORMAT) + " " + # download the specified video quality / encoding
             '--retries infinite ' + # in case downloading has transient errors
-            shlex.quote(video_info['webpage_url']) # url to download
+            shlex.quote(self.__url) # url to download
         )
 
     def __populate_avg_color_frames(
@@ -345,7 +343,6 @@ class VideoProcessor:
         return process_and_play_vid_cmd
 
     def __get_youtube_dl_cmd(self):
-        video_info = self.__get_video_info()
         if self.__video_settings.log_level == VideoSettings.LOG_LEVEL_VERBOSE:
             log_level = ''
         elif self.__video_settings.log_level == VideoSettings.LOG_LEVEL_NORMAL:
@@ -357,11 +354,11 @@ class VideoProcessor:
             'yt-dlp ' +
             '--output - ' + # output to stdout
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
-            '--format ' + shlex.quote(video_info['format_id']) + " " + # download the specified video quality / encoding
+            '--format ' + shlex.quote(self.__YOUTUBE_DL_FORMAT) + " " + # download the specified video quality / encoding
             '--retries infinite ' + # in case downloading has transient errors
             log_level +
             log_opts +
-            shlex.quote(video_info['webpage_url']) # url to download
+            shlex.quote(self.__url) # url to download
         )
 
     def __get_ffmpeg_cmd(self):
@@ -402,14 +399,13 @@ class VideoProcessor:
         self.__logger.info("Calculating video fps...")
         video_path = ''
         if self.__is_video_already_downloaded:
-            video_path = self.__get_video_save_path()
+            video_path = shlex.quote(self.__get_video_save_path())
         else:
-            video_path = self.__get_video_info()['url']
+            video_path = f'<({self.__get_youtube_dl_cmd()} 2>/dev/null)'
 
-        # TODO: https://github.com/dasl-/pifi/issues/13
+        fps_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate {video_path}'
         fps_parts = (subprocess
-            .check_output(('ffprobe', '-v', '0', '-of', 'csv=p=0', '-select_streams', 'v:0', '-show_entries',
-                'stream=r_frame_rate', video_path), stderr=subprocess.STDOUT)
+            .check_output(fps_cmd, shell = True, executable = '/bin/bash')
             .decode("utf-8"))
         fps_parts = fps_parts.split('/')
         fps = None
