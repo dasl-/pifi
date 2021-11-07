@@ -1,7 +1,6 @@
 import React from 'react';
 import { CSSTransition } from 'react-transition-group';
 
-import Header from './header';
 import LoadWithVideo from 'component/util/load_with_video';
 import Search from 'component/search/search';
 import CurrentlyPlayingFooter from 'component/currently_playing/currently_playing_footer';
@@ -40,7 +39,6 @@ class Content extends React.Component {
         />
 
         <div className={this.state.playlist_fully_expanded ? 'lock content' : 'content'}>
-          <Header />
           <div className='h-100'>
             <div className="d-block d-md-none h-100">
               {/* Phone View */}
