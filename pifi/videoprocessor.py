@@ -332,7 +332,7 @@ class VideoProcessor:
             maybe_mv_saved_video_cmd = '&& mv ' + shlex.quote(temp_video_save_path) + ' ' + shlex.quote(video_save_path)
 
         process_and_play_vid_cmd = (
-            'set -o pipefail && ' +
+            'set -o pipefail && export SHELLOPTS && ' +
             vid_data_cmd + "tee " +
             maybe_play_audio_tee +
             ">(" + self.__get_ffmpeg_cmd() + " > " + ffmpeg_to_python_fifo_name + ") " +
@@ -373,6 +373,7 @@ class VideoProcessor:
 
         return (
             'ffmpeg ' +
+            '-xerror ' + # ensure ffmpeg exits non-zero when errors happen
             '-threads 1 ' + # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
