@@ -371,9 +371,10 @@ class VideoProcessor:
         if sys.stderr.isatty():
             log_opts = '-stats '
 
+        # Note: don't use ffmpeg's `-xerror` flag:
+        # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
         return (
             'ffmpeg ' +
-            '-xerror ' + # ensure ffmpeg exits non-zero when errors happen
             '-threads 1 ' + # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
