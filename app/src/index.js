@@ -26,7 +26,7 @@ function maybeSetEnvCookies() {
 
 maybeSetEnvCookies();
 
-if (process.env.REACT_APP_GOOGLE_API_KEY && process.env.REACT_APP_GOOGLE_API_CLIENT_ID) {
+if (process.env.REACT_APP_GOOGLE_API_KEY) {
   render(
     <App
       is_new_session={!utils.hasExistingSession()}
