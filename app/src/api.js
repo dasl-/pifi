@@ -1,34 +1,68 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
+import utils from 'utils';
+
 // By default, include the port i.e. 'pifi.club:666' in the api host to
 // support running the pifi on a custom port
-var api_host = window.location.host;
-if (process.env.NODE_ENV === 'development') {
-  // API url should not include the :3000 port that is present in the development server url
-  api_host = window.location.hostname;
+function getApiHost() {
+  var api_host = window.location.host;
+  if (process.env.REACT_APP_API_HOST !== undefined) {
+    api_host = process.env.REACT_APP_API_HOST;
+  } else {
+    if (process.env.NODE_ENV === 'development') {
+      if (window.location.hostname === 'localhost') {
+        // 'localhost' indicates we are probably running the npm development server on a laptop / desktop computer
+        // via `npm start --prefix app`
+        api_host = 'pifi.club'; // Default to this
+      } else {
+        // API url should not include the :3000 port that is present in the development server url
+        api_host = window.location.hostname;
+      }
+    }
+  }
+  return api_host;
 }
+
+function getGoogleApiKey() {
+  const env = utils.getCookie('env');
+  if (env === 'dev') {
+    if (process.env.REACT_APP_GOOGLE_API_KEY_DEV === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY_DEV environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY_DEV;
+  } else if (env === 'test') {
+    if (process.env.REACT_APP_GOOGLE_API_KEY_TEST === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY_TEST environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY_TEST;
+  } else {
+    if (process.env.REACT_APP_GOOGLE_API_KEY === undefined) {
+      console.error("REACT_APP_GOOGLE_API_KEY environment variable was not set!");
+    }
+    return process.env.REACT_APP_GOOGLE_API_KEY;
+  }
+}
+
 const client = axios.create({
-  baseURL: "//" + api_host + "/api",
+  baseURL: "//" + getApiHost() + "/api",
   json: true
 });
 
 //On load, called to load the auth2 library and API client library.
-gapi.load('client:auth2', initGoogleClient);
+gapi.load('client', initGoogleClient);
 
 // Initialize the API client library
 function initGoogleClient() {
   gapi.client.init({
+    apiKey: getGoogleApiKey(),
     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
-    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID
-  }).then(function () {
-    gapi.client.setApiKey(process.env.REACT_APP_GOOGLE_API_KEY);
   });
 }
 
 class APIClient {
   getQueue() {
-   return this.perform('get', '/queue');
+    return this.perform('get', '/queue');
   }
 
   // Passing the id of the video to skip ensures our skips are "atomic". That is, we can ensure we skip the

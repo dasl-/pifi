@@ -5,6 +5,7 @@ import json
 import ssl
 import traceback
 import urllib
+from urllib.parse import urljoin, urlparse
 import time
 from pifi.playlist import Playlist
 from pifi.logger import Logger
@@ -284,6 +285,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(resp.getvalue())
 
     def __serve_static_asset(self):
+        self.path = urlparse(self.path).path # get rid of query parameters e.g. `?foo=bar&baz=1`
         if self.path == '/':
             self.path = '/index.html'
 
