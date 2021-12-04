@@ -1,8 +1,6 @@
 import axios from 'axios';
 import gapi from 'gapi-client';
 
-import utils from 'utils';
-
 // By default, include the port i.e. 'pifi.club:666' in the api host to
 // support running the pifi on a custom port
 function getApiHost() {
