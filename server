@@ -181,6 +181,12 @@ class PifiAPI():
             'success': True
         }
 
+    def get_youtube_api_key(self):
+        return {
+            SettingsDb.SETTING_YOUTUBE_API_KEY: self.__settings_db.get(SettingsDb.SETTING_YOUTUBE_API_KEY),
+            'success': True,
+        }
+
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     __root_dir = None
@@ -236,6 +242,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_high_scores(get_data)
         elif parsed_path.path == 'snake':
             response = self.__api.get_snake_data()
+        elif parsed_path.path == 'youtube_api_key':
+            response = self.__api.get_youtube_api_key()
         else:
             self.__do_404()
             return

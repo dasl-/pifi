@@ -24,26 +24,6 @@ function getApiHost() {
   return api_host;
 }
 
-function getGoogleApiKey() {
-  const env = utils.getCookie('env');
-  if (env === 'dev') {
-    if (process.env.REACT_APP_GOOGLE_API_KEY_DEV === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY_DEV environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY_DEV;
-  } else if (env === 'test') {
-    if (process.env.REACT_APP_GOOGLE_API_KEY_TEST === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY_TEST environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY_TEST;
-  } else {
-    if (process.env.REACT_APP_GOOGLE_API_KEY === undefined) {
-      console.error("REACT_APP_GOOGLE_API_KEY environment variable was not set!");
-    }
-    return process.env.REACT_APP_GOOGLE_API_KEY;
-  }
-}
-
 const client = axios.create({
   baseURL: "//" + getApiHost() + "/api",
   json: true
@@ -54,9 +34,14 @@ gapi.load('client', initGoogleClient);
 
 // Initialize the API client library
 function initGoogleClient() {
-  gapi.client.init({
-    apiKey: getGoogleApiKey(),
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+  const api_client = new APIClient();
+  api_client.getYoutubeApiKey().then((data) => {
+    if (data.success) {
+      gapi.client.init({
+        apiKey: data.youtube_api_key,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+      });
+    }
   });
 }
 
@@ -111,23 +96,46 @@ class APIClient {
       "maxResults": 25,
       "q": query
     })
-    .then(function(response) {
-      var videos = response.result.items;
-      var video_ids = '';
-      for (var i in videos) {
-        video_ids += videos[i].id.videoId + ",";
-      }
+    .then(
+      function(response) {
+        var videos = response.result.items;
+        var video_ids = '';
+        for (var i in videos) {
+          video_ids += videos[i].id.videoId + ",";
+        }
 
-      return gapi.client.youtube.videos.list({
-        "part": "snippet,contentDetails,statistics",
-        "id": video_ids
-      })
-      .then(function(response) {
-        return response.result.items;
+        return gapi.client.youtube.videos.list({
+          "part": "snippet,contentDetails,statistics",
+          "id": video_ids
+        })
+        .then(
+          function(response) {
+            return response.result.items;
+          },
+          function(err) {
+            console.error("Execute error", err);
+          }
+        );
       },
-      function(err) { console.error("Execute error", err); });
-    },
-    function(err) { console.error("Execute error", err); });
+      function(err) {
+        console.error("Execute error", err);
+        if (
+          "result" in err &&
+          "error" in err["result"] &&
+          "code" in err["result"]["error"] &&
+          err["result"]["error"]["code"] === 403
+        ) {
+          // youtube api quota exceeded. Reload the page to see if the API key we are supposed to use changed
+          // on the server side
+          // See: https://github.com/dasl-/piwall2/blob/main/docs/youtube_api_keys.adoc#quota
+          window.location.reload();
+        }
+      }
+    );
+  }
+
+  getYoutubeApiKey() {
+    return this.perform('get', '/youtube_api_key');
   }
 
   async perform (method, resource, data) {
