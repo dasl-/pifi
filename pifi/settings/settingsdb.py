@@ -33,7 +33,7 @@ class SettingsDb:
                 "UPDATE SET value=excluded.value, update_date=excluded.update_date"),
             [key, value]
         )
-        return self.__cursor.lastrowid
+        return self.__cursor.rowcount == 1
 
     def get(self, key, default = None):
         self.__cursor.execute(
