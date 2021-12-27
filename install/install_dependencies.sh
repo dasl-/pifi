@@ -9,10 +9,19 @@ if ! which npm >/dev/null ; then
     is_restart_required=true
 fi
 
+# Allow the command `sudo apt build-dep python3-pygame` to run.
+# https://stackoverflow.com/questions/47773715/error-you-must-put-some-source-uris-in-your-sources-list
+sudo sed -i 's/#\s*deb-src/deb-src/' /etc/apt/sources.list
+
 sudo apt update
+
 # libsdl2-mixer: needed for pygame
+#   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
+# libsdl2-dev: needed for pygame
+#   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
 # parallel: needed for update_youtube-dl.sh script
-sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 parallel
+sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 libsdl2-dev parallel
+sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
 sudo apt -y full-upgrade
 
 sudo pip3 install --upgrade youtube_dl yt-dlp numpy apa102-pi pytz websockets simpleaudio pygame
