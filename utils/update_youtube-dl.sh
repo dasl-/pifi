@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script that is run via cron to update youtube-dl.
 # Youtube releases updates every once in a while that breaks youtube-dl. If we don't constantly update

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # creates the websocket server service file
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 cat <<-EOF | sudo tee /etc/systemd/system/pifi_websocket_server.service >/dev/null
