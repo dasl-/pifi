@@ -61,12 +61,12 @@ Note: after this repo has been cloned, wifi may be set up via link:utils/wifi_co
 1. `cd pifi`
 
 ### Install
-1. `./install/install_dependencies.sh`
-1. `./install/install.sh`
-    1. This may result in an https://gist.github.com/dasl-/25a6db0322f7b61ba0b3b7f3436fb975[out of memory error]. If that happens, simply re-run the install script. It should succeed the second time.
-1. optionally create a config file: https://gist.github.com/dasl-/2081e697ab1c602a7b5dc02f100dd0a8[`config.json`]
-1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
-1. Check for https://github.com/dasl-/pifi/blob/master/docs/issues_weve_seen_before.adoc#cpu-throttling[CPU throttling]
+. `./install/install_dependencies.sh`
+. `./install/install.sh`
+    .. This may result in an https://gist.github.com/dasl-/25a6db0322f7b61ba0b3b7f3436fb975[out of memory error]. If that happens, simply re-run the install script. It should succeed the second time.
+. optionally create a config file: https://gist.github.com/dasl-/2081e697ab1c602a7b5dc02f100dd0a8[`config.json`]
+. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
+. Check for https://github.com/dasl-/pifi/blob/master/docs/issues_weve_seen_before.adoc#cpu-throttling[CPU throttling]
 
 ### Vanity domain name (optional):
 1. After running https://github.com/dasl-/pifi/blob/f4b16dfa625211d5aa9666b420e60834bb05e93e/install/install.sh#L72-L78[`./install/install.sh`], you can SSH onto the pi or hit the pifi webpage via `pifi.local` (i.e.: `ssh pi@pifi.local` and http://pifi.local ). Note: using http://pifi.local will not work on https://partnerissuetracker.corp.google.com/issues/140786115[android devices].
