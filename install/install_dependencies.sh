@@ -20,7 +20,8 @@ sudo apt update
 # libsdl2-dev: needed for pygame
 #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
 # parallel: needed for update_youtube-dl.sh script
-sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 libsdl2-dev parallel
+# libatlas-base-dev: needed for numpy
+sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer npm libsdl2-mixer-2.0-0 libsdl2-dev parallel libatlas-base-dev
 sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
 sudo apt -y full-upgrade
 
