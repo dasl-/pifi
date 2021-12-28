@@ -63,6 +63,7 @@ Note: after this repo has been cloned, wifi may be set up via link:utils/wifi_co
 ### Install
 1. `./install/install_dependencies.sh`
 1. `./install/install.sh`
+    1. This may result in an https://gist.github.com/dasl-/25a6db0322f7b61ba0b3b7f3436fb975[out of memory error]. If that happens, simply re-run the install script. It should succeed the second time.
 1. optionally create a config file: https://gist.github.com/dasl-/2081e697ab1c602a7b5dc02f100dd0a8[`config.json`]
 1. optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 1. Check for https://github.com/dasl-/pifi/blob/master/docs/issues_weve_seen_before.adoc#cpu-throttling[CPU throttling]
