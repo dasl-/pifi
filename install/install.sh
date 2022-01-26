@@ -91,14 +91,21 @@ fi
 # Maybe wifi power management is cause of occasional network issues?
 #   See: https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11#2022-01-24
 disableWifiPowerManagement(){
-    info "Disabling wifi power management..."
+    if ! grep -q '^iwconfig wlan0 power off' /etc/rc.local ; then
+        info "Disabling wifi power management..."
 
-    # disable it
-    sudo iwconfig wlan0 power off
+        # disable it
+        sudo iwconfig wlan0 power off
 
-    # ensure it stays disabled after reboots
-    echo "iwconfig wlan0 power off" | sudo tee -a /etc/rc.local >/dev/null 2>&1
-    echo "exit 0" | sudo tee -a /etc/rc.local >/dev/null 2>&1
+        # ensure it stays disabled after reboots
+        if [ "$(grep --count '^exit 0$' /etc/rc.local)" -ne 1 ] ; then
+           die "Unexpected contents in /etc/rc.local"
+        fi
+        sudo sed /etc/rc.local -i -e "s/^exit 0$/iwconfig wlan0 power off/"
+        echo "exit 0" | sudo tee -a /etc/rc.local >/dev/null 2>&1
+    else
+        info "Wifi power management already disabled"
+    fi
 }
 
 info() {
