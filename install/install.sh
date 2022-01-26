@@ -33,6 +33,7 @@ done
 set -x
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+is_restart_required=false
 
 # generate loading screens
 if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
