@@ -85,6 +85,33 @@ if [[ $(cat /etc/hostname) != pifi ]]; then
   is_restart_required=true
 fi
 
+# https://github.com/raspberrypi/linux/issues/2522#issuecomment-692559920
+# https://forums.raspberrypi.com/viewtopic.php?p=1764517#p1764517
+# Maybe wifi power management is cause of occasional network issues?
+#   See: https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11#2022-01-24
+disableWifiPowerManagement(){
+    info "Disabling wifi power management..."
+
+    # disable it
+    sudo iwconfig wlan0 power off
+
+    # ensure it stays disabled after reboots
+    echo "iwconfig wlan0 power off" | sudo tee -a /etc/rc.local >/dev/null 2>&1
+    echo "exit 0" | sudo tee -a /etc/rc.local >/dev/null 2>&1
+}
+
+info() {
+    echo -e "\x1b[32m$*\x1b[0m" # green stdout
+}
+
+die() {
+    echo
+    echo -e "\x1b[31m$*\x1b[0m" >&2 # red stderr
+    exit 1
+}
+
+disableWifiPowerManagement
+
 if [ "$is_restart_required" = true ] ; then
     echo "Restarting..."
     sudo shutdown -r now
