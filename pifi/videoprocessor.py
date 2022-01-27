@@ -286,11 +286,16 @@ class VideoProcessor:
                 cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
 
         if cur_frame == last_frame:
-            # Don't need to play a frame since we're still supposed to be playing the last frame we played
-
-            # Sleeping here decreases the process's CPU usage from ~92% to ~40%. Pi temperatures decrease
-            # as a result.
-            time.sleep(frame_length / 2)
+            # We don't need to play a frame since we're still supposed to be playing the last frame we played
+            if (len(avg_color_frames) * frame_length) > 5:
+                # Sleeping here decreases the process's CPU usage from ~92% to ~40%. Pi temperatures decrease
+                # as a result. But only sleep if we have at least a 5 second buffer of frames processed.
+                # Otherwise, we risk causing video processing to lag and running out of frames in the
+                # avg_color_frames buffer.
+                #
+                # For a 60 FPS video, each frame is ~16ms long. In this scenario, we'd need at least
+                # 312 frames in the avg_color_frames buffer to be able to sleep here.
+                time.sleep(frame_length / 2)
             return [False, cur_frame, vid_processing_lag_counter]
 
         # Play the new frame
