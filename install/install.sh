@@ -2,89 +2,138 @@
 
 set -euo pipefail
 
-usage() {
-  local exit_code=$1
-  echo "usage: $0 -w <display width> -l <display height>"
-  echo "    -h                   display this help message"
-  echo "    -w <display width>   Num of LEDs in the array horizontally. Defaults to 28."
-  echo "    -l <display height>  Num of LEDs in the array vertically. Defaults to 18."
-  exit "$exit_code"
-}
-
-# get opts
 display_width=28
 display_height=18
-while getopts ":hw:l:" opt; do
-  case $opt in
-    h) usage 0 ;;
-    w) display_width=$OPTARG ;;
-    l) display_height=$OPTARG ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      usage 1
-      ;;
-    :)
-      echo "Option -$OPTARG requires an argument." >&2
-      usage 1
-      ;;
-  esac
-done
 
-set -x
+CONFIG=/boot/config.txt
+old_config=$(cat $CONFIG)
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 is_restart_required=false
 
-# generate loading screens
-if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
-    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
-fi
-if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
-    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --display-width $display_width --display-height $display_height --output-file "$BASE_DIR"/loading_screen --color-mode color
-fi
+usage() {
+    local exit_code=$1
+    echo "usage: $0 -w <display width> -l <display height>"
+    echo "    -h                   display this help message"
+    echo "    -w <display width>   Num of LEDs in the array horizontally. Defaults to 28."
+    echo "    -l <display height>  Num of LEDs in the array vertically. Defaults to 18."
+    exit "$exit_code"
+}
 
-# set timezone
-sudo timedatectl set-timezone UTC
+main(){
+    trap 'fail $? $LINENO' ERR
 
-# setup logging: syslog
-sudo mkdir -p /var/log/pifi
-sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/websocket_server.log /var/log/pifi/update_youtube-dl.log
-sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
-sudo systemctl restart rsyslog
+    parseOpts "$@"
+    generateLoadingScreens
+    setTimezone
+    setupLogging
+    setupSystemdServices
+    setupYoutubeDlUpdateCron
+    updateDbSchema
+    buildWebApp
+    setHostname
+    disableWifiPowerManagement
+    setRpi3TempSoftLimit
 
-# setup logging: logrotate
-sudo cp "$BASE_DIR"/install/pifi_logrotate /etc/logrotate.d
-sudo chown root:root /etc/logrotate.d/pifi_logrotate
-sudo chmod 644 /etc/logrotate.d/pifi_logrotate
+    new_config=$(cat $CONFIG)
+    config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
+    if [[ $is_restart_required = true || -n "$config_diff" ]] ; then
+        info "Restart is required!"
+        info "Config diff:\n$config_diff"
+        info "Restarting..."
+        sudo shutdown -r now
+    fi
+}
 
-# setup systemd services
-sudo "$BASE_DIR/install/pifi_queue_service.sh"
-sudo "$BASE_DIR/install/pifi_server_service.sh"
-sudo "$BASE_DIR/install/pifi_websocket_server_service.sh"
-sudo chown root:root /etc/systemd/system/pifi_*.service
-sudo chmod 644 /etc/systemd/system/pifi_*.service
-sudo systemctl enable /etc/systemd/system/pifi_*.service
-sudo systemctl daemon-reload
-sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
+parseOpts(){
+    while getopts ":hw:l:" opt; do
+        case $opt in
+            h) usage 0 ;;
+            w) display_width=$OPTARG ;;
+            l) display_height=$OPTARG ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                usage 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                usage 1
+                ;;
+        esac
+    done
+}
 
-# setup youtube-dl update cron
-sudo "$BASE_DIR/install/pifi_cron.sh"
-sudo chown root:root /etc/cron.d/pifi
-sudo chmod 644 /etc/cron.d/pifi
+generateLoadingScreens(){
+    info "Generating loading screens"
+    if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
+        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --display-width "$display_width" --display-height "$display_height" --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
+    fi
+    if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
+        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --display-width "$display_width" --display-height "$display_height" --output-file "$BASE_DIR"/loading_screen --color-mode color
+    fi
+}
 
-# Update database schema (if necessary)
-sudo "$BASE_DIR"/utils/make_db
+setTimezone(){
+    info "Setting timezone"
+    sudo timedatectl set-timezone UTC
+}
 
-# build the web app
-npm run build --prefix "$BASE_DIR"/app
+setupLogging(){
+    info "Setting up logging"
+
+    # setup logging: syslog
+    sudo mkdir -p /var/log/pifi
+    sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/websocket_server.log /var/log/pifi/update_youtube-dl.log
+    sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
+    sudo systemctl restart rsyslog
+
+    # setup logging: logrotate
+    sudo cp "$BASE_DIR"/install/pifi_logrotate /etc/logrotate.d
+    sudo chown root:root /etc/logrotate.d/pifi_logrotate
+    sudo chmod 644 /etc/logrotate.d/pifi_logrotate
+}
+
+setupSystemdServices(){
+    info "Setting up systemd services"
+
+    sudo "$BASE_DIR/install/pifi_queue_service.sh"
+    sudo "$BASE_DIR/install/pifi_server_service.sh"
+    sudo "$BASE_DIR/install/pifi_websocket_server_service.sh"
+    sudo chown root:root /etc/systemd/system/pifi_*.service
+    sudo chmod 644 /etc/systemd/system/pifi_*.service
+    sudo systemctl enable /etc/systemd/system/pifi_*.service
+    sudo systemctl daemon-reload
+    sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
+}
+
+
+setupYoutubeDlUpdateCron(){
+    # setup youtube-dl update cron
+    sudo "$BASE_DIR/install/pifi_cron.sh"
+    sudo chown root:root /etc/cron.d/pifi
+    sudo chmod 644 /etc/cron.d/pifi
+}
+
+updateDbSchema(){
+    info "Updating DB schema (if necessary)..."
+    sudo "$BASE_DIR"/utils/make_db
+}
+
+buildWebApp(){
+    info "Building web app"
+    npm run build --prefix "$BASE_DIR"/app
+}
 
 # Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
-# See: https://www.raspberrypi.org/documentation/remote-access/ip-address.md "Resolving raspberrypi.local with mDNS"
-if [[ $(cat /etc/hostname) != pifi ]]; then
-  echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
-  sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
-  is_restart_required=true
-fi
+# See: https://www.raspberrypi.com/documentation/computers/remote-access.html#resolving-raspberrypi-local-with-mdns
+setHostname(){
+    info "Setting hostname"
+    if [[ $(cat /etc/hostname) != pifi ]]; then
+        echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
+        sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
+        is_restart_required=true
+    fi
+}
 
 # https://github.com/raspberrypi/linux/issues/2522#issuecomment-692559920
 # https://forums.raspberrypi.com/viewtopic.php?p=1764517#p1764517
@@ -108,6 +157,40 @@ disableWifiPowerManagement(){
     fi
 }
 
+# Don't throttle the CPU speed earlier than we need to. By default, some throttling kicks in at
+# 60 degrees. But we might never exceed 70 degrees under normal operation, so let's not needlessly
+# throttle earlier than that.
+#
+# See:
+# https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
+# https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#frequency-management-and-thermal-control
+# https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature
+# https://www.raspberrypi.com/documentation/computers/os.html#get_throttled
+setRpi3TempSoftLimit(){
+    # Check if the stanza already exists
+    if grep -q "^temp_soft_limit=70" $CONFIG ; then
+        info "Config key temp_soft_limit was already set to 70 degrees"
+        return
+    fi
+
+    info "Setting temp_soft_limit to 70 degrees"
+
+    # comment out existing temp_soft_limit=.* lines in config
+    sudo sed $CONFIG -i -e "s/^\(temp_soft_limit=.*\)/#\1/"
+
+    # https://www.raspberrypi.com/documentation/computers/config_txt.html#model-filters
+    # temp_soft_limit only applies for pi3+ models.
+    echo "[pi3+]" | sudo tee -a $CONFIG >/dev/null
+    echo "temp_soft_limit=70" | sudo tee -a $CONFIG >/dev/null
+    echo "[all]" | sudo tee -a $CONFIG >/dev/null
+}
+
+fail(){
+    local exit_code=$1
+    local line_no=$2
+    die "Error at line number: $line_no with exit code: $exit_code"
+}
+
 info() {
     echo -e "\x1b[32m$*\x1b[0m" # green stdout
 }
@@ -118,9 +201,4 @@ die() {
     exit 1
 }
 
-disableWifiPowerManagement
-
-if [ "$is_restart_required" = true ] ; then
-    echo "Restarting..."
-    sudo shutdown -r now
-fi
+main "$@"
