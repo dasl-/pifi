@@ -287,11 +287,15 @@ class VideoProcessor:
 
         if cur_frame == last_frame:
             # Don't need to play a frame since we're still supposed to be playing the last frame we played
+
+            # Sleeping here decreases the process's CPU usage from ~92% to ~40%. Pi temperatures decrease
+            # as a result.
+            time.sleep(frame_length / 2)
             return [False, cur_frame, vid_processing_lag_counter]
 
         # Play the new frame
         num_skipped_frames = 0
-        if last_frame == None:
+        if last_frame is None:
             if cur_frame != 0:
                 num_skipped_frames = cur_frame
         elif cur_frame - last_frame > 1:
