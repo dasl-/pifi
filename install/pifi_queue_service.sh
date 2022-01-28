@@ -8,6 +8,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+Environment=HOME=/root
 # Command to execute when the service is started
 ExecStart=$BASE_DIR/queue
 Restart=on-failure
