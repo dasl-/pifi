@@ -325,7 +325,7 @@ class VideoProcessor:
                 # Set HOME variable to prevent these logs when run via sudo:
                 #   mbuffer: warning: HOME environment variable not set - unable to find defaults file
                 self.__get_youtube_dl_cmd() + ' | ' +
-                'HOME=/home/pi mbuffer -q -Q -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
+                'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
             )
 
         maybe_play_audio_tee = ''
