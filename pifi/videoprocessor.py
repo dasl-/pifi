@@ -40,7 +40,6 @@ class VideoProcessor:
     __DATA_DIRECTORY = 'data'
 
     __YOUTUBE_DL_FORMAT = 'worst[ext=mp4]/worst' # mp4 scales quicker than webm in ffmpeg scaling
-    __YOUTUBE_DL_BUFFER_SIZE_BYTES = 1024 * 1024 * 10 # 10 megabytes
     __DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
@@ -279,19 +278,21 @@ class VideoProcessor:
                 return [True, cur_frame, vid_processing_lag_counter]
             else:
                 vid_processing_lag_counter += 1
-                if vid_processing_lag_counter % 100000 == 0 or vid_processing_lag_counter == 1:
+                if vid_processing_lag_counter % 1000 == 0 or vid_processing_lag_counter == 1:
                     self.__logger.error(
-                        "Video processing is lagging. Counter: {}.".format(vid_processing_lag_counter)
+                        f"Video processing is lagging. Counter: {vid_processing_lag_counter}. " +
+                        f"Frames available: {avg_color_frames.unread_length()}."
                     )
                 cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
 
         if cur_frame == last_frame:
             # We don't need to play a frame since we're still supposed to be playing the last frame we played
-            if (len(avg_color_frames) * frame_length) > 5:
+            if (avg_color_frames.unread_length() * frame_length) > 5 or is_ffmpeg_done_outputting:
                 # Sleeping here decreases the process's CPU usage from ~92% to ~40%. Pi temperatures decrease
                 # as a result. But only sleep if we have at least a 5 second buffer of frames processed.
                 # Otherwise, we risk causing video processing to lag and running out of frames in the
-                # avg_color_frames buffer.
+                # avg_color_frames buffer. Or, if ffmpeg is done outputting we can sleep here, because
+                # video processing is done.
                 #
                 # For a 60 FPS video, each frame is ~16ms long. In this scenario, we'd need at least
                 # 312 frames in the avg_color_frames buffer to be able to sleep here.
@@ -320,17 +321,26 @@ class VideoProcessor:
             vid_data_cmd = '< {} '.format(shlex.quote(video_save_path))
         else:
             vid_data_cmd = (
-                # Add a buffer to give some slack in the case of network blips downloading the video.
-                # Not necessary in my testing, but then again I have a good connection...
-                # Set HOME variable to prevent these logs when run via sudo:
-                #   mbuffer: warning: HOME environment variable not set - unable to find defaults file
+                # Add mbuffer to give some slack in the case of network blips downloading the video.
                 self.__get_youtube_dl_cmd() + ' | ' +
-                'HOME=/home/pi mbuffer -q -l /tmp/mbuffer.out -m ' + shlex.quote(str(self.__YOUTUBE_DL_BUFFER_SIZE_BYTES) + 'b') + ' | '
+                self.__get_mbuffer_cmd(1024 * 1024 * 10, '/tmp/mbuffer-ytdl.out') + ' | '
             )
 
         maybe_play_audio_tee = ''
         if self.__video_settings.should_play_audio:
-            maybe_play_audio_tee = ">(" + self.__get_ffplay_cmd() + ") "
+            # Add mbuffer because otherwise the ffplay command blocks the whole pipeline. Because
+            # audio can only play in real-time, this would block ffmpeg from processing the frames
+            # as fast as it otherwise could. This prevents us from building up a big enough buffer
+            # in the avg_color_frames circular buffer to withstand blips in performance. This
+            # ensures the circular buffer will generally get filled, rather than lingering around
+            # only ~70 frames full. Makes it less likely that we will fall behind in video
+            # processing.
+            maybe_play_audio_tee = (">(" +
+                self.__get_mbuffer_cmd(1024 * 1024 * 10, '/tmp/mbuffer-ffplay.out') + ' | ' +
+                self.__get_ffplay_cmd() +
+                ") ")
+
+        ffmpeg_tee = f'>( {self.__get_ffmpeg_cmd()} > {ffmpeg_to_python_fifo_name}) '
 
         maybe_save_video_tee = ''
         maybe_mv_saved_video_cmd = ''
@@ -344,7 +354,7 @@ class VideoProcessor:
             'set -o pipefail && export SHELLOPTS && ' +
             vid_data_cmd + "tee " +
             maybe_play_audio_tee +
-            ">(" + self.__get_ffmpeg_cmd() + " > " + ffmpeg_to_python_fifo_name + ") " +
+            ffmpeg_tee +
             maybe_save_video_tee +
             "> /dev/null " +
             maybe_mv_saved_video_cmd
@@ -404,6 +414,12 @@ class VideoProcessor:
             "-i pipe:0 " + # play input from stdin
             "-v quiet" # supress verbose ffplay output
         )
+
+    def __get_mbuffer_cmd(self, buffer_size_bytes, log_file = None):
+        log_file_clause = ' -Q '
+        if log_file:
+            log_file_clause = f' -l {log_file} '
+        return f'mbuffer -q {log_file_clause} -m ' + shlex.quote(str(buffer_size_bytes)) + 'b'
 
     # Fps is available in self.__video_info metadata obtained via youtube-dl, but it is less accurate than using ffprobe.
     def __calculate_fps(self):

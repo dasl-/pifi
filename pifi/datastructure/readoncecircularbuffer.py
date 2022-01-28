@@ -6,19 +6,13 @@
 # You can only access the items once; this makes room for more values.
 class ReadOnceCircularBuffer():
 
-    # remove items from start
-    __start = None
-
-    # number of items that have been added over this object's lifetime
-    __len = 0
-
-    __max_gotten_index = -1
-
-    __capacity = None
-    __data = []
-
     def __init__(self, capacity):
+        # This represents the index of the first unread slot
+        # remove items from start
+        # None if the buffer is empty. Else, an integer in [0, __capacity)
         self.__start = None
+
+        # number of items that have been added over this object's lifetime
         self.__len = 0
         self.__max_gotten_index = -1
         self.__capacity = capacity
@@ -36,10 +30,21 @@ class ReadOnceCircularBuffer():
         else:
             self.__data.append(value)
 
-        if self.__start == None:
+        if self.__start is None:
             self.__start = len(self) % self.__capacity
 
         self.__len += 1
+
+    # number of unread items in the buffer.
+    # This should return an integer in the range: [0, __capacity]
+    def unread_length(self):
+        if self.__start is None:
+            return 0
+        first_empty_slot_idx = len(self) % self.__capacity
+        if first_empty_slot_idx > self.__start:
+            return first_empty_slot_idx - self.__start
+        else:
+            return self.__capacity - self.__start + first_empty_slot_idx
 
     def __getitem__(self, index):
         if index >= len(self) or index < 0:
@@ -58,6 +63,7 @@ class ReadOnceCircularBuffer():
             self.__max_gotten_index = index
         return item
 
+    # number of items that have been added over this object's lifetime
     def __len__(self):
         return self.__len
 
