@@ -287,16 +287,6 @@ class VideoProcessor:
 
         if cur_frame == last_frame:
             # We don't need to play a frame since we're still supposed to be playing the last frame we played
-            if (avg_color_frames.unread_length() * frame_length) > 5 or is_ffmpeg_done_outputting:
-                # Sleeping here decreases the process's CPU usage from ~92% to ~40%. Pi temperatures decrease
-                # as a result. But only sleep if we have at least a 5 second buffer of frames processed.
-                # Otherwise, we risk causing video processing to lag and running out of frames in the
-                # avg_color_frames buffer. Or, if ffmpeg is done outputting we can sleep here, because
-                # video processing is done.
-                #
-                # For a 60 FPS video, each frame is ~16ms long. In this scenario, we'd need at least
-                # 312 frames in the avg_color_frames buffer to be able to sleep here.
-                time.sleep(frame_length / 2)
             return [False, cur_frame, vid_processing_lag_counter]
 
         # Play the new frame
