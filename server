@@ -5,7 +5,7 @@ import json
 import ssl
 import traceback
 import urllib
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 import time
 from pifi.playlist import Playlist
 from pifi.logger import Logger
@@ -19,10 +19,6 @@ from pifi.settings.settingsdb import SettingsDb
 from pifi.database import Database
 
 class PifiAPI():
-    __playlist = None
-    __vol_controller = None
-    __settings_db = None
-    __logger = None
 
     def __init__(self):
         self.__playlist = Playlist()
@@ -189,10 +185,6 @@ class PifiAPI():
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
-    __root_dir = None
-    __api = None
-    __logger = None
-
     def __init__(self, request, client_address, server):
         self.__root_dir = DirectoryUtils().root_dir + "/app/build"
         self.__api = PifiAPI()
@@ -342,8 +334,6 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
 class PifiServer:
 
-    __secure = False
-    __server = None
     __config = Config()
 
     def __init__(self):
@@ -360,6 +350,7 @@ class PifiServer:
 
     def serve_forever(self):
         self.__server.serve_forever()
+
 
 server = PifiServer()
 server.serve_forever()
