@@ -33,7 +33,6 @@ main(){
     buildWebApp
     setHostname
     disableWifiPowerManagement
-    setRpi3TempSoftLimit
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
