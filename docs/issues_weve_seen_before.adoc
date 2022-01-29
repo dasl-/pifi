@@ -16,7 +16,15 @@ vcgencmd measure_temp && vcgencmd get_throttled && time ffmpeg -threads 1 -i "/h
 
 If all is going well, ffmpeg should convert it in ~6x speed. If you're getting throttled, it might only run at ~3x speed.
 
-If temperature is > 80 C, it might be getting https://www.techrepublic.com/article/raspberry-pi-overheating-heres-how-to-stop-it-says-microsoft/[throttled]. See also the https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature[official docs on temperature]. Install a heatsink or fan.
+If temperature is > 80 C, it might be getting https://www.techrepublic.com/article/raspberry-pi-overheating-heres-how-to-stop-it-says-microsoft/[throttled]. The pi3 has soft throttling that starts occurring at 60 C. The soft throttling is fine -- it doesn't appear to throttle enough to affect normal operation. Video playback etc is fine. Reaching 80 C would likely adversely affect operations though, as the throttling becomes more aggressive at this temperature.
+
+Docs:
+* https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
+* https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#frequency-management-and-thermal-control
+* https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature
+* https://www.raspberrypi.com/documentation/computers/os.html#get_throttled
+
+Install a heatsink or fan.
 
 You can also interpret the `vcgencmd get_throttled` as shown https://gist.github.com/dasl-/f875535b2b71bcab0f1215a1b39b52cf[here] and https://www.raspberrypi.org/forums/viewtopic.php?t=240215[here] and https://www.raspberrypi.com/documentation/computers/os.html#get_throttled[here in the official docs].
 

@@ -157,34 +157,6 @@ disableWifiPowerManagement(){
     fi
 }
 
-# Don't throttle the CPU speed earlier than we need to. By default, some throttling kicks in at
-# 60 degrees. But we might never exceed 70 degrees under normal operation, so let's not needlessly
-# throttle earlier than that.
-#
-# See:
-# https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
-# https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#frequency-management-and-thermal-control
-# https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature
-# https://www.raspberrypi.com/documentation/computers/os.html#get_throttled
-setRpi3TempSoftLimit(){
-    # Check if the stanza already exists
-    if grep -q "^temp_soft_limit=70" $CONFIG ; then
-        info "Config key temp_soft_limit was already set to 70 degrees"
-        return
-    fi
-
-    info "Setting temp_soft_limit to 70 degrees"
-
-    # comment out existing temp_soft_limit=.* lines in config
-    sudo sed $CONFIG -i -e "s/^\(temp_soft_limit=.*\)/#\1/"
-
-    # https://www.raspberrypi.com/documentation/computers/config_txt.html#model-filters
-    # temp_soft_limit only applies for pi3+ models.
-    echo "[pi3+]" | sudo tee -a $CONFIG >/dev/null
-    echo "temp_soft_limit=70" | sudo tee -a $CONFIG >/dev/null
-    echo "[all]" | sudo tee -a $CONFIG >/dev/null
-}
-
 fail(){
     local exit_code=$1
     local line_no=$2
