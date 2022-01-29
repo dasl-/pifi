@@ -331,6 +331,13 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         self.__logger.info("%s - - %s" % (self.client_address[0], format%args))
 
+class PifiThreadingHTTPServer(ThreadingHTTPServer):
+
+    # Override: https://github.com/python/cpython/blob/18cb2ef46c9998480f7182048435bc58265c88f2/Lib/socketserver.py#L421-L443
+    # See: https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer.request_queue_size
+    # This prevents messages we might see in `dmesg` like:
+    #   [Sat Jan 29 00:44:36 2022] TCP: request_sock_TCP: Possible SYN flooding on port 80. Sending cookies.  Check SNMP counters.
+    request_queue_size = 128
 
 class PifiServer:
 
@@ -340,9 +347,9 @@ class PifiServer:
         self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:
-            self.__server = ThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
+            self.__server = PifiThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
         else:
-            self.__server = ThreadingHTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
+            self.__server = PifiThreadingHTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
             self.__server.socket = ssl.wrap_socket(self.__server.socket,
                                                    keyfile=self.__config.get_server_config('keyfile', ""),
                                                    certfile=self.__config.get_server_config('certfile', ""),
