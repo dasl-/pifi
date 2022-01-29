@@ -41,6 +41,9 @@ A raspberry pi was rebooting itself randomly. We would see this rebooting happen
 
 After replacing the SD card, the pi would no longer randomly reboot itself. See here for recommended raspberry pi SD cards: https://www.jeffgeerling.com/blog/2019/raspberry-pi-microsd-card-performance-comparison-2019
 
+## Power supply
+Originally, we tried powering both the pi and the LEDs from the same power supply. This mostly worked, but occasionally the pi would randomly reboot itself. This seemed to happen more when the pi was under load (requiring more current), or when the LEDs were playing bright white colors (requiring more current). After switching to powering the pi and the LEDs separately -- the pi with a USB adapter, the pi's random rebooting problems seem to be solved.
+
 ## Youtube API 403 errors
 https://stackoverflow.com/questions/40355794/access-not-configured-youtube-data-api-has-not-been-used-in-project-60894180825
 
