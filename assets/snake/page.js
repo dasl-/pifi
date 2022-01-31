@@ -201,9 +201,11 @@ var page = (() => {
                 high_scores.forEach((high_score, index) => {
                     //add leading zeros to 1 and 2 digit scores
                     var score = high_score.score.toString().padStart(3, '0');
+                    var num_dots = 12 - (score.length - 3);
+                    var dots = '.'.repeat(num_dots);
                     rank = index + 1;
                     $("#leaderrow").append("<li><span class='leaderinitial rank-" + rank + "'></span>" +
-                        "<div class='scorespacer'>&nbsp;............</div>" +
+                        "<div class='scorespacer'>&nbsp;" + dots + "</div>" +
                         "<span class='leaderscore rank-" + rank + "'></span></li>");
                     $("#leaderrow .leaderinitial.rank-" + rank).text(high_score.initials);
                     $("#leaderrow .leaderscore.rank-" + rank).text(score);
