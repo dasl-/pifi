@@ -19,6 +19,7 @@ If all is going well, ffmpeg should convert it in ~6x speed. If you're getting t
 If temperature is > 80 C, it might be getting https://www.techrepublic.com/article/raspberry-pi-overheating-heres-how-to-stop-it-says-microsoft/[throttled]. The pi3 has soft throttling that starts occurring at 60 C. The soft throttling is fine -- it doesn't appear to throttle enough to affect normal operation. Video playback etc is fine. Reaching 80 C would likely adversely affect operations though, as the throttling becomes more aggressive at this temperature.
 
 Docs:
+
 * https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
 * https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#frequency-management-and-thermal-control
 * https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature
