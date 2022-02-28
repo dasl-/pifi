@@ -72,14 +72,20 @@ installAppDependencies(){
 fail(){
     local exit_code=$1
     local line_no=$2
-    die "Error at line number: $line_no with exit code: $exit_code"
+    local script_name
+    script_name=$(basename "${BASH_SOURCE[0]}")
+    die "Error in $script_name at line number: $line_no with exit code: $exit_code"
 }
 
-info() {
+info(){
     echo -e "\x1b[32m$*\x1b[0m" # green stdout
 }
 
-die() {
+warn(){
+    echo -e "\x1b[33m$*\x1b[0m" # yellow stdout
+}
+
+die(){
     echo
     echo -e "\x1b[31m$*\x1b[0m" >&2 # red stderr
     exit 1
