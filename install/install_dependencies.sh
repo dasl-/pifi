@@ -66,7 +66,7 @@ installNpm(){
 installAppDependencies(){
     info "Installing app dependencies..."
 
-    sudo npm install --prefix "$BASE_DIR/app"
+    npm install --prefix "$BASE_DIR/app"
 }
 
 fail(){
