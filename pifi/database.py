@@ -22,10 +22,7 @@ class Database:
     __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
 
     # Zero indexed schema_version (first version is v0).
-    __SCHEMA_VERSION = 2
-
-    # instance vars
-    __logger = None
+    __SCHEMA_VERSION = 3
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -60,15 +57,15 @@ class Database:
     # Schema change how-to:
     # 1) Update all DB classes with 'virgin' sql (i.e. Playlist().construct(), Scores.construct())
     # 2) Increment self.__SCHEMA_VERSION
-    # 3) Implement self.__update_schema_to_vN for the incremented SCHEMA_VERSION, call this method in
-    #   the below for loop.
-    # 4) Run ./install/install.sh
+    # 3) Implement self.__update_schema_to_vN method for the incremented SCHEMA_VERSION
+    # 4) Call the method in the below for loop.
+    # 5) Run ./install/install.sh
     def construct(self):
         self.get_cursor().execute("BEGIN TRANSACTION")
         try:
             self.get_cursor().execute("SELECT version FROM pifi_schema_version")
             current_schema_version = int(self.get_cursor().fetchone()['version'])
-        except Exception as e:
+        except Exception:
             current_schema_version = -1
 
         self.__logger.info("current_schema_version: {}".format(current_schema_version))
@@ -82,8 +79,8 @@ class Database:
             pifi.settings.settingsdb.SettingsDb().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
-                "Database schema is outdated. Updating from version {} to {}."
-                    .format(current_schema_version, self.__SCHEMA_VERSION)
+                f"Database schema is outdated. Updating from version {current_schema_version} to " +
+                f"{self.__SCHEMA_VERSION}."
             )
             for i in range(current_schema_version + 1, self.__SCHEMA_VERSION + 1):
                 self.__logger.info(
@@ -93,6 +90,8 @@ class Database:
                     self.__update_schema_to_v1()
                 elif i == 2:
                     self.__update_schema_to_v2()
+                elif i == 3:
+                    self.__update_schema_to_v3()
                 else:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
@@ -139,3 +138,8 @@ class Database:
         #   sqlite3.OperationalError: Cannot add a column with non-constant default
         # Thus, just blow the table away and re-create it.
         pifi.settings.settingsdb.SettingsDb().construct()
+
+    # Updates schema from v2 to v3.
+    def __update_schema_to_v3(self):
+        self.get_cursor().execute("DROP INDEX IF EXISTS game_type_score_idx")
+        self.get_cursor().execute("CREATE INDEX game_type_score_idx ON scores (game_type, score)")

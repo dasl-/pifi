@@ -12,7 +12,6 @@ class Scores:
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    # TODO: indices
     def construct(self):
         self.__cursor.execute("DROP TABLE IF EXISTS scores")
         self.__cursor.execute("""
@@ -22,14 +21,14 @@ class Scores:
                 initials VARCHAR(100) DEFAULT '',
                 create_date DATETIME DEFAULT CURRENT_TIMESTAMP,
                 game_type VARCHAR(100)
-            )"""
-        )
+            )
+        """)
+        self.__cursor.execute("DROP INDEX IF EXISTS game_type_score_idx")
+        self.__cursor.execute("CREATE INDEX game_type_score_idx ON scores (game_type, score)")
 
     def insert_score(self, score, game_type):
         self.__cursor.execute(
-            "INSERT INTO scores " +
-                "(score, initials, game_type) " +
-                "VALUES(?, ?, ?)",
+            "INSERT INTO scores (score, initials, game_type) VALUES(?, ?, ?)",
             [score, "AAA", game_type]
         )
         return self.__cursor.lastrowid
@@ -57,4 +56,3 @@ class Scores:
             [initials, score_id]
         )
         return self.__cursor.rowcount >= 1
-
