@@ -77,7 +77,7 @@ class Snake:
             'dragon_quest4_05_town.wav',
             'dragon_quest4_04_solitary_warrior.wav',
             'dragon_quest4_19_a_pleasant_casino.wav',
-            'radia_senki_reimei_hen_06_unknown_village_elfas.wav', #todo: has a blip in the loop
+            'radia_senki_reimei_hen_06_unknown_village_elfas.wav',
             'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
         ])
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
