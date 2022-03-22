@@ -41,7 +41,10 @@ class PifiAPI():
         is_game_joinable = False
         game_joinable_countdown_s = None
         current_video = self.__playlist.get_current_video()
-        if current_video and current_video['title'] == Snake.GAME_TITLE and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
+        if (
+            current_video and current_video['type'] == Playlist.TYPE_GAME and current_video['title'] == Snake.GAME_TITLE and
+            current_video['status'] == Playlist.STATUS_PLAYING_WAITING_FOR_PLAYERS
+        ):
             is_game_joinable = True
             current_video_create_date = Database.database_date_to_unix_time(current_video['create_date'])
             game_joinable_countdown_s = max(
@@ -78,7 +81,10 @@ class PifiAPI():
         apple_count = None
 
         current_video = self.__playlist.get_current_video()
-        if current_video and current_video['title'] == title and current_video['color_mode'] == Playlist.STATUS2_WAITING_FOR_PLAYERS:
+        if (
+            current_video and current_video['type'] == Playlist.TYPE_GAME and current_video['title'] == title and
+            current_video['status'] == Playlist.STATUS_PLAYING_WAITING_FOR_PLAYERS
+        ):
             # join game
             game_playlist_video_id = current_video['playlist_video_id']
             did_join_existing_game = True
@@ -101,11 +107,7 @@ class PifiAPI():
                 'apple_count': apple_count,
             })
             duration = 'n/a'
-
-            # TODO HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
-            color_mode = Playlist.STATUS2_PLAYING
-            if num_players > 1:
-                color_mode = Playlist.STATUS2_WAITING_FOR_PLAYERS
+            color_mode = ''
             game_playlist_video_id = self.__playlist.enqueue(
                 url, color_mode, thumbnail, title, duration, game_type, settings
             )

@@ -67,10 +67,10 @@ class Queue:
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
                 snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
-                status2 = Playlist.STATUS2_PLAYING
+                is_waiting_for_players = False
                 if snake_settings.num_players > 1:
-                    status2 = Playlist.STATUS2_WAITING_FOR_PLAYERS
-                if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], status2):
+                    is_waiting_for_players = True
+                if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], is_waiting_for_players):
                     # Someone deleted the item from the queue in between getting the item and starting it.
                     return
                 snake = Snake(snake_settings, self.__unix_socket, playlist_item)

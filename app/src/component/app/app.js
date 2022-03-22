@@ -233,7 +233,7 @@ class App extends React.Component {
           var vol_pct = +(data.vol_pct.toFixed(0));
           var playlist_current_video = this.state.playlist_current_video;
           var current_video = playlist_videos.find(function(video) {
-            return video.status === 'STATUS_PLAYING';
+            return video.status === 'STATUS_PLAYING' || video.status === 'STATUS_PLAYING_WAITING_FOR_PLAYERS';
           });
 
           if (current_video) {

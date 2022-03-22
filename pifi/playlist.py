@@ -6,11 +6,12 @@ class Playlist:
     STATUS_QUEUED = 'STATUS_QUEUED'
     STATUS_DELETED = 'STATUS_DELETED' # No longer in the queue
     STATUS_PLAYING = 'STATUS_PLAYING'
-    STATUS_DONE = 'STATUS_DONE'
 
-    # A sub-status of STATUS_PLAYING
-    STATUS2_WAITING_FOR_PLAYERS = 'STATUS2_WAITING_FOR_PLAYERS'
-    STATUS2_PLAYING = 'STATUS2_PLAYING'
+    # This is a "sub-status" of STATUS_PLAYING. This is to support multiplayer games. For all intents and purposes,
+    # we consider the game to be "playing" when in this state, but we are just waiting for the rest of the players
+    # to join the game.
+    STATUS_PLAYING_WAITING_FOR_PLAYERS = 'STATUS_PLAYING_WAITING_FOR_PLAYERS'
+    STATUS_DONE = 'STATUS_DONE'
 
     """
     The Playlist DB holds a queue of playlist items to play. These items can be either videos or games, such as snake.
@@ -69,8 +70,8 @@ class Playlist:
     # video that the user intended to skip.
     def skip(self, playlist_video_id):
         self.__cursor.execute(
-            "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ? AND playlist_video_id = ?",
-            [self.STATUS_PLAYING, playlist_video_id]
+            "UPDATE playlist_videos set is_skip_requested = 1 WHERE (status = ? OR status = ?) AND playlist_video_id = ?",
+            [self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS, playlist_video_id]
         )
         return self.__cursor.rowcount >= 1
 
@@ -86,12 +87,15 @@ class Playlist:
             [self.STATUS_DELETED, self.STATUS_QUEUED]
         )
         self.__cursor.execute(
-            "UPDATE playlist_videos set is_skip_requested = 1 WHERE status = ?",
-            [self.STATUS_PLAYING]
+            "UPDATE playlist_videos set is_skip_requested = 1 WHERE (status = ? OR status = ?)",
+            [self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS]
         )
 
     def get_current_video(self):
-        self.__cursor.execute("SELECT * FROM playlist_videos WHERE status = ? LIMIT 1", [self.STATUS_PLAYING])
+        self.__cursor.execute(
+            "SELECT * FROM playlist_videos WHERE (status = ? OR status = ?) LIMIT 1",
+            [self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS]
+        )
         return self.__cursor.fetchone()
 
     def get_next_playlist_item(self):
@@ -103,8 +107,8 @@ class Playlist:
 
     def get_queue(self):
         self.__cursor.execute(
-            "SELECT * FROM playlist_videos WHERE status IN (?, ?) order by type asc, playlist_video_id asc",
-            [self.STATUS_PLAYING, self.STATUS_QUEUED]
+            "SELECT * FROM playlist_videos WHERE status IN (?, ?, ?) order by type asc, playlist_video_id asc",
+            [self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS, self.STATUS_QUEUED]
         )
         return self.__cursor.fetchall()
 
@@ -116,27 +120,23 @@ class Playlist:
     #   1) Next video in the queue is retrieved
     #   2) Someone deletes the video from the queue
     #   3) We attempt to set the video to "playing" status
-    def set_current_video(self, playlist_video_id, status2 = None):
-        if status2:
-            # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
-            self.__cursor.execute(
-                "UPDATE playlist_videos set status = ?, color_mode = ? WHERE status = ? AND playlist_video_id = ?",
-                [self.STATUS_PLAYING, status2, self.STATUS_QUEUED, playlist_video_id]
-            )
+    def set_current_video(self, playlist_video_id, is_waiting_for_players = False):
+        if is_waiting_for_players:
+            status_to_set = self.STATUS_PLAYING_WAITING_FOR_PLAYERS
         else:
-            self.__cursor.execute(
-                "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
-                [self.STATUS_PLAYING, self.STATUS_QUEUED, playlist_video_id]
-            )
+            status_to_set = self.STATUS_PLAYING
+        self.__cursor.execute(
+            "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
+            [status_to_set, self.STATUS_QUEUED, playlist_video_id]
+        )
         if self.__cursor.rowcount == 1:
             return True
         return False
 
     def set_all_players_ready(self, playlist_video_id):
-        # HACK: using color_mode to store the status2 sub-status until we figure out if this is the best schema design
         self.__cursor.execute(
-            "UPDATE playlist_videos set color_mode = ? WHERE status = ? AND playlist_video_id = ?",
-            [self.STATUS2_PLAYING, self.STATUS_PLAYING, playlist_video_id]
+            "UPDATE playlist_videos set status = ? WHERE status = ? AND playlist_video_id = ?",
+            [self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS, playlist_video_id]
         )
         if self.__cursor.rowcount == 1:
             return True
@@ -152,8 +152,8 @@ class Playlist:
     # set any existing 'playing' videos to 'done'.
     def clean_up_state(self):
         self.__cursor.execute(
-            "UPDATE playlist_videos set status = ? WHERE status = ?",
-            [self.STATUS_DONE, self.STATUS_PLAYING]
+            "UPDATE playlist_videos set status = ? WHERE (status = ? OR status = ?)",
+            [self.STATUS_DONE, self.STATUS_PLAYING, self.STATUS_PLAYING_WAITING_FOR_PLAYERS]
         )
 
     def should_skip_video_id(self, playlist_video_id):
