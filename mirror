@@ -4,11 +4,7 @@ from pifi.settings.videosettings import VideoSettings
 from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
 
-import numpy as np
-import cv2
-from matplotlib import pyplot as plt
 import time
-import io
 import datetime
 from picamera.array import PiRGBArray
 from picamera import PiCamera
@@ -33,6 +29,7 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 video_settings = VideoSettings(args)
 
@@ -54,4 +51,3 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     video_processor.display_image(image, video_player)
     rawCapture.truncate(0)
     print(datetime.datetime.now())
-

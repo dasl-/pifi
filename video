@@ -36,6 +36,7 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 video_settings = VideoSettings(
     color_mode = args.color_mode, display_width = args.display_width, display_height = args.display_height,

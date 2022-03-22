@@ -21,39 +21,25 @@ class SnakePlayer:
 
     __MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ = 0.5
 
-    __player_index = None
-
-    __logger = None
-
-    __snake_game = None
-
-    # Doubly linked list, representing all the coordinate pairs in the snake
-    __snake_linked_list = None
-
-    # Set representing all the coordinate pairs in the snake
-    __snake_set = None
-
-    __is_eliminated = False
-
-    # If we can't read from the snake's socket, mark it for elimination the next time __maybe_eliminate_snakes is called
-    __is_marked_for_elimination = False
-
-    __num_ticks_since_elimination = 0
-
-    __is_multiplayer_winner = False
-
-    __direction = None
-
-    __unix_socket_helper = None
-
     def __init__(self, player_index, server_unix_socket, snake_game):
         self.__logger = Logger().set_namespace(self.__class__.__name__ + '_' + str(player_index))
         self.__snake_game = snake_game
 
         self.__player_index = player_index
+        self.__is_multiplayer_winner = False
+        self.__is_eliminated = False
+
+        # If we can't read from the snake's socket, mark it for elimination the next time __maybe_eliminate_snakes is called
+        self.__is_marked_for_elimination = False
+        self.__num_ticks_since_elimination = 0
+
+        # Doubly linked list, representing all the coordinate pairs in the snake
         self.__snake_linked_list = collections.deque()
+
+        # Set representing all the coordinate pairs in the snake
         self.__snake_set = set()
         self.__unix_socket_helper = UnixSocketHelper().set_server_socket(server_unix_socket)
+        self.__direction = None
 
     def should_show_snake(self):
         if (

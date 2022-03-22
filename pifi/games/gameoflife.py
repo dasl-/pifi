@@ -4,7 +4,6 @@ import time
 import hashlib
 from pifi.logger import Logger
 from pifi.videoplayer import VideoPlayer
-from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
 
@@ -13,19 +12,7 @@ class GameOfLife:
     __COLOR_CHANGE_FREQ = 0.05
     __MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
 
-    # GameOfLifeSettings
-    __settings = None
-
-    __board = None
-
-    __num_ticks = None
-
-    __game_color_mode = None
-
-    __prev_board_state_counts = None
-
-    __game_color_helper = None
-
+    # settings: GameOfLifeSettings
     def __init__(self, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings = settings
@@ -112,11 +99,11 @@ class GameOfLife:
     def __board_to_frame(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self.__num_ticks)
-        on = 0 if self.__settings.invert else 1;
+        on = 0 if self.__settings.invert else 1
 
         for x in range(self.__settings.display_width):
             for y in range(self.__settings.display_height):
-                if self.__board[y,x] == on:
+                if self.__board[y, x] == on:
                     frame[y, x] = rgb
 
         return frame
@@ -130,21 +117,21 @@ class GameOfLife:
             for y in range(self.__settings.display_height):
                 # calculate num live neighbors
                 num_live_neighbors = 0
-                #left
+                # left
                 num_live_neighbors += (self.__board[y, x - 1] if x > 1 else 0)
-                #left-up
+                # left-up
                 num_live_neighbors += (self.__board[y - 1, x - 1] if x > 1 and y > 1 else 0)
-                #left-down
+                # left-down
                 num_live_neighbors += (self.__board[y + 1, x - 1] if x > 1 and y < (self.__settings.display_height - 1) else 0)
-                #right
+                # right
                 num_live_neighbors += (self.__board[y, x + 1] if x < (self.__settings.display_width - 1) else 0)
-                #right-up
+                # right-up
                 num_live_neighbors += (self.__board[y - 1, x + 1] if x < (self.__settings.display_width - 1) and y > 1 else 0)
-                #right-down
+                # right-down
                 num_live_neighbors += (self.__board[y + 1, x + 1] if x < (self.__settings.display_width - 1) and y < (self.__settings.display_height - 1) else 0)
-                #up
+                # up
                 num_live_neighbors += (self.__board[y - 1, x] if y > 1 else 0)
-                #down
+                # down
                 num_live_neighbors += (self.__board[y + 1, x] if y < (self.__settings.display_height - 1) else 0)
 
                 # 1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.

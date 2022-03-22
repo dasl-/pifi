@@ -4,19 +4,13 @@ from pifi.games.gamecolorhelper import GameColorHelper
 
 class GameOfLifeSettings(LedSettings):
 
-    DEFAULT_SEED_LIVENESS_PROBABILITY = 1/3
+    DEFAULT_SEED_LIVENESS_PROBABILITY = 1 / 3
     DEFAULT_TICK_SLEEP = 0
     DEFAULT_GAME_OVER_DETECTION_LOOKBACK = 16
     DEFAULT_FADE = False
     DEFAULT_INVERT = False
 
-    seed_liveness_probability = None
-    tick_sleep = None # seconds
-    game_over_detection_lookback = None
-    game_color_mode = None
-    fade = None
-    invert = None
-
+    # tick_sleep: in seconds
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False, log_level = None,
@@ -29,25 +23,25 @@ class GameOfLifeSettings(LedSettings):
             brightness = brightness, flip_x = flip_x, flip_y = flip_y, log_level = log_level
         )
 
-        if seed_liveness_probability == None:
+        if seed_liveness_probability is None:
             seed_liveness_probability = self.DEFAULT_SEED_LIVENESS_PROBABILITY
         self.seed_liveness_probability = seed_liveness_probability
 
-        if tick_sleep == None:
+        if tick_sleep is None:
             tick_sleep = self.DEFAULT_TICK_SLEEP
         self.tick_sleep = tick_sleep
 
-        if game_over_detection_lookback == None:
+        if game_over_detection_lookback is None:
             game_over_detection_lookback = self.DEFAULT_GAME_OVER_DETECTION_LOOKBACK
         self.game_over_detection_lookback = game_over_detection_lookback
 
         GameColorHelper().set_game_color_mode(self, game_color_mode)
 
-        if fade == None:
+        if fade is None:
             fade = self.DEFAULT_FADE
         self.fade = fade
 
-        if invert == None:
+        if invert is None:
             invert = self.DEFAULT_INVERT
         self.invert = invert
 
@@ -72,4 +66,3 @@ class GameOfLifeSettings(LedSettings):
 
     def get_values_from_config(self):
         return Config().get_game_of_life_settings()
-

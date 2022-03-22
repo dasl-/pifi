@@ -1,38 +1,32 @@
 import numpy as np
-import math
-import time
 from apa102_pi.driver import apa102
 from pifi.gamma import Gamma
 from pifi.settings.ledsettings import LedSettings
 
 class VideoPlayer:
-    __led_settings = None
 
-    __gamma_controller = None
-    __pixels = None
-
-    #LED Settings
+    # LED Settings
     __MOSI_PIN = 10
     __SCLK_PIN = 11
     __LED_ORDER = 'rbg'
-
-    # static gamma curve
-    __scale_red_gamma_curve = None
-    __scale_green_gamma_curve = None
-    __scale_blue_gamma_curve = None
-
-    # dynamic gamma curves
-    __scale_red_gamma_curves = None
-    __scale_green_gamma_curves = None
-    __scale_blue_gamma_curves = None
-
-    __current_frame = None
 
     __FADE_STEPS = 5
 
     def __init__(self, led_settings):
         self.__led_settings = led_settings
+        self.__current_frame = None
+        self.__pixels = None
         self.__gamma_controller = Gamma(self.__led_settings)
+
+        # static gamma curve
+        self.__scale_red_gamma_curve = None
+        self.__scale_green_gamma_curve = None
+        self.__scale_blue_gamma_curve = None
+
+        # dynamic gamma curves
+        self.__scale_red_gamma_curves = None
+        self.__scale_green_gamma_curves = None
+        self.__scale_blue_gamma_curves = None
 
         # Memoizing the specific gamma curve index for static gamma videos enables us to shave
         # 1 or 2 milliseconds off the loop per frame. See: self.__set_frame_pixels
@@ -64,14 +58,14 @@ class VideoPlayer:
 
         for x in range(self.__led_settings.display_width):
             for y in range(self.__led_settings.display_height):
-                for rgb in range(0,3):
+                for rgb in range(0, 3):
                     frame_steps[y, x, rgb] = ((avg_color_frame[y, x, rgb].astype(np.int16) - self.__current_frame[y, x, rgb].astype(np.int16)) / self.__FADE_STEPS).astype(np.int8)
 
         for current_step in range(1, self.__FADE_STEPS):
             new_frame = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.uint8)
             for x in range(self.__led_settings.display_width):
                 for y in range(self.__led_settings.display_height):
-                    for rgb in range(0,3):
+                    for rgb in range(0, 3):
                         new_frame[y, x, rgb] = self.__current_frame[y, x, rgb] + (frame_steps[y, x, rgb] * current_step)
 
             # no need to sleep since the above calculation takes some small amount of time

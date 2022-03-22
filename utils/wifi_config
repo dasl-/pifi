@@ -18,11 +18,12 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 f = None
 try:
     f = open("/boot/wpa_supplicant.conf", "w")
-except PermissionError as e:
+except PermissionError:
     print("This script must be run as sudo")
     exit(1)
 

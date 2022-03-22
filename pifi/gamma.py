@@ -5,11 +5,6 @@ class Gamma:
 
     DEFAULT_GAMMA_INDEX = 18
 
-    # list of gamma curves from min to max
-    scale_red_curves = []
-    scale_blue_curves = []
-    scale_green_curves = []
-
     # possible gamma curve range, step by .1
     __MIN_GAMMA_CURVE = 2
     __MAX_GAMMA_CURVE = 6
@@ -19,10 +14,14 @@ class Gamma:
     __GREEN_MAX_BRIGHTNESS = .45
     __BLUE_MAX_BRIGHTNESS = .375
 
-    __led_settings = None
-
     def __init__(self, led_settings):
         self.__led_settings = led_settings
+
+        # list of gamma curves from min to max
+        self.scale_red_curves = []
+        self.scale_blue_curves = []
+        self.scale_green_curves = []
+
         self.__generateGammaScales()
 
     # powers auto dynamic gamma curve using the average brightness of the given frame
@@ -35,7 +34,7 @@ class Gamma:
         #   * --brightness of 3 (i think?)
         #   * black and white video
         #   * using opencv LED color averaging rather than ffmpeg (https://github.com/dasl-/pifi/commit/8a4703fb479421160b9c119dc718b747a8627b4f#commitcomment-34206224)
-        gamma_index = (-0.2653691135*brightness_std) + (0.112790567*(brightness_avg)) + 18.25205188
+        gamma_index = (-0.2653691135 * brightness_std) + (0.112790567 * (brightness_avg)) + 18.25205188
 
         if gamma_index < 0:
             return 0
@@ -50,7 +49,7 @@ class Gamma:
     # https://learn.adafruit.com/led-tricks-gamma-correction/
     def __getGammaScaleValues(self, gamma, max_in, max_out):
         gamma_list = []
-        for i in range(0, max_in+1):
+        for i in range(0, max_in + 1):
             gamma_list.append(
                 int(
                     round(
@@ -63,9 +62,9 @@ class Gamma:
 
     def __generateGammaScales(self):
         for i in range(self.__MIN_GAMMA_CURVE * 10, self.__MAX_GAMMA_CURVE * 10):
-            self.scale_red_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__RED_MAX_BRIGHTNESS)))
-            self.scale_blue_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__BLUE_MAX_BRIGHTNESS)))
-            self.scale_green_curves.append(self.__getGammaScaleValues(i/10, 255, int(255 * self.__GREEN_MAX_BRIGHTNESS)))
+            self.scale_red_curves.append(self.__getGammaScaleValues(i / 10, 255, int(255 * self.__RED_MAX_BRIGHTNESS)))
+            self.scale_blue_curves.append(self.__getGammaScaleValues(i / 10, 255, int(255 * self.__BLUE_MAX_BRIGHTNESS)))
+            self.scale_green_curves.append(self.__getGammaScaleValues(i / 10, 255, int(255 * self.__GREEN_MAX_BRIGHTNESS)))
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color

@@ -11,10 +11,6 @@ class SnakeSettings(LedSettings):
     DEFAULT_NUM_PLAYERS = 1
     DEFAULT_APPLE_COUNT = 15
 
-    game_color_mode = None
-    difficulty = None
-    num_players = None
-
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False, log_level = None,
@@ -39,21 +35,21 @@ class SnakeSettings(LedSettings):
         snake_record_settings = {}
         try:
             snake_record_settings = json.loads(snake_record['settings'])
-        except Exception as e:
+        except Exception:
             self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
             return self
 
         try:
             self.__set_difficulty(int(snake_record_settings['difficulty']))
-        except Exception as e:
+        except Exception:
             self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
         try:
             self.__set_num_players(int(snake_record_settings['num_players']))
-        except Exception as e:
+        except Exception:
             self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
         try:
             self.__set_apple_count(int(snake_record_settings['apple_count']))
-        except Exception as e:
+        except Exception:
             self._logger.error('Caught exception: {}'.format(traceback.format_exc()))
 
         return self.from_config()
@@ -62,19 +58,19 @@ class SnakeSettings(LedSettings):
         return Config().get_snake_settings()
 
     def __set_difficulty(self, difficulty):
-        if difficulty == None or difficulty < 0 or difficulty > 9:
+        if difficulty is None or difficulty < 0 or difficulty > 9:
             difficulty = self.DEFAULT_DIFFICULTY
         self.difficulty = difficulty
 
     def __set_num_players(self, num_players):
-        if num_players == None or num_players < 1:
+        if num_players is None or num_players < 1:
             num_players = self.DEFAULT_NUM_PLAYERS
         if num_players > 4:
             num_players = 4
         self.num_players = num_players
 
     def __set_apple_count(self, apple_count):
-        if apple_count == None or apple_count < 1:
+        if apple_count is None or apple_count < 1:
             apple_count = self.DEFAULT_APPLE_COUNT
         if apple_count > 999:
             apple_count = 999

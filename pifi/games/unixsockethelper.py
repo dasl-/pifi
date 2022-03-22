@@ -32,17 +32,14 @@ class UnixSocketHelper:
     # fixed message length encoding scheme
     __MSG_LENGTH = 256
 
-    # a socket we can call `accept` on
-    __server_socket = None
-
-    # a socket we can send and receive data on
-    __connection_socket = None
-
-    __is_connection_socket_open = False
-
     def __init__(self):
+        # a socket we can call `accept` on
         self.__server_socket = None
+
+        # a socket we can send and receive data on
         self.__connection_socket = None
+
+        self.__is_connection_socket_open = False
 
     def create_server_unix_socket(self, socket_path):
         unix_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

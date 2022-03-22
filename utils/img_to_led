@@ -21,6 +21,7 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 
 reshape_dimensions = None

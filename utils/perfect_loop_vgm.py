@@ -1,6 +1,11 @@
 #!/usr/bin/python3
 
-import argparse, sys, os, subprocess, shlex, time
+import argparse
+import sys
+import os
+import subprocess
+import shlex
+import time
 
 # This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -20,6 +25,7 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 input_file = args.input_file
 output_file = args.output_file
@@ -31,18 +37,18 @@ SAMPLE_RATE = 44100
 """
 f = open(input_file, "rb")
 
-f.seek(24);
+f.seek(24)
 total_num_samples = int.from_bytes(f.read(4), byteorder=sys.byteorder)
-print('total num samples: {} ({} sec)'.format(total_num_samples, round(total_num_samples / SAMPLE_RATE, 2)));
+print('total num samples: {} ({} sec)'.format(total_num_samples, round(total_num_samples / SAMPLE_RATE, 2)))
 
-f.seek(32);
+f.seek(32)
 loop_num_samples = int.from_bytes(f.read(4), byteorder=sys.byteorder)
-print('loop num samples: {} ({} sec)'.format(loop_num_samples, round(loop_num_samples / SAMPLE_RATE, 2)));
+print('loop num samples: {} ({} sec)'.format(loop_num_samples, round(loop_num_samples / SAMPLE_RATE, 2)))
 
 # not sure if i should be modifying offsets based on this value? hopefully it is small and unnoticeable in most cases...
-f.seek(28);
+f.seek(28)
 loop_offset = int.from_bytes(f.read(4), byteorder=sys.byteorder)
-print('loop offset: {} ({} sec)'.format(loop_offset, round(loop_offset / SAMPLE_RATE, 2)));
+print('loop offset: {} ({} sec)'.format(loop_offset, round(loop_offset / SAMPLE_RATE, 2)))
 print('')
 f.close()
 
@@ -101,6 +107,6 @@ from pygame import mixer
 mixer.init(frequency = 22050, buffer = 512)
 
 loop_test = mixer.Sound(output_file)
-print("Loop length: " + str(round(loop_test.get_length(),2)) + ' seconds')
+print("Loop length: " + str(round(loop_test.get_length(), 2)) + ' seconds')
 loop_test.play(loops = -1)
 time.sleep(100000)

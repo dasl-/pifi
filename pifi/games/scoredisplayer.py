@@ -2,13 +2,6 @@ import numpy as np
 
 class ScoreDisplayer:
 
-    # LedSettings
-    __settings = None
-
-    __video_player = None
-
-    __score = None
-
     """
              0
            ----
@@ -24,8 +17,8 @@ class ScoreDisplayer:
            ----
              6
     """
-    __digit_components = (
-       # 0  1  2  3  4  5  6
+    __DIGIT_COMPONENTS = (
+        # 0  1  2  3  4  5  6
         (1, 1, 1, 0, 1, 1, 1), # 0
         (0, 0, 1, 0, 0, 1, 0), # 1
         (1, 0, 1, 1, 1, 0, 1), # 2
@@ -38,6 +31,7 @@ class ScoreDisplayer:
         (1, 1, 1, 1, 0, 1, 1), # 9
     )
 
+    # settings: LedSettings
     def __init__(self, settings, video_player, score):
         self.__settings = settings
         self.__video_player = video_player
@@ -67,7 +61,7 @@ class ScoreDisplayer:
         self.__video_player.play_frame(frame)
 
     def __write_digit(self, x, y, digit, digit_component_length, frame, rgb):
-        digit_components = self.__digit_components[digit]
+        digit_components = self.__DIGIT_COMPONENTS[digit]
         for digit_component in range(0, 7):
             if digit_components[digit_component] == 0:
                 continue

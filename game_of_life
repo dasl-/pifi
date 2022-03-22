@@ -44,6 +44,7 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
+
 args = parseArgs()
 settings = GameOfLifeSettings(
     display_width = args.display_width, display_height = args.display_height,

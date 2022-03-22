@@ -4,8 +4,6 @@ import sys
 
 class Logger:
 
-    __namespace = None
-
     def __init__(self):
         self.__namespace = ""
 

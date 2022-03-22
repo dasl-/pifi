@@ -2,11 +2,6 @@ import numpy as np
 import time
 import os
 import sys
-from pifi.logger import Logger
-from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
-from pifi.settings.videosettings import VideoSettings
-from pifi.directoryutils import DirectoryUtils
-from pifi.playlist import Playlist
 import youtube_dl
 import subprocess
 import math
@@ -19,23 +14,13 @@ import random
 import string
 import traceback
 
+from pifi.logger import Logger
+from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
+from pifi.settings.videosettings import VideoSettings
+from pifi.directoryutils import DirectoryUtils
+from pifi.playlist import Playlist
+
 class VideoProcessor:
-
-    __video_settings = None
-    __logger = None
-    __url = None
-
-    __playlist = None
-    __playlist_video_id = None
-    __was_video_skipped = None
-
-    # True if the video already exists (see: VideoSettings.should_save_video)
-    __is_video_already_downloaded = None
-
-    # Metadata about the video we are using, such as title, resolution, file extension, etc
-    # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
-    # Access should go through self.__get_video_info() to populate it lazily
-    __video_info = None
 
     __DATA_DIRECTORY = 'data'
 
@@ -48,12 +33,21 @@ class VideoProcessor:
     __FRAMES_BUFFER_LENGTH = 1024
 
     def __init__(self, video_settings, playlist_video_id = None):
+        self.__url = None
+        self.__playlist = None
+        self.__playlist_video_id = None
         self.__video_settings = video_settings
+
+        # Metadata about the video we are using, such as title, resolution, file extension, etc
+        # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
+        # Access should go through self.__get_video_info() to populate it lazily
+        self.__video_info = None
 
         if self.__video_settings.should_check_playlist:
             self.__playlist = Playlist()
             self.__playlist_video_id = playlist_video_id
 
+        # True if the video already exists (see: VideoSettings.should_save_video)
         self.__is_video_already_downloaded = False
         self.__was_video_skipped = False
 
@@ -446,10 +440,10 @@ class VideoProcessor:
     def __make_ffmpeg_to_python_fifo(self):
         make_fifo_cmd = (
             'fifo_name=$(mktemp --tmpdir={} --dry-run {}) && mkfifo -m 600 "$fifo_name" && printf $fifo_name'
-                .format(
-                    tempfile.gettempdir(),
-                    self.__FFMPEG_TO_PYTHON_FIFO_PREFIX + 'XXXXXXXXXX'
-                )
+            .format(
+                tempfile.gettempdir(),
+                self.__FFMPEG_TO_PYTHON_FIFO_PREFIX + 'XXXXXXXXXX'
+            )
         )
         self.__logger.info('Making ffmpeg_to_python_fifo...')
         ffmpeg_to_python_fifo_name = (subprocess

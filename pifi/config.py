@@ -7,13 +7,6 @@ class Config:
 
     __CONFIG_FILENAME = 'config.json'
 
-    __server_config = None
-    __queue_config = {}
-    __video_settings = None
-    __game_of_life_settings = None
-    __snake_settings = None
-    __logger = None
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__server_config = {}

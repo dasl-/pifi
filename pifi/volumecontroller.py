@@ -23,7 +23,7 @@ class VolumeController:
     # returns a float in the range [0, 100]
     def get_vol_pct(self):
         res = subprocess.check_output(('amixer', 'cget', 'numid=1')).decode("utf-8")
-        m = re.search(" values=(-?\d+)", res, re.MULTILINE)
+        m = re.search(r" values=(-?\d+)", res, re.MULTILINE)
         if m is None:
             return 0
 

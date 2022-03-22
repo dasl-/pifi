@@ -15,7 +15,6 @@ from pifi.games.scores import Scores
 from pifi.games.snakeplayer import SnakePlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.directoryutils import DirectoryUtils
-from pifi.database import Database
 
 class Snake:
 
@@ -29,39 +28,20 @@ class Snake:
 
     __APPLE_COLOR_CHANGE_FREQ = 0.2
 
-    __logger = None
-
-    # SnakeSettings
-    __settings = None
-
-    __game_color_helper = None
-
-    __num_ticks = 0
-
-    __game_color_mode = None
-
-    __players = None
-
-    __eliminated_snake_count = 0
-
-    __last_eliminated_snake_sound = None
-
-    __apple = None
-    __apples_eaten_count = 0
-
-    __apple_sound = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +
+    __VICTORY_SOUND_FILE = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"
+    __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +
         "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
-    __background_music = None
-    __victory_sound_file = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"
 
-    __playlist = None
-
-    __playlist_video = None
-
+    # settings: SnakeSettings
     def __init__(self, settings, unix_socket, playlist_video):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(settings)))
 
+        self.__num_ticks = 0
+        self.__eliminated_snake_count = 0
+        self.__last_eliminated_snake_sound = None
+        self.__apple = None
+        self.__apples_eaten_count = 0
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
         self.__video_player = VideoPlayer(self.__settings)
@@ -140,7 +120,7 @@ class Snake:
 
     def __eat_apple(self):
         self.__apples_eaten_count += 1
-        self.__apple_sound.play()
+        self.__APPLE_SOUND.play()
         self.__place_apple()
         player_scores = []
         for i in range(self.__settings.num_players):
@@ -298,7 +278,7 @@ class Snake:
                     ):
                         # Wait for eliminated snake sound to finish before playing victory sound
                         victory_sound = (simpleaudio.WaveObject
-                            .from_wave_file(self.__victory_sound_file)
+                            .from_wave_file(self.__VICTORY_SOUND_FILE)
                             .play())
                         did_play_victory_sound = True
 
@@ -357,7 +337,7 @@ class Snake:
                 num_ticks = score_tick
             )
             (simpleaudio.WaveObject
-                .from_wave_file(self.__victory_sound_file)
+                .from_wave_file(self.__VICTORY_SOUND_FILE)
                 .play())
         score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
         score_displayer.display_score(score_color)

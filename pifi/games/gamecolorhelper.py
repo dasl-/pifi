@@ -1,6 +1,5 @@
 import math
 import random
-from pifi.settings.ledsettings import LedSettings
 
 # utils for doing color in games
 class GameColorHelper:
@@ -18,8 +17,6 @@ class GameColorHelper:
         GAME_COLOR_MODE_BW, GAME_COLOR_MODE_RAINBOW
     ]
 
-    __color_gradient_offset = None
-
     def __init__(self):
         self.reset()
 
@@ -27,7 +24,7 @@ class GameColorHelper:
         self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
 
     def set_game_color_mode(self, settings, game_color_mode):
-        if game_color_mode == None:
+        if game_color_mode is None:
             game_color_mode = self.GAME_COLOR_MODE_RANDOM
 
         game_color_mode = game_color_mode.lower()
@@ -61,11 +58,11 @@ class GameColorHelper:
         phase1 = 0, phase2 = 2 * math.pi / 3, phase3 = 4 * math.pi / 3,
         center = 127.5, amplitude = 127.5
     ):
-        if freq1 == None:
+        if freq1 is None:
             freq1 = color_change_freq
-        if freq2 == None:
+        if freq2 is None:
             freq2 = color_change_freq
-        if freq3 == None:
+        if freq3 is None:
             freq3 = color_change_freq
 
         r = math.sin(num_ticks * freq1 + phase1 + self.__color_gradient_offset) * amplitude + center

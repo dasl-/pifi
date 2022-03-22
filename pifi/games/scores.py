@@ -5,9 +5,6 @@ class Scores:
 
     __HIGHSCORE_CUTOFF = 10
 
-    __cursor = None
-    __logger = None
-
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)

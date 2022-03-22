@@ -207,7 +207,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
                 return self.__do_api_GET(self.path[5:])
 
             return self.__serve_static_asset()
-        except Exception as e:
+        except Exception:
             self.log_error('Exception: {}'.format(traceback.format_exc()))
 
     def do_POST(self):
@@ -215,7 +215,7 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             if self.path[:4] == "/api":
                 return self.__do_api_POST(self.path[5:])
             return self.__serve_static_asset()
-        except Exception as e:
+        except Exception:
             self.log_error('Exception: {}'.format(traceback.format_exc()))
 
     def __do_404(self):
@@ -328,10 +328,10 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         self.log_message('[REQUEST] "%s" %s %s', self.requestline, str(code), str(size))
 
     def log_error(self, format, *args):
-        self.__logger.error("%s - - %s" % (self.client_address[0], format%args))
+        self.__logger.error("%s - - %s" % (self.client_address[0], format % args))
 
     def log_message(self, format, *args):
-        self.__logger.info("%s - - %s" % (self.client_address[0], format%args))
+        self.__logger.info("%s - - %s" % (self.client_address[0], format % args))
 
 class PifiThreadingHTTPServer(ThreadingHTTPServer):
 
@@ -343,9 +343,8 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
 
 class PifiServer:
 
-    __config = Config()
-
     def __init__(self):
+        self.__config = Config()
         self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:

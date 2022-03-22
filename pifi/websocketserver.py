@@ -13,8 +13,6 @@ class WebSocketServer:
 
     __PORT = 8765
 
-    __logger = None
-
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
@@ -84,7 +82,7 @@ class WebSocketServer:
     def __get_local_ip(self):
         return (subprocess
             .check_output(
-                'sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
+                r'sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
                 stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
             )
             .decode("utf-8")
