@@ -346,20 +346,17 @@ class VideoProcessor:
         return process_and_play_vid_cmd
 
     def __get_youtube_dl_cmd(self):
-        if self.__video_settings.log_level == VideoSettings.LOG_LEVEL_VERBOSE:
-            log_level = ''
-        elif self.__video_settings.log_level == VideoSettings.LOG_LEVEL_NORMAL:
-            log_level = '--no-progress '
-        log_opts = ''
+        log_opts = '--no-progress '
+        if Logger.get_level() <= Logger.DEBUG:
+            log_opts = ' ' # show video download progress
         if not sys.stderr.isatty():
-            log_opts = '--newline '
+            log_opts += '--newline '
         return (
             'yt-dlp ' +
             '--output - ' + # output to stdout
             '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
             '--format ' + shlex.quote(self.__YOUTUBE_DL_FORMAT) + " " + # download the specified video quality / encoding
             '--retries infinite ' + # in case downloading has transient errors
-            log_level +
             log_opts +
             shlex.quote(self.__url) # url to download
         )

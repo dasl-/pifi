@@ -1,6 +1,7 @@
 import os
 import time
 import traceback
+import shlex
 import signal
 import simpleaudio
 import subprocess
@@ -28,12 +29,12 @@ class Queue:
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__config = Config()
-        self.__is_game_of_life_enabled = None
+        self.__is_game_of_life_enabled = True
         self.__last_settings_db_check_time = 0
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__video_player = VideoPlayer(VideoSettings().from_playlist_item_in_queue())
+        self.__video_player = VideoPlayer(VideoSettings().from_config())
 
         # True if game of life screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
@@ -108,7 +109,10 @@ class Queue:
         self.__start_playback(cmd, log_uuid)
 
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
+    # TODO: set color mode of videos via cli flag
     def __start_playback(self, cmd, log_uuid):
+        cmd += f' --log-uuid {shlex.quote(log_uuid)}'
+
         # Using start_new_session = False here because it is not necessary to start a new session here (though
         # it should not hurt if we were to set it to True either)
         self.__playback_proc = subprocess.Popen(
@@ -234,6 +238,9 @@ class Queue:
                 self.__last_screen_clear_while_screensaver_disabled_time = now
 
         return self.__is_game_of_life_enabled
+
+    def __maybe_respond_to_settings_changes(self):
+        pass
 
     def __clear_screen(self):
         self.__video_player.clear_screen()

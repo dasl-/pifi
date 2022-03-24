@@ -13,14 +13,14 @@ class GameOfLifeSettings(LedSettings):
     # tick_sleep: in seconds
     def __init__(
         self, display_width = None, display_height = None,
-        brightness = None, flip_x = False, flip_y = False, log_level = None,
+        brightness = None, flip_x = False, flip_y = False,
         seed_liveness_probability = None, tick_sleep = None,
         game_over_detection_lookback = None, game_color_mode = None,
         fade = None, invert = None
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
-            brightness = brightness, flip_x = flip_x, flip_y = flip_y, log_level = log_level
+            brightness = brightness, flip_x = flip_x, flip_y = flip_y
         )
 
         if seed_liveness_probability is None:

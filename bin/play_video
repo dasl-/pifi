@@ -13,46 +13,59 @@ from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
 
 def parseArgs():
-    parser = argparse.ArgumentParser(description='convert a video.')
+    parser = argparse.ArgumentParser(
+        description=("Play a video. Arguments that are not specified will get values from your " +
+            "config file, if you have one."),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument('--url', dest='url', action='store', default='https://www.youtube.com/watch?v=xmUZ6nCFNoU',
         help='youtube video url. default: The Smashing Pumpkins - Today.')
+    parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
     parser.add_argument('--display-width', dest='display_width', action='store', type=int,
-        default=VideoSettings.DEFAULT_DISPLAY_WIDTH, metavar='N', help='Number of pixels / units')
+        metavar='N', help='Number of pixels / units')
     parser.add_argument('--display-height', dest='display_height', action='store', type=int,
-        default=VideoSettings.DEFAULT_DISPLAY_HEIGHT, metavar='N', help='Number of pixels / units')
-    parser.add_argument('--color-mode', dest='color_mode', action='store', default=VideoSettings.COLOR_MODE_COLOR,
-        help=("one of: '{}', '{}', '{}', '{}', '{}', '{}', or '{}'. Default is '{}'."
+        metavar='N', help='Number of pixels / units')
+    parser.add_argument('--color-mode', dest='color_mode', action='store',
+        help=("one of: '{}', '{}', '{}', '{}', '{}', '{}', or '{}'."
             .format(VideoSettings.COLOR_MODE_COLOR, VideoSettings.COLOR_MODE_BW, VideoSettings.COLOR_MODE_R,
                 VideoSettings.COLOR_MODE_G, VideoSettings.COLOR_MODE_B, VideoSettings.COLOR_MODE_INVERT_COLOR,
-                VideoSettings.COLOR_MODE_INVERT_BW, VideoSettings.COLOR_MODE_COLOR))
+                VideoSettings.COLOR_MODE_INVERT_BW))
     )
-    parser.add_argument('--audio', dest='should_play_audio', action='store_true', default=False,
-        help='play the audio (default is no audio)')
-    parser.add_argument('--flip-x', dest='flip_x', action='store_true', default=False,
+    parser.add_argument('--audio', dest='should_play_audio', action='store_true',
+        help='play the audio')
+    parser.add_argument('--flip-x', dest='flip_x', action='store_true',
         help='flip X direction output')
-    parser.add_argument('--flip-y', dest='flip_y', action='store_true', default=False,
+    parser.add_argument('--flip-y', dest='flip_y', action='store_true',
         help='flip Y direction output')
-    parser.add_argument('--brightness', dest='brightness', action='store', type=int, default=VideoSettings.DEFAULT_BRIGHTNESS,
+    parser.add_argument('--brightness', dest='brightness', action='store', type=int,
         metavar='N', help='Global brightness value. Max of 31.')
-    parser.add_argument('--save', dest='should_save_video', action='store_true', default=False,
-        help='Save the video to avoid downloading it in the future. Default is not to save.')
-    parser.add_argument('--log-level', dest='log_level', action='store', default=VideoSettings.LOG_LEVEL_VERBOSE,
-        help=("one of: '{}' or '{}'. Default is '{}'."
-            .format(VideoSettings.LOG_LEVEL_NORMAL, VideoSettings.LOG_LEVEL_VERBOSE, VideoSettings.LOG_LEVEL_VERBOSE))
-    )
+    parser.add_argument('--save', dest='should_save_video', action='store_true',
+        help='Save the video to avoid downloading it in the future.')
 
     args = parser.parse_args()
     return args
 
 
 args = parseArgs()
-video_settings = VideoSettings(
-    color_mode = args.color_mode, display_width = args.display_width, display_height = args.display_height,
-    should_play_audio = args.should_play_audio, brightness = args.brightness,
-    flip_x = args.flip_x, flip_y = args.flip_y, should_save_video = args.should_save_video,
-    log_level = args.log_level, should_check_playlist = False,
-)
+if args.log_uuid:
+    Logger.set_uuid(args.log_uuid)
 
-video_player = VideoPlayer(video_settings)
-video_processor = VideoProcessor(video_settings)
-video_processor.process_and_play(url = args.url, video_player = video_player)
+settings = VideoSettings().from_config()
+if args.color_mode is not None:
+    settings.set_color_mode(args.color_mode)
+if args.display_width is not None:
+    settings.display_width = args.display_width
+if args.display_height is not None:
+    settings.display_height = args.display_height
+if args.should_play_audio is not None:
+    settings.should_play_audio = args.should_play_audio
+if args.brightness is not None:
+    settings.brightness = args.brightness
+if args.flip_x is not None:
+    settings.flip_x = args.flip_x
+if args.flip_y is not None:
+    settings.flip_y = args.flip_x
+if args.should_save_video is not None:
+    settings.should_save_video = args.should_save_video
+
+VideoProcessor(settings).process_and_play(url = args.url, video_player = VideoPlayer(settings))

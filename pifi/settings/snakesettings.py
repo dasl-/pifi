@@ -13,12 +13,12 @@ class SnakeSettings(LedSettings):
 
     def __init__(
         self, display_width = None, display_height = None,
-        brightness = None, flip_x = False, flip_y = False, log_level = None,
+        brightness = None, flip_x = False, flip_y = False,
         game_color_mode = None, difficulty = None, num_players = None, apple_count = None
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
-            brightness = brightness, flip_x = flip_x, flip_y = flip_y, log_level = log_level
+            brightness = brightness, flip_x = flip_x, flip_y = flip_y,
         )
 
         self.__set_difficulty(difficulty)

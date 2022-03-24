@@ -6,6 +6,6 @@ import sys
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
-from piwall2.broadcaster.queue import Queue
+from pifi.queue import Queue
 
 Queue().run()
