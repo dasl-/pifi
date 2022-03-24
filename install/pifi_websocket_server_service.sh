@@ -10,7 +10,7 @@ Wants=network-online.target
 [Service]
 Environment=HOME=/root
 # Command to execute when the service is started
-ExecStart=$BASE_DIR/websocket_server
+ExecStart=$BASE_DIR/bin/websocket_server
 Restart=on-failure
 StandardOutput=syslog
 StandardError=syslog

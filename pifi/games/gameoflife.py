@@ -19,6 +19,7 @@ class GameOfLife:
         self.__video_player = VideoPlayer(self.__settings)
         self.__logger.info("Doing init with GameOfLifeSettings: {}".format(vars(self.__settings)))
         self.__game_color_helper = GameColorHelper()
+        self.__board = None
 
     def play(self, should_loop = False):
         if should_loop:

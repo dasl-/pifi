@@ -20,9 +20,6 @@ class LedSettings:
         COLOR_MODE_INVERT_BW,
     ]
 
-    LOG_LEVEL_NORMAL = 'normal'
-    LOG_LEVEL_VERBOSE = 'verbose'
-
     DEFAULT_DISPLAY_WIDTH = 28
     DEFAULT_DISPLAY_HEIGHT = 18
 
@@ -36,7 +33,7 @@ class LedSettings:
     # flip_y: boolean - swap top to bottom, depending on wiring
     def __init__(
         self, color_mode = None, display_width = None, display_height = None,
-        brightness = None, flip_x = False, flip_y = False, log_level = None,
+        brightness = None, flip_x = False, flip_y = False,
     ):
         # logger: used in child class(es)
         self._logger = Logger().set_namespace(self.__class__.__name__)
@@ -60,10 +57,6 @@ class LedSettings:
         self.flip_x = flip_x
         self.flip_y = flip_y
 
-        if log_level is None:
-            log_level = self.LOG_LEVEL_NORMAL
-        self.log_level = log_level
-
     def from_config(self):
         config = self.get_values_from_config()
 
@@ -77,8 +70,6 @@ class LedSettings:
             self.flip_x = config['flip_x']
         if 'flip_y' in config:
             self.flip_y = config['flip_y']
-        if 'log_level' in config:
-            self.log_level = config['log_level']
 
         return self
 

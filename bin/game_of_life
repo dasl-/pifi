@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+
+# This is necessary for the imports below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+
+import argparse
+from pifi.settings.gameoflifesettings import GameOfLifeSettings
+from pifi.games.gameoflife import GameOfLife
+from pifi.games.gamecolorhelper import GameColorHelper
+from pifi.logger import Logger
+
+def parseArgs():
+    parser = argparse.ArgumentParser(
+        description=("Conway's game of life. Arguments that are not specified will get values from your " +
+            "config file, if you have one."),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
+    parser.add_argument('--display-width', dest='display_width', action='store', type=int,
+        metavar='N', help='Number of pixels / units')
+    parser.add_argument('--display-height', dest='display_height', action='store', type=int,
+        metavar='N', help='Number of pixels / units')
+    parser.add_argument('--flip-x', dest='flip_x', action='store_true',
+        help='flip X direction output')
+    parser.add_argument('--flip-y', dest='flip_y', action='store_true',
+        help='flip Y direction output')
+    parser.add_argument('--brightness', dest='brightness', action='store', type=int,
+        metavar='N', help='Global brightness value. Max of 31.')
+    parser.add_argument('--loop', dest='should_loop', action='store_true', default=False,
+        help='Whether to start a new game after game over.')
+    parser.add_argument('--seed-liveness-probability', dest='seed_liveness_probability', action='store', type=float,
+        metavar='N', help='Probability that each pixel is live when seeding.')
+    parser.add_argument('--tick-sleep', dest='tick_sleep', action='store', type=float,
+        metavar='N', help='Amount to sleep after each tick.')
+    parser.add_argument('--game-over-detection-lookback', dest='game_over_detection_lookback', action='store', type=int,
+        metavar='N', help='Number of turns to look back to see if game has not changed (i.e. it is over).')
+    parser.add_argument('--fade', dest='fade', action='store_true', help='fade between each tick')
+    parser.add_argument('--invert', dest='invert', action='store_true', help='invert the board')
+
+    game_color_mode_help_str = ''
+    for mode in GameColorHelper.GAME_COLOR_MODES:
+        game_color_mode_help_str += f"'{mode}', "
+    game_color_mode_help_str += "or '{}'".format(GameColorHelper.GAME_COLOR_MODE_RANDOM)
+    parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
+        help=(f"one of: {game_color_mode_help_str}.")
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+args = parseArgs()
+if args.log_uuid:
+    Logger.set_uuid(args.log_uuid)
+
+settings = GameOfLifeSettings().from_config()
+if args.display_width is not None:
+    settings.display_width = args.display_width
+if args.display_height is not None:
+    settings.display_height = args.display_height
+if args.brightness is not None:
+    settings.brightness = args.brightness
+if args.flip_x is not None:
+    settings.flip_x = args.flip_x
+if args.flip_y is not None:
+    settings.flip_y = args.flip_x
+if args.seed_liveness_probability is not None:
+    settings.seed_liveness_probability = args.seed_liveness_probability
+if args.tick_sleep is not None:
+    settings.tick_sleep = args.tick_sleep
+if args.game_over_detection_lookback is not None:
+    settings.game_over_detection_lookback = args.game_over_detection_lookback
+if args.game_color_mode is not None:
+    GameColorHelper().set_game_color_mode(settings, args.game_color_mode)
+if args.fade is not None:
+    settings.fade = args.fade
+if args.invert is not None:
+    settings.invert = args.invert
+
+GameOfLife(settings).play(should_loop = args.should_loop)

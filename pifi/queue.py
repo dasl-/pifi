@@ -1,21 +1,23 @@
+import os
 import time
 import traceback
+import shlex
+import signal
 import simpleaudio
+import subprocess
+
 from pifi.directoryutils import DirectoryUtils
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
-from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
 from pifi.config import Config
-from pifi.games.gameoflife import GameOfLife
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
 from pifi.settings.settingsdb import SettingsDb
 from pifi.settings.snakesettings import SnakeSettings
-from pifi.database import Database
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
@@ -26,13 +28,16 @@ class Queue:
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__config = Config()
-        self.__game_of_life = GameOfLife(GameOfLifeSettings().from_config())
         self.__is_game_of_life_enabled = None
-        self.__last_settings_db_check_time = 0
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__video_player = VideoPlayer(VideoSettings().from_playlist_item_in_queue())
+        self.__video_player = VideoPlayer(VideoSettings().from_config())
+
+        # True if game of life screensaver, a video, or a game (like snake) is playing
+        self.__is_anything_playing = False
+        self.__playback_proc = None
+        self.__playlist_item = None
 
         # house keeping
         self.__clear_screen()
@@ -40,19 +45,20 @@ class Queue:
         self.__playlist.clean_up_state()
 
     def run(self):
-        is_game_reset_needed = False
         while True:
-            next_item = self.__playlist.get_next_playlist_item()
-            if next_item:
-                if next_item["type"] == Playlist.TYPE_VIDEO or next_item["type"] == Playlist.TYPE_GAME:
+            self.__maybe_respond_to_settings_changes()
+            if self.__is_anything_playing:
+                self.__maybe_skip_playback()
+                if self.__playback_proc and self.__playback_proc.poll() is not None:
+                    self.__logger.info("Ending playback because playback proc is no longer running...")
+                    self.__stop_playback_if_playing()
+            else:
+                next_item = self.__playlist.get_next_playlist_item()
+                if next_item:
                     self.__play_playlist_item(next_item)
-                    is_game_reset_needed = True
                 else:
-                    raise Exception("Invalid playlist_item type: {}".format(next_item["type"]))
-            if not self.__maybe_play_game_of_life(is_game_reset_needed):
-                # don't sleep if we're playing GoL (let GoL run as fast as possible).
-                time.sleep(0.050)
-            is_game_reset_needed = False
+                    self.__maybe_play_screensaver()
+            time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
         exception_to_raise = None
@@ -90,66 +96,129 @@ class Queue:
         if exception_to_raise is not None:
             raise exception_to_raise
 
-    """
-    Starting a game causes the currently playing video to immediately be skipped. Playing a lot of games in quick
-    succession could therefore cause the playlist queue to become depleted without the videos even having had a
-    chance to play.
+    def __maybe_play_screensaver(self):
+        if not self.__is_game_of_life_enabled:
+            return
+        log_uuid = 'SCREENSAVER__' + Logger.make_uuid()
+        Logger.set_uuid(log_uuid)
+        self.__logger.info("Starting game of life screensaver...")
+        cmd = f"{DirectoryUtils().root_dir}/bin/game_of_life --loop"
+        self.__start_playback(cmd, log_uuid)
 
-    Thus, when we are skipping a video, we check if a game is the next item in the queue. If so, we reenqueue the
-    video so as not to deplete the queue when a lot of games are being played.
-    """
-    def __reenqueue_or_end_playlist_item(self, current_playlist_item, force_end):
-        if force_end or current_playlist_item["type"] != Playlist.TYPE_VIDEO:
-            pass
-        else: # The current playlist item is a video
-            next_playlist_item = self.__playlist.get_next_playlist_item()
-            if next_playlist_item and next_playlist_item["type"] == Playlist.TYPE_GAME:
-                # Check if the current playlist item was actually skipped -- need to reload it from the DB to get the
-                # latest state.
-                current_playlist_item = self.__playlist.get_playlist_item_by_id(current_playlist_item['playlist_video_id'])
-                if current_playlist_item['is_skip_requested']:
-                    self.__logger.debug("Re-enqueuing current video because it was skipped due " +
-                        "to a game")
-                    self.__playlist.reenqueue(current_playlist_item['playlist_video_id'])
-                    return
+    # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
+    # TODO: set color mode of videos via cli flag
+    def __start_playback(self, cmd, log_uuid):
+        cmd += f' --log-uuid {shlex.quote(log_uuid)}'
 
-        self.__playlist.end_video(current_playlist_item["playlist_video_id"])
+        # Using start_new_session = False here because it is not necessary to start a new session here (though
+        # it should not hurt if we were to set it to True either)
+        self.__playback_proc = subprocess.Popen(
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = False
+        )
+        self.__is_anything_playing = True
 
-    def __maybe_play_game_of_life(self, is_game_reset_needed):
-        # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
-        num_seconds_between_settings_db_queries = 1
-        now = time.time()
-        if (now - self.__last_settings_db_check_time) > num_seconds_between_settings_db_queries:
-            old_is_enabled = self.__is_game_of_life_enabled
-            setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
-            if (setting is None or setting['value'] == '1'):
-                self.__is_game_of_life_enabled = True
-            else:
-                self.__is_game_of_life_enabled = False
-            seconds_since_setting_updated = 0
-            if setting is not None:
-                seconds_since_setting_updated = now - Database.database_date_to_unix_time(setting['update_date'])
-            if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
-                # don't play the sound if they changed the value of the setting a while ago,
-                # perhaps while a video was playing
-                should_play_sound = seconds_since_setting_updated < (num_seconds_between_settings_db_queries + 2)
-                if self.__is_game_of_life_enabled:
-                    if should_play_sound:
-                        simpleaudio.WaveObject.from_wave_file(
-                            DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
-                        ).play()
-                    is_game_reset_needed = True
+    def __maybe_skip_playback(self):
+        if not self.__is_anything_playing:
+            return
+
+        should_skip = False
+        if self.__playlist_item:
+            try:
+                # Might result in: `sqlite3.OperationalError: database is locked`, when DB is under load
+                should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
+            except Exception as e:
+                self.__logger.info(f"Caught exception: {e}.")
+        elif self.__is_screensaver_playing():
+            should_skip = self.__playlist.get_next_playlist_item() is not None
+
+        if should_skip:
+            self.__stop_playback_if_playing(was_skipped = True)
+            return True
+
+        return False
+
+    def __is_screensaver_playing(self):
+        return self.__is_anything_playing and self.__playlist_item is None
+
+    def __stop_playback_if_playing(self, was_skipped = False):
+        if not self.__is_anything_playing:
+            return
+
+        if self.__playback_proc:
+            self.__logger.info("Killing playback proc (if it's still running)...")
+            was_killed = True
+            try:
+                os.kill(self.__playback_proc.pid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                was_killed = False
+            exit_status = self.__playback_proc.wait()
+            if exit_status != 0:
+                if was_killed and abs(exit_status) == signal.SIGTERM:
+                    pass # We expect a specific non-zero exit code if the playback was killed.
                 else:
-                    if should_play_sound:
-                        simpleaudio.WaveObject.from_wave_file(
-                            DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
-                        ).play()
-                    self.__clear_screen()
-            self.__last_settings_db_check_time = now
+                    self.__logger.error(f'Got non-zero exit_status for playback proc: {exit_status}')
 
-        if self.__is_game_of_life_enabled:
-            self.__game_of_life.tick(should_loop = True, force_reset = is_game_reset_needed)
+        if self.__playlist_item:
+            if self.__should_reenqueue_current_playlist_item(was_skipped):
+                self.__playlist.reenqueue(self.__playlist_item["playlist_video_id"])
+            else:
+                self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
+
+        self.__clear_screen()
+
+        self.__logger.info("Ended playback.")
+        Logger.set_uuid('')
+        self.__playback_proc = None
+        self.__playlist_item = None
+        self.__is_anything_playing = False
+
+    """
+    Starting a game of snake causes the currently playing video to immediately be skipped. Playing a lot of snake
+    games in quick succession could therefore cause the playlist queue to become depleted without the videos even
+    having had a chance to play.
+
+    Thus, when we are skipping a video, we check if a snake game is the next item in the queue. If so, we
+    reenqueue the video so as not to deplete the queue when a lot of snake games are being played.
+    """
+    def __should_reenqueue_current_playlist_item(self, was_current_playlist_item_skipped):
+        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:
+            return False
+
+        if not was_current_playlist_item_skipped:
+            return False
+
+        next_playlist_item = self.__playlist.get_next_playlist_item()
+        if next_playlist_item and next_playlist_item["type"] == Playlist.TYPE_GAME:
+            return True
+
+        return False
+
+    def __maybe_respond_to_settings_changes(self):
+        old_is_enabled = self.__is_game_of_life_enabled
+        setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
+        if (setting is None or setting['value'] == '1'):
+            self.__is_game_of_life_enabled = True
         else:
+            self.__is_game_of_life_enabled = False
+
+        if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
+            should_play_sound = not self.__is_anything_playing or self.__is_screensaver_playing()
+            if self.__is_game_of_life_enabled:
+                if should_play_sound:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
+                    ).play()
+            else:
+                if should_play_sound:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
+                    ).play()
+                if self.__is_screensaver_playing():
+                    self.__stop_playback_if_playing()
+
+        if not self.__is_anything_playing:
+            now = time.time()
             if (now - self.__last_screen_clear_while_screensaver_disabled_time) > 1:
                 # Clear screen every second while screensaver is disabled
                 # See: https://github.com/dasl-/pifi/issues/6

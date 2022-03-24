@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPStatus
 from io import BytesIO
 import json
@@ -341,7 +340,7 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
     #   [Sat Jan 29 00:44:36 2022] TCP: request_sock_TCP: Possible SYN flooding on port 80. Sending cookies.  Check SNMP counters.
     request_queue_size = 128
 
-class PifiServer:
+class Server:
 
     def __init__(self):
         self.__config = Config()
@@ -358,7 +357,3 @@ class PifiServer:
 
     def serve_forever(self):
         self.__server.serve_forever()
-
-
-server = PifiServer()
-server.serve_forever()
