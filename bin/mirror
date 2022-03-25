@@ -44,6 +44,7 @@ video_settings = VideoSettings(args)
 video_player = VideoPlayer(video_settings)
 video_player.clear_screen()
 
+# TODO: update this code. It won't work with VideoProcessor API changes we've made.
 video_processor = VideoProcessor(video_settings)
 
 # Video Capture - 80, 60 is as small as itll go without artifacts or breaking

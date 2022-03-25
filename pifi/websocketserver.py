@@ -92,7 +92,7 @@ class WebSocketServer:
         return (subprocess
             .check_output(
                 'sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',
-                stderr = subprocess.STDOUT, shell = True, executable = '/bin/bash'
+                stderr = subprocess.STDOUT, shell = True, executable = '/usr/bin/bash'
             )
             .decode("utf-8")
             .strip())

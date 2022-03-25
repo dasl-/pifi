@@ -8,6 +8,7 @@ root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
 import argparse
+from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
 from pifi.videoplayer import VideoPlayer
 from pifi.videoprocessor import VideoProcessor
@@ -31,8 +32,8 @@ def parseArgs():
                 VideoSettings.COLOR_MODE_G, VideoSettings.COLOR_MODE_B, VideoSettings.COLOR_MODE_INVERT_COLOR,
                 VideoSettings.COLOR_MODE_INVERT_BW))
     )
-    parser.add_argument('--audio', dest='should_play_audio', action='store_true',
-        help='play the audio')
+    parser.add_argument('--no-audio', dest='dont_play_audio', action='store_true',
+        default=False, help="don't play the audio")
     parser.add_argument('--flip-x', dest='flip_x', action='store_true',
         help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true',
@@ -49,6 +50,8 @@ def parseArgs():
 args = parseArgs()
 if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
+else:
+    Logger.set_uuid(Logger.make_uuid())
 
 settings = VideoSettings().from_config()
 if args.color_mode is not None:
@@ -57,8 +60,8 @@ if args.display_width is not None:
     settings.display_width = args.display_width
 if args.display_height is not None:
     settings.display_height = args.display_height
-if args.should_play_audio is not None:
-    settings.should_play_audio = args.should_play_audio
+if args.dont_play_audio is not None:
+    settings.should_play_audio = not args.dont_play_audio
 if args.brightness is not None:
     settings.brightness = args.brightness
 if args.flip_x is not None:
@@ -68,4 +71,4 @@ if args.flip_y is not None:
 if args.should_save_video is not None:
     settings.should_save_video = args.should_save_video
 
-VideoProcessor(settings).process_and_play(url = args.url, video_player = VideoPlayer(settings))
+VideoProcessor(args.url, settings, VideoPlayer(settings)).process_and_play()

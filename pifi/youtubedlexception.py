@@ -1,0 +1,2 @@
+class YoutubeDlException(Exception):
+    pass
