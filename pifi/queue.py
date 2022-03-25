@@ -61,17 +61,19 @@ class Queue:
             time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
-        exception_to_raise = None
+        log_uuid = Logger.make_uuid()
+        Logger.set_uuid(log_uuid)
+
+        cmd = None
         if playlist_item["type"] == Playlist.TYPE_VIDEO:
             if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
                 # Someone deleted the item from the queue in between getting the item and starting it.
                 return
-            video_settings = VideoSettings().from_playlist_item_in_queue(playlist_item)
-            video_player = VideoPlayer(video_settings)
-            video_processor = VideoProcessor(video_settings, playlist_item['playlist_video_id'])
-            video_processor.process_and_play(url = playlist_item["url"], video_player = video_player)
+            cmd = (f"{DirectoryUtils().root_dir}/bin/play_video --url {shlex.quote(playlist_item['url'])} " +
+                f"--color-mode {shlex.quote(playlist_item['color_mode'])}")
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
+                # TODO
                 snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
                 is_waiting_for_players = False
                 if snake_settings.num_players > 1:
@@ -84,17 +86,14 @@ class Queue:
                     snake.play_snake()
                 except Exception:
                     self.__logger.error('Caught exception: {}'.format(traceback.format_exc()))
-
             else:
-                exception_to_raise = Exception("Invalid game title: {}".format(playlist_item["title"]))
+                self.__logger.error(f"Invalid game title: {playlist_item['title']}")
         else:
-            exception_to_raise = Exception("Invalid playlist_item type: {}".format(playlist_item["type"]))
+            self.__logger.error(f"Invalid playlist_item type: {playlist_item['type']}")
 
-        self.__reenqueue_or_end_playlist_item(
-            playlist_item, force_end = (exception_to_raise is not None)
-        )
-        if exception_to_raise is not None:
-            raise exception_to_raise
+        if (cmd):
+            self.__start_playback(cmd, log_uuid)
+            self.__playlist_item = playlist_item
 
     def __maybe_play_screensaver(self):
         if not self.__is_game_of_life_enabled:

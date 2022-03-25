@@ -10,15 +10,12 @@ import tempfile
 import hashlib
 import select
 import signal
-import random
-import string
 import traceback
 
 from pifi.logger import Logger
 from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
-from pifi.settings.videosettings import VideoSettings
 from pifi.directoryutils import DirectoryUtils
-from pifi.playlist import Playlist
+from pifi.youtubedlexception import YoutubeDlException
 
 class VideoProcessor:
 
@@ -32,32 +29,27 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
-    def __init__(self, video_settings, playlist_video_id = None):
-        self.__url = None
-        self.__playlist = None
-        self.__playlist_video_id = None
+    def __init__(self, url, video_settings, video_player):
+        self.__logger = Logger().set_namespace(self.__class__.__name__)
+        self.__url = url
         self.__video_settings = video_settings
+        self.__video_player = video_player
+        self.__process_and_play_vid_proc_pgid = None
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
         # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
         # Access should go through self.__get_video_info() to populate it lazily
         self.__video_info = None
 
-        if self.__video_settings.should_check_playlist:
-            self.__playlist = Playlist()
-            self.__playlist_video_id = playlist_video_id
-
         # True if the video already exists (see: VideoSettings.should_save_video)
         self.__is_video_already_downloaded = False
-        self.__was_video_skipped = False
+        self.__do_housekeeping()
+        self.__register_signal_handlers()
 
-        log_namespace_unique_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
-        self.__logger = Logger().set_namespace(self.__class__.__name__ + "__" + log_namespace_unique_id)
-
-    def process_and_play(self, url, video_player):
-        self.__logger.info("Starting process_and_play for url: {}, VideoSettings: {}".format(url, vars(self.__video_settings)))
-        self.__show_loading_screen(video_player)
-        self.__url = url
+    def process_and_play(self):
+        self.__logger.info(f"Starting process_and_play for url: {self.__url}, VideoSettings: " +
+            f"{vars(self.__video_settings)}")
+        self.__show_loading_screen()
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
@@ -70,16 +62,31 @@ class VideoProcessor:
             self.__logger.info('Video download complete: {}'.format(video_save_path))
             self.__is_video_already_downloaded = True
 
-        self.__process_and_play_video(video_player)
-        video_player.clear_screen()
+        attempt = 1
+        max_attempts = 2
+        while attempt <= max_attempts:
+            try:
+                self.__process_and_play_video()
+                break
+            except YoutubeDlException as e:
+                if attempt < max_attempts:
+                    self.__logger.warning("Caught exception in VideoProcessor.__process_and_play_video: " +
+                        traceback.format_exc())
+                    self.__logger.warning("Updating youtube-dl and retrying video...")
+                    self.__update_youtube_dl()
+                if attempt >= max_attempts:
+                    raise e
+            finally:
+                self.__do_housekeeping()
+            attempt += 1
         self.__logger.info("Finished process_and_play")
 
-    def __show_loading_screen(self, video_player):
+    def __show_loading_screen(self):
         filename = 'loading_screen_monochrome.npy'
         if self.__video_settings.is_color_mode_rgb():
             filename = 'loading_screen_color.npy'
         loading_screen_path = DirectoryUtils().root_dir + '/' + filename
-        video_player.play_frame(np.load(loading_screen_path))
+        self.__video_player.play_frame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
@@ -120,15 +127,7 @@ class VideoProcessor:
                     .format(attempt, max_attempts, caught_or_raising, traceback.format_exc()))
                 if attempt < max_attempts:
                     self.__logger.warning("Attempting to update youtube-dl before retrying download...")
-                    update_youtube_dl_output = (subprocess
-                        .check_output(
-                            'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
-                            shell = True,
-                            executable = '/bin/bash',
-                            stderr = subprocess.STDOUT
-                        )
-                        .decode("utf-8"))
-                    self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+                    self.__update_youtube_dl()
                 else:
                     self.__logger.error("Unable to download video info after {} attempts.".format(max_attempts))
                     raise e
@@ -154,32 +153,18 @@ class VideoProcessor:
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
-    def __process_and_play_video(self, video_player):
-        if self.__maybe_skip_video():
-            return
-
-        self.__do_pre_cleanup()
-
-        fps = None
-        try:
-            fps = self.__calculate_fps()
-        except subprocess.CalledProcessError as ex:
-            self.__logger.error("Got an error calculating fps: " + str(ex))
-            return
-
+    def __process_and_play_video(self):
+        fps = self.__calculate_fps()
         ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
-
-        if self.__maybe_skip_video():
-            return
 
         process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
         process_and_play_vid_proc = subprocess.Popen(
-            process_and_play_vid_cmd, shell = True, executable = '/bin/bash', start_new_session = True
+            process_and_play_vid_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
         )
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
-        process_and_play_vid_proc_pgid = os.getpgid(process_and_play_vid_proc.pid)
+        self.__process_and_play_vid_proc_pgid = os.getpgid(process_and_play_vid_proc.pid)
 
         bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
         np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
@@ -188,7 +173,6 @@ class VideoProcessor:
             np_array_shape.append(3)
 
         vid_start_time = None
-        last_skip_check_time = 0
         frame_length = 1 / fps
         last_frame = None
         vid_processing_lag_counter = 0
@@ -196,12 +180,6 @@ class VideoProcessor:
         avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
         while True:
-            t = time.time()
-            if (t - last_skip_check_time) > 0.100:
-                if self.__maybe_skip_video(process_and_play_vid_proc_pgid):
-                    break
-                last_skip_check_time = t
-
             if is_ffmpeg_done_outputting or avg_color_frames.is_full():
                 pass
             else:
@@ -214,13 +192,22 @@ class VideoProcessor:
                 pass
             else:
                 is_video_done_playing, last_frame, vid_processing_lag_counter = self.__play_video(
-                    video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+                    avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
                     last_frame, vid_processing_lag_counter
                 )
                 if is_video_done_playing:
                     break
 
-        self.__do_post_cleanup(process_and_play_vid_proc)
+        self.__logger.info("Waiting for process_and_play_vid_proc to end...")
+        while True: # Wait for proc to end
+            if process_and_play_vid_proc.poll() is not None:
+                if process_and_play_vid_proc.returncode != 0:
+                    raise YoutubeDlException("The process_and_play_vid_proc process exited non-zero: " +
+                        f"{process_and_play_vid_proc.returncode}. This could mean an issue with youtube-dl; " +
+                        "it may require updating.")
+                self.__logger.info("The process_and_play_vid_proc proc ended.")
+                break
+            time.sleep(0.1)
 
     def __download_youtube_video(self):
         return (
@@ -262,7 +249,7 @@ class VideoProcessor:
         return [False, vid_start_time]
 
     def __play_video(
-        self, video_player, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+        self, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
         last_frame, vid_processing_lag_counter
     ):
         cur_frame = max(math.floor((time.time() - vid_start_time) / frame_length), 0)
@@ -295,7 +282,7 @@ class VideoProcessor:
                 ("Video playing unable to keep up in real-time. Skipped playing {} frame(s)."
                     .format(num_skipped_frames))
             )
-        video_player.play_frame(avg_color_frames[cur_frame])
+        self.__video_player.play_frame(avg_color_frames[cur_frame])
         return [False, cur_frame, vid_processing_lag_counter]
 
     def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name):
@@ -412,9 +399,18 @@ class VideoProcessor:
             video_path = f'<({self.__get_youtube_dl_cmd()} 2>/dev/null)'
 
         fps_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate {video_path}'
-        fps_parts = (subprocess
-            .check_output(fps_cmd, shell = True, executable = '/bin/bash')
-            .decode("utf-8"))
+        try:
+            fps_parts = (subprocess
+                .check_output(fps_cmd, shell = True, executable = '/usr/bin/bash')
+                .decode("utf-8"))
+        except subprocess.CalledProcessError as ex:
+            if self.__is_video_already_downloaded:
+                raise ex
+            else:
+                raise YoutubeDlException("The fps calculation process exited non-zero: " +
+                    f"{ex.returncode}. Output: [{ex.output}]. This could mean an issue with youtube-dl; " +
+                    "it may require updating.")
+
         fps_parts = fps_parts.split('/')
         fps = None
         try:
@@ -444,52 +440,54 @@ class VideoProcessor:
         )
         self.__logger.info('Making ffmpeg_to_python_fifo...')
         ffmpeg_to_python_fifo_name = (subprocess
-            .check_output(make_fifo_cmd, shell = True, executable = '/bin/bash')
+            .check_output(make_fifo_cmd, shell = True, executable = '/usr/bin/bash')
             .decode("utf-8"))
         return ffmpeg_to_python_fifo_name
 
-    def __get_cleanup_ffmpeg_to_python_fifos_cmd(self):
-        path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FFMPEG_TO_PYTHON_FIFO_PREFIX) + '*'
-        return 'sudo rm -rf {}'.format(path_glob)
+    def __update_youtube_dl(self):
+        update_youtube_dl_output = (subprocess
+            .check_output(
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                shell = True,
+                executable = '/usr/bin/bash',
+                stderr = subprocess.STDOUT
+            )
+            .decode("utf-8"))
+        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
 
-    def __get_cleanup_incomplete_video_downloads_cmd(self):
-        return 'sudo rm -rf *{}'.format(shlex.quote(self.__TEMP_VIDEO_DOWNLOAD_SUFFIX))
-
-    # Perhaps aggressive to do 'pre' cleanup, but wanting to be a good citizen. Protects against a hypothetical
-    # where we're stuck in a state of failing to finish playing videos and thus post cleanup logic never gets
-    # run.
-    def __do_pre_cleanup(self):
-        self.__logger.info("Deleting orphaned ffmpeg_to_python_fifos...")
-        subprocess.check_output(self.__get_cleanup_ffmpeg_to_python_fifos_cmd(), shell = True, executable = '/bin/bash')
-        self.__logger.info("Deleting orphaned incomplete video downloads...")
-        subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
-
-    def __do_post_cleanup(self, process_and_play_vid_proc):
-        self.__logger.info("Waiting for process_and_play_vid_proc to end...")
-        exit_status = process_and_play_vid_proc.wait()
-        if self.__was_video_skipped and exit_status == -signal.SIGTERM:
-            pass # We expect a specific non-zero exit code if the video was skipped.
-        elif exit_status != 0:
-            self.__logger.error('Got non-zero exit_status for process_and_play_vid_proc: {}'.format(exit_status))
+    def __do_housekeeping(self):
+        self.__video_player.clear_screen()
+        if self.__process_and_play_vid_proc_pgid:
+            self.__logger.info("Killing process and play video process group (PGID: " +
+                f"{self.__process_and_play_vid_proc_pgid})...")
+            try:
+                os.killpg(self.__process_and_play_vid_proc_pgid, signal.SIGTERM)
+            except Exception:
+                # might raise: `ProcessLookupError: [Errno 3] No such process`
+                pass
 
         self.__logger.info("Deleting ffmpeg_to_python fifos...")
-        subprocess.check_output(self.__get_cleanup_ffmpeg_to_python_fifos_cmd(), shell = True, executable = '/bin/bash')
+        path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FFMPEG_TO_PYTHON_FIFO_PREFIX) + '*'
+        cleanup_ffmpeg_to_python_fifos_cmd = f'sudo rm -rf {path_glob}'
+        subprocess.check_output(cleanup_ffmpeg_to_python_fifos_cmd, shell = True, executable = '/usr/bin/bash')
 
         self.__logger.info("Deleting incomplete video downloads...")
-        subprocess.check_output(self.__get_cleanup_incomplete_video_downloads_cmd(), shell = True, executable = '/bin/bash')
+        cleanup_incomplete_video_downloads_cmd = f'sudo rm -rf *{shlex.quote(self.__TEMP_VIDEO_DOWNLOAD_SUFFIX)}'
+        subprocess.check_output(cleanup_incomplete_video_downloads_cmd, shell = True, executable = '/usr/bin/bash')
 
-    def __maybe_skip_video(self, process_and_play_vid_proc_pgid = None):
-        if not self.__video_settings.should_check_playlist:
-            return False
+        self.__video_info = None
 
-        if self.__playlist.should_skip_video_id(self.__playlist_video_id):
-            if process_and_play_vid_proc_pgid:
-                try:
-                    os.killpg(process_and_play_vid_proc_pgid, signal.SIGTERM)
-                except Exception:
-                    # might raise: `ProcessLookupError: [Errno 3] No such process`
-                    pass
-            self.__was_video_skipped = True
-            return True
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGHUP, self.__signal_handler)
+        signal.signal(signal.SIGQUIT, self.__signal_handler)
+        signal.signal(signal.SIGABRT, self.__signal_handler)
+        signal.signal(signal.SIGFPE, self.__signal_handler)
+        signal.signal(signal.SIGSEGV, self.__signal_handler)
+        signal.signal(signal.SIGPIPE, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
 
-        return False
+    def __signal_handler(self, sig, frame):
+        self.__logger.info(f"Caught signal {sig}, exiting gracefully...")
+        self.__do_housekeeping()
+        sys.exit(sig)
