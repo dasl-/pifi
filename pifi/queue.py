@@ -18,7 +18,6 @@ from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
 from pifi.settings.settingsdb import SettingsDb
 from pifi.settings.snakesettings import SnakeSettings
-from pifi.database import Database
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
@@ -29,8 +28,7 @@ class Queue:
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__config = Config()
-        self.__is_game_of_life_enabled = True
-        self.__last_settings_db_check_time = 0
+        self.__is_game_of_life_enabled = None
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
@@ -48,6 +46,7 @@ class Queue:
 
     def run(self):
         while True:
+            self.__maybe_respond_to_settings_changes()
             if self.__is_anything_playing:
                 self.__maybe_skip_playback()
                 if self.__playback_proc and self.__playback_proc.poll() is not None:
@@ -59,8 +58,6 @@ class Queue:
                     self.__play_playlist_item(next_item)
                 else:
                     self.__maybe_play_screensaver()
-
-            self.__maybe_respond_to_settings_changes()
             time.sleep(0.050)
 
     def __play_playlist_item(self, playlist_item):
@@ -131,7 +128,7 @@ class Queue:
                 should_skip = self.__playlist.should_skip_video_id(self.__playlist_item['playlist_video_id'])
             except Exception as e:
                 self.__logger.info(f"Caught exception: {e}.")
-        elif self.__is_screensaver_in_progress():
+        elif self.__is_screensaver_playing():
             should_skip = self.__playlist.get_next_playlist_item() is not None
 
         if should_skip:
@@ -140,7 +137,7 @@ class Queue:
 
         return False
 
-    def __is_screensaver_in_progress(self):
+    def __is_screensaver_playing(self):
         return self.__is_anything_playing and self.__playlist_item is None
 
     def __stop_playback_if_playing(self, was_skipped = False):
@@ -167,6 +164,8 @@ class Queue:
                 self.__playlist.reenqueue(self.__playlist_item["playlist_video_id"])
             else:
                 self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
+
+        self.__clear_screen()
 
         self.__logger.info("Ended playback.")
         Logger.set_uuid('')
@@ -195,42 +194,31 @@ class Queue:
 
         return False
 
-    # returns boolean: __is_game_of_life_enabled
-    def __maybe_play_game_of_life(self, is_game_reset_needed):
-        # query settings DB no more than once per second. For perf reasons *shrug* (didn't actually measure how expensive it is)
-        num_seconds_between_settings_db_queries = 1
-        now = time.time()
-        if (now - self.__last_settings_db_check_time) > num_seconds_between_settings_db_queries:
-            old_is_enabled = self.__is_game_of_life_enabled
-            setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
-            if (setting is None or setting['value'] == '1'):
-                self.__is_game_of_life_enabled = True
-            else:
-                self.__is_game_of_life_enabled = False
-            seconds_since_setting_updated = 0
-            if setting is not None:
-                seconds_since_setting_updated = now - Database.database_date_to_unix_time(setting['update_date'])
-            if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
-                # don't play the sound if they changed the value of the setting a while ago,
-                # perhaps while a video was playing
-                should_play_sound = seconds_since_setting_updated < (num_seconds_between_settings_db_queries + 2)
-                if self.__is_game_of_life_enabled:
-                    if should_play_sound:
-                        simpleaudio.WaveObject.from_wave_file(
-                            DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
-                        ).play()
-                    is_game_reset_needed = True
-                else:
-                    if should_play_sound:
-                        simpleaudio.WaveObject.from_wave_file(
-                            DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
-                        ).play()
-                    self.__clear_screen()
-            self.__last_settings_db_check_time = now
-
-        if self.__is_game_of_life_enabled:
-            self.__game_of_life.tick(should_loop = True, force_reset = is_game_reset_needed)
+    def __maybe_respond_to_settings_changes(self):
+        old_is_enabled = self.__is_game_of_life_enabled
+        setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
+        if (setting is None or setting['value'] == '1'):
+            self.__is_game_of_life_enabled = True
         else:
+            self.__is_game_of_life_enabled = False
+
+        if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
+            should_play_sound = not self.__is_anything_playing or self.__is_screensaver_playing()
+            if self.__is_game_of_life_enabled:
+                if should_play_sound:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
+                    ).play()
+            else:
+                if should_play_sound:
+                    simpleaudio.WaveObject.from_wave_file(
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
+                    ).play()
+                if self.__is_screensaver_playing():
+                    self.__stop_playback_if_playing()
+
+        if not self.__is_anything_playing:
+            now = time.time()
             if (now - self.__last_screen_clear_while_screensaver_disabled_time) > 1:
                 # Clear screen every second while screensaver is disabled
                 # See: https://github.com/dasl-/pifi/issues/6
@@ -238,9 +226,6 @@ class Queue:
                 self.__last_screen_clear_while_screensaver_disabled_time = now
 
         return self.__is_game_of_life_enabled
-
-    def __maybe_respond_to_settings_changes(self):
-        pass
 
     def __clear_screen(self):
         self.__video_player.clear_screen()
