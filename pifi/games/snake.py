@@ -51,7 +51,10 @@ class Snake:
         self.__video_player = VideoPlayer(self.__settings)
         self.__playlist_video = playlist_video
         self.__players = []
+
         server_unix_socket = socket.socket(fileno = server_unix_socket_fd)
+        # The timeout is not "inherited" from the socket_fd that was given to us, thus we have to set it again.
+        UnixSocketHelper().set_server_unix_socket_timeout(server_unix_socket)
         for i in range(self.__settings.num_players):
             self.__players.append(SnakePlayer(i, server_unix_socket, self))
 

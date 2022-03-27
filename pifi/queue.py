@@ -1,6 +1,5 @@
 import os
 import time
-import traceback
 import shlex
 import signal
 import simpleaudio
