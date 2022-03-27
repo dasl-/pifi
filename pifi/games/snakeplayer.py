@@ -85,13 +85,17 @@ class SnakePlayer:
         move = None
         if self.__unix_socket_helper.is_ready_to_read():
             try:
+                start = time.time()
                 move = self.__unix_socket_helper.recv_msg()
+                end = time.time()
+                elapsed_ms = (end - start) * 1000
+                if elapsed_ms > 2:
+                    self.__logger.info(f"Reading unix socket move took {elapsed_ms}ms")
             except (SocketClosedException, ConnectionResetError):
                 self.__logger.info("socket closed for player")
                 self.__is_marked_for_elimination = True
                 self.__unix_socket_helper.close()
                 return
-
             move, await_move_from_client_start_time = move.split()
             await_move_from_client_start_time = float(await_move_from_client_start_time)
             elapsed_ms = (time.time() - await_move_from_client_start_time) * 1000
@@ -100,7 +104,6 @@ class SnakePlayer:
                 # cat /var/log/pifi/queue.log | grep 'Total elapsed' | awk '{print $(NF-1)}' | datamash max 1 min 1 mean 1 median 1 q1 1 q3 1
                 # You should comment out the sleep in Snake.__tick_sleep to get purer data (get timing data without including that sleep)
                 self.__logger.info(f"Total elapsed from move start to registering: {elapsed_ms} ms")
-
             move = int(move)
             if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
                 move = self.UP
@@ -292,10 +295,11 @@ class SnakePlayer:
             try:
                 client_playlist_video_id = json.loads(self.__unix_socket_helper.recv_msg())['playlist_video_id']
                 if client_playlist_video_id != playlist_video_id:
-                    raise Exception("Server was playing playlist_video_id: {}, but client was playing playlist_video_id: {}."
-                        .format(playlist_video_id, client_playlist_video_id))
+                    self.__logger.warning(f"Server was playing playlist_video_id: {playlist_video_id}, but client was " +
+                        f"playing playlist_video_id: {client_playlist_video_id}. Calling accept again due to " +
+                        "playlist_video_id mismatch issue.")
             except Exception:
-                self.__logger.info('Calling accept again due to playlist_video_id mismatch error: {}'.format(traceback.format_exc()))
+                self.__logger.error(f'Error reading playlist_video_id from client: {traceback.format_exc()}')
                 continue
 
             # send client msg indicating its player index

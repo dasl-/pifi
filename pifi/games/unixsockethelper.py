@@ -49,12 +49,14 @@ class UnixSocketHelper:
             if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
                 raise e # re-raise exception if a different error occurred
         unix_socket.bind(socket_path)
-
-        # don't let socket.accept() block indefinitely if something goes wrong
-        # https://docs.python.org/3/library/socket.html#notes-on-socket-timeouts
-        unix_socket.settimeout(self.__SERVER_SOCKET_TIMEOUT_S)
+        self.set_server_unix_socket_timeout(unix_socket)
         unix_socket.listen(16)
         return unix_socket
+
+    # don't let socket.accept() block indefinitely if something goes wrong
+    # https://docs.python.org/3/library/socket.html#notes-on-socket-timeouts
+    def set_server_unix_socket_timeout(self, server_socket):
+        server_socket.settimeout(self.__SERVER_SOCKET_TIMEOUT_S)
 
     def set_server_socket(self, socket):
         self.__server_socket = socket
