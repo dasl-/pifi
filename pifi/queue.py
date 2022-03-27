@@ -73,7 +73,6 @@ class Queue:
                 f"--color-mode {shlex.quote(playlist_item['color_mode'])}")
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
-                # TODO
                 snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
                 is_waiting_for_players = False
                 if snake_settings.num_players > 1:
@@ -107,7 +106,6 @@ class Queue:
         self.__start_playback(cmd, log_uuid)
 
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
-    # TODO: set color mode of videos via cli flag
     def __start_playback(self, cmd, log_uuid, pass_fds = ()):
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")

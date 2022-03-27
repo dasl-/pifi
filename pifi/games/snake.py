@@ -222,7 +222,6 @@ class Snake:
         for i in range(self.__settings.num_players):
             if (not self.__players[i].should_show_snake()):
                 # Blink snakes for the first few ticks after they are eliminated.
-                # TODO: move this into new Player class (Player::should_display or something)
                 continue
 
             for (y, x) in self.__players[i].get_snake_linked_list():
