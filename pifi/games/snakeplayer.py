@@ -92,6 +92,15 @@ class SnakePlayer:
                 self.__unix_socket_helper.close()
                 return
 
+            move, await_move_from_client_start_time = move.split()
+            await_move_from_client_start_time = float(await_move_from_client_start_time)
+            elapsed_ms = (time.time() - await_move_from_client_start_time) * 1000
+            if elapsed_ms > 300:
+                # You can analyze this data for instance via:
+                # cat /var/log/pifi/queue.log | grep 'Total elapsed' | awk '{print $(NF-1)}' | datamash max 1 min 1 mean 1 median 1 q1 1 q3 1
+                # You should comment out the sleep in Snake.__tick_sleep to get purer data (get timing data without including that sleep)
+                self.__logger.info(f"Total elapsed from move start to registering: {elapsed_ms} ms")
+
             move = int(move)
             if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
                 move = self.UP
