@@ -42,6 +42,8 @@ def parseArgs():
         metavar='N', help='Global brightness value. Max of 31.')
     parser.add_argument('--save', dest='should_save_video', action='store_true',
         help='Save the video to avoid downloading it in the future.')
+    parser.add_argument('--no-clear-screen', dest='dont_clear_screen', action='store_true',
+        default=False, help="Don't clear the screen when initializing the video. For internal use only.")
 
     args = parser.parse_args()
     return args
@@ -71,4 +73,5 @@ if args.flip_y is not None:
 if args.should_save_video is not None:
     settings.should_save_video = args.should_save_video
 
-VideoProcessor(args.url, settings, VideoPlayer(settings)).process_and_play()
+clear_screen = not args.dont_clear_screen
+VideoProcessor(args.url, settings, VideoPlayer(settings, clear_screen), clear_screen).process_and_play()

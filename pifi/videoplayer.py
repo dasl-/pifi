@@ -1,5 +1,6 @@
 import numpy as np
 from apa102_pi.driver import apa102
+from pifi.directoryutils import DirectoryUtils
 from pifi.gamma import Gamma
 from pifi.settings.ledsettings import LedSettings
 
@@ -12,7 +13,7 @@ class VideoPlayer:
 
     __FADE_STEPS = 5
 
-    def __init__(self, led_settings):
+    def __init__(self, led_settings, clear_screen = True):
         self.__led_settings = led_settings
         self.__current_frame = None
         self.__pixels = None
@@ -40,7 +41,7 @@ class VideoPlayer:
             self.__scale_red_gamma_curves = self.__gamma_controller.scale_red_curves
             self.__scale_green_gamma_curves = self.__gamma_controller.scale_green_curves
             self.__scale_blue_gamma_curves = self.__gamma_controller.scale_blue_curves
-        self.__setup_pixels()
+        self.__setup_pixels(clear_screen)
 
     def clear_screen(self):
         self.__pixels.clear_strip()
@@ -76,7 +77,14 @@ class VideoPlayer:
         self.__set_frame_pixels(avg_color_frame)
         self.__pixels.show()
 
-    def __setup_pixels(self):
+    def show_loading_screen(self):
+        filename = 'loading_screen_monochrome.npy'
+        if self.__led_settings.is_color_mode_rgb():
+            filename = 'loading_screen_color.npy'
+        loading_screen_path = DirectoryUtils().root_dir + '/' + filename
+        self.play_frame(np.load(loading_screen_path))
+
+    def __setup_pixels(self, clear_screen):
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.__pixels = apa102.APA102(
             num_led=(self.__led_settings.display_width * self.__led_settings.display_height + 8),
@@ -85,7 +93,8 @@ class VideoPlayer:
             order=self.__LED_ORDER
         )
         self.__pixels.set_global_brightness(self.__led_settings.brightness)
-        self.__pixels.clear_strip()
+        if clear_screen:
+            self.clear_screen()
         return self.__pixels
 
     # CAUTION:
