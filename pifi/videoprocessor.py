@@ -29,7 +29,11 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
-    def __init__(self, url, video_settings, video_player):
+    # clear_screen: boolean. If False, then we won't clear the screen during the init phase.
+    #   This can be useful because the Queue process starts the loading screen. If we cleared
+    #   it in the VideoProcessor before showing the loading screen again, there'd be a brief
+    #   flicker in the loading screen image.
+    def __init__(self, url, video_settings, video_player, clear_screen):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
         self.__video_settings = video_settings
@@ -43,13 +47,13 @@ class VideoProcessor:
 
         # True if the video already exists (see: VideoSettings.should_save_video)
         self.__is_video_already_downloaded = False
-        self.__do_housekeeping()
+        self.__do_housekeeping(clear_screen)
         self.__register_signal_handlers()
 
     def process_and_play(self):
         self.__logger.info(f"Starting process_and_play for url: {self.__url}, VideoSettings: " +
             f"{vars(self.__video_settings)}")
-        self.__show_loading_screen()
+        self.__video_player.show_loading_screen()
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
@@ -80,13 +84,6 @@ class VideoProcessor:
                 self.__do_housekeeping()
             attempt += 1
         self.__logger.info("Finished process_and_play")
-
-    def __show_loading_screen(self):
-        filename = 'loading_screen_monochrome.npy'
-        if self.__video_settings.is_color_mode_rgb():
-            filename = 'loading_screen_color.npy'
-        loading_screen_path = DirectoryUtils().root_dir + '/' + filename
-        self.__video_player.play_frame(np.load(loading_screen_path))
 
     # Lazily populate video_info from youtube. This takes a couple seconds.
     def __get_video_info(self):
@@ -455,8 +452,9 @@ class VideoProcessor:
             .decode("utf-8"))
         self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
 
-    def __do_housekeeping(self):
-        self.__video_player.clear_screen()
+    def __do_housekeeping(self, clear_screen = True):
+        if clear_screen:
+            self.__video_player.clear_screen()
         if self.__process_and_play_vid_proc_pgid:
             self.__logger.info("Killing process and play video process group (PGID: " +
                 f"{self.__process_and_play_vid_proc_pgid})...")

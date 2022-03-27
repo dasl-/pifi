@@ -48,7 +48,6 @@ class Snake:
         self.__apples_eaten_count = 0
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
-        self.__video_player = VideoPlayer(self.__settings)
         self.__playlist_video = playlist_video
         self.__players = []
 
@@ -69,6 +68,7 @@ class Snake:
         ])
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
+        self.__video_player = VideoPlayer(self.__settings)
         self.__register_signal_handlers()
 
     def play_snake(self):

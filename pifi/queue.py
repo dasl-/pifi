@@ -69,7 +69,7 @@ class Queue:
                 # Someone deleted the item from the queue in between getting the item and starting it.
                 return
             cmd = (f"{DirectoryUtils().root_dir}/bin/play_video --url {shlex.quote(playlist_item['url'])} " +
-                f"--color-mode {shlex.quote(playlist_item['color_mode'])}")
+                f"--color-mode {shlex.quote(playlist_item['color_mode'])} --no-clear-screen")
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
                 snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
@@ -90,7 +90,7 @@ class Queue:
             self.__logger.error(f"Invalid playlist_item type: {playlist_item['type']}")
 
         if (cmd):
-            self.__start_playback(cmd, log_uuid, pass_fds)
+            self.__start_playback(cmd, log_uuid, True, pass_fds)
             self.__playlist_item = playlist_item
         else:
             Logger.set_uuid('')
@@ -102,10 +102,12 @@ class Queue:
         Logger.set_uuid(log_uuid)
         self.__logger.info("Starting game of life screensaver...")
         cmd = f"{DirectoryUtils().root_dir}/bin/game_of_life --loop"
-        self.__start_playback(cmd, log_uuid)
+        self.__start_playback(cmd, log_uuid, False)
 
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
-    def __start_playback(self, cmd, log_uuid, pass_fds = ()):
+    def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
+        if show_loading_screen:
+            self.__video_player.show_loading_screen()
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
