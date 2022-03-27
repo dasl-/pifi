@@ -11,7 +11,6 @@ from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
 from pifi.videoplayer import VideoPlayer
-from pifi.videoprocessor import VideoProcessor
 from pifi.config import Config
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
@@ -65,6 +64,7 @@ class Queue:
         Logger.set_uuid(log_uuid)
 
         cmd = None
+        pass_fds = ()
         if playlist_item["type"] == Playlist.TYPE_VIDEO:
             if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
                 # Someone deleted the item from the queue in between getting the item and starting it.
@@ -81,19 +81,21 @@ class Queue:
                 if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], is_waiting_for_players):
                     # Someone deleted the item from the queue in between getting the item and starting it.
                     return
-                snake = Snake(snake_settings, self.__unix_socket, playlist_item)
-                try:
-                    snake.play_snake()
-                except Exception:
-                    self.__logger.error('Caught exception: {}'.format(traceback.format_exc()))
+                unix_socket_fd = self.__unix_socket.fileno()
+                cmd = (f"{DirectoryUtils().root_dir}/bin/snake " +
+                    f"--playlist-video-id {shlex.quote(str(playlist_item['playlist_video_id']))} " +
+                    f"--server-unix-socket-fd {shlex.quote(str(unix_socket_fd))}")
+                pass_fds = (unix_socket_fd,)
             else:
                 self.__logger.error(f"Invalid game title: {playlist_item['title']}")
         else:
             self.__logger.error(f"Invalid playlist_item type: {playlist_item['type']}")
 
         if (cmd):
-            self.__start_playback(cmd, log_uuid)
+            self.__start_playback(cmd, log_uuid, pass_fds)
             self.__playlist_item = playlist_item
+        else:
+            Logger.set_uuid('')
 
     def __maybe_play_screensaver(self):
         if not self.__is_game_of_life_enabled:
@@ -106,13 +108,13 @@ class Queue:
 
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
     # TODO: set color mode of videos via cli flag
-    def __start_playback(self, cmd, log_uuid):
+    def __start_playback(self, cmd, log_uuid, pass_fds = ()):
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
-
+        self.__logger.debug(f"Starting playback with cmd: {cmd}.")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
         # it should not hurt if we were to set it to True either)
         self.__playback_proc = subprocess.Popen(
-            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = False
+            cmd, shell = True, executable = '/usr/bin/bash', start_new_session = False, pass_fds = pass_fds
         )
         self.__is_anything_playing = True
 

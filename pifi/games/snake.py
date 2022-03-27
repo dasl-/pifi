@@ -5,6 +5,10 @@ import simpleaudio
 import traceback
 import json
 import secrets
+import signal
+import socket
+import sys
+
 from pygame import mixer
 from pifi.logger import Logger
 from pifi.playlist import Playlist
@@ -21,7 +25,7 @@ class Snake:
     GAME_TITLE = "snake"
 
     __GAME_OVER_REASON_SNAKE_STATE = 'game_over_reason_snake_state'
-    __GAME_OVER_REASON_SKIP_REQUESTED = 'game_over_reason_skip_requested'
+    __GAME_OVER_REASON_SKIPPED = 'game_over_reason_skipped'
     __GAME_OVER_REASON_CLIENT_SOCKET_SIGNAL = 'game_over_reason_client_socket_signal'
 
     ELIMINATED_SNAKE_BLINK_TICK_COUNT = 8
@@ -33,7 +37,7 @@ class Snake:
         "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
     # settings: SnakeSettings
-    def __init__(self, settings, unix_socket, playlist_video):
+    def __init__(self, settings, server_unix_socket_fd, playlist_video):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__logger.info("Doing init with SnakeSettings: {}".format(vars(settings)))
 
@@ -45,11 +49,11 @@ class Snake:
         self.__settings = settings
         self.__game_color_helper = GameColorHelper()
         self.__video_player = VideoPlayer(self.__settings)
-        self.__playlist = Playlist()
         self.__playlist_video = playlist_video
         self.__players = []
+        server_unix_socket = socket.socket(fileno = server_unix_socket_fd)
         for i in range(self.__settings.num_players):
-            self.__players.append(SnakePlayer(i, unix_socket, self))
+            self.__players.append(SnakePlayer(i, server_unix_socket, self))
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
@@ -62,6 +66,7 @@ class Snake:
         ])
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
+        self.__register_signal_handlers()
 
     def play_snake(self):
         for i in range(self.__settings.num_players):
@@ -87,9 +92,6 @@ class Snake:
             self.__maybe_eliminate_snakes()
             if self.__is_game_over():
                 self.__end_game(self.__GAME_OVER_REASON_SNAKE_STATE)
-                break
-            if self.__should_skip_game():
-                self.__end_game(self.__GAME_OVER_REASON_SKIP_REQUESTED)
                 break
 
     def get_num_ticks(self):
@@ -358,9 +360,6 @@ class Snake:
                 )
                 score_displayer.display_score(score_color)
 
-            if i % 5 == 0 and self.__should_skip_game():
-                break
-
     # Win a multiplayer game by either:
     # 1) Being the last player remaining or
     # 2) Eating the most apples out of the non-eliminated snakes. In this case, there may be more than one winner.
@@ -403,11 +402,6 @@ class Snake:
         for i in range(self.__settings.num_players):
             self.__players[i].increment_tick_counters()
 
-    def __should_skip_game(self):
-        if self.__playlist.should_skip_video_id(self.__playlist_video['playlist_video_id']):
-            return True
-        return False
-
     # returns boolean success
     def __accept_sockets(self):
         max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_SINGLE_PLAYER_JOIN_TIME_S
@@ -423,5 +417,20 @@ class Snake:
                 return False
 
         if self.__settings.num_players > 1:
-            return self.__playlist.set_all_players_ready(self.__playlist_video['playlist_video_id'])
+            return Playlist().set_all_players_ready(self.__playlist_video['playlist_video_id'])
         return True
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGINT, self.__signal_handler)
+        signal.signal(signal.SIGHUP, self.__signal_handler)
+        signal.signal(signal.SIGQUIT, self.__signal_handler)
+        signal.signal(signal.SIGABRT, self.__signal_handler)
+        signal.signal(signal.SIGFPE, self.__signal_handler)
+        signal.signal(signal.SIGSEGV, self.__signal_handler)
+        signal.signal(signal.SIGPIPE, self.__signal_handler)
+        signal.signal(signal.SIGTERM, self.__signal_handler)
+
+    def __signal_handler(self, sig, frame):
+        self.__logger.info(f"Caught signal {sig}, exiting gracefully...")
+        self.__end_game(self.__GAME_OVER_REASON_SKIPPED)
+        sys.exit(sig)

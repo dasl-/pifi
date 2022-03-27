@@ -51,6 +51,13 @@ class GameColorHelper:
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
             return self.__make_color_gradient(color_change_freq, num_ticks)
 
+    def get_help_string(self):
+        game_color_mode_help_str = 'One of '
+        for mode in self.GAME_COLOR_MODES:
+            game_color_mode_help_str += f"'{mode}', "
+        game_color_mode_help_str += "or '{}'.".format(GameColorHelper.GAME_COLOR_MODE_RANDOM)
+        return game_color_mode_help_str
+
     # See: https://krazydad.com/tutorials/makecolors.php
     def __make_color_gradient(
         self, color_change_freq, num_ticks,
