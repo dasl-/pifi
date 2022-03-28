@@ -25,7 +25,9 @@ class VideoProcessor:
     __DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
-    __FFMPEG_TO_PYTHON_FIFO_PREFIX = 'pifi_ffmpeg_to_python_fifo__'
+    __PIFI_FIFO_PREFIX = 'pifi_fifo_'
+    __FFMPEG_TO_PYTHON_FIFO_PREFIX = __PIFI_FIFO_PREFIX + "ffmpeg_to_python"
+    __FPS_FIFO_PREFIX = __PIFI_FIFO_PREFIX + "fps"
 
     __FRAMES_BUFFER_LENGTH = 1024
 
@@ -34,6 +36,7 @@ class VideoProcessor:
     #   it in the VideoProcessor before showing the loading screen again, there'd be a brief
     #   flicker in the loading screen image.
     def __init__(self, url, video_settings, video_player, clear_screen):
+        self.__startup = time.time()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
         self.__video_settings = video_settings
@@ -151,10 +154,10 @@ class VideoProcessor:
         return save_dir
 
     def __process_and_play_video(self):
-        fps = self.__calculate_fps()
-        ffmpeg_to_python_fifo_name = self.__make_ffmpeg_to_python_fifo()
+        ffmpeg_to_python_fifo_name = self.__make_fifo(self.__FFMPEG_TO_PYTHON_FIFO_PREFIX)
+        fps_fifo_name = self.__make_fifo(self.__FPS_FIFO_PREFIX)
 
-        process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name)
+        process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name, fps_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
         process_and_play_vid_proc = subprocess.Popen(
             process_and_play_vid_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
@@ -170,24 +173,31 @@ class VideoProcessor:
             np_array_shape.append(3)
 
         vid_start_time = None
-        frame_length = 1 / fps
+        # Default frame length, until we discover the true one from the fps_fifo.
+        frame_length = 1 / 30.
         last_frame = None
         vid_processing_lag_counter = 0
         is_ffmpeg_done_outputting = False
         avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
+        fps_fifo = open(fps_fifo_name, 'r')
         while True:
             if is_ffmpeg_done_outputting or avg_color_frames.is_full():
                 pass
             else:
-                is_ffmpeg_done_outputting, vid_start_time = self.__populate_avg_color_frames(
-                    avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
+                is_ffmpeg_done_outputting, vid_start_time, fps = self.__populate_avg_color_frames(
+                    avg_color_frames, ffmpeg_to_python_fifo, fps_fifo, vid_start_time, bytes_per_frame, np_array_shape
                 )
+                if fps != 0:
+                    frame_length = 1/fps
 
             if vid_start_time is None:
                 # video has not started being processed yet
                 pass
             else:
+                if self.__startup != 0:
+                    self.__logger.info("started playing in {} secs".format(time.time() - self.__startup))
+                    self.__startup = 0
                 is_video_done_playing, last_frame, vid_processing_lag_counter = self.__play_video(
                     avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
                     last_frame, vid_processing_lag_counter
@@ -217,11 +227,21 @@ class VideoProcessor:
         )
 
     def __populate_avg_color_frames(
-        self, avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
+        self, avg_color_frames, ffmpeg_to_python_fifo, fps_fifo, vid_start_time, bytes_per_frame, np_array_shape
     ):
-        is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)
+        select_list = [ffmpeg_to_python_fifo]
+        if not fps_fifo.closed:
+            select_list.append(fps_fifo)
+        is_ready_to_read, ignore1, ignore2 = select.select(select_list, [], [], 0)
         if not is_ready_to_read:
-            return [False, vid_start_time]
+            return [False, vid_start_time, 0]
+
+        if is_ready_to_read[0] == fps_fifo:
+            fps_parts = fps_fifo.readline()
+            fps = self.__parse_fps(fps_parts)
+            self.__logger.info("Parsed FPS from stream: {}".format(fps))
+            fps_fifo.close()
+            return [False, vid_start_time, fps]
 
         ffmpeg_output = ffmpeg_to_python_fifo.read(bytes_per_frame)
         if ffmpeg_output and len(ffmpeg_output) < bytes_per_frame:
@@ -232,7 +252,7 @@ class VideoProcessor:
                 # under rare circumstances, youtube-dl might fail and we end up in this code path.
                 self.__logger.error("No vid_start_time set. Possible yt-dl crash. See: https://github.com/ytdl-org/youtube-dl/issues/24780")
                 vid_start_time = 0 # set this so that __process_and_play_video doesn't endlessly loop
-            return [True, vid_start_time]
+            return [True, vid_start_time, 0]
 
         if vid_start_time is None:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
@@ -243,7 +263,7 @@ class VideoProcessor:
         avg_color_frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
         )
-        return [False, vid_start_time]
+        return [False, vid_start_time, 0 ]
 
     def __play_video(
         self, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
@@ -282,7 +302,7 @@ class VideoProcessor:
         self.__video_player.play_frame(avg_color_frames[cur_frame])
         return [False, cur_frame, vid_processing_lag_counter]
 
-    def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name):
+    def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name, fps_fifo_name):
         video_save_path = self.__get_video_save_path()
         vid_data_cmd = None
         if self.__is_video_already_downloaded:
@@ -318,13 +338,25 @@ class VideoProcessor:
             maybe_save_video_tee = shlex.quote(temp_video_save_path) + ' '
             maybe_mv_saved_video_cmd = '&& mv ' + shlex.quote(temp_video_save_path) + ' ' + shlex.quote(video_save_path)
 
+        # This ffprobe command collects the FPS of the stream. FPS is also
+        # available from the self.__video_info metadata obtained via yt-dlp,
+        # but it is less accurate than the information from ffprobe.
+        fps_cmd = f'>( ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate - >{fps_fifo_name} ) '
         process_and_play_vid_cmd = (
             'set -o pipefail && export SHELLOPTS && ' +
-            vid_data_cmd + "tee " +
+            # Pass --output-error=warn to make sure that early-closed pipes
+            # don't shut down the entire tee. In particular, the fps_cmd will
+            # terminate early, as soon as it discovers the FPS.
+            # Unfortunately, tee is unable to return a zero error code if
+            # any of its output pipes terminate early. So, we're forced to
+            # suppress the non-zero error code with || true. Luckily, the main
+            # process we're interested in the error code of is the yt-dlp one.
+            vid_data_cmd + "( tee --output-error=warn " +
+            fps_cmd +
             maybe_play_audio_tee +
             ffmpeg_tee +
             maybe_save_video_tee +
-            "> /dev/null " +
+            "> /dev/null || true ) " +
             maybe_mv_saved_video_cmd
         )
         return process_and_play_vid_cmd
@@ -386,28 +418,7 @@ class VideoProcessor:
             log_file_clause = f' -l {log_file} '
         return f'mbuffer -q {log_file_clause} -m ' + shlex.quote(str(buffer_size_bytes)) + 'b'
 
-    # Fps is available in self.__video_info metadata obtained via youtube-dl, but it is less accurate than using ffprobe.
-    def __calculate_fps(self):
-        self.__logger.info("Calculating video fps...")
-        video_path = ''
-        if self.__is_video_already_downloaded:
-            video_path = shlex.quote(self.__get_video_save_path())
-        else:
-            video_path = f'<({self.__get_youtube_dl_cmd()} 2>/dev/null)'
-
-        fps_cmd = f'ffprobe -v 0 -of csv=p=0 -select_streams v:0 -show_entries stream=r_frame_rate {video_path}'
-        try:
-            fps_parts = (subprocess
-                .check_output(fps_cmd, shell = True, executable = '/usr/bin/bash')
-                .decode("utf-8"))
-        except subprocess.CalledProcessError as ex:
-            if self.__is_video_already_downloaded:
-                raise ex
-            else:
-                raise YoutubeDlException("The fps calculation process exited non-zero: " +
-                    f"{ex.returncode}. Output: [{ex.output}]. This could mean an issue with youtube-dl; " +
-                    "it may require updating.")
-
+    def __parse_fps(self, fps_parts):
         fps_parts = fps_parts.split('/')
         fps = None
         try:
@@ -427,19 +438,18 @@ class VideoProcessor:
         self.__logger.info('Calculated video fps: ' + str(fps))
         return fps
 
-    def __make_ffmpeg_to_python_fifo(self):
+    def __make_fifo(self, fifo_prefix):
         make_fifo_cmd = (
             'fifo_name=$(mktemp --tmpdir={} --dry-run {}) && mkfifo -m 600 "$fifo_name" && printf $fifo_name'
             .format(
                 tempfile.gettempdir(),
-                self.__FFMPEG_TO_PYTHON_FIFO_PREFIX + 'XXXXXXXXXX'
+                fifo_prefix + 'XXXXXXXXXX'
             )
         )
-        self.__logger.info('Making ffmpeg_to_python_fifo...')
-        ffmpeg_to_python_fifo_name = (subprocess
+        self.__logger.info('Making {} fifo {}...'.format(fifo_prefix, make_fifo_cmd))
+        return (subprocess
             .check_output(make_fifo_cmd, shell = True, executable = '/usr/bin/bash')
             .decode("utf-8"))
-        return ffmpeg_to_python_fifo_name
 
     def __update_youtube_dl(self):
         update_youtube_dl_output = (subprocess
@@ -464,8 +474,8 @@ class VideoProcessor:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
 
-        self.__logger.info("Deleting ffmpeg_to_python fifos...")
-        path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FFMPEG_TO_PYTHON_FIFO_PREFIX) + '*'
+        self.__logger.info("Deleting fifos...")
+        path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__PIFI_FIFO_PREFIX) + '*'
         cleanup_ffmpeg_to_python_fifos_cmd = f'sudo rm -rf {path_glob}'
         subprocess.check_output(cleanup_ffmpeg_to_python_fifos_cmd, shell = True, executable = '/usr/bin/bash')
 
