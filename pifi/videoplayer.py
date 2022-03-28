@@ -82,7 +82,12 @@ class VideoPlayer:
         if self.__led_settings.is_color_mode_rgb():
             filename = 'loading_screen_color.npy'
         loading_screen_path = DirectoryUtils().root_dir + '/' + filename
-        self.play_frame(np.load(loading_screen_path))
+        img = np.load(loading_screen_path)
+        height, width = self.__led_settings.display_height, self.__led_settings.display_width
+        frame = np.zeros([height, width, 3], np.uint8)
+        borderY, borderX = (height-img.shape[0]) // 2, (width - img.shape[1]) // 2
+        frame[borderY:-borderY,borderX:-borderX] = img
+        self.play_frame(frame)
 
     def __setup_pixels(self, clear_screen):
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
