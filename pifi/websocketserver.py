@@ -24,10 +24,10 @@ class WebSocketServer:
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
+    # TODO: multiplayer joining race condition bug: https://github.com/dasl-/pifi/issues/19
     async def server_connect(self, websocket, path):
-        uniq_id = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
         # create a logger local to this thread so that the namespace isn't clobbered by another thread
-        logger = Logger().set_namespace(self.__class__.__name__ + '__' + uniq_id)
+        logger = Logger().set_namespace(self.__class__.__name__ + '__' + Logger.make_uuid())
         logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
 
         is_connect_success = True
