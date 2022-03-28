@@ -34,9 +34,9 @@ def parseArgs():
     parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
         help=(GameColorHelper().get_help_string()))
     parser.add_argument('--flip-x', dest='flip_x', action='store_true',
-        help='flip X direction output')
+        default=None, help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true',
-        help='flip Y direction output')
+        default=None, help='flip Y direction output')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int,
         metavar='N', help='Global brightness value. Max of 31.')
 

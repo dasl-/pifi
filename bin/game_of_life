@@ -25,9 +25,9 @@ def parseArgs():
     parser.add_argument('--display-height', dest='display_height', action='store', type=int,
         metavar='N', help='Number of pixels / units')
     parser.add_argument('--flip-x', dest='flip_x', action='store_true',
-        help='flip X direction output')
+        default=None, help='flip X direction output')
     parser.add_argument('--flip-y', dest='flip_y', action='store_true',
-        help='flip Y direction output')
+        default=None, help='flip Y direction output')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int,
         metavar='N', help='Global brightness value. Max of 31.')
     parser.add_argument('--loop', dest='should_loop', action='store_true', default=False,
@@ -38,8 +38,8 @@ def parseArgs():
         metavar='N', help='Amount to sleep after each tick.')
     parser.add_argument('--game-over-detection-lookback', dest='game_over_detection_lookback', action='store', type=int,
         metavar='N', help='Number of turns to look back to see if game has not changed (i.e. it is over).')
-    parser.add_argument('--fade', dest='fade', action='store_true', help='fade between each tick')
-    parser.add_argument('--invert', dest='invert', action='store_true', help='invert the board')
+    parser.add_argument('--fade', dest='fade', action='store_true', help='fade between each tick', default=None)
+    parser.add_argument('--invert', dest='invert', action='store_true', help='invert the board', default=None)
     parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
         help=(GameColorHelper().get_help_string()))
 
