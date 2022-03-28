@@ -2,9 +2,6 @@
 
 set -euo pipefail -o errtrace
 
-display_width=28
-display_height=18
-
 CONFIG=/boot/config.txt
 old_config=$(cat $CONFIG)
 
@@ -13,10 +10,8 @@ is_restart_required=false
 
 usage() {
     local exit_code=$1
-    echo "usage: $0 -w <display width> -l <display height>"
-    echo "    -h                   display this help message"
-    echo "    -w <display width>   Num of LEDs in the array horizontally. Defaults to 28."
-    echo "    -l <display height>  Num of LEDs in the array vertically. Defaults to 18."
+    echo "usage: $0"
+    echo "    -h    display this help message"
     exit "$exit_code"
 }
 
@@ -45,11 +40,9 @@ main(){
 }
 
 parseOpts(){
-    while getopts ":hw:l:" opt; do
+    while getopts ":h" opt; do
         case $opt in
             h) usage 0 ;;
-            w) display_width=$OPTARG ;;
-            l) display_height=$OPTARG ;;
             \?)
                 echo "Invalid option: -$OPTARG" >&2
                 usage 1
@@ -65,10 +58,10 @@ parseOpts(){
 generateLoadingScreens(){
     info "Generating loading screens"
     if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
-        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --display-width "$display_width" --display-height "$display_height" --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
+        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
     fi
     if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
-        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --display-width "$display_width" --display-height "$display_height" --output-file "$BASE_DIR"/loading_screen --color-mode color
+        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --output-file "$BASE_DIR"/loading_screen --color-mode color
     fi
 }
 

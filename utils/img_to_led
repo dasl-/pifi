@@ -3,15 +3,22 @@
 import subprocess
 import argparse
 import numpy as np
+import sys
+import os
 
+# This is necessary for the import below to work
+root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
+sys.path.append(root_dir)
+
+from pifi.settings.videosettings import VideoSettings
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert an image to an RGB frame for display on the LEDs')
     parser.add_argument('--image', dest='image_path', action='store',
         help='path to the image to convert')
-    parser.add_argument('--display-width', dest='display_width', action='store', type=int, default=28, metavar='N',
+    parser.add_argument('--display-width', dest='display_width', action='store', type=int, default=None, metavar='N',
         help='Number of pixels / units')
-    parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=18, metavar='N',
+    parser.add_argument('--display-height', dest='display_height', action='store', type=int, default=None, metavar='N',
         help='Number of pixels / units')
     parser.add_argument('--output-file', dest='output_file', action='store',
         help="output path to save the array. The suffix '_<color-mode>.npy' will be appended to this file name.")
@@ -26,16 +33,23 @@ args = parseArgs()
 
 reshape_dimensions = None
 pix_fmt = None
+display_width = args.display_width
+display_height = args.display_height
+settings = VideoSettings().from_config()
 if args.color_mode == 'color':
     reshape_dimensions = [args.display_height, args.display_width, 3]
     pix_fmt = 'rgb24'
 elif args.color_mode == 'monochrome':
     reshape_dimensions = [args.display_height, args.display_width]
     pix_fmt = 'gray'
+if display_width is None:
+    display_width = settings.display_width
+if display_height is None:
+    display_height = settings.display_height
 else:
     raise Exception('Invalid color mode: {}'.format(args.color_mode))
 
-ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(args.display_width, args.display_height),
+ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(display_width, display_height),
     '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
 data = subprocess.check_output(ffmpeg_cmd)
 arr = np.frombuffer(data, np.uint8).reshape(reshape_dimensions)
