@@ -5,7 +5,7 @@ from pifi.games.gamecolorhelper import GameColorHelper
 class GameOfLifeSettings(LedSettings):
 
     DEFAULT_SEED_LIVENESS_PROBABILITY = 1 / 3
-    DEFAULT_TICK_SLEEP = 0
+    DEFAULT_TICK_SLEEP = 0.07
     DEFAULT_GAME_OVER_DETECTION_LOOKBACK = 16
     DEFAULT_FADE = False
     DEFAULT_INVERT = False
