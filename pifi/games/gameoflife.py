@@ -79,7 +79,8 @@ class GameOfLife:
         self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
         self.__prev_board_state_counts = LimitedSizeDict(capacity = self.__settings.game_over_detection_lookback)
         self.__seed()
-
+        
+    # See https://lhoupert.fr/test-jbook/book-jupyterbook.html#the-game-of-life
     def __seed(self):
         # Create the board with an extra edge cell on all sides to simplify the
         # neighborhood calculation and avoid edge checks.
@@ -111,6 +112,7 @@ class GameOfLife:
         self.__update_board()
         self.__show_board()
 
+    # See https://lhoupert.fr/test-jbook/book-jupyterbook.html#the-game-of-life
     def __update_board(self):
         b = self.__board
         # n is an array of the count of the live neighbors in the board.
