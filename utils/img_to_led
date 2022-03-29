@@ -36,16 +36,17 @@ pix_fmt = None
 display_width = args.display_width
 display_height = args.display_height
 settings = VideoSettings().from_config()
-if args.color_mode == 'color':
-    reshape_dimensions = [args.display_height, args.display_width, 3]
-    pix_fmt = 'rgb24'
-elif args.color_mode == 'monochrome':
-    reshape_dimensions = [args.display_height, args.display_width]
-    pix_fmt = 'gray'
 if display_width is None:
     display_width = settings.display_width
 if display_height is None:
     display_height = settings.display_height
+
+if args.color_mode == 'color':
+    reshape_dimensions = [display_height, display_width, 3]
+    pix_fmt = 'rgb24'
+elif args.color_mode == 'monochrome':
+    reshape_dimensions = [display_height, display_width]
+    pix_fmt = 'gray'
 else:
     raise Exception('Invalid color mode: {}'.format(args.color_mode))
 
