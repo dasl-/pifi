@@ -10,6 +10,9 @@ class LedSettings:
     COLOR_MODE_INVERT_COLOR = 'inv_color'
     COLOR_MODE_INVERT_BW = 'inv_bw'
 
+    DRIVER_APA102 = 'apa102'
+    DRIVER_RGBMATRIX = 'rgbmatrix'
+
     COLOR_MODES = [
         COLOR_MODE_COLOR,
         COLOR_MODE_BW,
@@ -31,9 +34,10 @@ class LedSettings:
     # brightness: int - Global brightness value, max of 31
     # flip_x: boolean - swap left to right, depending on wiring
     # flip_y: boolean - swap top to bottom, depending on wiring
+    # driver: one of the DRIVER_ constants
     def __init__(
         self, color_mode = None, display_width = None, display_height = None,
-        brightness = None, flip_x = False, flip_y = False,
+        brightness = None, flip_x = False, flip_y = False, driver = None
     ):
         # logger: used in child class(es)
         self._logger = Logger().set_namespace(self.__class__.__name__)
@@ -57,6 +61,10 @@ class LedSettings:
         self.flip_x = flip_x
         self.flip_y = flip_y
 
+        if driver is None:
+            driver = self.DRIVER_APA102
+        self.driver = driver
+
     def from_config(self):
         config = self.get_values_from_config()
 
@@ -70,6 +78,8 @@ class LedSettings:
             self.flip_x = config['flip_x']
         if 'flip_y' in config:
             self.flip_y = config['flip_y']
+        if 'driver' in config:
+            self.driver = config['driver']
 
         return self
 
