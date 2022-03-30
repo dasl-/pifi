@@ -1,7 +1,3 @@
-from apa102_pi.driver import apa102
-from rgbmatrix import RGBMatrix, RGBMatrixOptions
-from PIL import Image
-
 class APA102Driver():
     # LED Settings
     __MOSI_PIN = 10
@@ -9,6 +5,8 @@ class APA102Driver():
     __LED_ORDER = 'rbg'
 
     def __init__(self, led_settings, clear_screen=False):
+        from apa102_pi.driver import apa102
+
         self.__led_settings = led_settings
         # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.__pixels = apa102.APA102(
@@ -21,29 +19,40 @@ class APA102Driver():
         if clear_screen:
             self.clear_screen()
 
+        # Look up the order in which to write each color value to the LED strip.
+        # It's 1-indexed, so subtract by 1.
+        self.__color_order = [x-1 for x in apa102.RGB_MAP[self.__LED_ORDER]]
+
+        # Calculate the LED start "frame": 3 1 bits followed by 5 brightness bits. See
+        # set_pixel in the apa102 implementation for this calculation.
+        self.__ledstart = (led_settings.brightness & 0b00011111) | self.__pixels.LED_START
+
     # CAUTION:
     # This method has been heavily optimized. The program spends the bulk of its execution time in this loop.
     # If making any changes, profile your code first to see if there are regressions, i.e.:
     #
     #   python3 -m cProfile -s cumtime video --url https://www.youtube.com/watch?v=AxuvUAjHYWQ --color-mode color
-    #
-    # In the nested for loop, function calls are to be avoided. Inlining them is more performant.
-    #
-    # See: https://github.com/dasl-/pifi/commit/9640268084acb0c46b2624178f350017ab666d41
     def display_frame(self, frame):
         width, height = self.__led_settings.display_width, self.__led_settings.display_height
-        for x in range(width):
-            for y in range(height):
-                # TODO(dasl): re-implement this logic using numpy vectorization
-                # to improve performance.
-                # each row is zig-zagged, so every other row needs to be flipped horizontally
-                if (y % 2 == 0):
-                    pixel_index = (y * width) + (width - x - 1)
-                else:
-                    pixel_index = (y * width) + x
+        # Each row is zig-zagged, so every other row needs to be flipped
+        # horizontally.
+        #
+        # Additionally, each RGB tuple needs to be re-ordered to match the order
+        # that's expected by the LED strip, which is defined in
+        # self.__color_order.
+        #
+        # This terse statement tells numpy to do all of the above. Starting
+        # at row 1, with stride 2, set each column to itself with stride -1,
+        # which reverses the column.
+        # And, in the 3rd dimension, set each array via the desired index
+        # ordering.
+        frame[1::2,:,:] = frame[1::2,::-1,self.color_order]
 
-                # order on the strip is RBG (refer to self.__LED_ORDER)
-                self.__pixels.set_pixel(x, y, r, b, g)
+        # Now, populate the LEDs array by flattening the array, interposing
+        # each RGB triple with the "LED start frame".
+        self.__pixels.leds = np.insert(frame.flat, range(0, frame.size, 3), self.__ledstart)
+
+        # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
 
     def clear_screen(self):
@@ -51,6 +60,7 @@ class APA102Driver():
 
 class RGBMatrixDriver():
     def __init__(self, led_settings, clear_screen=False):
+        from rgbmatrix import RGBMatrix, RGBMatrixOptions
         options = RGBMatrixOptions()
         options.rows = led_settings.display_height
         options.cols = led_settings.display_width
@@ -65,6 +75,7 @@ class RGBMatrixDriver():
             self.clear_screen()
 
     def display_frame(self, frame):
+        from PIL import Image
         img = Image.fromarray(frame, mode='RGB')
         self.__pixels.SetImage(img)
         self.__pixels = self.__matrix.SwapOnVSync(self.__pixels)
