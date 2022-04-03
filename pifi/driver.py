@@ -1,10 +1,12 @@
+import numpy as np
+
 class APA102Driver():
     # LED Settings
     __MOSI_PIN = 10
     __SCLK_PIN = 11
-    __LED_ORDER = 'rbg'
+    __LED_ORDER = 'rgb'
 
-    def __init__(self, led_settings, clear_screen=False):
+    def __init__(self, led_settings, clear_screen=True):
         from apa102_pi.driver import apa102
 
         self.__led_settings = led_settings
@@ -32,25 +34,28 @@ class APA102Driver():
     # If making any changes, profile your code first to see if there are regressions, i.e.:
     #
     #   python3 -m cProfile -s cumtime video --url https://www.youtube.com/watch?v=AxuvUAjHYWQ --color-mode color
+    #
+    # Here are some graphs about the performance, generated like so:
+    # https://gist.github.com/dasl-/d552c0abb38fca823e97fb3b49898f2d
+    # https://docs.google.com/spreadsheets/d/1psa070FdMv2w8RPqzFuRVg1eqzTiLwlekClMsEG3qwE/edit#gid=716887181
     def display_frame(self, frame):
         width, height = self.__led_settings.display_width, self.__led_settings.display_height
         # Each row is zig-zagged, so every other row needs to be flipped
         # horizontally.
         #
+        # Starting at row 1, with stride 2, set each column to itself with
+        # stride -1, which reverses the column.
+        frame[0::2,:,:] = frame[0::2,::-1,:]
+
         # Additionally, each RGB tuple needs to be re-ordered to match the order
         # that's expected by the LED strip, which is defined in
         # self.__color_order.
-        #
-        # This terse statement tells numpy to do all of the above. Starting
-        # at row 1, with stride 2, set each column to itself with stride -1,
-        # which reverses the column.
-        # And, in the 3rd dimension, set each array via the desired index
-        # ordering.
-        frame[1::2,:,:] = frame[1::2,::-1,self.color_order]
+        frame = frame[:,:,self.__color_order]
+
 
         # Now, populate the LEDs array by flattening the array, interposing
         # each RGB triple with the "LED start frame".
-        self.__pixels.leds = np.insert(frame.flat, range(0, frame.size, 3), self.__ledstart)
+        self.__pixels.leds = list(np.insert(frame.flat, range(0, frame.size, 3), self.__ledstart))
 
         # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
@@ -59,7 +64,7 @@ class APA102Driver():
         self.__pixels.clear_strip()
 
 class RGBMatrixDriver():
-    def __init__(self, led_settings, clear_screen=False):
+    def __init__(self, led_settings, clear_screen=True):
         from rgbmatrix import RGBMatrix, RGBMatrixOptions
         options = RGBMatrixOptions()
         options.rows = led_settings.display_height
