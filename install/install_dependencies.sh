@@ -19,6 +19,14 @@ main(){
     fi
 }
 
+installRgbMatrix(){
+    info "Installing RGBMatrix..."
+
+    git clone https://github.com/hzeller/rpi-rgb-led-matrix
+    make -C rpi-rgb-led-matrix build-python PYTHON=$(command -v python3)
+    sudo make -C rpi-rgb-led-matrix install-python PYTHON=$(command -v python3)
+}
+
 updateAndInstallPackages(){
     info "Updating and installing packages..."
 
@@ -38,7 +46,7 @@ updateAndInstallPackages(){
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo pip3 install --upgrade youtube_dl yt-dlp numpy apa102-pi pytz websockets simpleaudio pygame
+    sudo pip3 install --upgrade youtube_dl yt-dlp numpy apa102-pi pytz websockets simpleaudio pygame python-pillow
 }
 
 clearYoutubeDlCache(){
