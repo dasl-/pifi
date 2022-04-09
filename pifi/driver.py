@@ -1,5 +1,4 @@
 import numpy as np
-
 class APA102Driver():
     # LED Settings
     __MOSI_PIN = 10
@@ -10,9 +9,8 @@ class APA102Driver():
         from apa102_pi.driver import apa102
 
         self.__led_settings = led_settings
-        # Add 8 because otherwise the last 8 LEDs don't powered correctly. Weird driver glitch?
         self.__pixels = apa102.APA102(
-            num_led=(led_settings.display_width * led_settings.display_height + 8),
+            num_led=(led_settings.display_width * led_settings.display_height),
             mosi=self.__MOSI_PIN,
             sclk=self.__SCLK_PIN,
             order=self.__LED_ORDER
