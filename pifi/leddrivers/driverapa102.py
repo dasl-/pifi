@@ -1,13 +1,16 @@
+from apa102_pi.driver import apa102
 import numpy as np
-class APA102Driver():
+
+from pifi.leddrivers.driverbase import DriverBase
+
+class DriverApa102(DriverBase):
+
     # LED Settings
     __MOSI_PIN = 10
     __SCLK_PIN = 11
     __LED_ORDER = 'rgb'
 
     def __init__(self, led_settings, clear_screen=True):
-        from apa102_pi.driver import apa102
-
         self.__led_settings = led_settings
         self.__pixels = apa102.APA102(
             num_led=(led_settings.display_width * led_settings.display_height),
@@ -21,7 +24,7 @@ class APA102Driver():
 
         # Look up the order in which to write each color value to the LED strip.
         # It's 1-indexed, so subtract by 1.
-        self.__color_order = [x-1 for x in apa102.RGB_MAP[self.__LED_ORDER]]
+        self.__color_order = [x - 1 for x in apa102.RGB_MAP[self.__LED_ORDER]]
 
         # Calculate the LED start "frame": 3 1 bits followed by 5 brightness bits. See
         # set_pixel in the apa102 implementation for this calculation.
@@ -37,19 +40,17 @@ class APA102Driver():
     # https://gist.github.com/dasl-/d552c0abb38fca823e97fb3b49898f2d
     # https://docs.google.com/spreadsheets/d/1psa070FdMv2w8RPqzFuRVg1eqzTiLwlekClMsEG3qwE/edit#gid=716887181
     def display_frame(self, frame):
-        width, height = self.__led_settings.display_width, self.__led_settings.display_height
         # Each row is zig-zagged, so every other row needs to be flipped
         # horizontally.
         #
         # Starting at row 1, with stride 2, set each column to itself with
         # stride -1, which reverses the column.
-        frame[0::2,:,:] = frame[0::2,::-1,:]
+        frame[0::2, :, :] = frame[0::2, ::-1, :]
 
         # Additionally, each RGB tuple needs to be re-ordered to match the order
         # that's expected by the LED strip, which is defined in
         # self.__color_order.
-        frame = frame[:,:,self.__color_order]
-
+        frame = frame[:, :, self.__color_order]
 
         # Now, populate the LEDs array by flattening the array, interposing
         # each RGB triple with the "LED start frame".
@@ -60,29 +61,3 @@ class APA102Driver():
 
     def clear_screen(self):
         self.__pixels.clear_strip()
-
-class RGBMatrixDriver():
-    def __init__(self, led_settings, clear_screen=True):
-        from rgbmatrix import RGBMatrix, RGBMatrixOptions
-        options = RGBMatrixOptions()
-        options.rows = led_settings.display_height
-        options.cols = led_settings.display_width
-        options.chain_length = 1
-        options.parallel = 1
-        options.hardware_mapping = 'adafruit-hat'
-        options.drop_privileges = False
-
-        self.__matrix = RGBMatrix(options = options)
-        self.__pixels = self.__matrix.CreateFrameCanvas()
-        if clear_screen:
-            self.clear_screen()
-
-    def display_frame(self, frame):
-        from PIL import Image
-        img = Image.fromarray(frame, mode='RGB')
-        self.__pixels.SetImage(img)
-        self.__pixels = self.__matrix.SwapOnVSync(self.__pixels)
-
-    def clear_screen(self):
-        self.__pixels.Clear()
-        self.__matrix.Clear()

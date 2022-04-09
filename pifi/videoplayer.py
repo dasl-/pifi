@@ -1,10 +1,10 @@
 import numpy as np
-from pifi.driver import APA102Driver, RGBMatrixDriver
 from pifi.directoryutils import DirectoryUtils
 from pifi.gamma import Gamma
 from pifi.settings.ledsettings import LedSettings
 
 class VideoPlayer:
+
     __FADE_STEPS = 5
 
     def __init__(self, led_settings, clear_screen = True):
@@ -36,9 +36,11 @@ class VideoPlayer:
             self.__scale_blue_gamma_curves = self.__gamma_controller.scale_blue_curves
 
         if led_settings.driver == LedSettings.DRIVER_APA102:
-            self.__driver = APA102Driver(led_settings, clear_screen)
+            from pifi.leddrivers.driverapa102 import DriverApa102
+            self.__driver = DriverApa102(led_settings, clear_screen)
         elif led_settings.driver == LedSettings.DRIVER_RGBMATRIX:
-            self.__driver = RGBMatrixDriver(led_settings, clear_screen)
+            from pifi.leddrivers.driverrgbmatrix import DriverRgbMatrix
+            self.__driver = DriverRgbMatrix(led_settings, clear_screen)
         else:
             raise Exception('Unsupported driver: {}'.format(self.__led_settings.driver))
 
@@ -93,27 +95,27 @@ class VideoPlayer:
         frame = np.zeros(shape, np.uint8)
         # calculate gamma corrected colors
         if self.__led_settings.color_mode == LedSettings.COLOR_MODE_COLOR:
-            frame[:,:,0] = np.take(self.__scale_red_gamma_curve, avg_color_frame[:,:,0])
-            frame[:,:,1] = np.take(self.__scale_green_gamma_curve, avg_color_frame[:,:,1])
-            frame[:,:,2] = np.take(self.__scale_blue_gamma_curve, avg_color_frame[:,:,2])
+            frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, avg_color_frame[:, :, 0])
+            frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, avg_color_frame[:, :, 1])
+            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, avg_color_frame[:, :, 2])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_R:
-            frame[:,:,0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:,:])
+            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_G:
-            frame[:,:,1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:,:])
+            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_B:
-            frame[:,:,2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:,:])
+            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_BW:
-            frame[:,:,0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:,:])
-            frame[:,:,1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:,:])
-            frame[:,:,2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:,:])
+            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:, :])
+            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:, :])
+            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_INVERT_COLOR:
-            frame[:,:,0] = np.take(self.__scale_red_gamma_curve, 255 - avg_color_frame[:,:,0])
-            frame[:,:,1] = np.take(self.__scale_green_gamma_curve, 255 - avg_color_frame[:,:,1])
-            frame[:,:,2] = np.take(self.__scale_blue_gamma_curve, 255 - avg_color_frame[:,:,2])
+            frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - avg_color_frame[:, :, 0])
+            frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - avg_color_frame[:, :, 1])
+            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - avg_color_frame[:, :, 2])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_INVERT_BW:
-            frame[:,:,0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - avg_color_frame[:,:])
-            frame[:,:,1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - avg_color_frame[:,:])
-            frame[:,:,2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - avg_color_frame[:,:])
+            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
+            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
+            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
         else:
             raise Exception('Unexpected color mode: {}'.format(self.__led_settings.color_mode))
 
