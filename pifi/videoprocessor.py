@@ -39,6 +39,7 @@ class VideoProcessor:
         self.__video_settings = video_settings
         self.__video_player = video_player
         self.__process_and_play_vid_proc_pgid = None
+        self.__init_time = time.time()
 
         # Metadata about the video we are using, such as title, resolution, file extension, etc
         # Note this is only populated if the video didn't already exist (see: VideoSettings.should_save_video)
@@ -188,6 +189,10 @@ class VideoProcessor:
                 # video has not started being processed yet
                 pass
             else:
+                if self.__init_time:
+                    self.__logger.info(f"Started playing video after {round(time.time() - self.__init_time, 3)} s.")
+                    self.__init_time = None
+
                 is_video_done_playing, last_frame, vid_processing_lag_counter = self.__play_video(
                     avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
                     last_frame, vid_processing_lag_counter
