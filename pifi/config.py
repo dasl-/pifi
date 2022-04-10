@@ -5,7 +5,7 @@ from pifi.directoryutils import DirectoryUtils
 
 class Config:
 
-    __CONFIG_FILENAME = 'config.json'
+    CONFIG_PATH = DirectoryUtils().root_dir + '/config.json'
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -38,13 +38,12 @@ class Config:
         return self.__snake_settings
 
     def __maybe_load_config(self):
-        config_path = DirectoryUtils().root_dir + '/' + self.__CONFIG_FILENAME
-        if not os.path.exists(config_path):
-            self.__logger.info("No config file found at: {}".format(config_path))
+        if not os.path.exists(self.CONFIG_PATH):
+            self.__logger.info("No config file found at: {}".format(self.CONFIG_PATH))
             return
 
-        self.__logger.info("Found config file at: {}".format(config_path))
-        with open(config_path) as config_json:
+        self.__logger.info("Found config file at: {}".format(self.CONFIG_PATH))
+        with open(self.CONFIG_PATH) as config_json:
             data = json.load(config_json)
             if 'server_config' in data:
                 self.__server_config = data['server_config']

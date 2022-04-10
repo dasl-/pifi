@@ -9,6 +9,7 @@ main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
+    installLedDriver
     clearYoutubeDlCache
     installNpm
     installAppDependencies
@@ -17,14 +18,6 @@ main(){
         echo "Restarting..."
         sudo shutdown -r now
     fi
-}
-
-installRgbMatrix(){
-    info "Installing RGBMatrix..."
-
-    git clone https://github.com/hzeller/rpi-rgb-led-matrix
-    make -C rpi-rgb-led-matrix build-python PYTHON=$(command -v python3)
-    sudo make -C rpi-rgb-led-matrix install-python PYTHON=$(command -v python3)
 }
 
 updateAndInstallPackages(){
@@ -46,7 +39,46 @@ updateAndInstallPackages(){
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo pip3 install --upgrade youtube_dl yt-dlp numpy apa102-pi pytz websockets simpleaudio pygame python-pillow
+    sudo pip3 install --upgrade youtube_dl yt-dlp numpy pytz websockets simpleaudio pygame
+}
+
+installLedDriver(){
+    info "Installing LED driver..."
+    local led_driver
+    led_driver=$("$BASE_DIR"/utils/get_config_value --type video --keys driver)
+    case $led_driver in
+        apa102)     installLedDriverApa102 ;;
+        rgbmatrix)  installLedDriverRgbMatrix ;;
+        *)          die "Unsupported LED driver: $led_driver" ;;
+    esac
+}
+
+installLedDriverApa102(){
+    info "Installing LED driver apa102..."
+    sudo pip3 install --upgrade apa102-pi
+}
+
+# e.g. https://www.adafruit.com/product/2276
+installLedDriverRgbMatrix(){
+    info "Installing LED driver RGB Matrix..."
+
+    local clone_dir
+    clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
+    if [ -d "$clone_dir" ]; then
+        info "Pulling repo in $clone_dir ..."
+        pushd "$clone_dir"
+        git pull
+    else
+        info "Cloning repo into $clone_dir ..."
+        git clone https://github.com/hzeller/rpi-rgb-led-matrix "$clone_dir"
+        pushd "$clone_dir"
+    fi
+
+    make build-python PYTHON="$(command -v python3)"
+    sudo make install-python PYTHON="$(command -v python3)"
+    popd
+
+    sudo pip3 install --upgrade Pillow
 }
 
 clearYoutubeDlCache(){

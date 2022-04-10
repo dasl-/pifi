@@ -61,8 +61,6 @@ class LedSettings:
         self.flip_x = flip_x
         self.flip_y = flip_y
 
-        if driver is None:
-            driver = self.DRIVER_APA102
         self.driver = driver
 
     def from_config(self):
