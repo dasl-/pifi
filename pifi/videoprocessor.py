@@ -21,7 +21,6 @@ class VideoProcessor:
 
     __DATA_DIRECTORY = 'data'
 
-    __YOUTUBE_DL_FORMAT = 'worst[ext=mp4]/worst' # mp4 scales quicker than webm in ffmpeg scaling
     __DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
@@ -54,20 +53,22 @@ class VideoProcessor:
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
-            self.__logger.info('Video has already been downloaded. Using saved video: {}'.format(video_save_path))
+            self.__logger.info(f'Video has already been downloaded. Using saved video: {video_save_path}')
             self.__is_video_already_downloaded = True
         elif self.__video_settings.should_predownload_video:
-            download_command = self.__download_youtube_video()
-            self.__logger.info('Downloading video: {}'.format(download_command))
-            subprocess.call(download_command, shell=True)
-            self.__logger.info('Video download complete: {}'.format(video_save_path))
+            download_command = self.__get_streaming_video_download_cmd() + ' > ' + shlex.quote(self.__get_video_save_path())
+            self.__logger.info(f'Downloading video: {download_command}')
+            subprocess.call(download_command, shell = True, executable = '/usr/bin/bash')
+            self.__logger.info(f'Video download complete: {video_save_path}')
             self.__is_video_already_downloaded = True
 
         attempt = 1
         max_attempts = 2
+        clear_screen = True
         while attempt <= max_attempts:
             try:
                 self.__process_and_play_video()
+                clear_screen = True
                 break
             except YoutubeDlException as e:
                 if attempt < max_attempts:
@@ -75,11 +76,13 @@ class VideoProcessor:
                         traceback.format_exc())
                     self.__logger.warning("Updating youtube-dl and retrying video...")
                     self.__video_player.show_loading_screen()
+                    clear_screen = False
                     self.__update_youtube_dl()
                 if attempt >= max_attempts:
+                    clear_screen = True
                     raise e
             finally:
-                self.__do_housekeeping()
+                self.__do_housekeeping(clear_screen = clear_screen)
             attempt += 1
         self.__logger.info("Finished process_and_play")
 
@@ -157,16 +160,6 @@ class VideoProcessor:
                 break
             time.sleep(0.1)
 
-    def __download_youtube_video(self):
-        return (
-            'yt-dlp ' +
-            '--output \'' + shlex.quote(self.__get_video_save_path()) + "' "
-            '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
-            '--format ' + shlex.quote(self.__YOUTUBE_DL_FORMAT) + " " + # download the specified video quality / encoding
-            '--retries infinite ' + # in case downloading has transient errors
-            shlex.quote(self.__url) # url to download
-        )
-
     def __populate_avg_color_frames(
         self, avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
     ):
@@ -189,7 +182,7 @@ class VideoProcessor:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
             # first audio data at around the same time so they stay in sync.
             # Add time for better audio / video sync
-            vid_start_time = time.time() + (0.15 if self.__video_settings.should_play_audio else 0)
+            vid_start_time = time.time() + (0.075 if self.__video_settings.should_play_audio else 0)
 
         avg_color_frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
@@ -239,11 +232,7 @@ class VideoProcessor:
         if self.__is_video_already_downloaded:
             vid_data_cmd = '< {} '.format(shlex.quote(video_save_path))
         else:
-            vid_data_cmd = (
-                # Add mbuffer to give some slack in the case of network blips downloading the video.
-                self.__get_youtube_dl_cmd() + ' | ' +
-                self.__get_mbuffer_cmd(1024 * 1024 * 10, '/tmp/mbuffer-ytdl.out') + ' | '
-            )
+            vid_data_cmd = self.__get_streaming_video_download_cmd() + ' | '
 
         # Explanation of the FPS calculation pipeline:
         #
@@ -253,9 +242,9 @@ class VideoProcessor:
         #   Note: ffprobe may need to read a number of bytes proportional to the video size, thus there may
         #   be no buffer size that works for all videos (see: https://stackoverflow.com/a/70707003/627663 )
         #   But our current buffer size works for videos that are ~24 hours long, so it's good enough in
-        #   most cases. Something fails for videos that are 100h+ long, but I'm not sure if it's due to this
+        #   most cases. Something fails for videos that are 100h+ long, but I believe it's unrelated to
         #   mbuffer size -- those videos failed even with our old model of calculating FPS separately from
-        #   the video playback pipeline.
+        #   the video playback pipeline. See: https://github.com/yt-dlp/yt-dlp/issues/3390
         #
         # while true ... : The pipeline will wait until a signal is given (the existence of the __FPS_READY_FILE)
         #   before data is emitted downstream. The signal will be given once the videoprocessor has finished
@@ -280,7 +269,7 @@ class VideoProcessor:
                 self.__get_ffplay_cmd() +
                 " ) ")
 
-        ffmpeg_tee = f'>( {self.__get_ffmpeg_cmd()} > {ffmpeg_to_python_fifo_name} ) '
+        ffmpeg_tee = f'>( {self.__get_ffmpeg_pixel_conversion_cmd()} > {ffmpeg_to_python_fifo_name} ) '
 
         maybe_save_video_tee = ''
         maybe_mv_saved_video_cmd = ''
@@ -301,46 +290,95 @@ class VideoProcessor:
         )
         return process_and_play_vid_cmd
 
-    def __get_youtube_dl_cmd(self):
-        log_opts = '--no-progress '
+    # Download the worst video and the best audio with youtube-dl, and mux them together with ffmpeg.
+    # See: https://github.com/dasl-/piwall2/blob/53f5e0acf1894b71d180cee12ae49ddd3736d96a/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc#solution-muxing-a-streaming-download
+    def __get_streaming_video_download_cmd(self):
+        # --retries infinite: in case downloading has transient errors
+        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} | {3}"
+
+        log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
-            log_opts = ' ' # show video download progress
+            log_opts = '' # show video download progress
         if not sys.stderr.isatty():
-            log_opts += '--newline '
-        return (
-            'yt-dlp ' +
-            '--output - ' + # output to stdout
-            '--restrict-filenames ' + # get rid of a warning ytdl gives about special chars in file names
-            '--format ' + shlex.quote(self.__YOUTUBE_DL_FORMAT) + " " + # download the specified video quality / encoding
-            '--retries infinite ' + # in case downloading has transient errors
-            log_opts +
-            shlex.quote(self.__url) # url to download
+            log_opts += '--newline'
+
+        # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
+        # be enough buffer for ~139s for a 1080p video, which is a lot higher resolution than we
+        # are ever likely to use.
+        video_buffer_size = 1024 * 1024 * 50
+
+        # Choose 'worst' video because we want our pixel ffmpeg video scaler to do less work when we
+        # scale the video down to the LED matrix size.
+        #
+        # But the height should be at least the height of the LED matrix (this probably only matters
+        # if someone made a very large LED matrix such that the worst quality video was lower resolution
+        # than the LED matrix pixel dimensions). Filter on only height so that vertical videos don't
+        # result in a super large resolution being chosen? /shrug ... could consider adding a filter on
+        # width too.
+        #
+        # Use avc1 because this means h264, and the pi has hardware acceleration for this format.
+        # See: https://github.com/dasl-/piwall2/blob/88030a47790e5ae208d2c9fe19f9c623fc736c83/docs/video_formats_and_hardware_acceleration.adoc#youtube--youtube-dl
+        #
+        # Fallback onto 'worst' rather than 'worstvideo', because some videos (live videos) only
+        # have combined video + audio formats. Thus, 'worstvideo' would fail for them.
+        video_format = (f'worstvideo[vcodec^=avc1][height>={self.__video_settings.display_height}]/' +
+            f'worst[vcodec^=avc1][height>={self.__video_settings.display_height}]')
+        youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__url),
+            shlex.quote(video_format),
+            log_opts,
+            self.__get_mbuffer_cmd(video_buffer_size)
         )
 
-    def __get_ffmpeg_cmd(self):
+        # Also use a 50MB buffer, because in some cases, the audio stream we download may also contain video.
+        audio_buffer_size = 1024 * 1024 * 50
+        youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__url),
+            # bestaudio: try to select the best audio-only format
+            # bestaudio*: this is the fallback option -- select the best quality format that contains audio.
+            #   It may also contain video, e.g. in the case that there are no audio-only formats available.
+            #   Some videos (live videos) only have combined video + audio formats. Thus 'bestaudio' would
+            #   fail for them.
+            shlex.quote('bestaudio/bestaudio*'),
+            log_opts,
+            self.__get_mbuffer_cmd(audio_buffer_size)
+        )
+
+        # Mux video from the first input with audio from the second input: https://stackoverflow.com/a/12943003/627663
+        # We need to specify, because in some cases, either input could contain both audio and video. But in most
+        # cases, the first input will have only video, and the second input will have only audio.
+        return (f"{self.__get_standard_ffmpeg_cmd()} -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
+            "-c copy -map 0:v:0 -map 1:a:0 -shortest -f mpegts -")
+
+    def __get_ffmpeg_pixel_conversion_cmd(self):
         pix_fmt = 'gray'
         if self.__video_settings.is_color_mode_rgb():
             pix_fmt = 'rgb24'
 
-        # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
-        log_opts = ''
-        if sys.stderr.isatty():
-            log_opts = '-stats '
-
-        # Note: don't use ffmpeg's `-xerror` flag:
-        # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
         return (
-            'ffmpeg ' +
-            '-threads 1 ' + # using one thread is plenty fast and is probably better to avoid tying up CPUs for displaying LEDs
+            self.__get_standard_ffmpeg_cmd() + ' '
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
                 'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height)) + " "
             '-c:a copy ' + # don't process the audio at all
             '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " # output in numpy compatible byte format
-            '-v quiet ' + # supress output of verbose ffmpeg configuration, etc
-            log_opts + # maybe display progress stats
             'pipe:1' # output to stdout
         )
+
+    def __get_standard_ffmpeg_cmd(self):
+        # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
+        log_opts = '-nostats '
+        if sys.stderr.isatty():
+            log_opts = '-stats '
+
+        if Logger.get_level() <= Logger.DEBUG:
+            pass # don't change anything, ffmpeg is pretty verbose by default
+        else:
+            log_opts += '-loglevel error'
+
+        # Note: don't use ffmpeg's `-xerror` flag:
+        # https://gist.github.com/dasl-/1ad012f55f33f14b44393960f66c6b00
+        return f"ffmpeg -hide_banner {log_opts} "
 
     def __get_ffplay_cmd(self):
         return (
@@ -359,14 +397,18 @@ class VideoProcessor:
         return f'mbuffer -q {log_file_clause} -m ' + shlex.quote(str(buffer_size_bytes)) + 'b'
 
     def __read_fps_from_fifo(self, fps_fifo_name):
-        fps_fifo = open(fps_fifo_name, 'r')
-        fps_parts = fps_fifo.readline().strip().split('/')
-        fps_fifo.close()
         fps = None
         try:
+            fps_fifo = open(fps_fifo_name, 'r')
+            # Need to call .read() rather than .readline() because in some cases, the output could
+            # contain multiple lines. We're only interested in the first line. Closing the fifo
+            # after only reading the first line when it has multi-line output would result in
+            # SIGPIPE errors
+            fps_parts = fps_fifo.read().splitlines()[0].strip().split('/')
+            fps_fifo.close()
             fps = float(fps_parts[0]) / float(fps_parts[1])
-        except ValueError as ex:
-            self.__logger.error("Got an error dividing fps parts: " + str(ex))
+        except Exception as ex:
+            self.__logger.error("Got an error determining the fps: " + str(ex))
             self.__logger.error("Assuming 30 fps for this video.")
             fps = 30
         self.__logger.info(f'Calculated video fps: {fps}')
