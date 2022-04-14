@@ -23,18 +23,6 @@ class Queue:
     UNIX_SOCKET_PATH = '/tmp/queue_unix_socket'
 
     def __init__(self):
-        # make the pi slightly faster (and thus more reponsive) by using the 'performance' CPU frequency
-        # scaling governor. This maybe has slight responsiveness benefits when playing snake.
-        #
-        # See:
-        # https://www.raspberrypi.com/documentation/computers/config_txt.html#monitoring-core-temperature
-        # https://forums.raspberrypi.com/viewtopic.php?t=281648
-        # https://gist.githubusercontent.com/dasl-/6526fdb8dfe05c5f94aed762485923ad/raw/1544275ddc15ac0b3338c43cba21937e0da29b63/gistfile1.txt
-        subprocess.check_output(
-            'echo "performance" | sudo tee /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor',
-            shell = True, executable = '/usr/bin/bash', stderr = subprocess.STDOUT
-        )
-
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__config = Config()

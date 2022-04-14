@@ -91,15 +91,12 @@ class SnakePlayer:
                 self.__is_marked_for_elimination = True
                 self.__unix_socket_helper.close()
                 return
-            move, websocket_send_time = move.split()
-            websocket_send_time = float(websocket_send_time)
-            elapsed_s = (time.time() - websocket_send_time)
-            tick_sleep_amount_s = self.__snake_game.get_tick_sleep_amount()
-            if elapsed_s > tick_sleep_amount_s:
-                # You can analyze this data for instance via:
-                # cat /var/log/pifi/queue.log | grep 'Total elapsed' | awk '{print $(NF-1)}' | datamash max 1 min 1 mean 1 median 1 q1 1 q3 1
-                # You should comment out the sleep in Snake.__tick_sleep to get purer data (get timing data without including that sleep)
-                self.__logger.info(f"Total elapsed from move start to registering: {(elapsed_s - tick_sleep_amount_s) * 1000} ms")
+            move, client_send_time = move.split()
+            client_send_time = float(client_send_time)
+            elapsed_s = (time.time() - client_send_time)
+            # You can analyze this data for instance via:
+            # cat /var/log/pifi/queue.log | grep 'Total elapsed' | awk '{print $(NF-1)}' | datamash max 1 min 1 mean 1 median 1 q1 1 q3 1
+            self.__logger.debug(f"Total elapsed from move start to registering: {elapsed_s * 1000} ms")
             move = int(move)
             if move not in (self.UP, self.DOWN, self.LEFT, self.RIGHT):
                 move = self.UP

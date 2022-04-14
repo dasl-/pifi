@@ -224,7 +224,7 @@ var snake_runner = (() => {
     }
 
     function sendDirection(direction, player_index) {
-        web_sockets[player_index].send(direction);
+        web_sockets[player_index].send(direction + ' ' + (new Date() / 1000));
         if (player_index === 0) {
             $(".button-active").hide();
             $(".button-active[data-direction='" + direction + "']").show();
