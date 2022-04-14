@@ -6,7 +6,6 @@ import websockets
 
 from pifi.logger import Logger
 from pifi.queue import Queue
-from pifi.games.snakeplayer import SnakePlayer
 from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException
 
 class WebSocketServer:
@@ -49,29 +48,24 @@ class WebSocketServer:
             return
 
         while True:
-            move = None
-
             # figure this shit out...
             # setting the timeout to 0.0000000001 maxes out CPU and ocasionally lags. Wheras setting to 0.01 doesnt max out
             # CPU and we don't lag (check log lines). But for some reason snake runs slower?? doesn't make sense since it's
             # a different process running snake...
             try:
                 move = await websocket.recv()
-            except asyncio.TimeoutError:
-                pass
             except Exception as e2:
                 logger.info("Exception reading from websocket. Ending game. Exception: " + str(e2))
                 break
 
-            if move is not None:
-                # Send the time so we can determine how long it took for the snake
-                # process to receive the move and get latency data.
-                move += " " + str(round(time.time(), 6))
-                try:
-                    unix_socket_helper.send_msg(move)
-                except Exception:
-                    logger.error(f'Unable to send move [{move}]: {traceback.format_exc()}')
-                    break
+            # Send the time so we can determine how long it took for the snake
+            # process to receive the move and get latency data.
+            move += " " + str(round(time.time(), 6))
+            try:
+                unix_socket_helper.send_msg(move)
+            except Exception:
+                logger.error(f'Unable to send move [{move}]: {traceback.format_exc()}')
+                break
 
             if unix_socket_helper.is_ready_to_read():
                 msg = None
