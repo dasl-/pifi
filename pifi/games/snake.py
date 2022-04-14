@@ -82,11 +82,12 @@ class Snake:
             return
 
         self.__background_music.play(loops = -1)
+        tick_sleep_amount = self.get_tick_sleep_amount()
 
         while True:
             # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
             # lead to more consistent tick durations?
-            self.__tick_sleep()
+            time.sleep(tick_sleep_amount)
 
             for i in range(self.__settings.num_players):
                 self.__players[i].read_move_and_set_direction()
@@ -111,6 +112,9 @@ class Snake:
 
     def get_settings(self):
         return self.__settings
+
+    def get_tick_sleep_amount(self):
+        return -0.02 * self.__settings.difficulty + 0.21
 
     def __tick(self):
         self.__increment_tick_counters()
@@ -395,9 +399,6 @@ class Snake:
     def __clear_board(self):
         frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
         self.__video_player.play_frame(frame)
-
-    def __tick_sleep(self):
-        time.sleep(-0.02 * self.__settings.difficulty + 0.21)
 
     def __increment_tick_counters(self):
         self.__num_ticks += 1

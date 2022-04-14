@@ -1,10 +1,9 @@
-import string
-import random
 import asyncio
-import websockets
-import time
 import subprocess
+import time
 import traceback
+import websockets
+
 from pifi.logger import Logger
 from pifi.queue import Queue
 from pifi.games.snakeplayer import SnakePlayer
@@ -24,55 +23,54 @@ class WebSocketServer:
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
-    # TODO: multiplayer joining race condition bug: https://github.com/dasl-/pifi/issues/19
     async def server_connect(self, websocket, path):
         # create a logger local to this thread so that the namespace isn't clobbered by another thread
         logger = Logger().set_namespace(self.__class__.__name__ + '__' + Logger.make_uuid())
         logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
 
-        is_connect_success = True
+        try:
+            # The client should send the playlist_video_id of the game they are joining as their first
+            # message. The client is obtaining the playlist_video_id (via HTTP POST request) and
+            # connecting to the websocket server concurrently, so give up to 5 seconds for the client
+            # to get the playlist_video_id and send it to us.
+            playlist_video_id_msg = await asyncio.wait_for(websocket.recv(), 5)
+        except Exception as e:
+            logger.info(f"Did not receive playlist_video_id message from client. Exception: {e}")
+            self.__end_connection(logger)
+            return
+
         unix_socket_helper = UnixSocketHelper()
         try:
-            logger.info("Calling unix_socket_helper.connect")
             unix_socket_helper.connect(Queue.UNIX_SOCKET_PATH)
-            logger.info("Done calling unix_socket_helper.connect")
+            unix_socket_helper.send_msg(playlist_video_id_msg)
         except Exception:
-            is_connect_success = False
             logger.error('Caught exception: {}'.format(traceback.format_exc()))
+            self.__end_connection(logger, unix_socket_helper)
+            return
 
-        while is_connect_success:
+        while True:
             move = None
 
             # figure this shit out...
             # setting the timeout to 0.0000000001 maxes out CPU and ocasionally lags. Wheras setting to 0.01 doesnt max out
             # CPU and we don't lag (check log lines). But for some reason snake runs slower?? doesn't make sense since it's
             # a different process running snake...
-            await_move_from_client_start_time = time.time()
             try:
-                move = await asyncio.wait_for(websocket.recv(), 0.01)
+                move = await websocket.recv()
             except asyncio.TimeoutError:
                 pass
             except Exception as e2:
                 logger.info("Exception reading from websocket. Ending game. Exception: " + str(e2))
                 break
 
-            elapsed_ms = (time.time() - await_move_from_client_start_time) * 1000
-            if elapsed_ms >= 100:
-                logger.info(f"reading from websocket took: {elapsed_ms} ms")
-
             if move is not None:
-                try:
-                    int_move = int(move)
-                except Exception:
-                    int_move = False
-                if int_move in (SnakePlayer.UP, SnakePlayer.DOWN, SnakePlayer.LEFT, SnakePlayer.RIGHT,):
-                    # Send the `await_move_from_client_start_time` so we can determine how long it took for the snake
-                    # process to receive the move and debug latency.
-                    move += " " + str(round(await_move_from_client_start_time, 6))
+                # Send the time so we can determine how long it took for the snake
+                # process to receive the move and get latency data.
+                move += " " + str(round(time.time(), 6))
                 try:
                     unix_socket_helper.send_msg(move)
                 except Exception:
-                    logger.error('Unable to send move: {}'.format(traceback.format_exc()))
+                    logger.error(f'Unable to send move [{move}]: {traceback.format_exc()}')
                     break
 
             if unix_socket_helper.is_ready_to_read():
@@ -85,7 +83,11 @@ class WebSocketServer:
 
                 await websocket.send(msg)
 
-        unix_socket_helper.close()
+        self.__end_connection(logger, unix_socket_helper)
+
+    def __end_connection(self, logger, unix_socket_helper = None):
+        if unix_socket_helper:
+            unix_socket_helper.close()
         logger.info("ending ws server_connect")
 
     def __get_local_ip(self):
