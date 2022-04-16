@@ -54,7 +54,8 @@ class DriverApa102(DriverBase):
 
         # Now, populate the LEDs array by flattening the array, interposing
         # each RGB triple with the "LED start frame".
-        self.__pixels.leds = list(np.insert(frame.flat, range(0, frame.size, 3), self.__ledstart))
+        # See: https://github.com/dasl-/pifi/issues/26
+        self.__pixels.leds = np.insert(frame.flat, range(0, frame.size, 3), self.__ledstart).tolist()
 
         # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
