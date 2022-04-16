@@ -49,16 +49,22 @@ class WebSocketServer:
 
         while True:
             try:
-                move = await websocket.recv()
+                # One might think we might not need a timeout here, and that we could wait here indefinitely.
+                # But we need to periodically check if the unix socket is ready to read and forward messages
+                # to the websocket client. Thus, we need asyncio.wait_for with a timeout here.
+                move = await asyncio.wait_for(websocket.recv(), 0.1)
+            except asyncio.TimeoutError:
+                move = None
             except Exception as e:
                 logger.info(f"Exception reading from websocket. Ending game. Exception: {e}")
                 break
 
-            try:
-                unix_socket_helper.send_msg(move)
-            except Exception:
-                logger.error(f'Unable to send move [{move}]: {traceback.format_exc()}')
-                break
+            if move is not None:
+                try:
+                    unix_socket_helper.send_msg(move)
+                except Exception:
+                    logger.error(f'Unable to send move [{move}]: {traceback.format_exc()}')
+                    break
 
             if unix_socket_helper.is_ready_to_read():
                 msg = None
