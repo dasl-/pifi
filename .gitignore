@@ -8,6 +8,7 @@ data/
 __pycache__/
 *.db
 *.db.bak
+*.db-journal
 config.json
 loading_screen_color.npy
 loading_screen_monochrome.npy
