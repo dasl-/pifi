@@ -120,6 +120,14 @@
   font-style: normal;
   font-weight: normal;
 }
+/* prevent annoyance where certain background elements can get accidentally selected on mobile */
+.glyphicon, .volume-container {
+   -moz-user-select: -moz-none;
+   -khtml-user-select: none;
+   -webkit-user-select: none;
+   -ms-user-select: none;
+   user-select: none;
+}
 .glyphicon {
   position: relative;
   top: 1px;
