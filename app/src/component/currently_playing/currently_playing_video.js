@@ -56,25 +56,6 @@ class CurrentlyPlayingRight extends React.Component {
               onChange={this.onVolChange}
               onAfterChange={this.markVolMutexReleasable}
               value={this.state.is_vol_locked ? this.state.vol_pct : this.props.vol_pct}
-              trackStyle={{
-                border: '1px solid #686E7B',
-                backgroundColor: '#686E7B',
-                height: 10
-              }}
-              railStyle={{
-                border: '1px solid #686E7B',
-                backgroundColor: 'transparent',
-                height: 10
-              }}
-              handleStyle={{
-                border: '1px solid #5cedf9',
-                boxShadow: '0px 0px 3.5px #52c6f3, 0px 0px 0px #6acef5',
-                height: 30,
-                width: 30,
-                marginLeft: -16,
-                marginTop: -9,
-                backgroundColor: '#2e3135',
-              }}
             />
           </div>
           <div className='col-1 p-0'><span className='glyphicon glyphicon-volume-up bg-light-text vol-icon' aria-hidden='true' /></div>

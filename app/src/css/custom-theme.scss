@@ -189,3 +189,47 @@ ul.menu li a {
     display: -webkit-box !important;
   }
 }
+
+//Volume slider
+.rc-slider-handle {
+  border:1px solid $text-title;
+  box-shadow: 0px 0px 3.5px $icon-shadow, 0px 0px 0px $icon-shadow;
+  height:30px;
+  width:30px;
+  margin-top:-10px;
+  background-color: $background-light;
+  opacity:1;
+}
+.rc-slider-handle::after {
+  // make the touch area for volume slider a bigger target without affecting the appearance
+  content: "";
+  position: absolute;
+  // center this over its parent
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+}
+.rc-slider-handle:hover {
+  border:1px solid $text-title;
+  box-shadow: 0px 0px 3.5px $icon-shadow, 0px 0px 0px $icon-shadow;
+}
+.rc-slider-handle:focus {
+  border:1px solid $text-title;
+  box-shadow: 0px 0px 3.5px $icon-shadow, 0px 0px 0px $icon-shadow;
+}
+.rc-slider-handle-dragging.rc-slider-handle-dragging.rc-slider-handle-dragging {
+  border:1px solid $text-title;
+  box-shadow: 0px 0px 3.5px $icon-shadow, 0px 0px 0px $icon-shadow;
+}
+.rc-slider-rail {
+  border: 1px solid $text-subtle;
+  background-color: transparent;
+  height:10px;
+}
+.rc-slider-track {
+  border: 1px solid $text-subtle;
+  background-color: $text-subtle;
+  height:10px;
+}
