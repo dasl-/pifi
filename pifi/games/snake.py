@@ -57,7 +57,7 @@ class Snake:
         for i in range(self.__settings.num_players):
             self.__players.append(SnakePlayer(i, server_unix_socket, self))
 
-        # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/master/utils/sound_test.py
+        # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/main/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
         background_music_file = secrets.choice([
             'dragon_quest4_05_town.wav',
