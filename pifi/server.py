@@ -112,7 +112,10 @@ class PifiAPI():
             )
             did_join_existing_game = False
 
-            # skip videos in the queue until we get to the game
+            # Skip videos in the queue until we get to the game
+            # Note: we have logic in the Queue class to re-enqueue videos of type TYPE_VIDEO that were skipped
+            # in this manner. The video skipped here will be added back at the head of the queue.
+            # See: Queue::__should_reenqueue_current_playlist_item
             while True:
                 current_video = self.__playlist.get_current_video()
                 if current_video is None:
@@ -159,6 +162,10 @@ class PifiAPI():
     def clear(self):
         self.__playlist.clear()
         return {'success': True}
+
+    def play_next(self, post_data):
+        success = self.__playlist.play_next(post_data['playlist_video_id'])
+        return {'success': success}
 
     def set_screensaver_enabled(self, post_data):
         self.__settings_db.set(SettingsDb.SCREENSAVER_SETTING, bool(post_data[SettingsDb.SCREENSAVER_SETTING]))
@@ -265,6 +272,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.remove(post_data)
         elif path == 'clear':
             response = self.__api.clear()
+        elif path == 'play_next':
+            response = self.__api.play_next(post_data)
         elif path == 'screensaver':
             response = self.__api.set_screensaver_enabled(post_data)
         elif path == 'vol_pct':

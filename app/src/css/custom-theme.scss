@@ -55,6 +55,11 @@
   -webkit-text-stroke: 1px $text-title;
   text-shadow: $icon-shadow 0px 0px $icon-shadow-blur;
 }
+.glyphicon-fill-no-stroke {
+  text-stroke: 0px $text-title;
+  -webkit-text-stroke: 0px $text-title;
+  color: $text-title !important;
+}
 
 /* overall text */
 body {
@@ -65,6 +70,17 @@ body {
 }
 
 /* playlist */
+.playlist-video-icon-fill-color {
+  fill:$background-light;
+}
+.playlist-video-icon-path {
+  stroke: $text-title;
+  stroke-width: 3.5px;
+}
+.svg-icon {
+  -webkit-filter: drop-shadow( 0px 0px 1px $icon-shadow);
+  filter: drop-shadow( 0px 0px 1px $icon-shadow);
+}
 .skip-icon {
   margin-left: 2px;
 }
@@ -76,17 +92,34 @@ body {
   border-top: 1px solid $border;
   box-shadow: $border 0px 0px 16.5px;
 }
-
-/* glowing top border */
-.pink-top {
-  overflow: hidden;
-  padding-top: 6px;
-  margin-top: -6px;
+.swipeable-list-item-button.play-next {
+  background-color: $text-subtle;
 }
-.pink-top > div {
-  padding-top: 10px;
+.swipeable-list-item-button.play-next .playlist-video-icon-fill-color {
+  fill:$text-subtle;
+}
+.swipeable-list-item-button.remove-video {
+  background-color: $background-light;
+}
+.swipeable-list-item-button.remove-video .glyphicon {
+  color: $background-primary;
+}
+
+// We need to set box-shadow and border on the .Wrapper class when the playlist is expanded,
+// because the .Wrapper has overflow:hidden, which prevents the box-shadow from showing
+// if it were set on .playlist-video-common
+.playlist-expanded .Wrapper {
+  box-shadow: 0 -#{$icon-shadow-blur} $icon-shadow-blur -#{$icon-shadow-blur} $border;
   border-top: 1px solid $border !important;
-  box-shadow: 0 0 $border-shadow-blur $border;
+}
+.playlist-video-common {
+  overflow: hidden;
+  border-top: 1px solid $border !important;
+  box-shadow: 0 -#{$icon-shadow-blur} $icon-shadow-blur -#{$icon-shadow-blur} $border;
+}
+.playlist-expanded .Wrapper .playlist-video-common {
+  border-top:none !important;
+  box-shadow:none;
 }
 
 /* alert */

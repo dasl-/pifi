@@ -16,3 +16,30 @@
   transform-origin: top;
   overflow: hidden;
 }
+
+.Background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.swipeable-list-item-button {
+  width: 100px;
+  height: 100%;
+  display: flex;
+  justify-content: center; /* align horizontal */
+  align-items: center; /* align vertical */
+  transition: width 0.5s ease-out;
+}
+.swipeable-list-item-button:hover {
+  cursor: pointer;
+}
+.swipeable-list-item-button .glyphicon {
+  width: inherit;
+  text-align: center;
+}

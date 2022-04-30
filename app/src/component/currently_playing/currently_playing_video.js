@@ -61,7 +61,7 @@ class CurrentlyPlayingRight extends React.Component {
           <div className='col-1 p-0'><span className='glyphicon glyphicon-volume-up bg-light-text vol-icon' aria-hidden='true' /></div>
         </div>
 
-        <div className='container pt-2 px-0 mt-2'>
+        <div className='container py-2 px-0 mt-2'>
           <div className='row mr-0'>
             <div className='col-8 px-2 pl-3 small-vertical-center'>
                 Up Next

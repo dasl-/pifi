@@ -62,6 +62,12 @@ class APIClient {
     });
   }
 
+  playVideoNext(video) {
+    return this.perform('post', '/play_next', {
+      playlist_video_id: video.playlist_video_id
+    });
+  }
+
   setVolPct(vol_pct) {
     return this.perform('post', '/vol_pct', {
       vol_pct: vol_pct

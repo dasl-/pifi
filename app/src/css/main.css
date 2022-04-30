@@ -1,3 +1,8 @@
+* {
+  /* prevent a crazily long youtube username from breaking the responsiveness of the page */
+  overflow-wrap: anywhere;
+}
+
 .app-body {
   max-width: 1200px;
   margin: auto;

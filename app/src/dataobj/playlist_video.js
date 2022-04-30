@@ -12,7 +12,9 @@ class PlaylistVideo {
       // Unique Data
       create_date: props.create_date,
       color_mode: props.color_mode,
-      status: props.status
+      status: props.status,
+
+      priority: props.priority,
     };
   }
 
@@ -21,7 +23,7 @@ class PlaylistVideo {
       return PlaylistVideo.prototype.fromProps(props);
     });
 
-    return videos.sort((a, b) => {return a.playlist_video_id > b.playlist_video_id})
+    return videos;
   }
 }
 

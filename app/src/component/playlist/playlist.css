@@ -20,6 +20,18 @@
   transition-timing-function: ease-in;
 }
 
+/* styles common to both the .playlist-video and .playlist-video-loading classes */
+.playlist-video-common {
+  padding:.5rem 0;
+}
+.playlist-video-thumbnail-container {
+  height: 100%;
+}
+.playlist-video-thumbnail-container img {
+  min-height: 100%;
+  object-fit:cover;
+}
+
 .playlist-mask {
   visibility: visible;
   height: 100%;
@@ -37,4 +49,20 @@
 .playlist-mask.hidden-mask {
   background: rgba(9, 9, 9, 0);
   visibility: hidden;
+}
+
+.playlist-video-icon-container {
+  display: flex;
+  justify-content:space-between;
+  flex-direction:column;
+}
+
+.playlist-video-icon-container svg:hover {
+  cursor:pointer;
+}
+
+svg.play-next-icon {
+  height: 25px;
+  width: 25px;
+  margin-right: -2px;
 }

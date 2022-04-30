@@ -22,7 +22,7 @@ class Database:
     __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
 
     # Zero indexed schema_version (first version is v0).
-    __SCHEMA_VERSION = 3
+    __SCHEMA_VERSION = 4
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -92,6 +92,8 @@ class Database:
                     self.__update_schema_to_v2()
                 elif i == 3:
                     self.__update_schema_to_v3()
+                elif i == 4:
+                    self.__update_schema_to_v4()
                 else:
                     msg = "No update schema method defined for version: {}.".format(i)
                     self.__logger.error(msg)
@@ -143,3 +145,11 @@ class Database:
     def __update_schema_to_v3(self):
         self.get_cursor().execute("DROP INDEX IF EXISTS game_type_score_idx")
         self.get_cursor().execute("CREATE INDEX game_type_score_idx ON scores (game_type, score)")
+
+    def __update_schema_to_v4(self):
+        self.get_cursor().execute("ALTER TABLE playlist_videos ADD COLUMN priority INTEGER DEFAULT 0")
+        self.get_cursor().execute("DROP INDEX IF EXISTS status_type_idx")
+        self.get_cursor().execute("DROP INDEX IF EXISTS status_type_priority_idx")
+        self.get_cursor().execute("CREATE INDEX status_type_priority_idx ON playlist_videos (status, type, priority)")
+        self.get_cursor().execute("DROP INDEX IF EXISTS status_priority_idx")
+        self.get_cursor().execute("CREATE INDEX status_priority_idx ON playlist_videos (status, priority DESC, playlist_video_id ASC)")

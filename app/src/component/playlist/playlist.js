@@ -60,7 +60,7 @@ class Playlist extends React.Component {
 
               <div className="play-queue">
                 { (this.props.videos.length === 0) &&
-                  <div className='container pt-2 px-0 mt-2 playlist-video'>
+                  <div className='container py-2 px-0 playlist-video-common'>
                     <div className="py-3 text-center">
                       &lt;Nothing&gt;
                     </div>
@@ -71,7 +71,9 @@ class Playlist extends React.Component {
                     return (
                       <LoadWithVideo key={video.video_id} video={video}>
                         <PlaylistVideo
+                          index={index}
                           removeVideo={this.props.removeVideo}
+                          playVideoNext={this.props.playVideoNext}
                         />
                       </LoadWithVideo>
                     );
