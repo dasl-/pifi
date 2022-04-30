@@ -109,13 +109,13 @@ body {
 // because the .Wrapper has overflow:hidden, which prevents the box-shadow from showing
 // if it were set on .playlist-video-common
 .playlist-expanded .Wrapper {
-  box-shadow: 0 -#{$icon-shadow-blur} $icon-shadow-blur -#{$icon-shadow-blur} $border;
+  box-shadow: 0 -#{$icon-shadow-blur} #{$icon-shadow-blur - 0.1} -#{$icon-shadow-blur} $border;
   border-top: 1px solid $border !important;
 }
 .playlist-video-common {
   overflow: hidden;
   border-top: 1px solid $border !important;
-  box-shadow: 0 -#{$icon-shadow-blur} $icon-shadow-blur -#{$icon-shadow-blur} $border;
+  box-shadow: 0 -#{$icon-shadow-blur} #{$icon-shadow-blur - 0.1} -#{$icon-shadow-blur} $border;
 }
 .playlist-expanded .Wrapper .playlist-video-common {
   border-top:none !important;
