@@ -21,11 +21,6 @@ var page = (() => {
         setupNumPlayersInput();
         setupAppleCountInput();
 
-        // https://github.com/mozilla-mobile/firefox-ios/issues/5772#issuecomment-573380173
-        if (window.__firefox__) {
-            window.__firefox__.NightMode.setEnabled(false);
-        }
-
         volume.init(false);
 
         setupPolling();
