@@ -235,8 +235,7 @@ class SnakePlayer:
     def end_game(self):
         self.__unix_socket_helper.close()
 
-        # Break circular reference
-        # TODO: confirm this works
+        # Break circular reference (not totally sure if it works /shrug)
         # https://rushter.com/blog/python-garbage-collector/
         self.__snake_game = None
 

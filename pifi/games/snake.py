@@ -156,7 +156,6 @@ class Snake:
                 self.__logger.info('Unable to send score message to player {}'.format(i))
 
     def __place_apple(self):
-        # TODO: make better?
         while True:
             x = random.randint(0, self.__settings.display_width - 1)
             y = random.randint(0, self.__settings.display_height - 1)

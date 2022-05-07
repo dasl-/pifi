@@ -171,12 +171,6 @@ class PifiAPI():
         self.__settings_db.set(SettingsDb.SCREENSAVER_SETTING, bool(post_data[SettingsDb.SCREENSAVER_SETTING]))
         return {'success': True}
 
-    # TODO : race conditions when setting volume, bigger surface area after converting to ThreadingHTTPServer.
-    # Options:
-    # 1) increase time interval to send ajax volume requests to reduce likelihood of race condition
-    # 2) lock sending ajax volume requests until any in-flight requests return their response
-    #
-    # Also, investigate whatever client side locking I did here...?
     def set_vol_pct(self, post_data):
         vol_pct = int(post_data['vol_pct'])
         self.__vol_controller.set_vol_pct(vol_pct)
