@@ -108,8 +108,9 @@ class VideoProcessor:
         process_and_play_vid_cmd = self.__get_process_and_play_vid_cmd(ffmpeg_to_python_fifo_name, fps_fifo_name)
         self.__logger.info('executing process and play cmd: ' + process_and_play_vid_cmd)
         process_and_play_vid_proc = subprocess.Popen(
-            process_and_play_vid_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True
+            process_and_play_vid_cmd, shell = True, executable = '/usr/bin/bash', start_new_session = True,
         )
+
         # Store the PGID separately, because attempting to get the PGID later via `os.getpgid` can
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__process_and_play_vid_proc_pgid = os.getpgid(process_and_play_vid_proc.pid)

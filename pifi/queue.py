@@ -24,10 +24,8 @@ class Queue:
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__is_game_of_life_enabled = None
-        self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__led_frame_player = LedFramePlayer()
 
         # True if game of life screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
@@ -35,7 +33,6 @@ class Queue:
         self.__playlist_item = None
 
         # house keeping
-        self.__clear_screen()
         (VolumeController()).set_vol_pct(50)
         self.__playlist.clean_up_state()
 
@@ -111,7 +108,8 @@ class Queue:
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
-            self.__led_frame_player.show_loading_screen()
+            player = LedFramePlayer()
+            player.show_loading_screen()
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
@@ -169,8 +167,6 @@ class Queue:
             else:
                 self.__playlist.end_video(self.__playlist_item["playlist_video_id"])
 
-        self.__clear_screen()
-
         self.__logger.info("Ended playback.")
         Logger.set_uuid('')
         self.__playback_proc = None
@@ -221,15 +217,4 @@ class Queue:
                 if self.__is_screensaver_playing():
                     self.__stop_playback_if_playing()
 
-        if not self.__is_anything_playing:
-            now = time.time()
-            if (now - self.__last_screen_clear_while_screensaver_disabled_time) > 1:
-                # Clear screen every second while screensaver is disabled
-                # See: https://github.com/dasl-/pifi/issues/6
-                self.__clear_screen()
-                self.__last_screen_clear_while_screensaver_disabled_time = now
-
         return self.__is_game_of_life_enabled
-
-    def __clear_screen(self):
-        self.__led_frame_player.clear_screen()
