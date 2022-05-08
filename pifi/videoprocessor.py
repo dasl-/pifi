@@ -120,18 +120,18 @@ class VideoProcessor:
         last_frame = None
         vid_processing_lag_counter = 0
         is_ffmpeg_done_outputting = False
-        avg_color_frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
+        frames = ReadOnceCircularBuffer(self.__FRAMES_BUFFER_LENGTH)
         ffmpeg_to_python_fifo = open(ffmpeg_to_python_fifo_name, 'rb')
 
         fps = self.__read_fps_from_fifo(fps_fifo_name)
         frame_length = 1 / fps
         pathlib.Path(self.__FPS_READY_FILE).touch()
         while True:
-            if is_ffmpeg_done_outputting or avg_color_frames.is_full():
+            if is_ffmpeg_done_outputting or frames.is_full():
                 pass
             else:
-                is_ffmpeg_done_outputting, vid_start_time = self.__populate_avg_color_frames(
-                    avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
+                is_ffmpeg_done_outputting, vid_start_time = self.__populate_frames(
+                    frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
                 )
 
             if vid_start_time is None:
@@ -143,7 +143,7 @@ class VideoProcessor:
                     self.__init_time = None
 
                 is_video_done_playing, last_frame, vid_processing_lag_counter = self.__play_video(
-                    avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+                    frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
                     last_frame, vid_processing_lag_counter
                 )
                 if is_video_done_playing:
@@ -160,8 +160,8 @@ class VideoProcessor:
                 break
             time.sleep(0.1)
 
-    def __populate_avg_color_frames(
-        self, avg_color_frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
+    def __populate_frames(
+        self, frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
     ):
         is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)
         if not is_ready_to_read:
@@ -184,17 +184,17 @@ class VideoProcessor:
             # Add time for better audio / video sync
             vid_start_time = time.time() + (0.075 if self.__video_settings.should_play_audio else 0)
 
-        avg_color_frames.append(
+        frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
         )
         return [False, vid_start_time]
 
     def __play_video(
-        self, avg_color_frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
+        self, frames, vid_start_time, frame_length, is_ffmpeg_done_outputting,
         last_frame, vid_processing_lag_counter
     ):
         cur_frame = max(math.floor((time.time() - vid_start_time) / frame_length), 0)
-        if cur_frame >= len(avg_color_frames):
+        if cur_frame >= len(frames):
             if is_ffmpeg_done_outputting:
                 self.__logger.info("Video done playing. Video processing lag counter: {}.".format(vid_processing_lag_counter))
                 return [True, cur_frame, vid_processing_lag_counter]
@@ -203,9 +203,9 @@ class VideoProcessor:
                 if vid_processing_lag_counter % 1000 == 0 or vid_processing_lag_counter == 1:
                     self.__logger.error(
                         f"Video processing is lagging. Counter: {vid_processing_lag_counter}. " +
-                        f"Frames available: {avg_color_frames.unread_length()}."
+                        f"Frames available: {frames.unread_length()}."
                     )
-                cur_frame = len(avg_color_frames) - 1 # play the most recent frame we have
+                cur_frame = len(frames) - 1 # play the most recent frame we have
 
         if cur_frame == last_frame:
             # We don't need to play a frame since we're still supposed to be playing the last frame we played
@@ -223,7 +223,7 @@ class VideoProcessor:
                 ("Video playing unable to keep up in real-time. Skipped playing {} frame(s)."
                     .format(num_skipped_frames))
             )
-        self.__video_player.play_frame(avg_color_frames[cur_frame])
+        self.__video_player.play_frame(frames[cur_frame])
         return [False, cur_frame, vid_processing_lag_counter]
 
     def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name, fps_fifo_name):
@@ -260,7 +260,7 @@ class VideoProcessor:
             # Add mbuffer because otherwise the ffplay command blocks the whole pipeline. Because
             # audio can only play in real-time, this would block ffmpeg from processing the frames
             # as fast as it otherwise could. This prevents us from building up a big enough buffer
-            # in the avg_color_frames circular buffer to withstand blips in performance. This
+            # in the frames circular buffer to withstand blips in performance. This
             # ensures the circular buffer will generally get filled, rather than lingering around
             # only ~70 frames full. Makes it less likely that we will fall behind in video
             # processing.

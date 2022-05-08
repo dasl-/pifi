@@ -47,20 +47,20 @@ class VideoPlayer:
     def clear_screen(self):
         self.__driver.clear_screen()
 
-    def play_frame(self, avg_color_frame):
-        self.__set_frame_pixels(avg_color_frame)
+    def play_frame(self, frame):
+        self.__set_frame_pixels(frame)
 
-    def fade_to_frame(self, avg_color_frame):
+    def fade_to_frame(self, frame):
         if (self.__current_frame is None):
-            self.__current_frame = avg_color_frame
-            return self.play_frame(avg_color_frame)
+            self.__current_frame = frame
+            return self.play_frame(frame)
 
         frame_steps = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.int8)
 
         for x in range(self.__led_settings.display_width):
             for y in range(self.__led_settings.display_height):
                 for rgb in range(0, 3):
-                    frame_steps[y, x, rgb] = ((avg_color_frame[y, x, rgb].astype(np.int16) - self.__current_frame[y, x, rgb].astype(np.int16)) / self.__FADE_STEPS).astype(np.int8)
+                    frame_steps[y, x, rgb] = ((frame[y, x, rgb].astype(np.int16) - self.__current_frame[y, x, rgb].astype(np.int16)) / self.__FADE_STEPS).astype(np.int8)
 
         for current_step in range(1, self.__FADE_STEPS):
             new_frame = np.zeros([self.__led_settings.display_height, self.__led_settings.display_width, 3], np.uint8)
@@ -72,8 +72,8 @@ class VideoPlayer:
             # no need to sleep since the above calculation takes some small amount of time
             self.__set_frame_pixels(new_frame)
 
-        self.__current_frame = avg_color_frame
-        self.__set_frame_pixels(avg_color_frame)
+        self.__current_frame = frame
+        self.__set_frame_pixels(frame)
 
     def show_loading_screen(self):
         filename = 'loading_screen_monochrome.npy'
@@ -87,35 +87,35 @@ class VideoPlayer:
     # otherwise, into an output frame by applying the user-provided transforms
     # such as color mode and flipping. The output is a 3d byte array suitable
     # for final display.
-    def __transform_frame(self, avg_color_frame):
+    def __transform_frame(self, frame):
         if not (self.__led_settings.is_color_mode_rgb()):
-            gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(avg_color_frame)
+            gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(frame)
 
         shape = [self.__led_settings.display_height, self.__led_settings.display_width, 3]
-        frame = np.zeros(shape, np.uint8)
+        transformed_frame = np.zeros(shape, np.uint8)
         # calculate gamma corrected colors
         if self.__led_settings.color_mode == LedSettings.COLOR_MODE_COLOR:
-            frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, avg_color_frame[:, :, 0])
-            frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, avg_color_frame[:, :, 1])
-            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, avg_color_frame[:, :, 2])
+            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, frame[:, :, 0])
+            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, frame[:, :, 1])
+            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, frame[:, :, 2])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_R:
-            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:, :])
+            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_G:
-            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:, :])
+            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_B:
-            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:, :])
+            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_BW:
-            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], avg_color_frame[:, :])
-            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], avg_color_frame[:, :])
-            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], avg_color_frame[:, :])
+            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
+            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
+            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_INVERT_COLOR:
-            frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - avg_color_frame[:, :, 0])
-            frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - avg_color_frame[:, :, 1])
-            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - avg_color_frame[:, :, 2])
+            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - frame[:, :, 0])
+            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - frame[:, :, 1])
+            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - frame[:, :, 2])
         elif self.__led_settings.color_mode == LedSettings.COLOR_MODE_INVERT_BW:
-            frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
-            frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
-            frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - avg_color_frame[:, :])
+            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - frame[:, :])
+            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - frame[:, :])
+            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - frame[:, :])
         else:
             raise Exception('Unexpected color mode: {}'.format(self.__led_settings.color_mode))
 
@@ -125,10 +125,10 @@ class VideoPlayer:
         if (self.__led_settings.flip_x):
             flips += (1,)
         if flips:
-            frame = np.flip(frame, flips)
+            transformed_frame = np.flip(transformed_frame, flips)
 
-        return frame
+        return transformed_frame
 
-    def __set_frame_pixels(self, avg_color_frame):
-        output_frame = self.__transform_frame(avg_color_frame)
+    def __set_frame_pixels(self, frame):
+        output_frame = self.__transform_frame(frame)
         self.__driver.display_frame(output_frame)
