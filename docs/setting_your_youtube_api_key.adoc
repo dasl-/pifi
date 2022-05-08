@@ -3,7 +3,7 @@
 :toclevels: 5
 
 ## Background
-We make use of the https://developers.google.com/youtube/v3/getting-started[Youtube Data API v3]. We use this to search for videos to play in the web UI.
+We make use of the https://developers.google.com/youtube/v3/getting-started[Youtube Data API v3]. We use this to search for videos to play in the web UI. For more info, see: https://github.com/dasl-/piwall2/blob/main/docs/youtube_api_keys.adoc
 
 If your youtube API key has not been set, you will see a warning message when you run the https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script.
 
