@@ -1,0 +1,17 @@
+# Setting your youtube API key
+:toc:
+:toclevels: 5
+
+## Background
+We make use of the https://developers.google.com/youtube/v3/getting-started[Youtube Data API v3]. We use this to search for videos to play in the web UI.
+
+If your youtube API key has not been set, you will see warnings when you run the https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script.
+
+## Generating your youtube API key
+Steps to get credentials: https://www.slickremix.com/docs/get-api-key-for-youtube/'>https://www.slickremix.com/docs/get-api-key-for-youtube/
+
+## Setting your youtube API key
+Use the script: https://github.com/dasl-/pifi/blob/main/utils/set_youtube_api_key[`./utils/set_youtube_api_key`]:
+```
+sudo ./utils/set_youtube_api_key --api-key <your youtube API key>
+```

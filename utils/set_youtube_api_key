@@ -11,10 +11,11 @@ from pifi.settings.settingsdb import SettingsDb
 
 def parseArgs():
     parser = argparse.ArgumentParser(
-        description=('Update the youtube API key used by the front end.'),
+        description=('Update the youtube API key used by the front end. ' +
+            'If called with no arguments, print the current youtube API key (if any).'),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('--api-key', dest='api_key', action='store', required = True,
+    parser.add_argument('--api-key', dest='api_key', action='store',
         help='The new youtube api key')
     args = parser.parse_args()
     return args
@@ -22,8 +23,14 @@ def parseArgs():
 
 args = parseArgs()
 settings_db = SettingsDb()
-success = settings_db.set(SettingsDb.SETTING_YOUTUBE_API_KEY, args.api_key)
-if not success:
-    raise Exception(f"Unable to set youtube api key to: {args.api_key}")
+
+if args.api_key is None:
+    api_key = settings_db.get(SettingsDb.SETTING_YOUTUBE_API_KEY)
+    if api_key is not None:
+        print(str(api_key))
 else:
-    print(f"Successfully set youtube api key to: {args.api_key}")
+    success = settings_db.set(SettingsDb.SETTING_YOUTUBE_API_KEY, args.api_key)
+    if not success:
+        raise Exception(f"Unable to set youtube api key to: {args.api_key}")
+    else:
+        print(f"Successfully set youtube api key to: {args.api_key}")

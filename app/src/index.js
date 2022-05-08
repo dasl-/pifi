@@ -9,16 +9,9 @@ import 'css/main.css';
 import 'css/bootstrap.min.css';
 import 'css/custom-theme.css';
 
-if (process.env.REACT_APP_GOOGLE_API_KEY) {
-  render(
-    <App
-      is_new_session={!utils.hasExistingSession()}
-    />,
-    document.getElementById('root')
-  );
-} else {
-  render(
-    <InvalidBuild />,
-    document.getElementById('root')
-  );
-}
+render(
+  <App
+    is_new_session={!utils.hasExistingSession()}
+  />,
+  document.getElementById('root')
+);

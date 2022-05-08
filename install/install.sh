@@ -28,6 +28,7 @@ main(){
     buildWebApp
     setHostname
     disableWifiPowerManagement
+    checkYoutubeApiKey
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
@@ -142,6 +143,15 @@ disableWifiPowerManagement(){
         echo "exit 0" | sudo tee -a /etc/rc.local >/dev/null 2>&1
     else
         info "Wifi power management already disabled"
+    fi
+}
+
+checkYoutubeApiKey(){
+    info "Checking for youtube API key..."
+    local youtube_api_key
+    youtube_api_key=$("$BASE_DIR"/utils/set_youtube_api_key)
+    if [ -z "${youtube_api_key}" ]; then
+        warn "WARNING: youtube API key has not been set. See: TODO"
     fi
 }
 
