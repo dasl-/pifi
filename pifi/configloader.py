@@ -10,7 +10,6 @@ class ConfigLoader:
     __is_loaded = False
 
     __server_config = {}
-    __queue_config = {}
     __led_settings = {}
     __video_settings = {}
     __game_of_life_settings = {}
@@ -23,12 +22,6 @@ class ConfigLoader:
     def get_server_config(self, key, default=None):
         if key in ConfigLoader.__server_config:
             return ConfigLoader.__server_config[key]
-
-        return default
-
-    def get_queue_config(self, key, default=None):
-        if key in ConfigLoader.__queue_config:
-            return ConfigLoader.__queue_config[key]
 
         return default
 
@@ -57,9 +50,6 @@ class ConfigLoader:
             if 'server_config' in data:
                 ConfigLoader.__server_config = data['server_config']
                 self.__logger.info(f"Found server config: {ConfigLoader.__server_config}")
-            if 'queue_config' in data:
-                ConfigLoader.__queue_config = data['queue_config']
-                self.__logger.info(f"Found queue config: {ConfigLoader.__queue_config}")
             if 'led_settings' in data:
                 ConfigLoader.__led_settings = data['led_settings']
                 self.__logger.info(f"Found LED settings: {ConfigLoader.__led_settings}")

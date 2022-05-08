@@ -12,12 +12,6 @@
         "certfile": "",
     },
 
-    // Settings for the queue process.
-    // Optional. This whole stanza is optional because none of the keys within it are required.
-    "queue_config": {
-        // No keys are present yet in the queue_config stanza. Perhaps we will use it in the future.
-    },
-
     // Settings used whenever displaying anything on the LEDs.
     // Required. At least one key within this stanza is required.
     "led_settings": {
