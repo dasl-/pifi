@@ -12,7 +12,7 @@ class SnakeSettings(LedSettings):
 
     # difficulty: snake difficulty setting
     # num_players: number of snake game players
-    # apple_count: apple count for multipplayer snake game
+    # apple_count: apple count for multiplayer snake game
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False,

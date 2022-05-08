@@ -47,6 +47,8 @@ class ConfigLoader:
         self.__logger.info(f"Found config file at: {self.CONFIG_PATH}")
         with open(self.CONFIG_PATH) as config_json:
             data = pyjson5.decode(config_json.read())
+            if 'log_level' in data:
+                Logger.set_level(data['log_level'])
             if 'server_config' in data:
                 ConfigLoader.__server_config = data['server_config']
                 self.__logger.info(f"Found server config: {ConfigLoader.__server_config}")

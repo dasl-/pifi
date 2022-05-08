@@ -300,7 +300,7 @@ class VideoProcessor:
         if Logger.get_level() <= Logger.DEBUG:
             log_opts = '' # show video download progress
         if not sys.stderr.isatty():
-            log_opts += '--newline'
+            log_opts += ' --newline'
 
         # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
         # be enough buffer for ~139s for a 1080p video, which is a lot higher resolution than we

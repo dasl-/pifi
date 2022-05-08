@@ -6,6 +6,8 @@ import sys
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
+from pifi.configloader import ConfigLoader
 from pifi.queue import Queue
 
+ConfigLoader()
 Queue().run()

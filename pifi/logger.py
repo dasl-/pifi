@@ -13,6 +13,16 @@ class Logger:
     INFO = 20
     DEBUG = 10
     ALL = 0
+    __LOG_LEVELS = [QUIET, ERROR, WARNING, INFO, DEBUG, ALL]
+
+    STR_TO_LEVEL = {
+        "quiet": QUIET,
+        "error": ERROR,
+        "warning": WARNING,
+        "info": INFO,
+        "debug": DEBUG,
+        "all": ALL,
+    }
 
     __level = ALL
 
@@ -27,13 +37,17 @@ class Logger:
         return self
 
     # A numeric level means to log everything at that level and above.
+    # String levels are also accepted: see STR_TO_LEVEL.
     @staticmethod
     def set_level(level):
-        if (
-            level != Logger.QUIET and level != Logger.ERROR and level != Logger.WARNING and
-            level != Logger.INFO and level != Logger.DEBUG and level != Logger.ALL
-        ):
-            raise Exception("Invalid level specified")
+        if isinstance(level, str):
+            level = level.lower()
+            if level not in Logger.STR_TO_LEVEL:
+                raise Exception(f"Invalid log level specified. Must be one of: {list(Logger.STR_TO_LEVEL.keys())}.")
+            level = Logger.STR_TO_LEVEL[level]
+
+        if level not in Logger.__LOG_LEVELS:
+            raise Exception(f"Invalid log level specified. Must be one of: {Logger.__LOG_LEVELS}.")
         Logger.__level = level
 
     @staticmethod

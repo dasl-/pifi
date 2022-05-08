@@ -8,6 +8,7 @@ root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
 import argparse
+from pifi.configloader import ConfigLoader
 from pifi.settings.gameoflifesettings import GameOfLifeSettings
 from pifi.games.gameoflife import GameOfLife
 from pifi.games.gamecolorhelper import GameColorHelper
@@ -50,6 +51,7 @@ def parseArgs():
 args = parseArgs()
 if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
+ConfigLoader()
 
 settings = GameOfLifeSettings.from_config()
 if args.display_width is not None:

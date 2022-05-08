@@ -1,5 +1,4 @@
 import numpy as np
-import random
 import time
 import hashlib
 from pifi.logger import Logger

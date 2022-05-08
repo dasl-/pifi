@@ -1,4 +1,8 @@
 {
+    // Optional, string, default: "info".
+    // Valid values: "quiet", "error", "warning", "info", "debug", "all" (from quietest to most verbose).
+    "log_level": "info",
+
     // Settings for the web server.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "server_config": {

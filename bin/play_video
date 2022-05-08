@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import sys
 
@@ -7,7 +8,7 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-import argparse
+from pifi.configloader import ConfigLoader
 from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
 from pifi.videoplayer import VideoPlayer
@@ -54,6 +55,7 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 else:
     Logger.set_uuid(Logger.make_uuid())
+ConfigLoader()
 
 settings = VideoSettings.from_config()
 if args.color_mode is not None:

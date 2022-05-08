@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import sys
+import traceback
 
 # This is necessary for the imports below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-import argparse
-import traceback
-
+from pifi.configloader import ConfigLoader
 from pifi.logger import Logger
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.snake import Snake
@@ -50,6 +50,7 @@ if args.log_uuid:
 else:
     Logger.set_uuid(Logger.make_uuid())
 logger = Logger().set_namespace(os.path.basename(__file__))
+ConfigLoader()
 
 snake_playlist_item = Playlist().get_playlist_item_by_id(args.playlist_video_id)
 try:

@@ -12,10 +12,6 @@ class LedSettings(ABC):
     COLOR_MODE_B = 'blue'
     COLOR_MODE_INVERT_COLOR = 'inv_color'
     COLOR_MODE_INVERT_BW = 'inv_bw'
-
-    DRIVER_APA102 = 'apa102'
-    DRIVER_RGBMATRIX = 'rgbmatrix'
-
     COLOR_MODES = [
         COLOR_MODE_COLOR,
         COLOR_MODE_BW,
@@ -27,6 +23,13 @@ class LedSettings(ABC):
     ]
 
     DEFAULT_BRIGHTNESS = 3
+
+    DRIVER_APA102 = 'apa102'
+    DRIVER_RGBMATRIX = 'rgbmatrix'
+    DRIVERS = [
+        DRIVER_APA102,
+        DRIVER_RGBMATRIX,
+    ]
 
     # color_mode: one of the COLOR_MODE_* constants
     # display_width: int - Number of pixels / units
@@ -93,7 +96,11 @@ class LedSettings(ABC):
 
         if self.display_height is None:
             raise Exception(
-                f'You must a "display_height" in the "led_settings" stanza of your config file: {ConfigLoader.CONFIG_PATH}.')
+                f'You must set a "display_height" in the "led_settings" stanza of your config file: {ConfigLoader.CONFIG_PATH}.')
+
+        if self.driver not in self.DRIVERS:
+            raise Exception('You must set a valid "driver" in the "led_settings" stanza of your config file: ' +
+                f'{ConfigLoader.CONFIG_PATH}. Valid values: {self.DRIVERS}.')
 
     def set_color_mode(self, color_mode):
         color_mode = color_mode.lower()
