@@ -84,8 +84,11 @@ class GameOfLife:
         # neighborhood calculation and avoid edge checks.
         shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
         self.__board = np.zeros(shape, np.uint8)
-        seed = np.random.random_sample([x-2 for x in shape]) < Config.get('game_of_life.seed_liveness_probability', 1 / 3)
+        probability = Config.get('game_of_life.seed_liveness_probability', 1 / 3)
+        seed  = np.random.random_sample([x-2 for x in shape]) < (probability / 2)
+        seed2 = np.random.random_sample([x-2 for x in shape]) < (probability / 2)
         self.__board[1:-1,1:-1][seed] = 1
+        self.__board[1:-1,1:-1][seed2] = 2
 
         self.__show_board()
 
@@ -100,9 +103,11 @@ class GameOfLife:
     def __board_to_frame(self):
         frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self.__num_ticks)
+        rgb2 = self.__game_color_helper.get_rgb2(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self.__num_ticks)
         on = 0 if Config.get('game_of_life.invert', False) else 1
 
         frame[(self.__board[1:-1,1:-1] == on)] = rgb
+        frame[(self.__board[1:-1,1:-1] == 2)] = rgb2
 
         return frame
 
@@ -116,16 +121,44 @@ class GameOfLife:
         # n is an array of the count of the live neighbors in the board.
         # We stop counting at the edge of the board by summing up partial
         # boards that don't include the 2 edge cells.
-        n = (b[ :-2, :-2] + b[ :-2,1:-1] + b[ :-2,2:] +
-             b[1:-1, :-2]                + b[1:-1,2:] +
-             b[2:  , :-2] + b[2:  ,1:-1] + b[2:  ,2:])
+        slices = [((0,-2), (0,-2)), 
+                  ((0,-2), (1,-1)),
+                  ((0,-2), (2,None)),
+                  ((1,-1), (0,-2)),
+                  ((1,-1), (2,None)),
+                  ((2,None), (0,-2)),
+                  ((2,None), (1,-1)),
+                  ((2,None), (2,None))]
+        
+        n = None
+        ones = None
+        twos = None
+        for indices in slices:
+            s = tuple(slice(*x) for x in indices)
+            if n is None:
+                n = (b[s] > 0).astype(int)
+                ones = (b[s] == 1).astype(int)
+                twos = (b[s] == 2).astype(int)
+            else:
+                n += (b[s] > 0).astype(int)
+                ones += (b[s] == 1).astype(int)
+                twos += (b[s] == 2).astype(int)
+
+        #n = (b[ :-2, :-2] > 0) + b[ :-2,1:-1] + b[ :-2,2:] +
+        #     b[1:-1, :-2]                + b[1:-1,2:] +
+        #     b[2:  , :-2] + b[2:  ,1:-1] + b[2:  ,2:])
 
         # 1. Any live cell with two or three live neighbours lives on to the next generation.
-        survivors = ((n==2) | (n==3)) & (b[1:-1,1:-1]==1)
+        survivors = ((n==2) | (n==3)) & (b[1:-1,1:-1]>0)
         # 2. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
         new_cells = (n==3) & (b[1:-1,1:-1]==0)
         # 3. All other cells die (over or underpopulation).
         new_board = np.zeros(b.shape, np.uint8)
-        new_board[1:-1,1:-1][new_cells | survivors] = 1
+        #new_board[1:-1,1:-1][new_cells | survivors] = 1
+        new_board[1:-1,1:-1][survivors] = b[1:-1,1:-1][survivors]
+        new_board[1:-1,1:-1][new_cells & (ones > twos)] = 1
+        new_board[1:-1,1:-1][new_cells & (twos > ones)] = 2
+
+        #new_board[1:-1,1:-1][new_cells] = random.randint(1,2)
 
         self.__board = new_board
