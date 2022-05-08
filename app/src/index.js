@@ -1,7 +1,6 @@
 import React from 'react';
 import { render } from 'react-dom';
 import App from 'component/app/app';
-import InvalidBuild from 'component/app/invalid_build';
 
 import utils from 'utils';
 
