@@ -49,9 +49,14 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 else:
     Logger.set_uuid(Logger.make_uuid())
+logger = Logger().set_namespace(os.path.basename(__file__))
 
 snake_playlist_item = Playlist().get_playlist_item_by_id(args.playlist_video_id)
-settings = SnakeSettings().from_playlist_item_in_queue(snake_playlist_item)
+try:
+    settings = SnakeSettings.from_playlist_item_in_queue(snake_playlist_item)
+except Exception:
+    logger.error(f'Caught exception: {traceback.format_exc()}')
+
 if args.display_width is not None:
     settings.display_width = args.display_width
 if args.display_height is not None:
@@ -65,8 +70,7 @@ if args.flip_y is not None:
 if args.game_color_mode is not None:
     GameColorHelper().set_game_color_mode(settings, args.game_color_mode)
 
-logger = Logger().set_namespace(os.path.basename(__file__))
 try:
     Snake(settings, args.server_unix_socket_fd, snake_playlist_item).play_snake()
 except Exception:
-    logger.error(f'Caught exception: {traceback.format_exc()}'.format())
+    logger.error(f'Caught exception: {traceback.format_exc()}')

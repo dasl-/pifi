@@ -1,0 +1,104 @@
+{
+    // Settings for the web server.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "server_config": {
+        // Optional, boolean, default: false. Set to true if you want to run the web server with SSL (https).
+        "use_ssl": false,
+
+        // Optional, string, default: "". Only applicable when use_ssl is true.
+        "keyfile": "",
+
+        // Optional, string, default: "". Only applicable when use_ssl is true.
+        "certfile": "",
+    },
+
+    // Settings for the queue process.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "queue_config": {
+        // No keys are present yet in the queue_config stanza. Perhaps we will use it in the future.
+    },
+
+    // Settings used whenever displaying anything on the LEDs.
+    // Required. At least one key within this stanza is required.
+    "led_settings": {
+
+        // Required, string. Controls which LED driver is used. Valid values: apa102, rgbmatrix.
+        "driver": "",
+
+        // Required, integer. The width of your LED matrix, in pixels.
+        "display_width": 0,
+
+        // Required, integer. The height of your LED matrix, in pixels.
+        "display_height": 0,
+
+        // Optional, integer, default: 3. Global brightness of LEDs. Only applicable for apa102 driver.
+        "brightness": 3,
+
+        // Optional, boolean, default: false. Whether to swap left to right when outputting to the LED matrix.
+        // Setting this might be necessary if you wired your LEDs differently.
+        "flip_x": false,
+
+        // Optional, boolean, default: false. Whether to swap top to bottom when outputting to the LED matrix.
+        // Setting this might be necessary if you wired your LEDs differently.
+        "flip_y": false,
+
+        // Optional, string, default: "color". Controls whether videos are displayed in color or monochrome.
+        // Valid values: color, bw, red, green, blue, inv_color, inv_bw.
+        "color_mode": "",
+    },
+
+    // Settings specific to displaying video on the LEDs.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it when
+    // playing videos.
+    "video_settings": {
+
+        // Opetional, boolean, default: true. Whether to play audio when playing videos.
+        "should_play_audio": true,
+
+        // Optional, boolean, default: false. Whether to save the videos that are played. Saving the video
+        // allows us to avoid youtube-dl network calls to download the video if it's played again.
+        "should_save_video": false,
+
+        // Optional, boolean, default: false. Whether to predownload the video, as opposed to streaming it.
+        // Setting this to true forces the video to fully download before playing.
+        "should_predownload_video": false,
+    },
+
+    // Settings specific to the game of life.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it
+    // when showing the game of life.
+    "game_of_life_settings": {
+
+        // Optional, float in range: [0,1], default: 0.3333. How likely each pixel is to be alive (on)
+        // in the initial state.
+        "seed_liveness_probability": 0.3333,
+
+        // Optional, float, default: 0.07. How long to sleep between ticks, in seconds,
+        "tick_sleep": 0.07,
+
+        // Optional, integer, default: 16. How many frames are analyzed to determine if we are stuck in a loop
+        // and if we should to end the game.
+        "game_over_detection_lookback": 16,
+
+        // Optional, string, default: "random". The color mode for the game.
+        // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
+        "game_color_mode": "random",
+
+        // Optional, boolean, default: false. Whether to do fade transitions between frames of the game.
+        "fade": false,
+
+        // Optional, boolean, default: false. Whether to invert the colors.
+        "invert": false,
+    },
+
+    // Settings specific to playing snake.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it
+    // when showing the game of life.
+    "snake_settings": {
+        // No keys are present yet in the snake_settings stanza.
+    },
+
+}

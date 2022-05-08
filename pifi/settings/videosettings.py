@@ -1,4 +1,4 @@
-from pifi.config import Config
+from pifi.configloader import ConfigLoader
 from pifi.settings.ledsettings import LedSettings
 
 class VideoSettings(LedSettings):
@@ -16,24 +16,21 @@ class VideoSettings(LedSettings):
         super().__init__(
             color_mode, display_width, display_height, brightness, flip_x, flip_y
         )
+
         self.should_play_audio = should_play_audio
         self.should_save_video = should_save_video
         self.should_predownload_video = should_predownload_video
 
-    def from_config(self):
-        super().from_config()
+    def get_values_from_config(self):
+        return ConfigLoader().get_video_settings()
+
+    def populate_values_from_config(self):
+        super().populate_values_from_config()
 
         config = self.get_values_from_config()
-        if 'color_mode' in config:
-            self.set_color_mode(config['color_mode'])
         if 'should_play_audio' in config:
             self.should_play_audio = config['should_play_audio']
         if 'should_save_video' in config:
             self.should_save_video = config['should_save_video']
         if 'should_predownload_video' in config:
             self.should_predownload_video = config['should_predownload_video']
-
-        return self
-
-    def get_values_from_config(self):
-        return Config().get_video_settings()

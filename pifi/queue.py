@@ -4,13 +4,13 @@ import shlex
 import signal
 import simpleaudio
 import subprocess
+import traceback
 
 from pifi.directoryutils import DirectoryUtils
 from pifi.playlist import Playlist
 from pifi.logger import Logger
 from pifi.settings.videosettings import VideoSettings
 from pifi.videoplayer import VideoPlayer
-from pifi.config import Config
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
@@ -25,12 +25,11 @@ class Queue:
     def __init__(self):
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
-        self.__config = Config()
         self.__is_game_of_life_enabled = None
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__video_player = VideoPlayer(VideoSettings().from_config())
+        self.__video_player = VideoPlayer(VideoSettings.from_config())
 
         # True if game of life screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
@@ -67,17 +66,24 @@ class Queue:
         if playlist_item["type"] == Playlist.TYPE_VIDEO:
             if not self.__playlist.set_current_video(playlist_item["playlist_video_id"]):
                 # Someone deleted the item from the queue in between getting the item and starting it.
+                Logger.set_uuid('')
                 return
             cmd = (f"{DirectoryUtils().root_dir}/bin/play_video --url {shlex.quote(playlist_item['url'])} " +
                 f"--color-mode {shlex.quote(playlist_item['color_mode'])} --no-clear-screen")
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
-                snake_settings = SnakeSettings().from_playlist_item_in_queue(playlist_item)
+                try:
+                    snake_settings = SnakeSettings.from_playlist_item_in_queue(playlist_item)
+                except Exception:
+                    self.__logger.error(f'Caught exception: {traceback.format_exc()}')
+                    Logger.set_uuid('')
+                    return
                 is_waiting_for_players = False
                 if snake_settings.num_players > 1:
                     is_waiting_for_players = True
                 if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], is_waiting_for_players):
                     # Someone deleted the item from the queue in between getting the item and starting it.
+                    Logger.set_uuid('')
                     return
                 unix_socket_fd = self.__unix_socket.fileno()
                 cmd = (f"{DirectoryUtils().root_dir}/bin/snake " +

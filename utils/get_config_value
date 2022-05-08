@@ -7,7 +7,7 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-from pifi.config import Config
+from pifi.configloader import ConfigLoader
 from pifi.logger import Logger
 from pifi.settings.snakesettings import SnakeSettings
 from pifi.settings.videosettings import VideoSettings
@@ -23,7 +23,7 @@ SETTINGS_TYPES = [
 def parse_args():
     parser = argparse.ArgumentParser(description=
 f"""This is called in the install/install_dependencies.sh script.
-This script prints out the specified config values as they are set in the config file {Config.CONFIG_PATH}.
+This script prints out the specified config values as they are set in the config file {ConfigLoader.CONFIG_PATH}.
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--type', dest='type', action='store', required=True,
@@ -38,16 +38,16 @@ def main():
     args = parse_args()
 
     Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
-    if not os.path.isfile(Config.CONFIG_PATH):
-        print(f"ERROR: Config file does not exist at path {Config.CONFIG_PATH}", file=sys.stderr)
+    if not os.path.isfile(ConfigLoader.CONFIG_PATH):
+        print(f"ERROR: Config file does not exist at path {ConfigLoader.CONFIG_PATH}", file=sys.stderr)
         sys.exit(1)
 
     if args.type == SETTINGS_VIDEO:
-        settings = VideoSettings().from_config()
+        settings = VideoSettings.from_config()
     elif args.type == SETTINGS_SNAKE:
-        settings = SnakeSettings().from_config()
+        settings = SnakeSettings.from_config()
     elif args.type == SETTINGS_GAME_OF_LIFE:
-        settings = GameOfLifeSettings().from_config()
+        settings = GameOfLifeSettings.from_config()
     else:
         raise Exception(f"Unsupported settings type: {args.type}. Must be one of {SETTINGS_TYPES}.")
 

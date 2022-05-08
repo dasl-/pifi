@@ -1,4 +1,4 @@
-from pifi.config import Config
+from pifi.configloader import ConfigLoader
 from pifi.settings.ledsettings import LedSettings
 from pifi.games.gamecolorhelper import GameColorHelper
 
@@ -7,16 +7,20 @@ class GameOfLifeSettings(LedSettings):
     DEFAULT_SEED_LIVENESS_PROBABILITY = 1 / 3
     DEFAULT_TICK_SLEEP = 0.07
     DEFAULT_GAME_OVER_DETECTION_LOOKBACK = 16
-    DEFAULT_FADE = False
-    DEFAULT_INVERT = False
 
-    # tick_sleep: in seconds
+    # seed_liveness_probability: how likely each pixel is to be alive (on) in the initial state.
+    # tick_sleep: how long to sleep between ticks, in seconds,
+    # game_over_detection_lookback: how many frames are analyzed to determine if we are stuck in a loop
+    #   and if we should to end the game.
+    # game_color_mode: one of the GameColorHelper.GAME_COLOR_MODE_* constants
+    # fade: whether to do fade transitions between frames of the game.
+    # invert: whether to invert the colors
     def __init__(
         self, display_width = None, display_height = None,
         brightness = None, flip_x = False, flip_y = False,
         seed_liveness_probability = None, tick_sleep = None,
         game_over_detection_lookback = None, game_color_mode = None,
-        fade = None, invert = None
+        fade = False, invert = False
     ):
         super().__init__(
             color_mode = self.COLOR_MODE_COLOR, display_width = display_width, display_height = display_height,
@@ -37,18 +41,16 @@ class GameOfLifeSettings(LedSettings):
 
         GameColorHelper().set_game_color_mode(self, game_color_mode)
 
-        if fade is None:
-            fade = self.DEFAULT_FADE
         self.fade = fade
-
-        if invert is None:
-            invert = self.DEFAULT_INVERT
         self.invert = invert
 
-    def from_config(self):
-        super().from_config()
-        config = self.get_values_from_config()
+    def get_values_from_config(self):
+        return ConfigLoader().get_game_of_life_settings()
 
+    def populate_values_from_config(self):
+        super().populate_values_from_config()
+
+        config = self.get_values_from_config()
         if 'seed_liveness_probability' in config:
             self.seed_liveness_probability = config['seed_liveness_probability']
         if 'tick_sleep' in config:
@@ -63,6 +65,3 @@ class GameOfLifeSettings(LedSettings):
             self.invert = config['invert']
 
         return self
-
-    def get_values_from_config(self):
-        return Config().get_game_of_life_settings()

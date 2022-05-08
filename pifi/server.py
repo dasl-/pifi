@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import time
 from pifi.playlist import Playlist
 from pifi.logger import Logger
-from pifi.config import Config
+from pifi.configloader import ConfigLoader
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.scores import Scores
@@ -346,7 +346,7 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
 class Server:
 
     def __init__(self):
-        self.__config = Config()
+        self.__config = ConfigLoader()
         self.__secure = self.__config.get_server_config('use_ssl', False)
 
         if not self.__secure:

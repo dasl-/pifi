@@ -1,6 +1,9 @@
-from pifi.logger import Logger
+from abc import ABC, abstractmethod
 
-class LedSettings:
+from pifi.logger import Logger
+from pifi.configloader import ConfigLoader
+
+class LedSettings(ABC):
 
     COLOR_MODE_COLOR = 'color'
     COLOR_MODE_BW = 'bw' # black and white
@@ -23,9 +26,6 @@ class LedSettings:
         COLOR_MODE_INVERT_BW,
     ]
 
-    DEFAULT_DISPLAY_WIDTH = 28
-    DEFAULT_DISPLAY_HEIGHT = 18
-
     DEFAULT_BRIGHTNESS = 3
 
     # color_mode: one of the COLOR_MODE_* constants
@@ -46,12 +46,7 @@ class LedSettings:
             color_mode = self.COLOR_MODE_COLOR
         self.set_color_mode(color_mode)
 
-        if display_width is None:
-            display_width = self.DEFAULT_DISPLAY_WIDTH
         self.display_width = display_width
-
-        if display_height is None:
-            display_height = self.DEFAULT_DISPLAY_HEIGHT
         self.display_height = display_height
 
         if brightness is None:
@@ -63,9 +58,21 @@ class LedSettings:
 
         self.driver = driver
 
-    def from_config(self):
-        config = self.get_values_from_config()
+    @classmethod
+    def from_config(cls):
+        settings = cls()
+        settings.populate_values_from_config()
+        settings.validate()
+        return settings
 
+    @abstractmethod
+    def get_values_from_config(self):
+        pass
+
+    def populate_values_from_config(self):
+        config = ConfigLoader().get_led_settings() | self.get_values_from_config()
+        if 'color_mode' in config:
+            self.set_color_mode(config['color_mode'])
         if 'display_width' in config:
             self.display_width = config['display_width']
         if 'display_height' in config:
@@ -79,10 +86,14 @@ class LedSettings:
         if 'driver' in config:
             self.driver = config['driver']
 
-        return self
+    def validate(self):
+        if self.display_width is None:
+            raise Exception(
+                f'You must set a "display_width" in the "led_settings" stanza of your config file: {ConfigLoader.CONFIG_PATH}.')
 
-    def get_values_from_config(self):
-        raise NotImplementedError("implement in child class")
+        if self.display_height is None:
+            raise Exception(
+                f'You must a "display_height" in the "led_settings" stanza of your config file: {ConfigLoader.CONFIG_PATH}.')
 
     def set_color_mode(self, color_mode):
         color_mode = color_mode.lower()

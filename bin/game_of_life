@@ -51,7 +51,7 @@ args = parseArgs()
 if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 
-settings = GameOfLifeSettings().from_config()
+settings = GameOfLifeSettings.from_config()
 if args.display_width is not None:
     settings.display_width = args.display_width
 if args.display_height is not None:

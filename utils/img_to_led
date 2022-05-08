@@ -35,7 +35,7 @@ reshape_dimensions = None
 pix_fmt = None
 display_width = args.display_width
 display_height = args.display_height
-settings = VideoSettings().from_config()
+settings = VideoSettings.from_config()
 if display_width is None:
     display_width = settings.display_width
 if display_height is None:

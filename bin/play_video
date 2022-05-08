@@ -55,7 +55,7 @@ if args.log_uuid:
 else:
     Logger.set_uuid(Logger.make_uuid())
 
-settings = VideoSettings().from_config()
+settings = VideoSettings.from_config()
 if args.color_mode is not None:
     settings.set_color_mode(args.color_mode)
 if args.display_width is not None:
