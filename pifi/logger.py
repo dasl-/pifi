@@ -24,7 +24,7 @@ class Logger:
         "all": ALL,
     }
 
-    __level = ALL
+    __level = INFO
 
     __uuid = ''
 
