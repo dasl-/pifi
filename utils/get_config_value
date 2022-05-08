@@ -38,6 +38,7 @@ def main():
     args = parse_args()
 
     Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
+    ConfigLoader(should_set_log_level = False) # load config, e.g. set log level.
     if not os.path.isfile(ConfigLoader.CONFIG_PATH):
         print(f"ERROR: Config file does not exist at path {ConfigLoader.CONFIG_PATH}", file=sys.stderr)
         sys.exit(1)

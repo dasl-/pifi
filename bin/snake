@@ -50,7 +50,7 @@ if args.log_uuid:
 else:
     Logger.set_uuid(Logger.make_uuid())
 logger = Logger().set_namespace(os.path.basename(__file__))
-ConfigLoader()
+ConfigLoader() # load config, e.g. set log level.
 
 snake_playlist_item = Playlist().get_playlist_item_by_id(args.playlist_video_id)
 try:

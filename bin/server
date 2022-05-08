@@ -9,5 +9,5 @@ sys.path.append(root_dir)
 from pifi.server import Server
 from pifi.configloader import ConfigLoader
 
-ConfigLoader()
+ConfigLoader() # load config, e.g. set log level.
 Server().serve_forever()

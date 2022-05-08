@@ -55,7 +55,7 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 else:
     Logger.set_uuid(Logger.make_uuid())
-ConfigLoader()
+ConfigLoader() # load config, e.g. set log level.
 
 settings = VideoSettings.from_config()
 if args.color_mode is not None:

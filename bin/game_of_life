@@ -51,7 +51,7 @@ def parseArgs():
 args = parseArgs()
 if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
-ConfigLoader()
+ConfigLoader() # load config, e.g. set log level.
 
 settings = GameOfLifeSettings.from_config()
 if args.display_width is not None:

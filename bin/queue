@@ -9,5 +9,5 @@ sys.path.append(root_dir)
 from pifi.configloader import ConfigLoader
 from pifi.queue import Queue
 
-ConfigLoader()
+ConfigLoader() # load config, e.g. set log level.
 Queue().run()

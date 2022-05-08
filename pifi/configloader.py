@@ -15,9 +15,9 @@ class ConfigLoader:
     __game_of_life_settings = {}
     __snake_settings = {}
 
-    def __init__(self):
+    def __init__(self, should_set_log_level = True):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__load_config_if_not_loaded()
+        self.__load_config_if_not_loaded(should_set_log_level)
 
     def get_server_config(self, key, default=None):
         if key in ConfigLoader.__server_config:
@@ -37,7 +37,7 @@ class ConfigLoader:
     def get_snake_settings(self):
         return ConfigLoader.__snake_settings
 
-    def __load_config_if_not_loaded(self):
+    def __load_config_if_not_loaded(self, should_set_log_level):
         if ConfigLoader.__is_loaded:
             return
 
@@ -47,7 +47,7 @@ class ConfigLoader:
         self.__logger.info(f"Found config file at: {self.CONFIG_PATH}")
         with open(self.CONFIG_PATH) as config_json:
             data = pyjson5.decode(config_json.read())
-            if 'log_level' in data:
+            if 'log_level' in data and should_set_log_level:
                 Logger.set_level(data['log_level'])
             if 'server_config' in data:
                 ConfigLoader.__server_config = data['server_config']
