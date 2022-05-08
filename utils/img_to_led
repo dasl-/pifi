@@ -1,16 +1,18 @@
 #!/usr/bin/python3
 
-import subprocess
 import argparse
 import numpy as np
-import sys
 import os
+import shlex
+import subprocess
+import sys
 
 # This is necessary for the import below to work
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
 from pifi.settings.videosettings import VideoSettings
+from pifi.videoprocessor import VideoProcessor
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert an image to an RGB frame for display on the LEDs')
@@ -50,8 +52,9 @@ elif args.color_mode == 'monochrome':
 else:
     raise Exception('Invalid color mode: {}'.format(args.color_mode))
 
-ffmpeg_cmd = ('ffmpeg', '-threads', '1', '-i', args.image_path, '-filter:v', 'scale={}x{}'.format(display_width, display_height),
-    '-c:a', 'copy', '-f', 'rawvideo', '-pix_fmt', pix_fmt, '-stats', 'pipe:1')
-data = subprocess.check_output(ffmpeg_cmd)
+ffmpeg_cmd = (f'{VideoProcessor.get_standard_ffmpeg_cmd()} -i {shlex.quote(str(args.image_path))} -filter:v ' +
+    f'scale={shlex.quote(str(display_width))}x{shlex.quote(str(display_height))} -c:a copy -f rawvideo ' +
+    f'-pix_fmt {shlex.quote(str(pix_fmt))} pipe:1')
+data = subprocess.check_output(ffmpeg_cmd, shell = True, executable = '/usr/bin/bash')
 arr = np.frombuffer(data, np.uint8).reshape(reshape_dimensions)
 np.save(args.output_file + '_{}'.format(args.color_mode), arr)

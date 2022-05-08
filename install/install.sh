@@ -57,12 +57,8 @@ parseOpts(){
 
 generateLoadingScreens(){
     info "Generating loading screens"
-    if [ ! -f "$BASE_DIR"/loading_screen_monochrome.npy ]; then
-        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
-    fi
-    if [ ! -f "$BASE_DIR"/loading_screen_color.npy ]; then
-        "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --output-file "$BASE_DIR"/loading_screen --color-mode color
-    fi
+    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
+    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --output-file "$BASE_DIR"/loading_screen --color-mode color
 }
 
 setTimezone(){

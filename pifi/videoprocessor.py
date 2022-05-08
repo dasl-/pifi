@@ -347,7 +347,7 @@ class VideoProcessor:
         # Mux video from the first input with audio from the second input: https://stackoverflow.com/a/12943003/627663
         # We need to specify, because in some cases, either input could contain both audio and video. But in most
         # cases, the first input will have only video, and the second input will have only audio.
-        return (f"{self.__get_standard_ffmpeg_cmd()} -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
+        return (f"{self.get_standard_ffmpeg_cmd()} -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
             "-c copy -map 0:v:0 -map 1:a:0 -shortest -f mpegts -")
 
     def __get_ffmpeg_pixel_conversion_cmd(self):
@@ -356,7 +356,7 @@ class VideoProcessor:
             pix_fmt = 'rgb24'
 
         return (
-            self.__get_standard_ffmpeg_cmd() + ' '
+            self.get_standard_ffmpeg_cmd() + ' '
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
                 'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height)) + " "
@@ -365,7 +365,8 @@ class VideoProcessor:
             'pipe:1' # output to stdout
         )
 
-    def __get_standard_ffmpeg_cmd(self):
+    @staticmethod
+    def get_standard_ffmpeg_cmd():
         # unfortunately there's no way to make ffmpeg output its stats progress stuff with line breaks
         log_opts = '-nostats '
         if sys.stderr.isatty():
