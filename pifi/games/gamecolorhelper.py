@@ -45,6 +45,18 @@ class GameColorHelper:
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
             return self.__make_color_gradient(color_change_freq, num_ticks)
 
+    def get_rgb2(self, game_color_mode, color_change_freq, num_ticks):
+        if game_color_mode == self.GAME_COLOR_MODE_RED:
+            return [0, 255, 255]
+        if game_color_mode == self.GAME_COLOR_MODE_GREEN:
+            return [255, 0, 255]
+        if game_color_mode == self.GAME_COLOR_MODE_BLUE:
+            return [255, 255, 0]
+        if game_color_mode == self.GAME_COLOR_MODE_BW:
+            return [0, 255, 0]
+        if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
+            x = [y / 2 for y in self.__make_color_gradient(color_change_freq, num_ticks)]
+
     def get_help_string(self):
         game_color_mode_help_str = 'One of '
         for mode in self.GAME_COLOR_MODES:
