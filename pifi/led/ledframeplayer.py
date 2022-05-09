@@ -3,7 +3,7 @@ import numpy as np
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.gamma import Gamma
-from pifi.leddrivers.leddrivers import LedDrivers
+from pifi.led.drivers.leddrivers import LedDrivers
 from pifi.video.videocolormode import VideoColorMode
 
 class LedFramePlayer:
@@ -41,10 +41,10 @@ class LedFramePlayer:
 
         led_driver = Config.get_or_throw('leds.driver')
         if led_driver == LedDrivers.DRIVER_APA102:
-            from pifi.leddrivers.driverapa102 import DriverApa102
+            from pifi.led.drivers.driverapa102 import DriverApa102
             self.__driver = DriverApa102(clear_screen)
         elif led_driver == LedDrivers.DRIVER_RGBMATRIX:
-            from pifi.leddrivers.driverrgbmatrix import DriverRgbMatrix
+            from pifi.led.drivers.driverrgbmatrix import DriverRgbMatrix
             self.__driver = DriverRgbMatrix(clear_screen)
         else:
             raise Exception(f'Unsupported driver: {led_driver}.')

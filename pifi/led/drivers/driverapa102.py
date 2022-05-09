@@ -2,7 +2,7 @@ from apa102_pi.driver import apa102
 import numpy as np
 
 from pifi.config import Config
-from pifi.leddrivers.driverbase import DriverBase
+from pifi.led.drivers.driverbase import DriverBase
 
 class DriverApa102(DriverBase):
 

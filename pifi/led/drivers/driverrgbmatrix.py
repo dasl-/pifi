@@ -2,7 +2,7 @@ from PIL import Image
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
 from pifi.config import Config
-from pifi.leddrivers.driverbase import DriverBase
+from pifi.led.drivers.driverbase import DriverBase
 
 class DriverRgbMatrix(DriverBase):
 
