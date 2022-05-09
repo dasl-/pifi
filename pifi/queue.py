@@ -9,7 +9,7 @@ import traceback
 from pifi.directoryutils import DirectoryUtils
 from pifi.playlist import Playlist
 from pifi.logger import Logger
-from pifi.videoplayer import VideoPlayer
+from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
@@ -27,7 +27,7 @@ class Queue:
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__video_player = VideoPlayer()
+        self.__led_frame_player = LedFramePlayer()
 
         # True if game of life screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
@@ -111,7 +111,7 @@ class Queue:
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
-            self.__video_player.show_loading_screen()
+            self.__led_frame_player.show_loading_screen()
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
@@ -232,4 +232,4 @@ class Queue:
         return self.__is_game_of_life_enabled
 
     def __clear_screen(self):
-        self.__video_player.clear_screen()
+        self.__led_frame_player.clear_screen()

@@ -16,7 +16,7 @@ from pifi.config import Config
 from pifi.logger import Logger
 from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
 from pifi.directoryutils import DirectoryUtils
-from pifi.videoplayer import VideoPlayer
+from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.video.videocolormode import VideoColorMode
 from pifi.youtubedlexception import YoutubeDlException
 
@@ -39,7 +39,7 @@ class VideoProcessor:
     def __init__(self, url, clear_screen):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
-        self.__video_player = VideoPlayer(
+        self.__led_frame_player = LedFramePlayer(
             clear_screen = clear_screen,
             video_color_mode = Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)
         )
@@ -53,7 +53,7 @@ class VideoProcessor:
 
     def process_and_play(self):
         self.__logger.info(f"Starting process_and_play for url: {self.__url}")
-        self.__video_player.show_loading_screen()
+        self.__led_frame_player.show_loading_screen()
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
@@ -79,7 +79,7 @@ class VideoProcessor:
                     self.__logger.warning("Caught exception in VideoProcessor.__process_and_play_video: " +
                         traceback.format_exc())
                     self.__logger.warning("Updating youtube-dl and retrying video...")
-                    self.__video_player.show_loading_screen()
+                    self.__led_frame_player.show_loading_screen()
                     clear_screen = False
                     self.__update_youtube_dl()
                 if attempt >= max_attempts:
@@ -229,7 +229,7 @@ class VideoProcessor:
                 ("Video playing unable to keep up in real-time. Skipped playing {} frame(s)."
                     .format(num_skipped_frames))
             )
-        self.__video_player.play_frame(frames[cur_frame])
+        self.__led_frame_player.play_frame(frames[cur_frame])
         return [False, cur_frame, vid_processing_lag_counter]
 
     def __get_process_and_play_vid_cmd(self, ffmpeg_to_python_fifo_name, fps_fifo_name):
@@ -452,7 +452,7 @@ class VideoProcessor:
 
     def __do_housekeeping(self, clear_screen = True):
         if clear_screen:
-            self.__video_player.clear_screen()
+            self.__led_frame_player.clear_screen()
         if self.__process_and_play_vid_proc_pgid:
             self.__logger.info("Killing process and play video process group (PGID: " +
                 f"{self.__process_and_play_vid_proc_pgid})...")

@@ -6,8 +6,7 @@ from pifi.gamma import Gamma
 from pifi.leddrivers.leddrivers import LedDrivers
 from pifi.video.videocolormode import VideoColorMode
 
-# TODO: rename pifi/leds/ledframeplayer.py
-class VideoPlayer:
+class LedFramePlayer:
 
     __FADE_STEPS = 5
 

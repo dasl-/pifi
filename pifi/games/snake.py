@@ -13,7 +13,7 @@ import traceback
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.playlist import Playlist
-from pifi.videoplayer import VideoPlayer
+from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.scoredisplayer import ScoreDisplayer
 from pifi.games.scores import Scores
@@ -67,7 +67,7 @@ class Snake:
         ])
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('snake.game_color_mode'))
-        self.__video_player = VideoPlayer()
+        self.__led_frame_player = LedFramePlayer()
 
         self.__register_signal_handlers()
 
@@ -264,7 +264,7 @@ class Snake:
             )
             frame[self.__apple[0], self.__apple[1]] = apple_rgb
 
-        self.__video_player.play_frame(frame)
+        self.__led_frame_player.play_frame(frame)
 
     def __end_game(self, reason):
         if self.__background_music:
@@ -371,7 +371,7 @@ class Snake:
             (simpleaudio.WaveObject
                 .from_wave_file(self.__VICTORY_SOUND_FILE)
                 .play())
-        score_displayer = ScoreDisplayer(self.__video_player, score)
+        score_displayer = ScoreDisplayer(self.__led_frame_player, score)
         score_displayer.display_score(score_color)
 
         for i in range(1, 100):
@@ -422,7 +422,7 @@ class Snake:
 
     def __clear_board(self):
         frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
-        self.__video_player.play_frame(frame)
+        self.__led_frame_player.play_frame(frame)
 
     def __tick_sleep(self):
         time.sleep(-0.02 * self.__settings['difficulty'] + 0.21)

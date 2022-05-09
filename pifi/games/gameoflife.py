@@ -4,7 +4,7 @@ import hashlib
 
 from pifi.config import Config
 from pifi.logger import Logger
-from pifi.videoplayer import VideoPlayer
+from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.games.gamecolorhelper import GameColorHelper
 
@@ -15,7 +15,7 @@ class GameOfLife:
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__video_player = VideoPlayer()
+        self.__led_frame_player = LedFramePlayer()
         self.__game_color_helper = GameColorHelper()
         self.__board = None
 
@@ -93,9 +93,9 @@ class GameOfLife:
         frame = self.__board_to_frame()
 
         if Config.get('game_of_life.fade', False):
-            self.__video_player.fade_to_frame(frame)
+            self.__led_frame_player.fade_to_frame(frame)
         else:
-            self.__video_player.play_frame(frame)
+            self.__led_frame_player.play_frame(frame)
 
     def __board_to_frame(self):
         frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)

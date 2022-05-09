@@ -33,8 +33,8 @@ class ScoreDisplayer:
         (1, 1, 1, 1, 0, 1, 1), # 9
     )
 
-    def __init__(self, video_player, score):
-        self.__video_player = video_player
+    def __init__(self, led_frame_player, score):
+        self.__led_frame_player = led_frame_player
         self.__score = score
 
     # TODO: validate if score too big
@@ -59,7 +59,7 @@ class ScoreDisplayer:
             self.__write_digit(x, y, int(score_string[i]), digit_component_length, frame, rgb)
             x = x + digit_width
 
-        self.__video_player.play_frame(frame)
+        self.__led_frame_player.play_frame(frame)
 
     def __write_digit(self, x, y, digit, digit_component_length, frame, rgb):
         digit_components = self.__DIGIT_COMPONENTS[digit]
