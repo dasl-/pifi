@@ -12,6 +12,7 @@ class Config:
     __logger = Logger().set_namespace('Config')
     __PATH_SEP = '.'
 
+    # Get a key from config using dot notation: "foo.bar.baz"
     @staticmethod
     def get(key, default = None):
         return Config.__get(key, should_throw = False, default = default)
