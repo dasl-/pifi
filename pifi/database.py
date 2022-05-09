@@ -6,7 +6,7 @@ from pifi.directoryutils import DirectoryUtils
 from pifi.logger import Logger
 import pifi.playlist
 import pifi.games.scores
-import pifi.settings.settingsdb
+import pifi.settingsdb
 
 def dict_factory(cursor, row):
     d = {}
@@ -76,7 +76,7 @@ class Database:
             self.__construct_pifi_schema_version()
             pifi.playlist.Playlist().construct()
             pifi.games.scores.Scores().construct()
-            pifi.settings.settingsdb.SettingsDb().construct()
+            pifi.settingsdb.SettingsDb().construct()
         elif current_schema_version < self.__SCHEMA_VERSION:
             self.__logger.info(
                 f"Database schema is outdated. Updating from version {current_schema_version} to " +
@@ -132,14 +132,14 @@ class Database:
 
     # Updates schema from v0 to v1.
     def __update_schema_to_v1(self):
-        pifi.settings.settingsdb.SettingsDb().construct()
+        pifi.settingsdb.SettingsDb().construct()
 
     # Updates schema from v1 to v2.
     def __update_schema_to_v2(self):
         # Adding the update_date column. Trying to set the column's default value to CURRENT_TIMESTAMP results in:
         #   sqlite3.OperationalError: Cannot add a column with non-constant default
         # Thus, just blow the table away and re-create it.
-        pifi.settings.settingsdb.SettingsDb().construct()
+        pifi.settingsdb.SettingsDb().construct()
 
     # Updates schema from v2 to v3.
     def __update_schema_to_v3(self):

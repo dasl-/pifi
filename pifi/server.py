@@ -14,7 +14,7 @@ from pifi.volumecontroller import VolumeController
 from pifi.games.scores import Scores
 from pifi.games.snake import Snake
 from pifi.games.unixsockethelper import UnixSocketHelper
-from pifi.settings.settingsdb import SettingsDb
+from pifi.settingsdb import SettingsDb
 from pifi.database import Database
 
 class PifiAPI():

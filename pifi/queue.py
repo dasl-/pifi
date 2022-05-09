@@ -13,7 +13,7 @@ from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.volumecontroller import VolumeController
 from pifi.games.snake import Snake
-from pifi.settings.settingsdb import SettingsDb
+from pifi.settingsdb import SettingsDb
 
 # The Queue is responsible for playing the next video in the Playlist
 class Queue:
