@@ -9,12 +9,11 @@ import traceback
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-from pifi.configloader import ConfigLoader
+from pifi.config import Config
 from pifi.logger import Logger
 from pifi.games.gamecolorhelper import GameColorHelper
 from pifi.games.snake import Snake
 from pifi.playlist import Playlist
-from pifi.settings.snakesettings import SnakeSettings
 
 def parseArgs():
     parser = argparse.ArgumentParser(
@@ -27,16 +26,8 @@ def parseArgs():
     parser.add_argument('--server-unix-socket-fd', dest='server_unix_socket_fd', action='store', type=int,
         metavar='N', required=True, help="The file descriptor number (integer) of the game's server unix socket.")
     parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
-    parser.add_argument('--display-width', dest='display_width', action='store', type=int,
-        metavar='N', help='Number of pixels / units')
-    parser.add_argument('--display-height', dest='display_height', action='store', type=int,
-        metavar='N', help='Number of pixels / units')
     parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
         help=(GameColorHelper().get_help_string()))
-    parser.add_argument('--flip-x', dest='flip_x', action='store_true',
-        default=None, help='flip X direction output')
-    parser.add_argument('--flip-y', dest='flip_y', action='store_true',
-        default=None, help='flip Y direction output')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int,
         metavar='N', help='Global brightness value. Max of 31.')
 
@@ -50,28 +41,17 @@ if args.log_uuid:
 else:
     Logger.set_uuid(Logger.make_uuid())
 logger = Logger().set_namespace(os.path.basename(__file__))
-ConfigLoader() # load config, e.g. set log level.
+Config.load_config_if_not_loaded()
 
 snake_playlist_item = Playlist().get_playlist_item_by_id(args.playlist_video_id)
-try:
-    settings = SnakeSettings.from_playlist_item_in_queue(snake_playlist_item)
-except Exception:
-    logger.error(f'Caught exception: {traceback.format_exc()}')
+settings = Snake.make_settings_from_playlist_item(snake_playlist_item)
 
-if args.display_width is not None:
-    settings.display_width = args.display_width
-if args.display_height is not None:
-    settings.display_height = args.display_height
 if args.brightness is not None:
-    settings.brightness = args.brightness
-if args.flip_x is not None:
-    settings.flip_x = args.flip_x
-if args.flip_y is not None:
-    settings.flip_y = args.flip_y
+    Config.set('leds.brightness', args.brightness)
 if args.game_color_mode is not None:
-    GameColorHelper().set_game_color_mode(settings, args.game_color_mode)
+    Config.set('snake.game_color_mode', args.game_color_mode)
 
 try:
-    Snake(settings, args.server_unix_socket_fd, snake_playlist_item).play_snake()
+    Snake(args.server_unix_socket_fd, snake_playlist_item, settings).play_snake()
 except Exception:
     logger.error(f'Caught exception: {traceback.format_exc()}')

@@ -2,9 +2,10 @@ from pifi.logger import Logger
 import pifi.database
 
 """
-This differs from the json settings in that these settings are modifiable at runtime. They are stored in a DB
-and re-read during program execution. They may be modified from a UI. Whereas the json settings are written
-manually and require a program restart to take effect, because they are only read at program startup.
+This differs from the json configuration (see: Config) in that these settings are modifiable at runtime.
+They are stored in a DB and re-read during program execution. They may be modified from a UI. Whereas
+the json configuration is written manually and require a program restart to take effect, because they are
+only read at program startup.
 """
 class SettingsDb:
 

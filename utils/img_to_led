@@ -11,8 +11,8 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-from pifi.settings.videosettings import VideoSettings
-from pifi.videoprocessor import VideoProcessor
+from pifi.config import Config
+from pifi.video.videoprocessor import VideoProcessor
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='convert an image to an RGB frame for display on the LEDs')
@@ -32,16 +32,16 @@ def parseArgs():
 
 
 args = parseArgs()
+Config.load_config_if_not_loaded()
 
 reshape_dimensions = None
 pix_fmt = None
 display_width = args.display_width
 display_height = args.display_height
-settings = VideoSettings.from_config()
 if display_width is None:
-    display_width = settings.display_width
+    display_width = Config.get_or_throw('leds.display_width')
 if display_height is None:
-    display_height = settings.display_height
+    display_height = Config.get_or_throw('leds.display_height')
 
 if args.color_mode == 'color':
     reshape_dimensions = [display_height, display_width, 3]
@@ -50,7 +50,7 @@ elif args.color_mode == 'monochrome':
     reshape_dimensions = [display_height, display_width]
     pix_fmt = 'gray'
 else:
-    raise Exception('Invalid color mode: {}'.format(args.color_mode))
+    raise Exception(f'Invalid color mode: {args.color_mode}.')
 
 ffmpeg_cmd = (f'{VideoProcessor.get_standard_ffmpeg_cmd()} -i {shlex.quote(str(args.image_path))} -filter:v ' +
     f'scale={shlex.quote(str(display_width))}x{shlex.quote(str(display_height))} -c:a copy -f rawvideo ' +

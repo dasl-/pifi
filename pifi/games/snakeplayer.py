@@ -1,8 +1,10 @@
-import time
 import collections
-import traceback
 import json
 import socket
+import time
+import traceback
+
+from pifi.config import Config
 from pifi.logger import Logger
 from pifi.games.gamecolorhelper import GameColorHelper
 import pifi.games.snake
@@ -21,7 +23,8 @@ class SnakePlayer:
 
     __MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ = 0.5
 
-    def __init__(self, player_index, server_unix_socket, snake_game):
+    # settings: dict shaped like return value of Snake.make_settings_from_playlist_item
+    def __init__(self, player_index, server_unix_socket, snake_game, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__ + '_' + str(player_index))
         self.__snake_game = snake_game
 
@@ -40,6 +43,7 @@ class SnakePlayer:
         self.__snake_set = set()
         self.__unix_socket_helper = UnixSocketHelper().set_server_socket(server_unix_socket)
         self.__direction = None
+        self.__settings = settings
 
     def should_show_snake(self):
         if (
@@ -51,8 +55,8 @@ class SnakePlayer:
 
     def get_score(self):
         score = 0
-        if (self.__snake_game.get_settings().num_players == 1):
-            score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__snake_game.get_settings().difficulty
+        if (self.__settings['num_players'] == 1):
+            score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH) * self.__settings['difficulty']
         else:
             score = (len(self.__snake_linked_list) - self.__SNAKE_STARTING_LENGTH)
         return score
@@ -123,15 +127,17 @@ class SnakePlayer:
             return was_apple_eaten
 
         old_head_y, old_head_x = self.__snake_linked_list[0]
+        display_width = Config.get_or_throw('leds.display_width')
+        display_height = Config.get_or_throw('leds.display_height')
 
         if self.__direction == self.UP:
-            new_head = ((old_head_y - 1) % self.__snake_game.get_settings().display_height, old_head_x)
+            new_head = ((old_head_y - 1) % display_height, old_head_x)
         elif self.__direction == self.DOWN:
-            new_head = ((old_head_y + 1) % self.__snake_game.get_settings().display_height, old_head_x)
+            new_head = ((old_head_y + 1) % display_height, old_head_x)
         elif self.__direction == self.LEFT:
-            new_head = (old_head_y, (old_head_x - 1) % self.__snake_game.get_settings().display_width)
+            new_head = (old_head_y, (old_head_x - 1) % display_width)
         elif self.__direction == self.RIGHT:
-            new_head = (old_head_y, (old_head_x + 1) % self.__snake_game.get_settings().display_width)
+            new_head = (old_head_y, (old_head_x + 1) % display_width)
 
         self.__snake_linked_list.insert(0, new_head)
 
@@ -164,7 +170,7 @@ class SnakePlayer:
         return False
 
     def get_snake_rgb(self):
-        if self.__snake_game.get_settings().num_players <= 1:
+        if self.__settings['num_players'] <= 1:
             return self.__snake_game.get_game_color_helper().get_rgb(
                 self.__snake_game.get_game_color_mode(), self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
             )
@@ -204,20 +210,23 @@ class SnakePlayer:
     # When placing N snakes, divide the grid into N + 1 rows. Snakes will placed one per
     # row border.
     def place_snake_at_starting_location(self):
+        display_width = Config.get_or_throw('leds.display_width')
+        display_height = Config.get_or_throw('leds.display_height')
+
         starting_height = int(
             round(
-                (self.__player_index + 1) * (self.__snake_game.get_settings().display_height / (self.__snake_game.get_settings().num_players + 1)),
+                (self.__player_index + 1) * (display_height / (self.__settings['num_players'] + 1)),
                 1
             )
         )
 
-        if self.__snake_game.get_settings().num_players == 1:
-            starting_width = int(round(self.__snake_game.get_settings().display_width / 2, 1))
+        if self.__settings['num_players'] == 1:
+            starting_width = int(round(display_width / 2, 1))
         else:
             if self.__player_index % 2 == 0:
-                starting_width = int(round(self.__snake_game.get_settings().display_width / 3, 1))
+                starting_width = int(round(display_width / 3, 1))
             else:
-                starting_width = int(round((2 / 3) * self.__snake_game.get_settings().display_width, 1))
+                starting_width = int(round((2 / 3) * display_width, 1))
 
         if self.__player_index % 2 == 0:
             self.__direction = self.RIGHT
@@ -295,7 +304,7 @@ class SnakePlayer:
                 continue
 
             # send client msg indicating its player index
-            if (self.__snake_game.get_settings().num_players > 1):
+            if (self.__settings['num_players'] > 1):
                 player_index_message = json.dumps({
                     'message_type': 'player_index_message',
                     'player_index': self.__player_index

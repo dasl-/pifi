@@ -7,7 +7,7 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 from pifi.server import Server
-from pifi.configloader import ConfigLoader
+from pifi.config import Config
 
-ConfigLoader() # load config, e.g. set log level.
+Config.load_config_if_not_loaded()
 Server().serve_forever()

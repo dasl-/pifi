@@ -1,14 +1,15 @@
 from PIL import Image
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
+from pifi.config import Config
 from pifi.leddrivers.driverbase import DriverBase
 
 class DriverRgbMatrix(DriverBase):
 
-    def __init__(self, led_settings, clear_screen=True):
+    def __init__(self, clear_screen=True):
         options = RGBMatrixOptions()
-        options.rows = led_settings.display_height
-        options.cols = led_settings.display_width
+        options.rows = Config.get_or_throw('leds.display_height')
+        options.cols = Config.get_or_throw('leds.display_width')
         options.chain_length = 1
         options.parallel = 1
         options.hardware_mapping = 'adafruit-hat'

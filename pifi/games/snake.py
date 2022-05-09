@@ -1,15 +1,16 @@
-import numpy as np
-import random
-import time
-import simpleaudio
-import traceback
 import json
+import numpy as np
+from pygame import mixer
+import random
 import secrets
 import signal
+import simpleaudio
 import socket
 import sys
+import time
+import traceback
 
-from pygame import mixer
+from pifi.config import Config
 from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.videoplayer import VideoPlayer
@@ -36,26 +37,24 @@ class Snake:
     __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +
         "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
-    # settings: SnakeSettings
-    def __init__(self, settings, server_unix_socket_fd, playlist_video):
+    # settings: dict shaped like return value of Snake.make_settings_from_playlist_item
+    def __init__(self, server_unix_socket_fd, playlist_video, settings):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__logger.info("Doing init with SnakeSettings: {}".format(vars(settings)))
-
         self.__num_ticks = 0
         self.__eliminated_snake_count = 0
         self.__last_eliminated_snake_sound = None
         self.__apple = None
         self.__apples_eaten_count = 0
-        self.__settings = settings
         self.__game_color_helper = GameColorHelper()
         self.__playlist_video = playlist_video
         self.__players = []
+        self.__settings = settings
 
         server_unix_socket = socket.socket(fileno = server_unix_socket_fd)
         # The timeout is not "inherited" from the socket_fd that was given to us, thus we have to set it again.
         UnixSocketHelper().set_server_unix_socket_timeout(server_unix_socket)
-        for i in range(self.__settings.num_players):
-            self.__players.append(SnakePlayer(i, server_unix_socket, self))
+        for i in range(self.__settings['num_players']):
+            self.__players.append(SnakePlayer(i, server_unix_socket, self, settings))
 
         # why do we use both simpleaudio and pygame mixer? see: https://github.com/dasl-/pifi/blob/main/utils/sound_test.py
         mixer.init(frequency = 22050, buffer = 512)
@@ -67,12 +66,13 @@ class Snake:
             'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
         ])
         self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
-        self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
-        self.__video_player = VideoPlayer(self.__settings)
+        self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('snake.game_color_mode'))
+        self.__video_player = VideoPlayer()
+
         self.__register_signal_handlers()
 
     def play_snake(self):
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             self.__players[i].place_snake_at_starting_location()
         self.__place_apple()
         self.__show_board()
@@ -82,14 +82,12 @@ class Snake:
             return
 
         self.__background_music.play(loops = -1)
-        tick_sleep_amount = self.get_tick_sleep_amount()
-
         while True:
             # TODO : sleep for a variable amount depending on how long each loop iteration took. Should
             # lead to more consistent tick durations?
-            time.sleep(tick_sleep_amount)
+            self.__tick_sleep()
 
-            for i in range(self.__settings.num_players):
+            for i in range(self.__settings['num_players']):
                 self.__players[i].read_move_and_set_direction()
 
             self.__tick()
@@ -110,16 +108,41 @@ class Snake:
     def get_game_color_mode(self):
         return self.__game_color_mode
 
-    def get_settings(self):
-        return self.__settings
+    @staticmethod
+    def make_settings_from_playlist_item(playlist_item):
+        difficulty = None
+        num_players = None
+        apple_count = None
+        try:
+            snake_record_settings = json.loads(playlist_item['settings'])
+            difficulty = int(snake_record_settings['difficulty'])
+            num_players = int(snake_record_settings['num_players'])
+            apple_count = int(snake_record_settings['apple_count'])
+        except Exception:
+            Logger().set_namespace("Snake").error(f'Caught exception: {traceback.format_exc()}')
 
-    def get_tick_sleep_amount(self):
-        return -0.02 * self.__settings.difficulty + 0.21
+        # validation
+        if difficulty is None or difficulty < 0 or difficulty > 9:
+            difficulty = 7
+        if num_players is None or num_players < 1:
+            num_players = 1
+        if num_players > 4:
+            num_players = 4
+        if apple_count is None or apple_count < 1:
+            apple_count = 15
+        if apple_count > 999:
+            apple_count = 999
+
+        return {
+            'difficulty': difficulty,
+            'num_players': num_players,
+            'apple_count': apple_count,
+        }
 
     def __tick(self):
         self.__increment_tick_counters()
         was_apple_eaten = False
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             if(self.__players[i].tick()):
                 was_apple_eaten = True
         if was_apple_eaten:
@@ -132,35 +155,37 @@ class Snake:
         self.__APPLE_SOUND.play()
         self.__place_apple()
         player_scores = []
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             player_scores.append(self.__players[i].get_score())
 
         score_message = None
-        if self.__settings.num_players <= 1:
+        if self.__settings['num_players'] <= 1:
             score_message = json.dumps({
                 'message_type': 'single_player_score',
                 'player_scores': player_scores,
             })
         else:
-            apples_left = self.__settings.apple_count - self.__apples_eaten_count
+            apples_left = self.__settings['apple_count'] - self.__apples_eaten_count
             score_message = json.dumps({
                 'message_type': 'multi_player_score',
                 'player_scores': player_scores,
                 'apples_left': apples_left,
             })
 
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             try:
                 self.__players[i].send_socket_msg(score_message)
             except Exception:
                 self.__logger.info('Unable to send score message to player {}'.format(i))
 
     def __place_apple(self):
+        display_width = Config.get_or_throw('leds.display_width')
+        display_height = Config.get_or_throw('leds.display_height')
         while True:
-            x = random.randint(0, self.__settings.display_width - 1)
-            y = random.randint(0, self.__settings.display_height - 1)
+            x = random.randint(0, display_width - 1)
+            y = random.randint(0, display_height - 1)
             is_coordinate_occupied_by_a_snake = False
-            for i in range(self.__settings.num_players):
+            for i in range(self.__settings['num_players']):
                 is_coordinate_occupied_by_a_snake = self.__players[i].is_coordinate_occupied(y, x)
                 if is_coordinate_occupied_by_a_snake:
                     break
@@ -175,12 +200,12 @@ class Snake:
         # 1) overlapped themselves
         # 2) overlapped other snakes
         # 3) were previously marked for elimination
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             if self.__players[i].is_eliminated():
                 continue
 
             this_snake_head = self.__players[i].get_snake_linked_list()[0]
-            for j in range(self.__settings.num_players):
+            for j in range(self.__settings['num_players']):
                 if self.__players[j].is_eliminated():
                     continue
 
@@ -206,26 +231,26 @@ class Snake:
         self.__eliminated_snake_count += len(eliminated_snakes)
 
         # Play snake death sound in multiplayer if any snakes were eliminated
-        if len(eliminated_snakes) > 0 and self.__settings.num_players > 1:
+        if len(eliminated_snakes) > 0 and self.__settings['num_players'] > 1:
             self.__last_eliminated_snake_sound = simpleaudio.WaveObject.from_wave_file(
                 DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()
 
     def __is_game_over(self):
-        if self.__settings.num_players > 1:
-            if self.__eliminated_snake_count >= (self.__settings.num_players - 1):
+        if self.__settings['num_players'] > 1:
+            if self.__eliminated_snake_count >= (self.__settings['num_players'] - 1):
                 return True
-            if self.__apples_eaten_count >= self.__settings.apple_count:
+            if self.__apples_eaten_count >= self.__settings['apple_count']:
                 return True
-        elif self.__settings.num_players == 1:
+        elif self.__settings['num_players'] == 1:
             if self.__eliminated_snake_count > 0:
                 return True
 
         return False
 
     def __show_board(self):
-        frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
+        frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
 
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             if (not self.__players[i].should_show_snake()):
                 # Blink snakes for the first few ticks after they are eliminated.
                 continue
@@ -246,12 +271,12 @@ class Snake:
             self.__background_music.fadeout(500)
 
         score = None
-        if self.__settings.num_players == 1: # only do scoring in single player
+        if self.__settings['num_players'] == 1: # only do scoring in single player
             score = self.__players[0].get_score()
             if reason == self.__GAME_OVER_REASON_SNAKE_STATE:
                 self.__do_scoring(score)
-        elif self.__settings.num_players > 1 and reason == self.__GAME_OVER_REASON_SNAKE_STATE:
-            if self.__eliminated_snake_count == self.__settings.num_players:
+        elif self.__settings['num_players'] > 1 and reason == self.__GAME_OVER_REASON_SNAKE_STATE:
+            if self.__eliminated_snake_count == self.__settings['num_players']:
                 # The last N players died at the same time in a head to head collision. There was no winner.
                 for i in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1):
                     self.__tick_sleep()
@@ -265,7 +290,7 @@ class Snake:
                     'message_type': 'multiplayer_winners',
                     'winners': winners,
                 })
-                for i in range(self.__settings.num_players):
+                for i in range(self.__settings['num_players']):
                     try:
                         self.__players[i].send_socket_msg(winner_message)
                     except Exception:
@@ -302,7 +327,7 @@ class Snake:
                         break
                     while_counter += 1
 
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             self.__players[i].end_game()
 
         self.__clear_board()
@@ -346,7 +371,7 @@ class Snake:
             (simpleaudio.WaveObject
                 .from_wave_file(self.__VICTORY_SOUND_FILE)
                 .play())
-        score_displayer = ScoreDisplayer(self.__settings, self.__video_player, score)
+        score_displayer = ScoreDisplayer(self.__video_player, score)
         score_displayer.display_score(score_color)
 
         for i in range(1, 100):
@@ -370,18 +395,18 @@ class Snake:
     # 2) Eating the most apples out of the non-eliminated snakes. In this case, there may be more than one winner.
     def __determine_multiplayer_winners(self):
         winners = []
-        if self.__settings.num_players == self.__eliminated_snake_count + 1:
+        if self.__settings['num_players'] == self.__eliminated_snake_count + 1:
             # Case 1
-            for i in range(self.__settings.num_players):
+            for i in range(self.__settings['num_players']):
                 if not self.__players[i].is_eliminated():
                     self.__players[i].set_multiplayer_winner()
                     winners.append(i)
                     break
-        elif self.__apples_eaten_count >= self.__settings.apple_count:
+        elif self.__apples_eaten_count >= self.__settings['apple_count']:
             # Case 2
             longest_snake_length = None
             longest_snake_indexes = []
-            for i in range(self.__settings.num_players):
+            for i in range(self.__settings['num_players']):
                 if self.__players[i].is_eliminated():
                     continue
                 snake_length = len(self.__players[i].get_snake_linked_list())
@@ -396,21 +421,24 @@ class Snake:
         return winners
 
     def __clear_board(self):
-        frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
+        frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
         self.__video_player.play_frame(frame)
+
+    def __tick_sleep(self):
+        time.sleep(-0.02 * self.__settings['difficulty'] + 0.21)
 
     def __increment_tick_counters(self):
         self.__num_ticks += 1
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             self.__players[i].increment_tick_counters()
 
     # returns boolean success
     def __accept_sockets(self):
         max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_SINGLE_PLAYER_JOIN_TIME_S
         accept_loop_start_time = time.time()
-        if self.__settings.num_players > 1:
+        if self.__settings['num_players'] > 1:
             max_accept_sockets_wait_time_s = UnixSocketHelper.MAX_MULTI_PLAYER_JOIN_TIME_S + 1 # give a 1s extra buffer
-        for i in range(self.__settings.num_players):
+        for i in range(self.__settings['num_players']):
             if not (
                 self.__players[i].accept_socket(
                     self.__playlist_video['playlist_video_id'], accept_loop_start_time, max_accept_sockets_wait_time_s
@@ -418,7 +446,7 @@ class Snake:
             ):
                 return False
 
-        if self.__settings.num_players > 1:
+        if self.__settings['num_players'] > 1:
             return Playlist().set_all_players_ready(self.__playlist_video['playlist_video_id'])
         return True
 

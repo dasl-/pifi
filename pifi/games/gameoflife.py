@@ -1,6 +1,8 @@
 import numpy as np
 import time
 import hashlib
+
+from pifi.config import Config
 from pifi.logger import Logger
 from pifi.videoplayer import VideoPlayer
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
@@ -11,12 +13,9 @@ class GameOfLife:
     __COLOR_CHANGE_FREQ = 0.05
     __MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
 
-    # settings: GameOfLifeSettings
-    def __init__(self, settings):
+    def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        self.__settings = settings
-        self.__video_player = VideoPlayer(self.__settings)
-        self.__logger.info("Doing init with GameOfLifeSettings: {}".format(vars(self.__settings)))
+        self.__video_player = VideoPlayer()
         self.__game_color_helper = GameColorHelper()
         self.__board = None
 
@@ -49,7 +48,7 @@ class GameOfLife:
             else:
                 is_game_in_progress = False
 
-        time.sleep(self.__settings.tick_sleep)
+        time.sleep(Config.get('game_of_life.tick_sleep', 0.07))
 
         return is_game_in_progress
 
@@ -75,17 +74,17 @@ class GameOfLife:
         self.__logger.info("Starting new game.")
         self.__num_ticks = 0
         self.__game_color_helper.reset()
-        self.__game_color_mode = self.__game_color_helper.determine_game_color_mode(self.__settings)
-        self.__prev_board_state_counts = LimitedSizeDict(capacity = self.__settings.game_over_detection_lookback)
+        self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('game_of_life.game_color_mode'))
+        self.__prev_board_state_counts = LimitedSizeDict(capacity = Config.get('game_of_life.game_over_detection_lookback', 16))
         self.__seed()
         
     # See https://lhoupert.fr/test-jbook/book-jupyterbook.html#the-game-of-life
     def __seed(self):
         # Create the board with an extra edge cell on all sides to simplify the
         # neighborhood calculation and avoid edge checks.
-        shape = [self.__settings.display_height+2, self.__settings.display_width+2]
+        shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
         self.__board = np.zeros(shape, np.uint8)
-        seed = np.random.random_sample([x-2 for x in shape]) < self.__settings.seed_liveness_probability
+        seed = np.random.random_sample([x-2 for x in shape]) < Config.get('game_of_life.seed_liveness_probability', 1 / 3)
         self.__board[1:-1,1:-1][seed] = 1
 
         self.__show_board()
@@ -93,15 +92,15 @@ class GameOfLife:
     def __show_board(self):
         frame = self.__board_to_frame()
 
-        if self.__settings.fade:
+        if Config.get('game_of_life.fade', False):
             self.__video_player.fade_to_frame(frame)
         else:
             self.__video_player.play_frame(frame)
 
     def __board_to_frame(self):
-        frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
+        frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self.__num_ticks)
-        on = 0 if self.__settings.invert else 1
+        on = 0 if Config.get('game_of_life.invert', False) else 1
 
         frame[(self.__board[1:-1,1:-1] == on)] = rgb
 

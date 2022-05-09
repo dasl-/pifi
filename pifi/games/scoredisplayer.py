@@ -1,5 +1,7 @@
 import numpy as np
 
+from pifi.config import Config
+
 class ScoreDisplayer:
 
     """
@@ -31,9 +33,7 @@ class ScoreDisplayer:
         (1, 1, 1, 1, 0, 1, 1), # 9
     )
 
-    # settings: LedSettings
-    def __init__(self, settings, video_player, score):
-        self.__settings = settings
+    def __init__(self, video_player, score):
         self.__video_player = video_player
         self.__score = score
 
@@ -49,11 +49,12 @@ class ScoreDisplayer:
         digit_height = 1 + digit_component_length + 1 + digit_component_length + 1
 
         num_digits = len(score_string)
-
         score_width = digit_width * num_digits
-        x = round((self.__settings.display_width - score_width) / 2)
-        y = round((self.__settings.display_height - digit_height) / 2)
-        frame = np.zeros([self.__settings.display_height, self.__settings.display_width, 3], np.uint8)
+        display_width = Config.get_or_throw('leds.display_width')
+        display_height = Config.get_or_throw('leds.display_height')
+        x = round((display_width - score_width) / 2)
+        y = round((display_height - digit_height) / 2)
+        frame = np.zeros([display_height, display_width, 3], np.uint8)
         for i in range(0, num_digits):
             self.__write_digit(x, y, int(score_string[i]), digit_component_length, frame, rgb)
             x = x + digit_width
@@ -89,6 +90,6 @@ class ScoreDisplayer:
 
     def __get_digit_component_length(self):
         return min(
-            round(3 * self.__settings.display_width / 28),
-            round(3 * self.__settings.display_height / 18)
+            round(3 * Config.get_or_throw('leds.display_width') / 28),
+            round(3 * Config.get_or_throw('leds.display_height') / 18)
         )

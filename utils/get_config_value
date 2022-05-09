@@ -7,30 +7,18 @@ import sys
 root_dir = os.path.abspath(os.path.dirname(__file__) + '/..')
 sys.path.append(root_dir)
 
-from pifi.configloader import ConfigLoader
+from pifi.config import Config
 from pifi.logger import Logger
-from pifi.settings.snakesettings import SnakeSettings
-from pifi.settings.videosettings import VideoSettings
-from pifi.settings.gameoflifesettings import GameOfLifeSettings
-
-SETTINGS_VIDEO = 'video'
-SETTINGS_SNAKE = 'snake'
-SETTINGS_GAME_OF_LIFE = 'gameoflife'
-SETTINGS_TYPES = [
-    SETTINGS_VIDEO, SETTINGS_SNAKE, SETTINGS_GAME_OF_LIFE,
-]
 
 def parse_args():
     parser = argparse.ArgumentParser(description=
 f"""This is called in the install/install_dependencies.sh script.
-This script prints out the specified config values as they are set in the config file {ConfigLoader.CONFIG_PATH}.
+This script prints out the specified config values as they are set in the config file {Config.CONFIG_PATH}.
 """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--type', dest='type', action='store', required=True,
-        help=f"one of {SETTINGS_TYPES}.")
     parser.add_argument('--keys', dest='keys', action='store', default='',
-        help="Comma separated list of keys. We will print the corresponding values of these keys, or a " +
-        "blank line if the key is not set.")
+        help="Comma separated list of keys. Each key should be in dot notation. We will print the " +
+        "corresponding values of these keys, or a blank line if the key is not set.")
     args = parser.parse_args()
     return args
 
@@ -38,23 +26,11 @@ def main():
     args = parse_args()
 
     Logger.set_level(Logger.QUIET) # silence any other output to stdout, because we parse this script's stdout output.
-    ConfigLoader(should_set_log_level = False) # load config, e.g. set log level.
-    if not os.path.isfile(ConfigLoader.CONFIG_PATH):
-        print(f"ERROR: Config file does not exist at path {ConfigLoader.CONFIG_PATH}", file=sys.stderr)
-        sys.exit(1)
-
-    if args.type == SETTINGS_VIDEO:
-        settings = VideoSettings.from_config()
-    elif args.type == SETTINGS_SNAKE:
-        settings = SnakeSettings.from_config()
-    elif args.type == SETTINGS_GAME_OF_LIFE:
-        settings = GameOfLifeSettings.from_config()
-    else:
-        raise Exception(f"Unsupported settings type: {args.type}. Must be one of {SETTINGS_TYPES}.")
+    Config.load_config_if_not_loaded(should_set_log_level = False)
 
     config_keys_to_print = args.keys.split(',')
     for key in config_keys_to_print:
-        print(getattr(settings, key, ''))
+        print(Config.get(key, ''))
 
 
 main()

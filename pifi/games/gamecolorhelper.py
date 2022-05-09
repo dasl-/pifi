@@ -23,21 +23,15 @@ class GameColorHelper:
     def reset(self):
         self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
 
-    def set_game_color_mode(self, settings, game_color_mode):
-        if game_color_mode is None:
-            game_color_mode = self.GAME_COLOR_MODE_RANDOM
-
-        game_color_mode = game_color_mode.lower()
-        if game_color_mode in self.GAME_COLOR_MODES or game_color_mode == self.GAME_COLOR_MODE_RANDOM:
-            settings.game_color_mode = game_color_mode
+    @staticmethod
+    def determine_game_color_mode(game_color_mode):
+        if (
+            game_color_mode == GameColorHelper.GAME_COLOR_MODE_RANDOM or
+            game_color_mode not in GameColorHelper.GAME_COLOR_MODES
+        ):
+            return random.choice(GameColorHelper.GAME_COLOR_MODES)
         else:
-            raise Exception("Unknown game_color_mode: {}".format(game_color_mode))
-
-    def determine_game_color_mode(self, settings):
-        if settings.game_color_mode == self.GAME_COLOR_MODE_RANDOM:
-            return random.choice(self.GAME_COLOR_MODES)
-        else:
-            return settings.game_color_mode
+            return game_color_mode
 
     def get_rgb(self, game_color_mode, color_change_freq, num_ticks):
         if game_color_mode == self.GAME_COLOR_MODE_RED:

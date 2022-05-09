@@ -1,5 +1,6 @@
 import numpy as np
-from pifi.settings.ledsettings import LedSettings
+
+from pifi.video.videocolormode import VideoColorMode
 
 class Gamma:
 
@@ -14,15 +15,14 @@ class Gamma:
     __GREEN_MAX_BRIGHTNESS = .45
     __BLUE_MAX_BRIGHTNESS = .375
 
-    def __init__(self, led_settings):
-        self.__led_settings = led_settings
-
+    # video_color_mode: only applicable when playing videos
+    def __init__(self, video_color_mode = VideoColorMode.COLOR_MODE_COLOR):
         # list of gamma curves from min to max
         self.scale_red_curves = []
         self.scale_blue_curves = []
         self.scale_green_curves = []
 
-        self.__generateGammaScales()
+        self.__generateGammaScales(video_color_mode)
 
     # powers auto dynamic gamma curve using the average brightness of the given frame
     def getGammaIndexForMonochromeFrame(self, frame):
@@ -60,7 +60,7 @@ class Gamma:
 
         return gamma_list
 
-    def __generateGammaScales(self):
+    def __generateGammaScales(self, video_color_mode):
         for i in range(self.__MIN_GAMMA_CURVE * 10, self.__MAX_GAMMA_CURVE * 10):
             self.scale_red_curves.append(self.__getGammaScaleValues(i / 10, 255, int(255 * self.__RED_MAX_BRIGHTNESS)))
             self.scale_blue_curves.append(self.__getGammaScaleValues(i / 10, 255, int(255 * self.__BLUE_MAX_BRIGHTNESS)))
@@ -68,7 +68,7 @@ class Gamma:
 
         # for black and white, if r, g, or b has a zero in the scale they all should be 0
         # otherwise dim pixels will be just that color
-        if self.__led_settings.color_mode == LedSettings.COLOR_MODE_BW:
+        if video_color_mode == VideoColorMode.COLOR_MODE_BW:
             for g in range(0, ((self.__MAX_GAMMA_CURVE - self.__MIN_GAMMA_CURVE) * 10)):
                 for i in range(0, 256):
                     if min(self.scale_red_curves[g][i], self.scale_green_curves[g][i], self.scale_blue_curves[g][i]) == 0:

@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import time
 from pifi.playlist import Playlist
 from pifi.logger import Logger
-from pifi.configloader import ConfigLoader
+from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.scores import Scores
@@ -87,12 +87,9 @@ class PifiAPI():
             # join game
             game_playlist_video_id = current_video['playlist_video_id']
             did_join_existing_game = True
-            try:
-                settings = json.loads(current_video['settings'])
-                num_players = settings['num_players']
-                apple_count = settings['apple_count']
-            except Exception:
-                self.__logger.error("Couldn't load settings from database: {}".format(current_video['settings']))
+            settings = Snake.make_settings_from_playlist_item(current_video)
+            num_players = settings['num_players']
+            apple_count = settings['apple_count']
         else:
             # enqueue game
             game_type = Playlist.TYPE_GAME
@@ -346,16 +343,15 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
 class Server:
 
     def __init__(self):
-        self.__config = ConfigLoader()
-        self.__secure = self.__config.get_server_config('use_ssl', False)
+        self.__secure = Config.get('server.use_ssl', False)
 
         if not self.__secure:
             self.__server = PifiThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
         else:
             self.__server = PifiThreadingHTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
             self.__server.socket = ssl.wrap_socket(self.__server.socket,
-                                                   keyfile=self.__config.get_server_config('keyfile', ""),
-                                                   certfile=self.__config.get_server_config('certfile', ""),
+                                                   keyfile=Config.get_or_throw('server.keyfile'),
+                                                   certfile=Config.get_or_throw('server.certfile'),
                                                    server_side=True)
 
     def serve_forever(self):

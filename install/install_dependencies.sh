@@ -46,7 +46,7 @@ updateAndInstallPackages(){
 installLedDriver(){
     info "Installing LED driver..."
     local led_driver
-    led_driver=$("$BASE_DIR"/utils/get_config_value --type video --keys driver)
+    led_driver=$("$BASE_DIR"/utils/get_config_value --keys leds.driver)
     case $led_driver in
         apa102)     installLedDriverApa102 ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;

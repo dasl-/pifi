@@ -3,9 +3,9 @@
     // Valid values: "quiet", "error", "warning", "info", "debug", "all" (from quietest to most verbose).
     "log_level": "info",
 
-    // Settings for the web server.
+    // Configuration for the web server.
     // Optional. This whole stanza is optional because none of the keys within it are required.
-    "server_config": {
+    "server": {
         // Optional, boolean, default: false. Set to true if you want to run the web server with SSL (https).
         "use_ssl": false,
 
@@ -16,9 +16,9 @@
         "certfile": "",
     },
 
-    // Settings used whenever displaying anything on the LEDs.
+    // Configuration used whenever displaying anything on the LEDs.
     // Required. At least one key within this stanza is required.
-    "led_settings": {
+    "leds": {
 
         // Required, string. Controls which LED driver is used. Valid values: apa102, rgbmatrix.
         "driver": "",
@@ -39,17 +39,15 @@
         // Optional, boolean, default: false. Whether to swap top to bottom when outputting to the LED matrix.
         // Setting this might be necessary if you wired your LEDs differently.
         "flip_y": false,
+    },
+
+    // Configuration specific to displaying videos.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "video": {
 
         // Optional, string, default: "color". Controls whether videos are displayed in color or monochrome.
         // Valid values: color, bw, red, green, blue, inv_color, inv_bw.
-        "color_mode": "",
-    },
-
-    // Settings specific to displaying video on the LEDs.
-    // Optional. This whole stanza is optional because none of the keys within it are required.
-    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it when
-    // playing videos.
-    "video_settings": {
+        "color_mode": "color",
 
         // Opetional, boolean, default: true. Whether to play audio when playing videos.
         "should_play_audio": true,
@@ -63,11 +61,9 @@
         "should_predownload_video": false,
     },
 
-    // Settings specific to the game of life.
+    // Configuration specific to the game of life.
     // Optional. This whole stanza is optional because none of the keys within it are required.
-    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it
-    // when showing the game of life.
-    "game_of_life_settings": {
+    "game_of_life": {
 
         // Optional, float in range: [0,1], default: 0.3333. How likely each pixel is to be alive (on)
         // in the initial state.
@@ -91,12 +87,13 @@
         "invert": false,
     },
 
-    // Settings specific to playing snake.
+    // Configuration specific to playing snake.
     // Optional. This whole stanza is optional because none of the keys within it are required.
-    // Note: any key from the "led_settings" stanza may be specified in this stanza to override it
-    // when showing the game of life.
-    "snake_settings": {
-        // No keys are present yet in the snake_settings stanza.
-    },
+    "snake": {
+
+        // Optional, string, default: "random". The color mode for the game.
+        // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
+        "game_color_mode": "random",
+    }
 
 }

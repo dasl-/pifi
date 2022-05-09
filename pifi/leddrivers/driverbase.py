@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class DriverBase(ABC):
 
     @abstractmethod
-    def __init__(self, led_settings, clear_screen=True):
+    def __init__(self, clear_screen=True):
         pass
 
     @abstractmethod

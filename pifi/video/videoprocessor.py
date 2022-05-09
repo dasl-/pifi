@@ -12,9 +12,12 @@ import tempfile
 import time
 import traceback
 
+from pifi.config import Config
 from pifi.logger import Logger
 from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
 from pifi.directoryutils import DirectoryUtils
+from pifi.videoplayer import VideoPlayer
+from pifi.video.videocolormode import VideoColorMode
 from pifi.youtubedlexception import YoutubeDlException
 
 class VideoProcessor:
@@ -33,29 +36,30 @@ class VideoProcessor:
     #   This can be useful because the Queue process starts the loading screen. If we cleared
     #   it in the VideoProcessor before showing the loading screen again, there'd be a brief
     #   flicker in the loading screen image.
-    def __init__(self, url, video_settings, video_player, clear_screen):
+    def __init__(self, url, clear_screen):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
-        self.__video_settings = video_settings
-        self.__video_player = video_player
+        self.__video_player = VideoPlayer(
+            clear_screen = clear_screen,
+            video_color_mode = Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)
+        )
         self.__process_and_play_vid_proc_pgid = None
         self.__init_time = time.time()
 
-        # True if the video already exists (see: VideoSettings.should_save_video)
+        # True if the video already exists (see config value: "video.should_save_video")
         self.__is_video_already_downloaded = False
         self.__do_housekeeping(clear_screen)
         self.__register_signal_handlers()
 
     def process_and_play(self):
-        self.__logger.info(f"Starting process_and_play for url: {self.__url}, VideoSettings: " +
-            f"{vars(self.__video_settings)}")
+        self.__logger.info(f"Starting process_and_play for url: {self.__url}")
         self.__video_player.show_loading_screen()
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
             self.__logger.info(f'Video has already been downloaded. Using saved video: {video_save_path}')
             self.__is_video_already_downloaded = True
-        elif self.__video_settings.should_predownload_video:
+        elif Config.get('video.should_predownload_video', False):
             download_command = self.__get_streaming_video_download_cmd() + ' > ' + shlex.quote(self.__get_video_save_path())
             self.__logger.info(f'Downloading video: {download_command}')
             subprocess.call(download_command, shell = True, executable = '/usr/bin/bash')
@@ -110,9 +114,11 @@ class VideoProcessor:
         # raise `ProcessLookupError: [Errno 3] No such process` if the process is no longer running
         self.__process_and_play_vid_proc_pgid = os.getpgid(process_and_play_vid_proc.pid)
 
-        bytes_per_frame = self.__video_settings.display_width * self.__video_settings.display_height
-        np_array_shape = [self.__video_settings.display_height, self.__video_settings.display_width]
-        if self.__video_settings.is_color_mode_rgb():
+        display_width = Config.get_or_throw('leds.display_width')
+        display_height = Config.get_or_throw('leds.display_height')
+        bytes_per_frame = display_width * display_height
+        np_array_shape = [display_height, display_width]
+        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)):
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
@@ -182,7 +188,7 @@ class VideoProcessor:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
             # first audio data at around the same time so they stay in sync.
             # Add time for better audio / video sync
-            vid_start_time = time.time() + (0.075 if self.__video_settings.should_play_audio else 0)
+            vid_start_time = time.time() + (0.075 if Config.get('video.should_play_audio', True) else 0)
 
         frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
@@ -256,7 +262,7 @@ class VideoProcessor:
             f'{{ while true ; do [ -f {self.__FPS_READY_FILE} ] && break || sleep 0.1 ; done && cat - ; }} | ')
 
         maybe_play_audio_tee = ''
-        if self.__video_settings.should_play_audio:
+        if Config.get('video.should_play_audio', True):
             # Add mbuffer because otherwise the ffplay command blocks the whole pipeline. Because
             # audio can only play in real-time, this would block ffmpeg from processing the frames
             # as fast as it otherwise could. This prevents us from building up a big enough buffer
@@ -273,7 +279,7 @@ class VideoProcessor:
 
         maybe_save_video_tee = ''
         maybe_mv_saved_video_cmd = ''
-        if self.__video_settings.should_save_video and not self.__is_video_already_downloaded:
+        if Config.get('video.should_save_video', False) and not self.__is_video_already_downloaded:
             self.__logger.info(f'Video will be saved to: {video_save_path}')
             temp_video_save_path = video_save_path + self.__TEMP_VIDEO_DOWNLOAD_SUFFIX
             maybe_save_video_tee = shlex.quote(temp_video_save_path) + ' '
@@ -321,8 +327,8 @@ class VideoProcessor:
         #
         # Fallback onto 'worst' rather than 'worstvideo', because some videos (live videos) only
         # have combined video + audio formats. Thus, 'worstvideo' would fail for them.
-        video_format = (f'worstvideo[vcodec^=avc1][height>={self.__video_settings.display_height}]/' +
-            f'worst[vcodec^=avc1][height>={self.__video_settings.display_height}]')
+        video_format = (f'worstvideo[vcodec^=avc1][height>={Config.get_or_throw("leds.display_height")}]/' +
+            f'worst[vcodec^=avc1][height>={Config.get_or_throw("leds.display_height")}]')
         youtube_dl_video_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__url),
             shlex.quote(video_format),
@@ -352,14 +358,14 @@ class VideoProcessor:
 
     def __get_ffmpeg_pixel_conversion_cmd(self):
         pix_fmt = 'gray'
-        if self.__video_settings.is_color_mode_rgb():
+        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)):
             pix_fmt = 'rgb24'
 
         return (
             self.get_standard_ffmpeg_cmd() + ' '
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
-                'scale=' + str(self.__video_settings.display_width) + 'x' + str(self.__video_settings.display_height)) + " "
+                'scale=' + str(Config.get_or_throw('leds.display_width')) + 'x' + str(Config.get_or_throw('leds.display_height'))) + " "
             '-c:a copy ' + # don't process the audio at all
             '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " # output in numpy compatible byte format
             'pipe:1' # output to stdout
