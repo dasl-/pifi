@@ -2,7 +2,7 @@ import numpy as np
 
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
-from pifi.gamma import Gamma
+from pifi.led.gamma import Gamma
 from pifi.led.drivers.leddrivers import LedDrivers
 from pifi.video.videocolormode import VideoColorMode
 

@@ -18,7 +18,7 @@ from pifi.datastructure.readoncecircularbuffer import ReadOnceCircularBuffer
 from pifi.directoryutils import DirectoryUtils
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.video.videocolormode import VideoColorMode
-from pifi.youtubedlexception import YoutubeDlException
+from pifi.video.youtubedlexception import YoutubeDlException
 
 class VideoProcessor:
 
