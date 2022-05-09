@@ -149,7 +149,7 @@ disableWifiPowerManagement(){
 checkYoutubeApiKey(){
     info "Checking for youtube API key..."
     local youtube_api_key
-    youtube_api_key=$("$BASE_DIR"/utils/set_youtube_api_key)
+    youtube_api_key=$("$BASE_DIR"/utils/youtube_api_key)
     if [ -z "${youtube_api_key}" ]; then
         warn "WARNING: your youtube API key has not been set. See: https://github.com/dasl-/pifi/blob/main/docs/setting_your_youtube_api_key.adoc"
     else
