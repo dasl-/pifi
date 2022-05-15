@@ -11,8 +11,7 @@ main(){
     updateAndInstallPackages
     installLedDriver
     clearYoutubeDlCache
-    installNpm
-    installAppDependencies
+    installNode
 
     if [ -f $RESTART_REQUIRED_FILE ]; then
         echo "Restarting..."
@@ -95,22 +94,22 @@ clearYoutubeDlCache(){
     parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root "$users" ::: youtube-dl yt-dlp
 }
 
-installNpm(){
-    info "Installing npm..."
+installNode(){
+    info "\\nInstalling node and npm..."
 
-    # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
-    # when the version changed between `apt install npm` and `npm install npm@latest -g`
-    if ! which npm >/dev/null ; then
-        touch $RESTART_REQUIRED_FILE
-    fi
+    # Install node and npm. Installing this with the OS's default packages provided by apt installs a pretty old
+    # version of node and npm. We need a newer version.
+    # See: https://github.com/nodesource/distributions/blob/master/README.md#installation-instructions
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash -
+    sudo apt-get install -y nodejs
 
-    # The `apt install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
-    sudo npm install npm@latest -g
-}
-
-installAppDependencies(){
-    info "Installing app dependencies..."
-
+    info "\\nInstalling react app dependencies..."
+    # TODO: when installing from scratch on a fresh OS installation, this step once failed with
+    # and error: https://gist.github.com/dasl-/01b9bf9650730c7dbfab6c859ea6c0dc
+    # See if this is reproducible on a fresh install sometime...
+    # It's weird because apparently it's a node error, but the line that is executing below is a
+    # npm command. Could npm be shelling out to node? Maybe I can figure this out by running
+    # checking the process list while the next step is running, and htop to look at RAM usage.`
     npm install --prefix "$BASE_DIR/app"
 }
 
