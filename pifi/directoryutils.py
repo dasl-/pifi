@@ -2,7 +2,7 @@ import os
 
 class DirectoryUtils:
 
-    # Will be: "/home/pi/development/pifi" if you install in the default location
+    # The directory that you cloned the pifi repo into. E.g. "/home/<USER>/pifi".
     root_dir = None
 
     def __init__(self):

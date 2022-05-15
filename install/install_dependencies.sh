@@ -85,10 +85,14 @@ installLedDriverRgbMatrix(){
 clearYoutubeDlCache(){
     info "Clearing youtube-dl caches..."
 
+    # https://askubuntu.com/a/329689
+    local users
+    users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
+
     # Just in case the youtube-dl cache got polluted, as it has before...
     # https://github.com/ytdl-org/youtube-dl/issues/24780
     # shellcheck disable=SC1083
-    parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root pi ::: youtube-dl yt-dlp
+    parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root "$users" ::: youtube-dl yt-dlp
 }
 
 installNpm(){
