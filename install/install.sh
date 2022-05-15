@@ -6,7 +6,7 @@ CONFIG=/boot/config.txt
 old_config=$(cat $CONFIG)
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
-is_restart_required=false
+RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 
 usage() {
     local exit_code=$1
@@ -32,7 +32,7 @@ main(){
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
-    if [[ $is_restart_required = true || -n "$config_diff" ]] ; then
+    if [[ -f $RESTART_REQUIRED_FILE || -n "$config_diff" ]] ; then
         info "Restart is required!"
         info "Config diff:\n$config_diff"
         info "Restarting..."
@@ -120,7 +120,7 @@ setHostname(){
     if [[ $(cat /etc/hostname) != pifi ]]; then
         echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
         sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
-        is_restart_required=true
+        touch $RESTART_REQUIRED_FILE
     fi
 }
 

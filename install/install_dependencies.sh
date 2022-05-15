@@ -3,7 +3,7 @@
 set -euo pipefail -o errtrace
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
-is_restart_required=false
+RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 
 main(){
     trap 'fail $? $LINENO' ERR
@@ -14,7 +14,7 @@ main(){
     installNpm
     installAppDependencies
 
-    if [ "$is_restart_required" = true ] ; then
+    if [ -f $RESTART_REQUIRED_FILE ]; then
         echo "Restarting..."
         sudo shutdown -r now
     fi
@@ -101,7 +101,7 @@ installNpm(){
     # installing and upgrading npm from scratch required a restart / re-login for the shell to recognize the new version
     # when the version changed between `apt install npm` and `npm install npm@latest -g`
     if ! which npm >/dev/null ; then
-        is_restart_required=true
+        touch $RESTART_REQUIRED_FILE
     fi
 
     # The `apt install npm` command installs a very old version of npm. Use npm to upgrade itself to latest.
