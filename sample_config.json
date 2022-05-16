@@ -94,6 +94,6 @@
         // Optional, string, default: "random". The color mode for the game.
         // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
         "game_color_mode": "random",
-    }
+    },
 
 }
