@@ -26,9 +26,14 @@ main(){
     setupYoutubeDlUpdateCron
     updateDbSchema
     buildWebApp
-    setHostname
     disableWifiPowerManagement
+    setOverVoltage
     checkYoutubeApiKey
+
+    # Setting the hostname should be as close to the last step as possible. Anything after this step that
+    # requires `sudo` will emit a warning: "sudo: unable to resolve host raspberrypi: Name or service not known".
+    # Note that `sudo` will still work; it's just a "warning".
+    setHostname
 
     new_config=$(cat $CONFIG)
     config_diff=$(diff <(echo "$old_config") <(echo "$new_config") || true)
@@ -36,7 +41,11 @@ main(){
         info "Restart is required!"
         info "Config diff:\n$config_diff"
         info "Restarting..."
-        sudo shutdown -r now
+
+        # Hide the "sudo: unable to resolve host raspberrypi: Name or service not known" output by
+        # redirecting stderr. This it to avoid someone thinking something didn't work  (it's fine).
+        # Related to changing the hostname via setHostname above.
+        sudo shutdown -r now 2>/dev/null
     fi
 }
 
@@ -113,17 +122,6 @@ buildWebApp(){
     npm run build --prefix "$BASE_DIR"/app
 }
 
-# Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
-# See: https://www.raspberrypi.com/documentation/computers/remote-access.html#resolving-raspberrypi-local-with-mdns
-setHostname(){
-    info "Setting hostname"
-    if [[ $(cat /etc/hostname) != pifi ]]; then
-        echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
-        sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
-        touch $RESTART_REQUIRED_FILE
-    fi
-}
-
 # https://github.com/raspberrypi/linux/issues/2522#issuecomment-692559920
 # https://forums.raspberrypi.com/viewtopic.php?p=1764517#p1764517
 # Maybe wifi power management is cause of occasional network issues?
@@ -146,6 +144,34 @@ disableWifiPowerManagement(){
     fi
 }
 
+# See: https://github.com/dasl-/piwall2/blob/main/docs/issues_weve_seen_before.adoc#video-playback-freezes-cause-1
+#      https://github.com/Hexxeh/rpi-firmware/issues/249
+#      https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
+#      https://github.com/dasl-/pifi/blob/main/docs/issues_weve_seen_before.adoc#unable-to-ssh-onto-pi--hit-pifi-web-page
+setOverVoltage(){
+    over_voltage=$(vcgencmd get_config over_voltage | sed -n 's/over_voltage=\(.*\)/\1/p')
+    if (( over_voltage >= 2 )); then
+        info "over_voltage was already high enough ( $over_voltage )..."
+        return
+    fi
+
+    force_turbo=$(vcgencmd get_config force_turbo | sed -n 's/force_turbo=\(.*\)/\1/p')
+    if (( force_turbo == 1 )); then
+        # See: https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking-options
+        warn "WARNING: not setting over_voltage because force_turbo is enabled and we don't " \
+            "want to set your warranty bit. This might result in video playback issues."
+        return
+    fi
+
+    # Set over_voltage.
+    info "Setting over_voltage to 2..."
+
+    # comment out existing over_voltage lines in config
+    sudo sed $CONFIG -i -e "s/^\(over_voltage=.*\)/#\1/"
+
+    echo -e 'over_voltage=2' | sudo tee -a $CONFIG >/dev/null
+}
+
 checkYoutubeApiKey(){
     info "Checking for youtube API key..."
     local youtube_api_key
@@ -154,6 +180,17 @@ checkYoutubeApiKey(){
         warn "WARNING: your youtube API key has not been set. See: https://github.com/dasl-/pifi/blob/main/docs/setting_your_youtube_api_key.adoc"
     else
         info "Found youtube API key!"
+    fi
+}
+
+# Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
+# See: https://www.raspberrypi.com/documentation/computers/remote-access.html#resolving-raspberrypi-local-with-mdns
+setHostname(){
+    info "Setting hostname"
+    if [[ $(cat /etc/hostname) != pifi ]]; then
+        echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
+        sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
+        touch $RESTART_REQUIRED_FILE
     fi
 }
 
