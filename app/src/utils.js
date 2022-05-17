@@ -21,7 +21,7 @@ function getCookie(cname) {
   return "";
 }
 
-export default {
+const utils = {
   abbreviateNumber(value) {
     var newValue = value;
     if (value >= 1000) {
@@ -114,3 +114,5 @@ export default {
   setCookie,
   getCookie
 }
+
+export default utils;
