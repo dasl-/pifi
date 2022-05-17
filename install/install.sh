@@ -186,7 +186,7 @@ checkYoutubeApiKey(){
 # Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
 # See: https://www.raspberrypi.com/documentation/computers/remote-access.html#resolving-raspberrypi-local-with-mdns
 setHostname(){
-    info "Setting hostname"
+    info "Setting hostname to 'pifi' (if not already set to 'pifi')..."
     if [[ $(cat /etc/hostname) != pifi ]]; then
         echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
         sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
