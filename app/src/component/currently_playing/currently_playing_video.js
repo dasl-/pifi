@@ -4,6 +4,7 @@ import App from '../app/app';
 import 'rc-slider/assets/index.css';
 import React from 'react';
 import Slider from 'rc-slider';
+import playlist_placeholder_img from './playlist-placeholder.png';
 
 class CurrentlyPlayingRight extends React.Component {
   constructor(props) {
@@ -26,7 +27,7 @@ class CurrentlyPlayingRight extends React.Component {
           <div className='bg-dark position-relative'>
             <div className='loading-cover'><div className='dot-pulse'></div></div>
             <img
-              src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
+              src={(this.props.video) ? this.props.video.thumbnail : playlist_placeholder_img}
               className='img-fluid video-thumbnail w-100'
               alt={(this.props.video) ? this.props.video.title : ''}
               onLoad={this.props.setImageLoaded}

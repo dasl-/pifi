@@ -1,4 +1,5 @@
 import React from 'react';
+import playlist_placeholder_img from './playlist-placeholder.png';
 
 class CurrentlyPlayingFooter extends React.Component {
   constructor(props) {
@@ -17,7 +18,7 @@ class CurrentlyPlayingFooter extends React.Component {
             <div className='col-4 col-sm-3 col-md-2 small-vertical-center bg-dark position-relative'>
               <div className='loading-cover'><div className='dot-pulse'></div></div>
               <img
-                src={(this.props.video) ? this.props.video.thumbnail : 'img/playlist-placeholder.png'}
+                src={(this.props.video) ? this.props.video.thumbnail : playlist_placeholder_img}
                 className='img-fluid video-thumbnail w-100'
                 alt={(this.props.video) ? this.props.video.title : ''}
                 onLoad={this.props.setImageLoaded}
