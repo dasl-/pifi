@@ -28,13 +28,15 @@ updateAndInstallPackages(){
 
     sudo apt update
 
+    # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
+    #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
     # libsdl2-mixer: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # libsdl2-dev: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # parallel: needed for update_youtube-dl.sh script
     # libatlas-base-dev: needed for numpy
-    sudo apt -y install git ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
+    sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
         libatlas-base-dev
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
