@@ -7,7 +7,7 @@
 set -x
 
 echo "starting update_youtube-dl at $(date -u)"
-sudo pip3 install --upgrade youtube_dl yt-dlp
+sudo python3 -m pip install --upgrade youtube_dl yt-dlp
 
 # https://askubuntu.com/a/329689
 users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
