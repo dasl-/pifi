@@ -21,13 +21,19 @@ class Queue:
     UNIX_SOCKET_PATH = '/tmp/queue_unix_socket'
 
     def __init__(self):
+        # Note: do not create an instance variable for LedFramePlayer in the Queue because the
+        # rpi-rgb-led-matrix library doesn't play well with multiple instances (the screensaver,
+        # videoplaback, etc processes that the Queue launches will have their own instance of
+        # the LedFramePlayer as well).
+        #
+        # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
+
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__is_game_of_life_enabled = None
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
-        self.__led_frame_player = LedFramePlayer()
 
         # True if game of life screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
@@ -111,7 +117,8 @@ class Queue:
     # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
-            self.__led_frame_player.show_loading_screen()
+            LedFramePlayer().show_loading_screen()
+
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")
         # Using start_new_session = False here because it is not necessary to start a new session here (though
@@ -232,4 +239,4 @@ class Queue:
         return self.__is_game_of_life_enabled
 
     def __clear_screen(self):
-        self.__led_frame_player.clear_screen()
+        LedFramePlayer(clear_screen = True)
