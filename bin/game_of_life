@@ -31,9 +31,9 @@ def parseArgs():
     parser.add_argument('--game-over-detection-lookback', dest='game_over_detection_lookback', action='store', type=int,
         metavar='N', help='Number of turns to look back to see if game has not changed (i.e. it is over).')
     parser.add_argument('--fade', dest='fade', action='store_true', help='fade between each tick', default=None)
-    parser.add_argument('--invert', dest='invert', action='store_true', help='invert the board', default=None)
     parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
         help=(GameColorHelper().get_help_string()))
+    parser.add_argument('--variant', dest='variant', action='store', help=f'One of {GameOfLife.VARIANTS}.')
 
     args = parser.parse_args()
     return args
@@ -56,7 +56,7 @@ if args.game_color_mode is not None:
     Config.set('game_of_life.game_color_mode', args.game_color_mode)
 if args.fade is not None:
     Config.set('game_of_life.fade', args.fade)
-if args.invert is not None:
-    Config.set('game_of_life.invert', args.invert)
+if args.variant is not None:
+    Config.set('game_of_life.variant', args.variant)
 
 GameOfLife().play(should_loop = args.should_loop)

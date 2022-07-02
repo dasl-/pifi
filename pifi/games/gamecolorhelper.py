@@ -22,6 +22,7 @@ class GameColorHelper:
 
     def reset(self):
         self.__color_gradient_offset = random.uniform(0, 2 * math.pi)
+        self.__color_gradient_offset2 = random.uniform(0, 2 * math.pi)
 
     @staticmethod
     def determine_game_color_mode(game_color_mode):
@@ -43,19 +44,19 @@ class GameColorHelper:
         if game_color_mode == self.GAME_COLOR_MODE_BW:
             return [255, 255, 255]
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
-            return self.__make_color_gradient(color_change_freq, num_ticks)
+            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset)
 
     def get_rgb2(self, game_color_mode, color_change_freq, num_ticks):
         if game_color_mode == self.GAME_COLOR_MODE_RED:
-            return [0, 255, 255]
+            return [255, 182, 193]
         if game_color_mode == self.GAME_COLOR_MODE_GREEN:
-            return [255, 0, 255]
+            return [193, 255, 182]
         if game_color_mode == self.GAME_COLOR_MODE_BLUE:
-            return [255, 255, 0]
+            return [0, 220, 255]
         if game_color_mode == self.GAME_COLOR_MODE_BW:
-            return [0, 255, 0]
+            return [150, 150, 150]
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
-            x = [y / 2 for y in self.__make_color_gradient(color_change_freq, num_ticks)]
+            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset2)
 
     def get_help_string(self):
         game_color_mode_help_str = 'One of '
@@ -69,7 +70,7 @@ class GameColorHelper:
         self, color_change_freq, num_ticks,
         freq1 = None, freq2 = None, freq3 = None,
         phase1 = 0, phase2 = 2 * math.pi / 3, phase3 = 4 * math.pi / 3,
-        center = 127.5, amplitude = 127.5
+        center = 127.5, amplitude = 127.5, offset = 0
     ):
         if freq1 is None:
             freq1 = color_change_freq
@@ -78,7 +79,7 @@ class GameColorHelper:
         if freq3 is None:
             freq3 = color_change_freq
 
-        r = math.sin(num_ticks * freq1 + phase1 + self.__color_gradient_offset) * amplitude + center
-        g = math.sin(num_ticks * freq2 + phase2 + self.__color_gradient_offset) * amplitude + center
-        b = math.sin(num_ticks * freq3 + phase3 + self.__color_gradient_offset) * amplitude + center
+        r = math.sin(num_ticks * freq1 + phase1 + offset) * amplitude + center
+        g = math.sin(num_ticks * freq2 + phase2 + offset) * amplitude + center
+        b = math.sin(num_ticks * freq3 + phase3 + offset) * amplitude + center
         return [r, g, b]

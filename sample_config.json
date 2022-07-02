@@ -80,6 +80,11 @@
         // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
         "game_color_mode": "random",
 
+        // Optional, string, default: "random". The variant for the game.
+        // Valid values: "normal", "immigration".
+        // See: https://cs.stanford.edu/people/eroberts/courses/soco/projects/2008-09/modeling-natural-systems/gameOfLife2.html
+        "variant": "random",
+
         // Optional, boolean, default: false. Whether to do fade transitions between frames of the game.
         "fade": false,
 
