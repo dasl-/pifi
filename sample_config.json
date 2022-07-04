@@ -61,6 +61,14 @@
         "should_predownload_video": false,
     },
 
+    // Configuration specific to the screensavers that play while nothing is in the playlist queue.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "screensavers": {
+
+        // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
+        "screensavers": ["game_of_life", "cyclic_automaton"]
+    },
+
     // Configuration specific to the game of life.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "game_of_life": {
@@ -90,6 +98,21 @@
 
         // Optional, boolean, default: false. Whether to invert the colors.
         "invert": false,
+    },
+
+    // Configuration specific to cyclic automaton: https://en.wikipedia.org/wiki/Cyclic_cellular_automaton
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "cyclic_automaton": {
+
+        // Optional, float, default: 0.07. How long to sleep between ticks, in seconds,
+        "tick_sleep": 0.07,
+
+        // Optional, integer, default: 16. How many frames are analyzed to determine if we are stuck in a loop
+        // and if we should to end the game.
+        "game_over_detection_lookback": 16,
+
+        // Optional, boolean, default: false. Whether to do fade transitions between frames of the game.
+        "fade": false,
     },
 
     // Configuration specific to playing snake.

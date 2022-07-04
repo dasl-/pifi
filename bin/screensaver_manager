@@ -9,12 +9,12 @@ sys.path.append(root_dir)
 
 import argparse
 from pifi.config import Config
-from pifi.games.cellularautomata.gameoflife import GameOfLife
 from pifi.logger import Logger
+from pifi.screensavermanager import ScreensaverManager
 
 def parseArgs():
     parser = argparse.ArgumentParser(
-        description=("Conway's game of life."),
+        description=("Plays screensavers that play while nothing is in the playlist queue."),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
@@ -28,4 +28,4 @@ if args.log_uuid:
     Logger.set_uuid(args.log_uuid)
 Config.load_config_if_not_loaded()
 
-GameOfLife().play()
+ScreensaverManager().run()

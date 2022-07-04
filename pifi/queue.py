@@ -23,19 +23,19 @@ class Queue:
     def __init__(self):
         # Note: do not create an instance variable for LedFramePlayer in the Queue because the
         # rpi-rgb-led-matrix library doesn't play well with multiple instances (the screensaver,
-        # videoplaback, etc processes that the Queue launches will have their own instance of
+        # video playback, etc processes that the Queue launches will have their own instance of
         # the LedFramePlayer as well).
         #
         # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
 
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
-        self.__is_game_of_life_enabled = None
+        self.__is_screensaver_enabled = None
         self.__last_screen_clear_while_screensaver_disabled_time = 0
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__unix_socket = UnixSocketHelper().create_server_unix_socket(self.UNIX_SOCKET_PATH)
 
-        # True if game of life screensaver, a video, or a game (like snake) is playing
+        # True if a screensaver, a video, or a game (like snake) is playing
         self.__is_anything_playing = False
         self.__playback_proc = None
         self.__playlist_item = None
@@ -106,15 +106,15 @@ class Queue:
             Logger.set_uuid('')
 
     def __maybe_play_screensaver(self):
-        if not self.__is_game_of_life_enabled:
+        if not self.__is_screensaver_enabled:
             return
         log_uuid = 'SCREENSAVER__' + Logger.make_uuid()
         Logger.set_uuid(log_uuid)
-        self.__logger.info("Starting game of life screensaver...")
-        cmd = f"{DirectoryUtils().root_dir}/bin/game_of_life --loop"
+        self.__logger.info("Starting screensaver...")
+        cmd = f"{DirectoryUtils().root_dir}/bin/screensaver_manager"
         self.__start_playback(cmd, log_uuid, False)
 
-    # Play something, whether it's a screensaver (game of life), a video, or a game (snake)
+    # Play something, whether it's a screensaver, a video, or a game (snake)
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
             LedFramePlayer().show_loading_screen()
@@ -206,16 +206,16 @@ class Queue:
         return False
 
     def __maybe_respond_to_settings_changes(self):
-        old_is_enabled = self.__is_game_of_life_enabled
+        old_is_enabled = self.__is_screensaver_enabled
         setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
         if (setting is None or setting['value'] == '1'):
-            self.__is_game_of_life_enabled = True
+            self.__is_screensaver_enabled = True
         else:
-            self.__is_game_of_life_enabled = False
+            self.__is_screensaver_enabled = False
 
-        if old_is_enabled is not None and old_is_enabled != self.__is_game_of_life_enabled:
+        if old_is_enabled is not None and old_is_enabled != self.__is_screensaver_enabled:
             should_play_sound = not self.__is_anything_playing or self.__is_screensaver_playing()
-            if self.__is_game_of_life_enabled:
+            if self.__is_screensaver_enabled:
                 if should_play_sound:
                     simpleaudio.WaveObject.from_wave_file(
                         DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
@@ -236,7 +236,7 @@ class Queue:
                 self.__clear_screen()
                 self.__last_screen_clear_while_screensaver_disabled_time = now
 
-        return self.__is_game_of_life_enabled
+        return self.__is_screensaver_enabled
 
     def __clear_screen(self):
         LedFramePlayer(clear_screen = True)
