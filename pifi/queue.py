@@ -21,13 +21,6 @@ class Queue:
     UNIX_SOCKET_PATH = '/tmp/queue_unix_socket'
 
     def __init__(self):
-        # Note: do not create an instance variable for LedFramePlayer in the Queue because the
-        # rpi-rgb-led-matrix library doesn't play well with multiple instances (the screensaver,
-        # video playback, etc processes that the Queue launches will have their own instance of
-        # the LedFramePlayer as well).
-        #
-        # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
-
         self.__playlist = Playlist()
         self.__settings_db = SettingsDb()
         self.__is_screensaver_enabled = None
@@ -39,6 +32,13 @@ class Queue:
         self.__is_anything_playing = False
         self.__playback_proc = None
         self.__playlist_item = None
+
+        self.__led_frame_player = LedFramePlayer()
+        if not self.__led_frame_player.can_multiple_driver_instances_coexist():
+            # The queue should not create a long lived instance of the LED driver because the various
+            # processes that are launched by the Queue (video playback, screensaver, etc) will
+            # simultaneously have their own instances of the LED driver.
+            self.__led_frame_player = None
 
         # house keeping
         self.__clear_screen()
@@ -117,7 +117,10 @@ class Queue:
     # Play something, whether it's a screensaver, a video, or a game (snake)
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
-            LedFramePlayer().show_loading_screen()
+            if self.__led_frame_player is None:
+                LedFramePlayer().show_loading_screen()
+            else:
+                self.__led_frame_player.show_loading_screen()
 
         cmd += f' --log-uuid {shlex.quote(log_uuid)}'
         self.__logger.debug(f"Starting playback with cmd: {cmd}.")
@@ -239,4 +242,7 @@ class Queue:
         return self.__is_screensaver_enabled
 
     def __clear_screen(self):
-        LedFramePlayer(clear_screen = True)
+        if self.__led_frame_player is None:
+            LedFramePlayer(clear_screen = True)
+        else:
+            self.__led_frame_player.clear_screen()

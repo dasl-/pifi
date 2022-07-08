@@ -91,6 +91,9 @@ class LedFramePlayer:
         loading_screen_path = DirectoryUtils().root_dir + '/' + filename
         self.play_frame(np.load(loading_screen_path))
 
+    def can_multiple_driver_instances_coexist(self):
+        return self.__driver.can_multiple_driver_instances_coexist()
+
     # This method transforms an input frame, which may be either a 2-dimensional
     # byte array if VideoColorMode.is_color_mode_rgb() is false, or 3d
     # otherwise, into an output frame by applying the user-provided transforms
