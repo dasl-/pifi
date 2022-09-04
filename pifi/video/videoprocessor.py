@@ -305,7 +305,7 @@ class VideoProcessor:
     # See: https://github.com/dasl-/piwall2/blob/53f5e0acf1894b71d180cee12ae49ddd3736d96a/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc#solution-muxing-a-streaming-download
     def __get_streaming_video_download_cmd(self):
         # --retries infinite: in case downloading has transient errors
-        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} {3} | {4}"
+        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} | {3}"
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
@@ -338,16 +338,21 @@ class VideoProcessor:
         # have combined video + audio formats. Thus, 'worstvideo' would fail for them.
         video_format = (f'worstvideo[vcodec^=avc1][height>={Config.get_or_throw("leds.display_height")}]/' +
             f'worst[vcodec^=avc1][height>={Config.get_or_throw("leds.display_height")}]')
+
+        # See: https://gist.github.com/dasl-/967bf1e2f7d53609b2d5b5418ce76851
+        video_format_sort = "--format-sort 'quality, res, +fps'"
+
+        video_extra_opts = f' {log_opts} {use_extractors} {video_format_sort} '
         youtube_dl_video_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__url),
             shlex.quote(video_format),
-            log_opts,
-            use_extractors,
+            video_extra_opts,
             self.__get_mbuffer_cmd(video_buffer_size)
         )
 
         # Also use a 50MB buffer, because in some cases, the audio stream we download may also contain video.
         audio_buffer_size = 1024 * 1024 * 50
+        audio_extra_opts = f' {log_opts} {use_extractors} '
         youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
             shlex.quote(self.__url),
             # bestaudio: try to select the best audio-only format
@@ -356,8 +361,7 @@ class VideoProcessor:
             #   Some videos (live videos) only have combined video + audio formats. Thus 'bestaudio' would
             #   fail for them.
             shlex.quote('bestaudio/bestaudio*'),
-            log_opts,
-            use_extractors,
+            audio_extra_opts,
             self.__get_mbuffer_cmd(audio_buffer_size)
         )
 
