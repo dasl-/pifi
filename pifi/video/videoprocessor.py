@@ -36,7 +36,11 @@ class VideoProcessor:
     #   This can be useful because the Queue process starts the loading screen. If we cleared
     #   it in the VideoProcessor before showing the loading screen again, there'd be a brief
     #   flicker in the loading screen image.
-    def __init__(self, url, clear_screen):
+    #
+    # yt_dlp_extractors: string. Extractor names for yt-dlp to use, separated by commas.
+    #   Whitelisting extractors to use can speed up video download initialization time.
+    #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
+    def __init__(self, url, clear_screen, yt_dlp_extractors):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
         self.__led_frame_player = LedFramePlayer(
@@ -48,6 +52,7 @@ class VideoProcessor:
 
         # True if the video already exists (see config value: "video.should_save_video")
         self.__is_video_already_downloaded = False
+        self.__yt_dlp_extractors = yt_dlp_extractors
         self.__do_housekeeping(clear_screen)
         self.__register_signal_handlers()
 
@@ -300,13 +305,17 @@ class VideoProcessor:
     # See: https://github.com/dasl-/piwall2/blob/53f5e0acf1894b71d180cee12ae49ddd3736d96a/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc#solution-muxing-a-streaming-download
     def __get_streaming_video_download_cmd(self):
         # --retries infinite: in case downloading has transient errors
-        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} | {3}"
+        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} {3} | {4}"
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
             log_opts = '' # show video download progress
         if not sys.stderr.isatty():
             log_opts += ' --newline'
+
+        use_extractors = ''
+        if self.__yt_dlp_extractors is not None:
+            use_extractors = f'--use-extractors {shlex.quote(self.__yt_dlp_extractors)}'
 
         # 50 MB. Based on one video, 1080p avc1 video consumes about 0.36 MB/s. So this should
         # be enough buffer for ~139s for a 1080p video, which is a lot higher resolution than we
@@ -333,6 +342,7 @@ class VideoProcessor:
             shlex.quote(self.__url),
             shlex.quote(video_format),
             log_opts,
+            use_extractors,
             self.__get_mbuffer_cmd(video_buffer_size)
         )
 
@@ -347,6 +357,7 @@ class VideoProcessor:
             #   fail for them.
             shlex.quote('bestaudio/bestaudio*'),
             log_opts,
+            use_extractors,
             self.__get_mbuffer_cmd(audio_buffer_size)
         )
 

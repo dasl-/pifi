@@ -33,6 +33,10 @@ def parseArgs():
         default=None, help='Save the video to avoid downloading it in the future.')
     parser.add_argument('--no-clear-screen', dest='dont_clear_screen', action='store_true',
         default=False, help="Don't clear the screen when initializing the video. For internal use only.")
+    parser.add_argument('--use-extractors', dest='yt_dlp_extractors', action='store', default=None,
+        help='Extractor names for yt-dlp to use, separated by commas. Whitelisting extractors to use can ' +
+        'speed up video download initialization time. E.g. \'--use-extractors youtube\'. ' +
+        'Refer to yt-dlp documentation for more details on the same named feature.')
 
     args = parser.parse_args()
     return args
@@ -55,4 +59,4 @@ if args.should_save_video is not None:
     Config.set('video.should_save_video', args.should_save_video)
 
 clear_screen = not args.dont_clear_screen
-VideoProcessor(args.url, clear_screen).process_and_play()
+VideoProcessor(args.url, clear_screen, args.yt_dlp_extractors).process_and_play()

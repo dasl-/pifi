@@ -73,7 +73,7 @@ class Queue:
                 Logger.set_uuid('')
                 return
             cmd = (f"{DirectoryUtils().root_dir}/bin/play_video --url {shlex.quote(playlist_item['url'])} " +
-                "--no-clear-screen")
+                "--no-clear-screen --use-extractors youtube")
         elif playlist_item["type"] == Playlist.TYPE_GAME:
             if playlist_item["title"] == Snake.GAME_TITLE:
                 try:
