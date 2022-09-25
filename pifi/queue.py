@@ -118,7 +118,9 @@ class Queue:
     def __start_playback(self, cmd, log_uuid, show_loading_screen, pass_fds = ()):
         if show_loading_screen:
             if self.__led_frame_player is None:
-                LedFramePlayer().show_loading_screen()
+                # We can't show the loading screen as requested, due to issues with dual video player instances
+                # existing with certain LED drivers. See DriverBase.can_multiple_driver_instances_coexist.
+                pass
             else:
                 self.__led_frame_player.show_loading_screen()
 
