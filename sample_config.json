@@ -61,6 +61,31 @@
         "should_predownload_video": false,
     },
 
+    "sound": {
+        // Optional integer, default: 0. The card number to use for the `amixer` command. This can be useful if
+        // you use an external soundcard. Check the output of `aplay --list-devices` to determine which card
+        // number to use. See: https://gist.github.com/dasl-/e400409f4f3afdcaf2aef3f40af8528f
+        "card": 0,
+
+        // Optional integer, default: 1. The numid to use for the `amixer` command. This can be useful if
+        // you use an external soundcard. Check the output of `amixer -c <card_number> controls` to determine
+        // which numid to use. See: https://gist.github.com/dasl-/e400409f4f3afdcaf2aef3f40af8528f
+        "numid": 1,
+
+        // Optional, ?boolean, default: null. Whether volume should be adjusted logarithmically to match
+        // perceptual loudness. If the volume slider increments don't seem natural, try enabling this. Null
+        // means try to autodetect (i.e. set to `true` for raspberry pi internal sound card, and set to
+        // `false` for external sound cards).
+        "adjust_volume_logarithmically": null,
+
+        // Optional, ?integer, default: null. Volume level at which to limit raspberry pi. This can be useful
+        // in conjunction with the raspberry pi headphone jack, because the internal soundcard allows
+        // incrementing the volume to a level which results in clipping. Null means try to autodetect (i.e.
+        // set to `0` for raspberry pi internal sound card, and set to the global max vol val for external
+        // sound cards).
+        "limited_max_vol_val": null,
+    },
+
     // Configuration specific to the screensavers that play while nothing is in the playlist queue.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "screensavers": {
