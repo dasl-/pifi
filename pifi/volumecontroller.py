@@ -10,6 +10,58 @@ class VolumeController:
     __GLOBAL_MIN_VOL_VAL = None
     __GLOBAL_MAX_VOL_VAL = None
 
+    # gets a perceptual loudness %
+    # returns a float in the range [0, 100]
+    def get_vol_pct(self):
+        vol_val = self.get_vol_val()
+        if vol_val <= VolumeController.__get_global_min_vol_val():
+            return 0
+
+        if VolumeController.__should_adjust_volume_logarithmically():
+            # Assume that the volume value is a value in millibels if we are adjusting volume logarithmically.
+            # This might be a poor assumption if it's only true on the RPI internal soundcard...
+            mb_level = vol_val
+
+            # convert from decibel attenuation amount to perceptual loudness %
+            # see: http://www.sengpielaudio.com/calculator-levelchange.htm
+            db_level = mb_level / 100
+            vol_pct = 100 * math.pow(2, (db_level / 10))
+        else:
+            vol_pct = 100 * vol_val / VolumeController.__get_limited_max_vol_val()
+
+        vol_pct = max(0, vol_pct)
+        vol_pct = min(100, vol_pct)
+        return vol_pct
+
+    # takes a perceptual loudness %.
+    # vol_pct should be a float in the range [0, 100]
+    def set_vol_pct(self, vol_pct):
+        vol_pct = max(0, vol_pct)
+        vol_pct = min(100, vol_pct)
+
+        if VolumeController.__should_adjust_volume_logarithmically():
+            # Assume that the volume value is a value in millibels if we are adjusting volume logarithmically.
+            # This might be a poor assumption if it's only true on the RPI internal soundcard...
+            mb_level = VolumeController.pct_to_millibels(vol_pct)
+            vol_val = mb_level
+        else:
+            vol_val = vol_pct * VolumeController.__get_limited_max_vol_val() / 100
+
+        vol_val = round(vol_val)
+        subprocess.check_output(
+            ('amixer', '-c', str(Config.get('sound.card', 0)), 'cset', f'numid={Config.get("sound.numid", 1)}', '--', str(vol_val))
+        )
+
+    # increments volume percentage by the specified increment. The increment should be a float in the range [0, 100]
+    # Returns the new volume percent, which will be a float in the range [0, 100]
+    def increment_vol_pct(self, inc = 1):
+        old_vol_pct = self.get_vol_pct()
+        new_vol_pct = old_vol_pct + inc
+        new_vol_pct = max(0, new_vol_pct)
+        new_vol_pct = min(100, new_vol_pct)
+        self.set_vol_pct(new_vol_pct)
+        return new_vol_pct
+
     @staticmethod
     def __get_global_min_vol_val():
         if VolumeController.__GLOBAL_MIN_VOL_VAL is not None:
@@ -71,58 +123,6 @@ class VolumeController:
     @staticmethod
     def __is_internal_soundcard_being_used():
         return Config.get('sound.card') == 0 and Config.get('sound.numid') == 1
-
-    # gets a perceptual loudness %
-    # returns a float in the range [0, 100]
-    def get_vol_pct(self):
-        vol_val = self.get_vol_val()
-        if vol_val <= VolumeController.__get_global_min_vol_val():
-            return 0
-
-        if VolumeController.__should_adjust_volume_logarithmically():
-            # Assume that the volume value is a value in millibels if we are adjusting volume logarithmically.
-            # This might be a poor assumption if it's only true on the RPI internal soundcard...
-            mb_level = vol_val
-
-            # convert from decibel attenuation amount to perceptual loudness %
-            # see: http://www.sengpielaudio.com/calculator-levelchange.htm
-            db_level = mb_level / 100
-            vol_pct = 100 * math.pow(2, (db_level / 10))
-        else:
-            vol_pct = 100 * vol_val / VolumeController.__get_limited_max_vol_val()
-
-        vol_pct = max(0, vol_pct)
-        vol_pct = min(100, vol_pct)
-        return vol_pct
-
-    # takes a perceptual loudness %.
-    # vol_pct should be a float in the range [0, 100]
-    def set_vol_pct(self, vol_pct):
-        vol_pct = max(0, vol_pct)
-        vol_pct = min(100, vol_pct)
-
-        if VolumeController.__should_adjust_volume_logarithmically():
-            # Assume that the volume value is a value in millibels if we are adjusting volume logarithmically.
-            # This might be a poor assumption if it's only true on the RPI internal soundcard...
-            mb_level = VolumeController.pct_to_millibels(vol_pct)
-            vol_val = mb_level
-        else:
-            vol_val = vol_pct * VolumeController.__get_limited_max_vol_val() / 100
-
-        vol_val = round(vol_val)
-        subprocess.check_output(
-            ('amixer', '-c', str(Config.get('sound.card', 0)), 'cset', f'numid={Config.get("sound.numid", 1)}', '--', str(vol_val))
-        )
-
-    # increments volume percentage by the specified increment. The increment should be a float in the range [0, 100]
-    # Returns the new volume percent, which will be a float in the range [0, 100]
-    def increment_vol_pct(self, inc = 1):
-        old_vol_pct = self.get_vol_pct()
-        new_vol_pct = old_vol_pct + inc
-        new_vol_pct = max(0, new_vol_pct)
-        new_vol_pct = min(100, new_vol_pct)
-        self.set_vol_pct(new_vol_pct)
-        return new_vol_pct
 
     # Return volume value. Returns an integer in the range
     # [VolumeController.__get_global_min_vol_val(), VolumeController.__get_limited_max_vol_val()]
