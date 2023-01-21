@@ -51,6 +51,7 @@ installLedDriver(){
     case $led_driver in
         apa102)     installLedDriverApa102 ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;
+        ws2812b)    echo 'ws2812b no-op ... TODO' ;;
         *)          die "Unsupported LED driver: $led_driver" ;;
     esac
 }

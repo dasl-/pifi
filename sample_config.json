@@ -20,7 +20,7 @@
     // Required. At least one key within this stanza is required.
     "leds": {
 
-        // Required, string. Controls which LED driver is used. Valid values: apa102, rgbmatrix.
+        // Required, string. Controls which LED driver is used. Valid values: apa102, rgbmatrix, ws2812b.
         "driver": "",
 
         // Required, integer. The width of your LED matrix, in pixels.
@@ -29,7 +29,7 @@
         // Required, integer. The height of your LED matrix, in pixels.
         "display_height": 0,
 
-        // Optional, integer, default: 3. Global brightness of LEDs. Only applicable for apa102 driver.
+        // Optional, integer, default: 3. Global brightness of LEDs. Only applicable for apa102 or ws2812b driver.
         "brightness": 3,
 
         // Optional, boolean, default: false. Whether to swap left to right when outputting to the LED matrix.
