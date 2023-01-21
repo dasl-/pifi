@@ -27,7 +27,7 @@ class DriverWs2812b(DriverBase):
             num=self.__display_width * self.__display_height,
             pin=10, # SPI pin https://pinout.xyz/pinout/pin19_gpio10
             brightness=Config.get('leds.brightness', 3), # 0 - 255 
-            strip_type=rpi_ws281x.WS2811_STRIP_RGB,
+            strip_type=rpi_ws281x.WS2811_STRIP_GRB,
             gamma=None
         )
 
@@ -51,17 +51,19 @@ class DriverWs2812b(DriverBase):
         #
         # Starting at row 1, with stride 2, set each column to itself with
         # stride -1, which reverses the column.
-        # frame[0::2, :, :] = frame[0::2, ::-1, :]
+        frame[0::2, :, :] = frame[0::2, ::-1, :]
 
         # Additionally, each RGB tuple needs to be re-ordered to match the order
         # that's expected by the LED strip, which is defined in
         # self.__color_order.
         # frame = frame[:, :, self.__color_order]
 
+        frame = frame.tolist()
         for x in range(self.__display_width):
             for y in range(self.__display_height):
-                r, g, b = frame[y, x]
-                self.__pixels.setPixelColorRGB(y * x, r, g, b)
+                r, g, b = frame[y][x]
+                pixel_index = y * self.__display_width + x
+                self.__pixels.setPixelColorRGB(pixel_index, r, g, b)
 
         # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
