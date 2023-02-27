@@ -91,10 +91,9 @@ class VolumeController:
             # These values are in millibels.
             VolumeController.__GLOBAL_MIN_VOL_VAL = -10239
             VolumeController.__GLOBAL_MAX_VOL_VAL = 400
-            return
-
-        VolumeController.__GLOBAL_MIN_VOL_VAL = int(m.group(1))
-        VolumeController.__GLOBAL_MAX_VOL_VAL = int(m.group(2))
+        else:
+            VolumeController.__GLOBAL_MIN_VOL_VAL = int(m.group(1))
+            VolumeController.__GLOBAL_MAX_VOL_VAL = int(m.group(2))
 
     @staticmethod
     def __should_adjust_volume_logarithmically():
@@ -122,7 +121,7 @@ class VolumeController:
     # Attempt to autodetect if the default soundcard is being used, based on config.json values.
     @staticmethod
     def __is_internal_soundcard_being_used():
-        return Config.get('sound.card') == 0 and Config.get('sound.numid') == 1
+        return Config.get('sound.card', 0) == 0 and Config.get('sound.numid', 1) == 1
 
     # Return volume value. Returns an integer in the range
     # [VolumeController.__get_global_min_vol_val(), VolumeController.__get_limited_max_vol_val()]
