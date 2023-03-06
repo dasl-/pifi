@@ -32,6 +32,10 @@ class VideoProcessor:
 
     __FRAMES_BUFFER_LENGTH = 1024
 
+    # Workaround for https://github.com/yt-dlp/yt-dlp/issues/6447
+    __VIDEO_TMP_DIR = '/tmp/pifi_video_tmp'
+    __AUDIO_TMP_DIR = '/tmp/pifi_audio_tmp'
+
     # clear_screen: boolean. If False, then we won't clear the screen during the init phase.
     #   This can be useful because the Queue process starts the loading screen. If we cleared
     #   it in the VideoProcessor before showing the loading screen again, there'd be a brief
@@ -305,7 +309,7 @@ class VideoProcessor:
     # See: https://github.com/dasl-/piwall2/blob/53f5e0acf1894b71d180cee12ae49ddd3736d96a/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc#solution-muxing-a-streaming-download
     def __get_streaming_video_download_cmd(self):
         # --retries infinite: in case downloading has transient errors
-        youtube_dl_cmd_template = "yt-dlp {0} --retries infinite --format {1} --output - {2} | {3}"
+        youtube_dl_cmd_template = "mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} | {4}"
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
@@ -344,6 +348,7 @@ class VideoProcessor:
 
         video_extra_opts = f' {log_opts} {use_extractors} {video_format_sort} '
         youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__VIDEO_TMP_DIR),
             shlex.quote(self.__url),
             shlex.quote(video_format),
             video_extra_opts,
@@ -354,6 +359,7 @@ class VideoProcessor:
         audio_buffer_size = 1024 * 1024 * 50
         audio_extra_opts = f' {log_opts} {use_extractors} '
         youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+            shlex.quote(self.__AUDIO_TMP_DIR),
             shlex.quote(self.__url),
             # bestaudio: try to select the best audio-only format
             # bestaudio*: this is the fallback option -- select the best quality format that contains audio.
@@ -477,10 +483,11 @@ class VideoProcessor:
                 # might raise: `ProcessLookupError: [Errno 3] No such process`
                 pass
 
-        self.__logger.info(f"Deleting fifos, incomplete video downloads, and {self.__FPS_READY_FILE} ...")
+        self.__logger.info(f"Deleting fifos, temp dirs, incomplete video downloads, and {self.__FPS_READY_FILE} ...")
         fifos_path_glob = shlex.quote(tempfile.gettempdir() + "/" + self.__FIFO_PREFIX) + '*'
         incomplete_video_downloads_path_glob = f'*{shlex.quote(self.__TEMP_VIDEO_DOWNLOAD_SUFFIX)}'
-        cleanup_files_cmd = f'sudo rm -rf {fifos_path_glob} {incomplete_video_downloads_path_glob} {self.__FPS_READY_FILE}'
+        cleanup_files_cmd = (f'sudo rm -rf {fifos_path_glob} {incomplete_video_downloads_path_glob} ' +
+            f'{self.__FPS_READY_FILE} {self.__VIDEO_TMP_DIR} {self.__AUDIO_TMP_DIR}')
         subprocess.check_output(cleanup_files_cmd, shell = True, executable = '/usr/bin/bash')
 
     def __register_signal_handlers(self):
