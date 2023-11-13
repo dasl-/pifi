@@ -90,8 +90,8 @@
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "screensavers": {
 
-        // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
-        "screensavers": ["game_of_life", "cyclic_automaton"]
+        // Optional, array, default: ["game_of_life", "cyclic_automaton", "pibyt"]. The screensavers to cycle through.
+        "screensavers": ["game_of_life", "cyclic_automaton", "pibyt"]
     },
 
     // Configuration specific to the game of life.
@@ -148,5 +148,19 @@
         // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
         "game_color_mode": "random",
     },
-
+    // Configuration specific to pibyt screensaver.
+    // Optional.
+    "pibyt": {
+	// The amount of time to spend on each pibyt app.
+    	"duration": 15,
+	// A list of the pibyt apps to display. Corresponds to the name of the directory
+	// that holds a pixlet app. Each app can have configuration parameters, which are
+	// specific to the app - these are passed from the object within.
+    	"apps": {
+    		"nyancat": {},
+    		"dateprogress": {},
+    		"digitalrain": {},
+    		"whosthatpokemon": {"speed": 15}
+    	}
+    }
 }

@@ -3,6 +3,7 @@ import random
 from pifi.config import Config
 from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.games.cellularautomata.gameoflife import GameOfLife
+from pifi.pibyt import Pibyt
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 
@@ -15,12 +16,14 @@ class ScreensaverManager:
         # See: https://github.com/dasl-/pifi/commit/fd48ba5b41bba6c6aa0034d743e40de153482f21
         self.__led_frame_player = LedFramePlayer()
 
-        screensaver_types = Config.get("screensavers.screensavers", ["game_of_life", "cyclic_automaton"])
+        screensaver_types = Config.get("screensavers.screensavers", ["game_of_life", "cyclic_automaton", "pibyt"])
         self.__screensavers = []
         if "game_of_life" in screensaver_types:
             self.__screensavers.append(GameOfLife(led_frame_player = self.__led_frame_player))
         if "cyclic_automaton" in screensaver_types:
             self.__screensavers.append(CyclicAutomaton(led_frame_player = self.__led_frame_player))
+        if "pibyt" in screensaver_types:
+            self.__screensavers.append(Pibyt("/home/pi/community/apps", led_frame_player = self.__led_frame_player))
 
     def run(self):
         while True:
