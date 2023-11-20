@@ -30,6 +30,8 @@
         "display_height": 0,
 
         // Optional, integer, default: 3. Global brightness of LEDs. Only applicable for apa102 or ws2812b driver.
+        // apa102 range: [0, 31]
+        // ws2812b range: [0, 255]
         "brightness": 3,
 
         // Optional, boolean, default: false. Whether to swap left to right when outputting to the LED matrix.

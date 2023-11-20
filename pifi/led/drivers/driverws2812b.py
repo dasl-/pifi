@@ -36,34 +36,15 @@ class DriverWs2812b(DriverBase):
         if clear_screen:
             self.clear_screen()
 
-    # CAUTION:
-    # This method has been heavily optimized. The program spends the bulk of its execution time in this loop.
-    # If making any changes, profile your code first to see if there are regressions, i.e.:
-    #
-    #   python3 -m cProfile -s cumtime video --url https://www.youtube.com/watch?v=AxuvUAjHYWQ --color-mode color
-    #
-    # Here are some graphs about the performance, generated like so:
-    # https://gist.github.com/dasl-/d552c0abb38fca823e97fb3b49898f2d
-    # https://docs.google.com/spreadsheets/d/1psa070FdMv2w8RPqzFuRVg1eqzTiLwlekClMsEG3qwE/edit#gid=716887181
     def display_frame(self, frame):
-        # Each row is zig-zagged, so every other row needs to be flipped
-        # horizontally.
-        #
-        # Starting at row 1, with stride 2, set each column to itself with
-        # stride -1, which reverses the column.
-        # frame[0::2, :, :] = frame[0::2, ::-1, :]
-
-        # Additionally, each RGB tuple needs to be re-ordered to match the order
-        # that's expected by the LED strip, which is defined in
-        # self.__color_order.
-        # frame = frame[:, :, self.__color_order]
-
+        # TODO: vectorize this shit
         frame = frame.tolist()
         for x in range(self.__display_width):
             for y in range(self.__display_height):
                 r, g, b = frame[y][x]
-                # pixel_index = y * self.__display_width + x
                 pixel_index = x * self.__display_height + y
+                # TODO: this could also maybe be vectorized? e.g. use setPixelColor instead of setPixelColorRGB
+                # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/29a99c00ac3eefebf01480d7cb3e6c355f40ce0c/library/rpi_ws281x/rpi_ws281x.py#L140-L149
                 self.__pixels.setPixelColorRGB(pixel_index, r, g, b)
 
         # We're done! Tell the underlying driver to send data to the LEDs.

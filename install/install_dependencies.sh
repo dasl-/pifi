@@ -3,6 +3,7 @@
 set -euo pipefail -o errtrace
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+CONFIG='/boot/config.txt'
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 
 main(){
@@ -51,7 +52,7 @@ installLedDriver(){
     case $led_driver in
         apa102)     installLedDriverApa102 ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;
-        ws2812b)    echo 'ws2812b no-op ... TODO' ;;
+        ws2812b)    installLedDriverWs2812b ;;
         *)          die "Unsupported LED driver: $led_driver" ;;
     esac
 }
@@ -82,6 +83,46 @@ installLedDriverRgbMatrix(){
     popd
 
     sudo python3 -m pip install --upgrade Pillow
+}
+
+installLedDriverWs2812b(){
+    info "Installing LED driver ws2812b..."
+    sudo python3 -m pip install --upgrade rpi_ws281x
+
+    # Set SPI buffer size.
+    # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi
+    local spi_bufsiz='spidev.bufsiz=32768'
+    local cmdline_path='/boot/cmdline.txt'
+    if ! grep -q $spi_bufsiz $cmdline_path ; then
+        info "Updating spidev.bufsiz..."
+        sudo sed -i '1 s/$/ spidev.bufsiz=32768/' $cmdline_path
+        touch $RESTART_REQUIRED_FILE
+    else
+        info "spidev.bufsiz is already large enough..."
+    fi
+
+    # Set core_freq / core_freq_min
+    # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi
+    # https://www.raspberrypi.com/documentation/computers/config_txt.html#overclocking
+    if grep -q 'Raspberry Pi 4 ' /proc/device-tree/model ; then
+        local rpi4_core_freq_min='core_freq_min=500'
+        if [ "$(vcgencmd get_config core_freq_min)" = $rpi4_core_freq_min ] ; then
+            info "Detected Raspberry Pi 4 - core_freq_min is already set appropriately."
+        else
+            info "Detected Raspberry Pi 4 - setting core_freq_min..."
+            echo -e "\n[pi4]\n$rpi4_core_freq_min\n\n[all]\n" | sudo tee -a $CONFIG >/dev/null
+            touch $RESTART_REQUIRED_FILE
+        fi
+    elif grep -q 'Raspberry Pi 3 ' /proc/device-tree/model ; then
+        local rpi3_core_freq='core_freq=250'
+        if [ "$(vcgencmd get_config core_freq)" = $rpi3_core_freq ] ; then
+            info "Detected Raspberry Pi 3 - core_freq is already set appropriately."
+        else
+            info "Detected Raspberry Pi 3 - setting core_freq..."
+            echo -e "\n[pi3]\n$rpi3_core_freq\n\n[all]\n" | sudo tee -a $CONFIG >/dev/null
+            touch $RESTART_REQUIRED_FILE
+        fi
+    fi
 }
 
 clearYoutubeDlCache(){
