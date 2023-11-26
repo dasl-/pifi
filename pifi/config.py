@@ -50,7 +50,7 @@ class Config:
             if 'log_level' in Config.__config and should_set_log_level:
                 Logger.set_level(Config.__config['log_level'])
 
-            Logger.debug(f"Using merged config: {Config.__config}")
+            Config.__logger.debug(f"Using merged config: {Config.__config}")
 
         Config.__is_loaded = True
 
