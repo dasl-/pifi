@@ -121,6 +121,6 @@ class Config:
     def __merge_dicts(d1, d2):
         for k, v in d2.items():
             if (k in d1 and isinstance(d1[k], dict) and isinstance(d2[k], dict)):
-                Config.__dict_merge(d1[k], d2[k])
+                Config.__merge_dicts(d1[k], d2[k])
             else:
                 d1[k] = d2[k]
