@@ -26,7 +26,7 @@ class DriverWs2812b(DriverBase):
         self.__pixels = rpi_ws281x.PixelStrip(
             num=self.__display_width * self.__display_height,
             pin=10, # SPI pin https://pinout.xyz/pinout/pin19_gpio10
-            brightness=Config.get('leds.brightness', 3), # 0 - 255 
+            brightness=Config.get('leds.brightness'), # 0 - 255
             strip_type=rpi_ws281x.WS2811_STRIP_GRB,
             gamma=None
         )

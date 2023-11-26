@@ -21,19 +21,19 @@ class GameOfLife(CellularAutomaton):
         self.__game_color_helper = GameColorHelper()
 
     def _get_tick_sleep_seconds(self):
-        return Config.get('game_of_life.tick_sleep', self._DEFAULT_TICK_SLEEP_SECONDS)
+        return Config.get('game_of_life.tick_sleep')
 
     def _get_game_over_detection_lookback_amount(self):
-        return Config.get('game_of_life.game_over_detection_lookback', self._DEFAULT_GAME_OVER_LOOKBACK_DETECTION_AMOUNT)
+        return Config.get('game_of_life.game_over_detection_lookback')
 
     def _should_fade_to_frame(self):
-        return Config.get('game_of_life.fade', self._DEFAULT_SHOULD_FADE_TO_FRAME)
+        return Config.get('game_of_life.fade')
 
     def _reset_hook(self):
         self.__game_color_helper.reset()
         self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('game_of_life.game_color_mode'))
 
-        variant = Config.get('game_of_life.variant', 'random')
+        variant = Config.get('game_of_life.variant')
         if variant in self.VARIANTS:
             self.__variant = variant
         else:
@@ -45,7 +45,7 @@ class GameOfLife(CellularAutomaton):
         # neighborhood calculation and avoid edge checks.
         shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
         self._board = np.zeros(shape, np.uint8)
-        probability = Config.get('game_of_life.seed_liveness_probability', 1 / 3)
+        probability = Config.get('game_of_life.seed_liveness_probability')
         if self.__variant == self.__VARIANT_IMMIGRATION:
             seed = np.random.random_sample([x - 2 for x in shape]) < (probability / 2)
             seed2 = np.random.random_sample([x - 2 for x in shape]) < (probability / 2)

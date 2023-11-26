@@ -11,9 +11,6 @@ class CellularAutomaton(ABC):
 
     _DEFAULT_MAX_GAME_LENGTH_SECONDS = 0 # unlimited
     _DEFAULT_MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
-    _DEFAULT_TICK_SLEEP_SECONDS = 0.07
-    _DEFAULT_GAME_OVER_LOOKBACK_DETECTION_AMOUNT = 16
-    _DEFAULT_SHOULD_FADE_TO_FRAME = False
 
     def __init__(self, led_frame_player = None):
         self._logger = Logger().set_namespace(self.__class__.__name__)
@@ -120,14 +117,17 @@ class CellularAutomaton(ABC):
     def _update_board(self):
         pass
 
+    @abstractmethod
     def _get_tick_sleep_seconds(self):
-        return self._DEFAULT_TICK_SLEEP_SECONDS
+        pass
 
+    @abstractmethod
     def _get_game_over_detection_lookback_amount(self):
-        return self._DEFAULT_GAME_OVER_LOOKBACK_DETECTION_AMOUNT
+        pass
 
+    @abstractmethod
     def _should_fade_to_frame(self):
-        return self._DEFAULT_SHOULD_FADE_TO_FRAME
+        pass
 
     def _get_max_state_repetitions_for_game_over(self):
         return self._DEFAULT_MAX_STATE_REPETITIONS_FOR_GAME_OVER

@@ -9,13 +9,13 @@ from pifi.games.cellularautomata.cellularautomaton import CellularAutomaton
 class CyclicAutomaton(CellularAutomaton):
 
     def _get_tick_sleep_seconds(self):
-        return Config.get('cyclic_automaton.tick_sleep', self._DEFAULT_TICK_SLEEP_SECONDS)
+        return Config.get('cyclic_automaton.tick_sleep')
 
     def _get_game_over_detection_lookback_amount(self):
-        return Config.get('cyclic_automaton.game_over_detection_lookback', self._DEFAULT_GAME_OVER_LOOKBACK_DETECTION_AMOUNT)
+        return Config.get('cyclic_automaton.game_over_detection_lookback')
 
     def _should_fade_to_frame(self):
-        return Config.get('cyclic_automaton.fade', self._DEFAULT_SHOULD_FADE_TO_FRAME)
+        return Config.get('cyclic_automaton.fade')
 
     def _get_max_game_length_seconds(self):
         return 60

@@ -135,9 +135,9 @@ class LedFramePlayer:
             raise Exception(f'Unexpected color mode: {self.__video_color_mode}.')
 
         flips = ()
-        if Config.get('leds.flip_y', False):
+        if Config.get('leds.flip_y'):
             flips += (0,)
-        if Config.get('leds.flip_x', False):
+        if Config.get('leds.flip_x'):
             flips += (1,)
         if flips:
             transformed_frame = np.flip(transformed_frame, flips)

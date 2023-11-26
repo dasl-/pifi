@@ -49,7 +49,7 @@ class VideoProcessor:
         self.__url = url
         self.__led_frame_player = LedFramePlayer(
             clear_screen = clear_screen,
-            video_color_mode = Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)
+            video_color_mode = Config.get('video.color_mode')
         )
         self.__process_and_play_vid_proc_pgid = None
         self.__init_time = time.time()
@@ -68,7 +68,7 @@ class VideoProcessor:
         if os.path.isfile(video_save_path):
             self.__logger.info(f'Video has already been downloaded. Using saved video: {video_save_path}')
             self.__is_video_already_downloaded = True
-        elif Config.get('video.should_predownload_video', False):
+        elif Config.get('video.should_predownload_video'):
             download_command = self.__get_streaming_video_download_cmd() + ' > ' + shlex.quote(self.__get_video_save_path())
             self.__logger.info(f'Downloading video: {download_command}')
             subprocess.call(download_command, shell = True, executable = '/usr/bin/bash')
@@ -127,7 +127,7 @@ class VideoProcessor:
         display_height = Config.get_or_throw('leds.display_height')
         bytes_per_frame = display_width * display_height
         np_array_shape = [display_height, display_width]
-        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)):
+        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode')):
             bytes_per_frame = bytes_per_frame * 3
             np_array_shape.append(3)
 
@@ -197,7 +197,7 @@ class VideoProcessor:
             # Start the video clock as soon as we see ffmpeg output. Ffplay probably sent its
             # first audio data at around the same time so they stay in sync.
             # Add time for better audio / video sync
-            vid_start_time = time.time() + (0.075 if Config.get('video.should_play_audio', True) else 0)
+            vid_start_time = time.time() + (0.075 if Config.get('video.should_play_audio') else 0)
 
         frames.append(
             np.frombuffer(ffmpeg_output, np.uint8).reshape(np_array_shape)
@@ -271,7 +271,7 @@ class VideoProcessor:
             f'{{ while true ; do [ -f {self.__FPS_READY_FILE} ] && break || sleep 0.1 ; done && cat - ; }} | ')
 
         maybe_play_audio_tee = ''
-        if Config.get('video.should_play_audio', True):
+        if Config.get('video.should_play_audio'):
             # Add mbuffer because otherwise the ffplay command blocks the whole pipeline. Because
             # audio can only play in real-time, this would block ffmpeg from processing the frames
             # as fast as it otherwise could. This prevents us from building up a big enough buffer
@@ -288,7 +288,7 @@ class VideoProcessor:
 
         maybe_save_video_tee = ''
         maybe_mv_saved_video_cmd = ''
-        if Config.get('video.should_save_video', False) and not self.__is_video_already_downloaded:
+        if Config.get('video.should_save_video') and not self.__is_video_already_downloaded:
             self.__logger.info(f'Video will be saved to: {video_save_path}')
             temp_video_save_path = video_save_path + self.__TEMP_VIDEO_DOWNLOAD_SUFFIX
             maybe_save_video_tee = shlex.quote(temp_video_save_path) + ' '
@@ -379,7 +379,7 @@ class VideoProcessor:
 
     def __get_ffmpeg_pixel_conversion_cmd(self):
         pix_fmt = 'gray'
-        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode', VideoColorMode.COLOR_MODE_COLOR)):
+        if VideoColorMode.is_color_mode_rgb(Config.get('video.color_mode')):
             pix_fmt = 'rgb24'
 
         return (

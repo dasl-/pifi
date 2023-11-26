@@ -49,7 +49,7 @@ class VolumeController:
 
         vol_val = round(vol_val)
         subprocess.check_output(
-            ('amixer', '-c', str(Config.get('sound.card', 0)), 'cset', f'numid={Config.get("sound.numid", 1)}', '--', str(vol_val))
+            ('amixer', '-c', str(Config.get('sound.card')), 'cset', f'numid={Config.get("sound.numid")}', '--', str(vol_val))
         )
 
     # increments volume percentage by the specified increment. The increment should be a float in the range [0, 100]
@@ -81,7 +81,7 @@ class VolumeController:
     @staticmethod
     def __init_global_min_and_max_vol_vals():
         res = subprocess.check_output(
-            ('amixer', '-c', str(Config.get('sound.card', 0)), 'cget', f'numid={Config.get("sound.numid", 1)}'),
+            ('amixer', '-c', str(Config.get('sound.card')), 'cget', f'numid={Config.get("sound.numid")}'),
         ).decode("utf-8")
         m = re.search(r",min=(-?\d+),max=(-?\d+)", res, re.MULTILINE)
 
@@ -121,13 +121,13 @@ class VolumeController:
     # Attempt to autodetect if the default soundcard is being used, based on config.json values.
     @staticmethod
     def __is_internal_soundcard_being_used():
-        return Config.get('sound.card', 0) == 0 and Config.get('sound.numid', 1) == 1
+        return Config.get('sound.card') == 0 and Config.get('sound.numid') == 1
 
     # Return volume value. Returns an integer in the range
     # [VolumeController.__get_global_min_vol_val(), VolumeController.__get_limited_max_vol_val()]
     def get_vol_val(self):
         res = subprocess.check_output(
-            ('amixer', '-c', str(Config.get('sound.card', 0)), 'cget', f'numid={Config.get("sound.numid", 1)}')
+            ('amixer', '-c', str(Config.get('sound.card')), 'cget', f'numid={Config.get("sound.numid")}')
         ).decode("utf-8")
         m = re.search(r" values=(-?\d+)", res, re.MULTILINE)
         if m is None:

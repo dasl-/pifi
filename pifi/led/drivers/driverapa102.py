@@ -18,7 +18,7 @@ class DriverApa102(DriverBase):
             order=self.__LED_ORDER
         )
 
-        brightness = Config.get('leds.brightness', 3)
+        brightness = Config.get('leds.brightness')
         self.__pixels.set_global_brightness(brightness)
         if clear_screen:
             self.clear_screen()

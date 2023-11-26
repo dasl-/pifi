@@ -343,7 +343,7 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
 class Server:
 
     def __init__(self):
-        self.__secure = Config.get('server.use_ssl', False)
+        self.__secure = Config.get('server.use_ssl')
 
         if not self.__secure:
             self.__server = PifiThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
