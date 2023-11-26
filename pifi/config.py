@@ -6,6 +6,7 @@ from pifi.directoryutils import DirectoryUtils
 class Config:
 
     CONFIG_PATH = DirectoryUtils().root_dir + '/config.json'
+    __DEFAULT_CONFIG_PATH = DirectoryUtils().root_dir + '/default_config.json'
 
     __is_loaded = False
     __config = {}
@@ -33,12 +34,18 @@ class Config:
         if Config.__is_loaded:
             return
 
+        if not os.path.exists(Config.__DEFAULT_CONFIG_PATH):
+            raise Exception(f"No default config file found at: {Config.__DEFAULT_CONFIG_PATH}.")
+
         if not os.path.exists(Config.CONFIG_PATH):
             raise Exception(f"No config file found at: {Config.CONFIG_PATH}.")
 
         Config.__logger.info(f"Found config file at: {Config.CONFIG_PATH}")
-        with open(Config.CONFIG_PATH) as config_json:
-            Config.__config = pyjson5.decode(config_json.read())
+        with open(Config.__DEFAULT_CONFIG_PATH) as default_config_json, open(Config.CONFIG_PATH) as config_json:
+            default_config = pyjson5.decode(default_config_json.read())
+            config = pyjson5.decode(config_json.read())
+            Config.__merge_dicts(default_config, config)
+            Config.__config = default_config
 
             if 'log_level' in Config.__config and should_set_log_level:
                 Logger.set_level(Config.__config['log_level'])
@@ -98,3 +105,22 @@ class Config:
             return my_dict
         else:
             raise Exception("No keys were given.")
+
+    """
+    Recursively merge two dicts. The dict d1 will be modified in-place.
+
+    Example:
+    d1 = {'a': {'b': {'c': 1, 'd': 2}, 'e': 3}, 'aa': {'bb': {'cc': 11}}}
+    d2 = {'a': {'b': {'d': 666, 'f': 666}}, 'aa': {'bb': 666}, 'aaa': 666}
+    Config.__merge_dicts(d1, d2)
+
+    The contents of d1 will now be:
+    {'a': {'b': {'c': 1, 'd': 666, 'f': 666}, 'e': 3}, 'aa': {'bb': 666}, 'aaa': 666}
+    """
+    @staticmethod
+    def __merge_dicts(d1, d2):
+        for k, v in d2.items():
+            if (k in d1 and isinstance(d1[k], dict) and isinstance(d2[k], dict)):
+                Config.__dict_merge(d1[k], d2[k])
+            else:
+                d1[k] = d2[k]

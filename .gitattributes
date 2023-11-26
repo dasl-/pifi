@@ -1,2 +1,2 @@
 # Force github to syntax highlight the JSON5 file correctly: https://webapps.stackexchange.com/a/108676
-sample_config.json linguist-language=JSON5
+default_config.json linguist-language=JSON5
