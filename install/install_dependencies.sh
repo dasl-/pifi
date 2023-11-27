@@ -10,6 +10,7 @@ main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
+    enableSpi
     installLedDriver
     clearYoutubeDlCache
     installNode
@@ -43,6 +44,17 @@ updateAndInstallPackages(){
     sudo apt -y full-upgrade
 
     sudo python3 -m pip install --upgrade youtube_dl yt-dlp numpy pytz websockets simpleaudio pygame pyjson5
+}
+
+enableSpi(){
+    if [ "$(sudo raspi-config nonint get_spi)" = "1" ]; then
+        info "Enabling SPI..."
+        # https://raspberrypi.stackexchange.com/a/96679
+        sudo raspi-config nonint do_spi 0
+        touch $RESTART_REQUIRED_FILE
+    else
+        info "SPI was already enabled."
+    fi
 }
 
 installLedDriver(){
