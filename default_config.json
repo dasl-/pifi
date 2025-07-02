@@ -95,6 +95,7 @@
     "screensavers": {
 
         // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
+        // Other values include "saved_videos" which will pull from a local list of saved videos
         "screensavers": ["game_of_life", "cyclic_automaton"]
     },
 
