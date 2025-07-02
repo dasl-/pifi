@@ -39,7 +39,7 @@ updateAndInstallPackages(){
     # parallel: needed for update_youtube-dl.sh script
     # libatlas-base-dev: needed for numpy
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libatlas-base-dev
+        libatlas-base-dev libopenblas-dev
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
