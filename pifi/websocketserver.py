@@ -16,16 +16,18 @@ class WebSocketServer:
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
     def run(self):
+        asyncio.run(self.__run())
+
+    async def __run(self):
         local_ip = self.__get_local_ip()
         self.__logger.info("Starting websocket server at {}:{}".format(local_ip, self.__PORT))
-        start_server = websockets.serve(self.server_connect, local_ip, self.__PORT)
-        asyncio.get_event_loop().run_until_complete(start_server)
-        asyncio.get_event_loop().run_forever()
+        async with websockets.serve(self.server_connect, local_ip, self.__PORT) as server:
+            await server.serve_forever()
 
-    async def server_connect(self, websocket, path):
+    async def server_connect(self, websocket):
         # create a logger local to this thread so that the namespace isn't clobbered by another thread
         logger = Logger().set_namespace(self.__class__.__name__ + '__' + Logger.make_uuid())
-        logger.info("websocket server_connect. ws: " + str(websocket) + " path: " + str(path))
+        logger.info("websocket server_connect. ws: " + str(websocket))
 
         try:
             # The client should send the playlist_video_id of the game they are joining as their first
