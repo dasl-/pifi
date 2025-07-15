@@ -55,6 +55,7 @@ class VideoProcessor:
         self.__init_time = time.time()
 
         # True if the video already exists (see config value: "video.should_save_video")
+        # Also may be True if a filepath was passed into url
         self.__is_video_already_downloaded = False
         self.__yt_dlp_extractors = yt_dlp_extractors
         self.__do_housekeeping(clear_screen)
@@ -100,10 +101,15 @@ class VideoProcessor:
         self.__logger.info("Finished process_and_play")
 
     def __get_video_save_path(self):
+        if self.__urlIsFilePath():
+            return self.__url
         return (
             self.__get_data_directory() + '/' +
             hashlib.md5(self.__url.encode('utf-8')).hexdigest() + self.__DEFAULT_VIDEO_EXTENSION
         )
+
+    def __urlIsFilePath(self):
+        return os.path.isfile(self.__url)
 
     def __get_data_directory(self):
         save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
