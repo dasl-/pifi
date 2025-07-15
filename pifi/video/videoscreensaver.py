@@ -8,12 +8,8 @@ class VideoScreensaver:
 
     __DATA_DIRECTORY = 'data/screensavers'
 
-    def __init__(self):
-        # Videos must be set in the Config to be playable
-        saved_videos = Config.get("screensavers.saved_videos")
-        self.video_name = None
-        if saved_videos is not None:
-            self.video_name = random.choice(saved_videos)
+    def __init__(self, video_list):
+        self.video_list = video_list
 
     def __getScreensaverPath(self):
         save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
@@ -21,11 +17,10 @@ class VideoScreensaver:
         return save_dir
 
     def play(self):
-        if self.video_name is not None:
-            url = self.__getScreensaverPath() + '/' + self.video_name
-            VideoProcessor(
-                url=url,
-                clear_screen=True,
-                yt_dlp_extractors="",
-                show_loading_screen=False
-            ).process_and_play()
+        url = self.__getScreensaverPath() + '/' + random.choice(self.video_list)
+        VideoProcessor(
+            url = url,
+            clear_screen = True,
+            yt_dlp_extractors = "",
+            show_loading_screen = False
+        ).process_and_play()
