@@ -44,7 +44,9 @@ class VideoProcessor:
     # yt_dlp_extractors: string. Extractor names for yt-dlp to use, separated by commas.
     #   Whitelisting extractors to use can speed up video download initialization time.
     #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
-    def __init__(self, url, clear_screen, yt_dlp_extractors):
+    #
+    # show_loading_screen: boolean. Whether or not we display the loading screen at all.
+    def __init__(self, url, clear_screen, yt_dlp_extractors, show_loading_screen=True):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
         self.__led_frame_player = LedFramePlayer(
@@ -58,12 +60,13 @@ class VideoProcessor:
         # Also may be True if a filepath was passed into url
         self.__is_video_already_downloaded = False
         self.__yt_dlp_extractors = yt_dlp_extractors
+        self.__can_show_loading_screen = show_loading_screen
         self.__do_housekeeping(clear_screen)
         self.__register_signal_handlers()
 
     def process_and_play(self):
         self.__logger.info(f"Starting process_and_play for url: {self.__url}")
-        self.__led_frame_player.show_loading_screen()
+        self.__show_loading_screen()
         video_save_path = self.__get_video_save_path()
 
         if os.path.isfile(video_save_path):
@@ -89,7 +92,7 @@ class VideoProcessor:
                     self.__logger.warning("Caught exception in VideoProcessor.__process_and_play_video: " +
                         traceback.format_exc())
                     self.__logger.warning("Updating youtube-dl and retrying video...")
-                    self.__led_frame_player.show_loading_screen()
+                    self.__show_loading_screen()
                     clear_screen = False
                     self.__update_youtube_dl()
                 if attempt >= max_attempts:
@@ -100,15 +103,19 @@ class VideoProcessor:
             attempt += 1
         self.__logger.info("Finished process_and_play")
 
+    def __show_loading_screen(self):
+        if self.__can_show_loading_screen:
+            self.__led_frame_player.show_loading_screen()
+
     def __get_video_save_path(self):
-        if self.__urlIsFilePath():
+        if self.__url_is_file_path():
             return self.__url
         return (
             self.__get_data_directory() + '/' +
             hashlib.md5(self.__url.encode('utf-8')).hexdigest() + self.__DEFAULT_VIDEO_EXTENSION
         )
 
-    def __urlIsFilePath(self):
+    def __url_is_file_path(self):
         return os.path.isfile(self.__url)
 
     def __get_data_directory(self):

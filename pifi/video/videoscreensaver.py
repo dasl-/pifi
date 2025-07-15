@@ -23,4 +23,9 @@ class VideoScreensaver:
     def play(self):
         if self.video_name is not None:
             url = self.__getScreensaverPath() + '/' + self.video_name
-            VideoProcessor(url, True, "").process_and_play()
+            VideoProcessor(
+                url=url,
+                clear_screen=True,
+                yt_dlp_extractors="",
+                show_loading_screen=False
+            ).process_and_play()
