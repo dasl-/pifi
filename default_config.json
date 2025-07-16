@@ -97,9 +97,9 @@
         // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
         "screensavers": ["game_of_life", "cyclic_automaton"],
 
-        // Optional, ?array, default: null. Videos that may be cycled through as screensavers.
+        // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
-        "saved_videos": null,
+        "saved_videos": [],
     },
 
     // Configuration specific to the game of life.

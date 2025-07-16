@@ -108,15 +108,12 @@ class VideoProcessor:
             self.__led_frame_player.show_loading_screen()
 
     def __get_video_save_path(self):
-        if self.__url_is_file_path():
+        if os.path.isfile(self.__url):
             return self.__url
         return (
             self.__get_data_directory() + '/' +
             hashlib.md5(self.__url.encode('utf-8')).hexdigest() + self.__DEFAULT_VIDEO_EXTENSION
         )
-
-    def __url_is_file_path(self):
-        return os.path.isfile(self.__url)
 
     def __get_data_directory(self):
         save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
