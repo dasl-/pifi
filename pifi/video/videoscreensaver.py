@@ -21,6 +21,5 @@ class VideoScreensaver:
         VideoProcessor(
             url = url,
             clear_screen = True,
-            yt_dlp_extractors = "",
             show_loading_screen = False
         ).process_and_play()

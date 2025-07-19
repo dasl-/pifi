@@ -24,7 +24,7 @@ class VideoProcessor:
 
     __DATA_DIRECTORY = 'data'
 
-    __DEFAULT_VIDEO_EXTENSION = '.mp4'
+    DEFAULT_VIDEO_EXTENSION = '.mp4'
     __TEMP_VIDEO_DOWNLOAD_SUFFIX = '.dl_part'
 
     __FIFO_PREFIX = 'pifi_fifo'
@@ -46,7 +46,7 @@ class VideoProcessor:
     #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
     #
     # show_loading_screen: boolean. Whether or not we display the loading screen at all.
-    def __init__(self, url, clear_screen, yt_dlp_extractors, show_loading_screen=True):
+    def __init__(self, url, clear_screen, yt_dlp_extractors = None, show_loading_screen = True):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
         self.__led_frame_player = LedFramePlayer(
@@ -73,10 +73,7 @@ class VideoProcessor:
             self.__logger.info(f'Video has already been downloaded. Using saved video: {video_save_path}')
             self.__is_video_already_downloaded = True
         elif Config.get('video.should_predownload_video'):
-            download_command = self.__get_streaming_video_download_cmd() + ' > ' + shlex.quote(self.__get_video_save_path())
-            self.__logger.info(f'Downloading video: {download_command}')
-            subprocess.call(download_command, shell = True, executable = '/usr/bin/bash')
-            self.__logger.info(f'Video download complete: {video_save_path}')
+            self.download_video(self.__get_video_save_path())
             self.__is_video_already_downloaded = True
 
         attempt = 1
@@ -103,6 +100,12 @@ class VideoProcessor:
             attempt += 1
         self.__logger.info("Finished process_and_play")
 
+    def download_video(self, save_path):
+        download_command = self.__get_streaming_video_download_cmd() + ' > ' + shlex.quote(save_path)
+        self.__logger.info(f'Downloading video: {download_command}')
+        subprocess.call(download_command, shell = True, executable = '/usr/bin/bash')
+        self.__logger.info(f'Video download complete: {save_path}')
+
     def __show_loading_screen(self):
         if self.__can_show_loading_screen:
             self.__led_frame_player.show_loading_screen()
@@ -112,7 +115,7 @@ class VideoProcessor:
             return self.__url
         return (
             self.__get_data_directory() + '/' +
-            hashlib.md5(self.__url.encode('utf-8')).hexdigest() + self.__DEFAULT_VIDEO_EXTENSION
+            hashlib.md5(self.__url.encode('utf-8')).hexdigest() + self.DEFAULT_VIDEO_EXTENSION
         )
 
     def __get_data_directory(self):
