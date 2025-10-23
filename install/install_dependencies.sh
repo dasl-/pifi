@@ -33,9 +33,34 @@ updateAndInstallPackages(){
 
     # libatlas-base-dev: needed for numpy ?
     if (( OS_VERSION > 12 )); then
-        atlas_package=''
+        local atlas_package=''
+        local numpy_package='' # numpy is installed by default?
+
+        # Fix for `Error: You must put some 'deb-src' URIs in your sources.list`
+        # This error occurs when doing `sudo apt -y build-dep ...`
+        sudo bash -c 'cp -a /etc/apt/sources.list /etc/apt/sources.list.bak.$(date +%Y%m%d-%H%M%S) 2>/dev/null; \
+        cat >/etc/apt/sources.list <<EOF
+        deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
+        deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
+
+        deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+        deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+
+        deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
+        deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
+        EOF
+
+        mkdir -p /etc/apt/sources.list.d; \
+        cp -a /etc/apt/sources.list.d/raspi.list /etc/apt/sources.list.d/raspi.list.bak.$(date +%Y%m%d-%H%M%S) 2>/dev/null; \
+        cat >/etc/apt/sources.list.d/raspi.list <<EOF
+        deb http://archive.raspberrypi.org/debian/ trixie main
+        deb-src http://archive.raspberrypi.org/debian/ trixie main
+        EOF
+
+        apt update'
     else
-        atlas_package='libatlas-base-dev'
+        local atlas_package='libatlas-base-dev'
+        local numpy_package='numpy'
     fi
 
     # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
@@ -51,7 +76,7 @@ updateAndInstallPackages(){
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade youtube_dl yt-dlp numpy pytz websockets simpleaudio pygame pyjson5
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade youtube_dl yt-dlp $numpy_package pytz websockets simpleaudio pygame pyjson5
 }
 
 enableSpi(){
