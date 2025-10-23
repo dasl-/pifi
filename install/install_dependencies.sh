@@ -36,6 +36,7 @@ updateAndInstallPackages(){
         local atlas_package=''
         local numpy_package='' # numpy is installed by default?
 
+        # TODO: figure out how to run this command only once, the first time
         # Fix for `Error: You must put some 'deb-src' URIs in your sources.list`
         # This error occurs when doing `sudo apt -y build-dep ...`
         # sudo bash -c 'cp -a /etc/apt/sources.list /etc/apt/sources.list.bak.$(date +%Y%m%d-%H%M%S) 2>/dev/null; \
@@ -104,7 +105,7 @@ installLedDriver(){
 
 installLedDriverApa102(){
     info "Installing LED driver apa102..."
-    sudo python3 -m pip install --upgrade apa102-pi
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade apa102-pi
 }
 
 # e.g. https://www.adafruit.com/product/2276
@@ -127,12 +128,12 @@ installLedDriverRgbMatrix(){
     sudo make install-python PYTHON="$(command -v python3)"
     popd
 
-    sudo python3 -m pip install --upgrade Pillow
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
 }
 
 installLedDriverWs2812b(){
     info "Installing LED driver ws2812b..."
-    sudo python3 -m pip install --upgrade rpi_ws281x
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade rpi_ws281x
 
     # Set SPI buffer size.
     # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi
