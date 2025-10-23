@@ -111,6 +111,16 @@ buildWebApp(){
 # Maybe wifi power management is cause of occasional network issues?
 #   See: https://gist.github.com/dasl-/18599c40408d268adfc92f8704ca1c11#2022-01-24
 disableWifiPowerManagement(){
+    if [ ! -f /etc/rc.local ]; then
+        # rc.local file no longer exists in newer raspbian, but we can still create it and it will be used:
+        # https://forums.raspberrypi.com/viewtopic.php?p=2283266#p2283266
+cat <<-EOF | sudo tee /etc/rc.local >/dev/null
+#!/bin/sh -e
+logger "rc.local here"
+exit 0
+EOF
+        sudo chmod 755 /etc/rc.local
+    fi
     if ! grep -q '^iwconfig wlan0 power off' /etc/rc.local ; then
         info "Disabling wifi power management..."
 
