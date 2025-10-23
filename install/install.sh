@@ -21,7 +21,6 @@ main(){
     parseOpts "$@"
     generateLoadingScreens
     setTimezone
-    setupLogging
     setupSystemdServices
     setupYoutubeDlUpdateCron
     updateDbSchema
@@ -74,21 +73,6 @@ generateLoadingScreens(){
 setTimezone(){
     info "Setting timezone"
     sudo timedatectl set-timezone UTC
-}
-
-setupLogging(){
-    info "Setting up logging"
-
-    # setup logging: syslog
-    sudo mkdir -p /var/log/pifi
-    sudo touch /var/log/pifi/server.log /var/log/pifi/queue.log /var/log/pifi/websocket_server.log /var/log/pifi/update_youtube-dl.log
-    sudo cp "$BASE_DIR"/install/*_syslog.conf /etc/rsyslog.d
-    sudo systemctl restart rsyslog
-
-    # setup logging: logrotate
-    sudo cp "$BASE_DIR"/install/pifi_logrotate /etc/logrotate.d
-    sudo chown root:root /etc/logrotate.d/pifi_logrotate
-    sudo chmod 644 /etc/logrotate.d/pifi_logrotate
 }
 
 setupSystemdServices(){

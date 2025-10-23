@@ -12,9 +12,6 @@ Environment=HOME=/root
 # Command to execute when the service is started
 ExecStart=$BASE_DIR/bin/server
 Restart=on-failure
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=PIFI_SERVER
 
 [Install]
 WantedBy=multi-user.target

@@ -1,8 +1,0 @@
-/var/log/pifi/*.log {
-    nocompress
-    copytruncate
-    daily
-    dateext
-    ifempty
-    rotate 7
-}

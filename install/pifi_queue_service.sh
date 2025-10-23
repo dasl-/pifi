@@ -11,9 +11,6 @@ Wants=network-online.target
 Environment=HOME=/root
 ExecStart=$BASE_DIR/bin/queue
 Restart=on-failure
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=PIFI_QUEUE
 
 [Install]
 WantedBy=multi-user.target
