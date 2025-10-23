@@ -5,6 +5,7 @@ set -euo pipefail -o errtrace
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 CONFIG='/boot/config.txt'
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
+OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
 
 main(){
     trap 'fail $? $LINENO' ERR
@@ -30,6 +31,13 @@ updateAndInstallPackages(){
 
     sudo apt update
 
+    # libatlas-base-dev: needed for numpy ?
+    if (( OS_VERSION > 12 )); then
+        atlas_package=''
+    else
+        atlas_package='libatlas-base-dev'
+    fi
+
     # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
     #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
     # libsdl2-mixer: needed for pygame
@@ -37,9 +45,9 @@ updateAndInstallPackages(){
     # libsdl2-dev: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # parallel: needed for update_youtube-dl.sh script
-    # libatlas-base-dev: needed for numpy
+
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libatlas-base-dev libopenblas-dev
+        $atlas_package libopenblas-dev
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
