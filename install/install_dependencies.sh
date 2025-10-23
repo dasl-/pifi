@@ -51,7 +51,7 @@ updateAndInstallPackages(){
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo python3 -m pip install --upgrade youtube_dl yt-dlp numpy pytz websockets simpleaudio pygame pyjson5
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade youtube_dl yt-dlp numpy pytz websockets simpleaudio pygame pyjson5
 }
 
 enableSpi(){
