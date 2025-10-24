@@ -3,9 +3,12 @@
 set -euo pipefail -o errtrace
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
-CONFIG='/boot/config.txt'
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
+CONFIG='/boot/config.txt'
+if (( OS_VERSION > 12 )); then
+    CONFIG='/boot/firmware/config.txt'
+fi
 
 main(){
     trap 'fail $? $LINENO' ERR
@@ -139,6 +142,9 @@ installLedDriverWs2812b(){
     # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi
     local spi_bufsiz='spidev.bufsiz=32768'
     local cmdline_path='/boot/cmdline.txt'
+    if (( OS_VERSION > 12 )); then
+        cmdline_path='/boot/firmware/cmdline.txt'
+    fi
     if ! grep -q $spi_bufsiz $cmdline_path ; then
         info "Updating spidev.bufsiz..."
         sudo sed -i '1 s/$/ spidev.bufsiz=32768/' $cmdline_path

@@ -2,7 +2,11 @@
 
 set -euo pipefail -o errtrace
 
-CONFIG=/boot/config.txt
+OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
+CONFIG='/boot/config.txt'
+if (( OS_VERSION > 12 )); then
+    CONFIG='/boot/firmware/config.txt'
+fi
 old_config=$(cat $CONFIG)
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
