@@ -88,10 +88,10 @@ class VideoProcessor:
                 if attempt < max_attempts:
                     self.__logger.warning("Caught exception in VideoProcessor.__process_and_play_video: " +
                         traceback.format_exc())
-                    self.__logger.warning("Updating youtube-dl and retrying video...")
+                    self.__logger.warning("Updating yt-dlp and retrying video...")
                     self.__show_loading_screen()
                     clear_screen = False
-                    self.__update_youtube_dl()
+                    self.__update_yt_dlp()
                 if attempt >= max_attempts:
                     clear_screen = True
                     raise e
@@ -182,7 +182,7 @@ class VideoProcessor:
             if process_and_play_vid_proc.poll() is not None:
                 if process_and_play_vid_proc.returncode != 0:
                     raise YoutubeDlException("The process_and_play_vid_proc process exited non-zero: " +
-                        f"{process_and_play_vid_proc.returncode}. This could mean an issue with youtube-dl; " +
+                        f"{process_and_play_vid_proc.returncode}. This could mean an issue with yt-dlp; " +
                         "it may require updating.")
                 self.__logger.info("The process_and_play_vid_proc proc ended.")
                 break
@@ -201,7 +201,7 @@ class VideoProcessor:
         if not ffmpeg_output:
             self.__logger.info("no ffmpeg_output, end of video processing.")
             if vid_start_time is None:
-                # under rare circumstances, youtube-dl might fail and we end up in this code path.
+                # under rare circumstances, yt-dlp might fail and we end up in this code path.
                 self.__logger.error("No vid_start_time set. Possible yt-dl crash. See: https://github.com/ytdl-org/youtube-dl/issues/24780")
                 vid_start_time = 0 # set this so that __process_and_play_video doesn't endlessly loop
             return [True, vid_start_time]
@@ -318,11 +318,11 @@ class VideoProcessor:
         )
         return process_and_play_vid_cmd
 
-    # Download the worst video and the best audio with youtube-dl, and mux them together with ffmpeg.
+    # Download the worst video and the best audio with yt-dlp, and mux them together with ffmpeg.
     # See: https://github.com/dasl-/piwall2/blob/53f5e0acf1894b71d180cee12ae49ddd3736d96a/docs/streaming_high_quality_videos_from_youtube-dl_to_stdout.adoc#solution-muxing-a-streaming-download
     def __get_streaming_video_download_cmd(self):
         # --retries infinite: in case downloading has transient errors
-        youtube_dl_cmd_template = "mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} | {4}"
+        yt_dlp_cmd_template = "mkdir -p {0} && cd {0} && yt-dlp {1} --retries infinite --format {2} --output - {3} | {4}"
 
         log_opts = '--no-progress'
         if Logger.get_level() <= Logger.DEBUG:
@@ -360,7 +360,7 @@ class VideoProcessor:
         video_format_sort = "--format-sort 'quality, res, +fps'"
 
         video_extra_opts = f' {log_opts} {use_extractors} {video_format_sort} '
-        youtube_dl_video_cmd = youtube_dl_cmd_template.format(
+        yt_dlp_video_cmd = yt_dlp_cmd_template.format(
             shlex.quote(self.__VIDEO_TMP_DIR),
             shlex.quote(self.__url),
             shlex.quote(video_format),
@@ -371,7 +371,7 @@ class VideoProcessor:
         # Also use a 50MB buffer, because in some cases, the audio stream we download may also contain video.
         audio_buffer_size = 1024 * 1024 * 50
         audio_extra_opts = f' {log_opts} {use_extractors} '
-        youtube_dl_audio_cmd = youtube_dl_cmd_template.format(
+        yt_dlp_audio_cmd = yt_dlp_cmd_template.format(
             shlex.quote(self.__AUDIO_TMP_DIR),
             shlex.quote(self.__url),
             # bestaudio: try to select the best audio-only format
@@ -387,7 +387,7 @@ class VideoProcessor:
         # Mux video from the first input with audio from the second input: https://stackoverflow.com/a/12943003/627663
         # We need to specify, because in some cases, either input could contain both audio and video. But in most
         # cases, the first input will have only video, and the second input will have only audio.
-        return (f"{self.get_standard_ffmpeg_cmd()} -i <({youtube_dl_video_cmd}) -i <({youtube_dl_audio_cmd}) " +
+        return (f"{self.get_standard_ffmpeg_cmd()} -i <({yt_dlp_video_cmd}) -i <({yt_dlp_audio_cmd}) " +
             "-c copy -map 0:v:0 -map 1:a:0 -shortest -f mpegts -")
 
     def __get_ffmpeg_pixel_conversion_cmd(self):
@@ -473,16 +473,16 @@ class VideoProcessor:
             .decode("utf-8"))
         return fifo_name
 
-    def __update_youtube_dl(self):
-        update_youtube_dl_output = (subprocess
+    def __update_yt_dlp(self):
+        update_yt_dlp_output = (subprocess
             .check_output(
-                'sudo ' + DirectoryUtils().root_dir + '/utils/update_youtube-dl.sh',
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',
                 shell = True,
                 executable = '/usr/bin/bash',
                 stderr = subprocess.STDOUT
             )
             .decode("utf-8"))
-        self.__logger.info("Update youtube-dl output: {}".format(update_youtube_dl_output))
+        self.__logger.info("Update yt-dlp output: {}".format(update_yt_dlp_output))
 
     def __do_housekeeping(self, clear_screen = True):
         if clear_screen:

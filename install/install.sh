@@ -26,7 +26,7 @@ main(){
     generateLoadingScreens
     setTimezone
     setupSystemdServices
-    setupYoutubeDlUpdateCron
+    setupYtDlpUpdateCron
     updateDbSchema
     buildWebApp
     disableWifiPowerManagement
@@ -93,8 +93,8 @@ setupSystemdServices(){
 }
 
 
-setupYoutubeDlUpdateCron(){
-    # setup youtube-dl update cron
+setupYtDlpUpdateCron(){
+    # setup yt-dlp update cron
     sudo "$BASE_DIR/install/pifi_cron.sh"
     sudo chown root:root /etc/cron.d/pifi
     sudo chmod 644 /etc/cron.d/pifi

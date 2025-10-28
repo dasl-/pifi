@@ -113,7 +113,7 @@ class Logger:
         # actually being written to the file. And with separate log files (stdout vs stderr), each one
         # keeps a separate buffer, so error vs info logs will be out of order in the log file.
         #
-        # Furthermore, other binaries we shell out to, like youtube-dl, don't buffer their writes, so
+        # Furthermore, other binaries we shell out to, like yt-dlp, don't buffer their writes, so
         # the output of those binaries will be out of order relative to our logs. Fwiw, omxplayer
         # flushes with every log when using its `--genlog` param.
         #

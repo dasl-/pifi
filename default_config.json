@@ -57,7 +57,7 @@
         "should_play_audio": true,
 
         // Optional, boolean, default: false. Whether to save the videos that are played. Saving the video
-        // allows us to avoid youtube-dl network calls to download the video if it's played again.
+        // allows us to avoid yt-dlp network calls to download the video if it's played again.
         "should_save_video": false,
 
         // Optional, boolean, default: false. Whether to predownload the video, as opposed to streaming it.

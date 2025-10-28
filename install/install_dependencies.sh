@@ -32,8 +32,6 @@ updateAndInstallPackages(){
     # https://stackoverflow.com/questions/47773715/error-you-must-put-some-source-uris-in-your-sources-list
     sudo sed -i 's/#\s*deb-src/deb-src/' /etc/apt/sources.list
 
-    sudo apt update
-
     # libatlas-base-dev: needed for numpy ?
     if (( OS_VERSION > 12 )); then
         local atlas_package=''
@@ -67,20 +65,22 @@ updateAndInstallPackages(){
         local numpy_package='numpy'
     fi
 
+    sudo apt update
+
     # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
     #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
     # libsdl2-mixer: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # libsdl2-dev: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
-    # parallel: needed for update_youtube-dl.sh script
+    # parallel: needed for update_yt-dlp.sh script
 
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
         $atlas_package libopenblas-dev
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade youtube_dl yt-dlp $numpy_package pytz websockets simpleaudio pygame pyjson5
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade yt-dlp $numpy_package pytz websockets simpleaudio pygame pyjson5
 }
 
 enableSpi(){
@@ -178,16 +178,16 @@ installLedDriverWs2812b(){
 }
 
 clearYoutubeDlCache(){
-    info "Clearing youtube-dl caches..."
+    info "Clearing yt-dlp caches..."
 
     # https://askubuntu.com/a/329689
     local users
     users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
 
-    # Just in case the youtube-dl cache got polluted, as it has before...
+    # Just in case the yt-dlp cache got polluted, as it has before...
     # https://github.com/ytdl-org/youtube-dl/issues/24780
     # shellcheck disable=SC1083
-    parallel --will-cite --max-procs 0 --halt never sudo -u {1} {2} --rm-cache-dir ::: root "$users" ::: youtube-dl yt-dlp
+    parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root "$users"
 }
 
 installNode(){
