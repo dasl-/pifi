@@ -49,16 +49,17 @@ toc::[]
 . `./install/install.sh`
     .. This may result in an https://gist.github.com/dasl-/25a6db0322f7b61ba0b3b7f3436fb975[out of memory error]. If that happens, simply re-run the install script. It should succeed the second time.
 . optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
-. Check for https://github.com/dasl-/pifi/blob/main/docs/issues_weve_seen_before.adoc#cpu-throttling[CPU throttling]
 
 ### Vanity domain name (optional):
-. After running https://github.com/dasl-/pifi/blob/f4b16dfa625211d5aa9666b420e60834bb05e93e/install/install.sh#L72-L78[`./install/install.sh`], you can SSH onto the pi or hit the pifi webpage via `pifi.local` (i.e.: `ssh <USER>@pifi.local` and http://pifi.local ). Note: using http://pifi.local will not work on https://partnerissuetracker.corp.google.com/issues/140786115[android devices].
+. By default, raspberry pi's have the hostname `raspberrypi`. As such, you can SSH onto the pi or hit the pifi webpage via `pifi.local` (i.e.: `ssh pi@pifi.local` and http://pifi.local
+. The https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script has an argument you can use to change the hostname, e.g. `./install/install.sh -g pifi`
 . Optionally reserve an IP address for the pifi on your router (if it supports this)
 . Note if you choose 192.168.1.166 for the reserved IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :)
     .. FreshTomato router firmware has a setting `Enable DNS Rebind protection`, which is enabled by default. When this is enabled, it will prevent upstream DNS servers from resolving queries to any non-routable IP (e.g., 192.168.1.X). So you need to disable this feature for the vanity URL to work.
 
 ### Connect GPIO Pins
-(pinout: https://pinout.xyz/)
+pinout: https://pinout.xyz/
+
 * power: 2
 * ground: 6
 * data: 19
