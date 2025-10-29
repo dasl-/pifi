@@ -31,13 +31,17 @@ updateAndInstallPackages(){
     # libatlas-base-dev: needed for numpy ?
     if (( OS_VERSION > 12 )); then
         local atlas_package=''
-        local numpy_package='' # numpy is installed by default?
+        local numpy_package='python3-numpy' # numpy is installed by default?
+
+        # https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
+        local simpleaudio_package='git+https://github.com/cexen/py-simple-audio.git'
 
         # Allow the command `sudo apt build-dep python3-pygame` to run.
         sudo sed -i 's/^Types: deb\s*$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
     else
         local atlas_package='libatlas-base-dev'
         local numpy_package='numpy'
+        local simpleaudio_package='simpleaudio'
 
         # Allow the command `sudo apt build-dep python3-pygame` to run.
         # https://stackoverflow.com/questions/47773715/error-you-must-put-some-source-uris-in-your-sources-list
@@ -59,7 +63,7 @@ updateAndInstallPackages(){
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade yt-dlp $numpy_package pytz websockets simpleaudio pygame pyjson5
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade yt-dlp $numpy_package pytz websockets $simpleaudio_package pygame pyjson5
 }
 
 enableSpi(){
