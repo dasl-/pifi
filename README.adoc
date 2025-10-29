@@ -9,8 +9,8 @@ toc::[]
 
 ## Setting up from Scratch
 ### Compatible hardware
+* Raspberry Pi 4 - this is our recommended pi model. At least 2 GB of RAM is recommended.
 * Raspberry Pi 3B+
-* Raspberry Pi 4 (recommended)
 * Although it will likely work on a Raspberry Pi 5, this is untested and not officially supported.
 
 ### Install Raspian Lite
