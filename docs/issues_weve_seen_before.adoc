@@ -43,7 +43,7 @@ If it shows undervoltage issues when you think everything is wired / powered cor
 avoid_warnings=2
 ```
 
-Refer to https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html#avoid_warnings#avoid_warnings[docs] and use at your own risk!
+Refer to https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html#avoid_warnings[docs] and use at your own risk!
 
 ## Bad SD card
 A raspberry pi was rebooting itself randomly. We would see this rebooting happening ~50% of the time when we ran the `./install/install_dependencies.sh` or `./install/install.sh` scripts. It would also reboot itself occasionally during normal operation (playing and queueing videos).

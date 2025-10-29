@@ -10,12 +10,14 @@ fi
 old_config=$(cat $CONFIG)
 
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
+HOSTNAME=''
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 
 usage() {
     local exit_code=$1
     echo "usage: $0"
-    echo "    -h    display this help message"
+    echo "    -h            : Display this help message"
+    echo "    -g HOSTNAME   : Set the hostname. This is optional."
     exit "$exit_code"
 }
 
@@ -31,6 +33,7 @@ main(){
     buildWebApp
     disableWifiPowerManagement
     setOverVoltage
+    setAvoidWarnings
     checkYoutubeApiKey
 
     # Setting the hostname should be as close to the last step as possible. Anything after this step that
@@ -53,9 +56,17 @@ main(){
 }
 
 parseOpts(){
-    while getopts ":h" opt; do
+    while getopts ":hg:" opt; do
         case $opt in
             h) usage 0 ;;
+            g)
+                if [[ "$OPTARG" =~ ^[a-z]([a-z0-9-]*[a-z0-9])?$ ]]; then
+                    HOSTNAME=${OPTARG}
+                else
+                    warn "Invalid hostname."
+                    usage
+                fi
+                ;;
             \?)
                 echo "Invalid option: -$OPTARG" >&2
                 usage 1
@@ -170,6 +181,26 @@ setOverVoltage(){
     echo -e 'over_voltage=2' | sudo tee -a $CONFIG >/dev/null
 }
 
+# See:
+# https://github.com/dasl-/pifi/blob/main/docs/issues_weve_seen_before.adoc#spurious-undervoltage-warnings-resulting-in-throttling
+# https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html#avoid_warnings
+setAvoidWarnings(){
+    local avoid_warnings
+    avoid_warnings=$(vcgencmd get_config avoid_warnings | sed -n 's/avoid_warnings=\(.*\)/\1/p')
+    if (( avoid_warnings == 2 )); then
+        info "avoid_warnings was already set ( $avoid_warnings )..."
+        return
+    fi
+
+    # Set avoid_warnings.
+    info "Setting avoid_warnings to 2..."
+
+    # comment out existing avoid_warnings lines in config
+    sudo sed $CONFIG -i -e "s/^\(avoid_warnings=.*\)/#\1/"
+
+    echo -e 'avoid_warnings=2' | sudo tee -a $CONFIG >/dev/null
+}
+
 checkYoutubeApiKey(){
     info "Checking for youtube API key..."
     local youtube_api_key
@@ -181,14 +212,16 @@ checkYoutubeApiKey(){
     fi
 }
 
-# Set the hostname. Allows sshing and hitting the pifi webpage via "pifi.local"
+# Set the hostname. Allows sshing and hitting the pifi webpage via "HOSTNAME.local"
 # See: https://www.raspberrypi.com/documentation/computers/remote-access.html#resolving-raspberrypi-local-with-mdns
 setHostname(){
-    info "Setting hostname to 'pifi' (if not already set to 'pifi')..."
-    if [[ $(cat /etc/hostname) != pifi ]]; then
-        echo "pifi" | sudo tee /etc/hostname >/dev/null 2>&1
-        sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1pifi/g' /etc/hosts
-        touch $RESTART_REQUIRED_FILE
+    if [[ -n ${HOSTNAME} ]]; then
+        info "Setting hostname to '$HOSTNAME' (if not already set to '$HOSTNAME')..."
+        if [[ $(cat /etc/hostname) != "$HOSTNAME" ]]; then
+            echo "$HOSTNAME" | sudo tee /etc/hostname >/dev/null 2>&1
+            sudo sed -i -E 's/(127\.0\.1\.1\s+)[^ ]+/\1'"$HOSTNAME"'/g' /etc/hosts
+            touch $RESTART_REQUIRED_FILE
+        fi
     fi
 }
 

@@ -4,6 +4,7 @@
 .project
 .DS_Store
 sftp-config.json
+sftp-config.json.bak
 data/
 __pycache__/
 *.db

@@ -28,10 +28,6 @@ main(){
 updateAndInstallPackages(){
     info "Updating and installing packages..."
 
-    # Allow the command `sudo apt build-dep python3-pygame` to run.
-    # https://stackoverflow.com/questions/47773715/error-you-must-put-some-source-uris-in-your-sources-list
-    sudo sed -i 's/#\s*deb-src/deb-src/' /etc/apt/sources.list
-
     # libatlas-base-dev: needed for numpy ?
     if (( OS_VERSION > 12 )); then
         local atlas_package=''
@@ -40,29 +36,13 @@ updateAndInstallPackages(){
         # TODO: figure out how to run this command only once, the first time
         # Fix for `Error: You must put some 'deb-src' URIs in your sources.list`
         # This error occurs when doing `sudo apt -y build-dep ...`
-        # sudo bash -c 'cp -a /etc/apt/sources.list /etc/apt/sources.list.bak.$(date +%Y%m%d-%H%M%S) 2>/dev/null; \
-        # cat >/etc/apt/sources.list <<EOF
-        # deb http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-        # deb-src http://deb.debian.org/debian trixie main contrib non-free non-free-firmware
-
-        # deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-        # deb-src http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
-
-        # deb http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-        # deb-src http://deb.debian.org/debian trixie-updates main contrib non-free non-free-firmware
-        # EOF
-
-        # mkdir -p /etc/apt/sources.list.d; \
-        # cp -a /etc/apt/sources.list.d/raspi.list /etc/apt/sources.list.d/raspi.list.bak.$(date +%Y%m%d-%H%M%S) 2>/dev/null; \
-        # cat >/etc/apt/sources.list.d/raspi.list <<EOF
-        # deb http://archive.raspberrypi.org/debian/ trixie main
-        # deb-src http://archive.raspberrypi.org/debian/ trixie main
-        # EOF
-
-        # apt update'
     else
         local atlas_package='libatlas-base-dev'
         local numpy_package='numpy'
+
+        # Allow the command `sudo apt build-dep python3-pygame` to run.
+        # https://stackoverflow.com/questions/47773715/error-you-must-put-some-source-uris-in-your-sources-list
+        sudo sed -i 's/#\s*deb-src/deb-src/' /etc/apt/sources.list
     fi
 
     sudo apt update

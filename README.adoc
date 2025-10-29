@@ -8,57 +8,40 @@ image::https://lh3.googleusercontent.com/50Q5aQS7kWFsroNjzMIAM1pqVv42ulz_HItEhe2
 toc::[]
 
 ## Setting up from Scratch
+### Compatible hardware
+* Raspberry Pi 3B+
+* Raspberry Pi 4 (recommended)
+* Although it will likely work on a Raspberry Pi 5, this is untested and not officially supported.
+
 ### Install Raspian Lite
-https://www.raspberrypi.org/documentation/installation/installing-images/mac.md
 
-1. `diskutil list`
-1. `sd_disk_num=<disk# from diskutil>`
-1. `diskutil unmountDisk /dev/disk$sd_disk_num`
-1. download Raspberry Pi OS Lite image from https://www.raspberrypi.org/software/operating-systems/
-1. `sudo dd bs=1m if=path_of_your_image.img of=/dev/rdisk$sd_disk_num; sync`
-1. `sudo diskutil eject /dev/rdisk$sd_disk_num`
-
-### Set up Wifi
-https://raspberrypi.stackexchange.com/a/57023[`/boot/wpa_supplicant.conf`]:
-
-    country=US
-    ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-    update_config=1
-    network={
-      ssid="MyWiFiNetwork"
-      psk="MyPassword"
-      key_mgmt=WPA-PSK
-    }
-
-Note: after this repo has been cloned, wifi may be set up via link:utils/wifi_config[`utils/wifi_config`]:
-
-    sudo ./utils/wifi_config --network-name <name> --password <password>
-
-### Enable ssh, Connect
-1. create a file `/boot/ssh` to enable SSH on the raspberry pi
-1. plug in raspberry pi
-1. find its IP: `sudo arp-scan --interface=en0 --localnet` or `sudo nmap -sS -p 22 192.168.1.0/24`
-1. ssh in `ssh <USER>@<IP_ADDRESS>`; enter password
+. Use the official https://www.raspberrypi.com/software/[Raspberry Pi Imager] to write the disk image to your SD card
+. Operating System > Raspberry Pi OS (other) > Raspberry Pi OS Lite (64-bit), Debian Trixie. Installation of other OS versions is not officialy supported.
+. OS customisation settings:
+.. General
+... Username: `pi`
+... Set wifi credentials
+.. Services
+... Enable SSH
+. Eject SD card
 
 ### Setup Raspberry Pi
-1. `sudo raspi-config`
--- change password
--- enable SPI (interfacing options)
-1. `sudo apt-get update`
-1. `sudo apt-get upgrade -y`
-1. `sudo apt-get install git`
+. Connect via ssh: `ssh pi@raspberrypi.local`
+. `sudo apt-get update`
+. `sudo apt-get upgrade -y`
+. `sudo apt-get install git`
 
 ### Setup Git
-1. `ssh-keygen -t rsa -b 4096 -C “your@email.com”`
-1. `eval "$(ssh-agent -s)"`
-1. `ssh-add ~/.ssh/id_rsa`
-1. `more ~/.ssh/id_rsa.pub` (copy to git)
-    1. https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
-    1. https://github.com/settings/keys
+. `ssh-keygen -t rsa -b 4096 -C “your@email.com”`
+. `eval "$(ssh-agent -s)"`
+. `ssh-add ~/.ssh/id_rsa`
+. `more ~/.ssh/id_rsa.pub` (copy to git)
+    . https://help.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
+    . https://github.com/settings/keys
 
 ### Checkout Repo
-1. `git clone git@github.com:dasl-/pifi.git`
-1. `cd pifi`
+. `git clone git@github.com:dasl-/pifi.git`
+. `cd pifi`
 
 ### Install
 . Create a config file: https://github.com/dasl-/pifi/blob/main/default_config.json[`config.json`]. The config file should set all of the required config parameters.
@@ -76,22 +59,13 @@ Note: after this repo has been cloned, wifi may be set up via link:utils/wifi_co
 
 ### Connect GPIO Pins
 (pinout: https://pinout.xyz/)
-- power: 2
-- ground: 6
-- data: 19
-- clock: 23
+* power: 2
+* ground: 6
+* data: 19
+* clock: 23
 
 ### Hacking on the code:
 See link:docs/development_setup.md[development_setup]
 
 ## Issues we've seen before
 See link:docs/issues_weve_seen_before.adoc[issues we've seen before]
-
-## Branch rename
-On 2022-04-30, we renamed the branch from master to main. Run these commands to update your local checkout:
-```
-git branch -m master main
-git fetch origin
-git branch -u origin/main main
-git remote set-head origin -a
-```
