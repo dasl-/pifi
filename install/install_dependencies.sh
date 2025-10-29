@@ -33,9 +33,8 @@ updateAndInstallPackages(){
         local atlas_package=''
         local numpy_package='' # numpy is installed by default?
 
-        # TODO: figure out how to run this command only once, the first time
-        # Fix for `Error: You must put some 'deb-src' URIs in your sources.list`
-        # This error occurs when doing `sudo apt -y build-dep ...`
+        # Allow the command `sudo apt build-dep python3-pygame` to run.
+        sudo sed -i 's/^Types: deb\s*$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
     else
         local atlas_package='libatlas-base-dev'
         local numpy_package='numpy'

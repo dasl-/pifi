@@ -23,7 +23,7 @@ toc::[]
 ... Set wifi credentials
 .. Services
 ... Enable SSH
-. Eject SD card
+. Write OS to SD card and eject SD card
 
 ### Setup Raspberry Pi
 . Connect via ssh: `ssh pi@raspberrypi.local`
