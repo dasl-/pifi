@@ -51,11 +51,11 @@ toc::[]
 . optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
 ### Vanity domain name (optional):
-. By default, raspberry pi's have the hostname `raspberrypi`. As such, you can SSH onto the pi or hit the pifi webpage via `pifi.local` (i.e.: `ssh pi@pifi.local` and http://pifi.local
-. The https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script has an argument you can use to change the hostname, e.g. `./install/install.sh -g pifi`
-. Optionally reserve an IP address for the pifi on your router (if it supports this)
-. Note if you choose 192.168.1.166 for the reserved IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :)
-    .. FreshTomato router firmware has a setting `Enable DNS Rebind protection`, which is enabled by default. When this is enabled, it will prevent upstream DNS servers from resolving queries to any non-routable IP (e.g., 192.168.1.X). So you need to disable this feature for the vanity URL to work.
+* By default, raspberry pi's have the hostname `raspberrypi`. As such, you can SSH onto the pi or hit the pifi webpage via `raspberrypi.local` (i.e.: `ssh pi@raspberrypi.local` and http://raspberrypi.local
+* The https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script has an argument you can use to change the hostname, e.g. `./install/install.sh -g pifi`
+* You can optionally reserve an IP address for the pifi on your router (if it supports this)
+* Note if you choose 192.168.1.166 for the reserved IP, then the domain name http://pifi.club/ will resolve to your pi on your wifi network :)
+** FreshTomato router firmware has a setting `Enable DNS Rebind protection`, which is enabled by default. When this is enabled, it will prevent upstream DNS servers from resolving queries to any non-routable IP (e.g., 192.168.1.X). So you need to disable this feature for the vanity URL to work.
 
 ### Connect GPIO Pins
 pinout: https://pinout.xyz/
