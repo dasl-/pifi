@@ -132,6 +132,7 @@ exit 0
 EOF
         sudo chmod 755 /etc/rc.local
     fi
+
     if ! grep -q '^iwconfig wlan0 power off' /etc/rc.local ; then
         info "Disabling wifi power management..."
 
