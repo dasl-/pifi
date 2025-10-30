@@ -100,7 +100,6 @@ setupSystemdServices(){
     sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
 }
 
-
 setupYtDlpUpdateCron(){
     # setup yt-dlp update cron
     sudo "$BASE_DIR/install/pifi_cron.sh"
