@@ -8,7 +8,7 @@ We make use of the https://developers.google.com/youtube/v3/getting-started[Yout
 If your youtube API key has not been set, you will see a warning message when you run the https://github.com/dasl-/pifi/blob/main/install/install.sh[`./install/install.sh`] script.
 
 ## Generating your youtube API key
-Steps to get credentials: https://www.slickremix.com/docs/get-api-key-for-youtube/
+Steps to get credentials: https://web.archive.org/web/20240103001935/https://www.slickremix.com/docs/get-api-key-for-youtube/
 
 ## Setting your youtube API key
 Use the script: https://github.com/dasl-/pifi/blob/main/utils/youtube_api_key[`./utils/youtube_api_key`]:

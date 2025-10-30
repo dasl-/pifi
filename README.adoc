@@ -48,6 +48,7 @@ toc::[]
 . `./install/install_dependencies.sh`
 . `./install/install.sh`
     .. This may result in an https://gist.github.com/dasl-/25a6db0322f7b61ba0b3b7f3436fb975[out of memory error]. If that happens, simply re-run the install script. It should succeed the second time.
+. link:docs/setting_your_youtube_api_key.adoc[Set your youtube API key]
 . optional reboot to confirm services come up automatically and cleanly from a reboot: `sudo shutdown -r now`
 
 ### Vanity domain name (optional):
