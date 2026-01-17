@@ -54,7 +54,7 @@ class PongPlayer:
     def accept_socket(self, playlist_video_id, accept_loop_start_time, max_wait_time):
         """Accept a socket connection from a player."""
         try:
-            self.__unix_socket_helper.accept_socket(playlist_video_id, accept_loop_start_time, max_wait_time)
+            self.__unix_socket_helper.accept(playlist_video_id, accept_loop_start_time, max_wait_time)
             return True
         except Exception:
             self.__logger.error(f'Error accepting socket: {traceback.format_exc()}')
