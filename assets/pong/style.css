@@ -1,0 +1,281 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'VT323', monospace;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Menu */
+.menu-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.new-game {
+    background: #4ecca3;
+    color: #1a1a2e;
+    padding: 10px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.new-game:hover {
+    background: #3db892;
+    transform: scale(1.05);
+}
+
+.new-game.disabled-button {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.menubutton {
+    cursor: pointer;
+    font-size: 1.2em;
+    padding: 10px;
+}
+
+.menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 5px;
+    padding: 10px 0;
+    min-width: 200px;
+}
+
+.menu ul {
+    list-style: none;
+}
+
+.menu li {
+    padding: 10px 20px;
+}
+
+.menu li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+}
+
+.menu label {
+    display: block;
+    margin-bottom: 5px;
+    color: #4ecca3;
+}
+
+.slider {
+    width: 100%;
+    margin: 5px 0;
+}
+
+/* Game Status */
+.game-status {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.waiting-message {
+    display: none;
+    font-size: 1.5em;
+    color: #4ecca3;
+    animation: pulse 1.5s infinite;
+}
+
+.player-indicator {
+    display: none;
+    font-size: 1.2em;
+    color: #fff;
+    margin-top: 10px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Scoreboard */
+.scoreboard {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    font-size: 4em;
+}
+
+.score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.player-label {
+    font-size: 0.4em;
+    color: #888;
+}
+
+.player1-score .score-value {
+    color: #ff6b6b;
+}
+
+.player2-score .score-value {
+    color: #6b9fff;
+}
+
+.my-score .player-label {
+    color: #4ecca3;
+    font-weight: bold;
+}
+
+.score-divider {
+    color: #444;
+}
+
+/* Winner Display */
+.winner-display {
+    display: none;
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.winner-text {
+    font-size: 3em;
+    color: #ff6b6b;
+    text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+    animation: winner-pulse 0.5s infinite alternate;
+}
+
+.winner-display.victory .winner-text {
+    color: #4ecca3;
+    text-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
+}
+
+@keyframes winner-pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+/* Controls */
+.controls-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+}
+
+.control-hint {
+    color: #666;
+    font-size: 1em;
+}
+
+.key-hint {
+    margin: 5px 0;
+}
+
+/* Touch Controls */
+.touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+}
+
+.touch-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.left-zone {
+    left: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.right-zone {
+    right: 0;
+}
+
+.touch-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    color: rgba(255, 255, 255, 0.3);
+    transition: all 0.1s;
+}
+
+.touch-button:active,
+.touch-button.active {
+    background: rgba(78, 204, 163, 0.3);
+    color: #4ecca3;
+}
+
+.left-zone .up-button {
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.left-zone .down-button {
+    background: rgba(255, 107, 107, 0.05);
+}
+
+.right-zone .up-button {
+    background: rgba(107, 159, 255, 0.1);
+}
+
+.right-zone .down-button {
+    background: rgba(107, 159, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .scoreboard {
+        font-size: 3em;
+    }
+
+    .winner-text {
+        font-size: 2em;
+    }
+}

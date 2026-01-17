@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/pong/style.css">
+    <title>PONG</title>
+    <script>
+      $(document).ready(function () {
+        pong_page.init();
+      });
+    </script>
+  </head>
+
+  <body>
+    <nav class="menu-container">
+      <span class="new-game">New Game</span>
+      <span class="menubutton">Menu</span>
+      <section class="menu">
+        <ul>
+          <li>
+            <a class="settings_dropdown">Settings</a>
+            <ul>
+              <li><label>Volume</label>
+                <input type="range" min="0" max="100" value="50" class="slider" id="volume"><span id="volumeval"></span>
+              </li>
+              <li><label>Difficulty</label>
+                <input type="range" min="1" max="9" value="5" class="slider" id="difficulty"><span id="difficultyval"></span>
+              </li>
+              <li><label>Play to</label>
+                <input type="range" min="3" max="11" value="5" class="slider" id="target_score"><span id="target_score_val"></span>
+              </li>
+            </ul>
+          </li>
+          <li><a href="/">Pi-Fi</a></li>
+        </ul>
+      </section>
+    </nav>
+
+    <div class="game-status">
+      <div class="waiting-message">Waiting for opponent...</div>
+      <div class="player-indicator"></div>
+    </div>
+
+    <div class="scoreboard">
+      <div class="score player1-score">
+        <span class="player-label">P1</span>
+        <span class="score-value" id="p1-score">0</span>
+      </div>
+      <div class="score-divider">-</div>
+      <div class="score player2-score">
+        <span class="score-value" id="p2-score">0</span>
+        <span class="player-label">P2</span>
+      </div>
+    </div>
+
+    <div class="winner-display">
+      <div class="winner-text"></div>
+    </div>
+
+    <div class="controls-container">
+      <div class="control-hint">
+        <div class="key-hint">P1: W/S or Touch Left</div>
+        <div class="key-hint">P2: Up/Down or Touch Right</div>
+      </div>
+
+      <div class="touch-controls">
+        <div class="touch-zone left-zone">
+          <div class="touch-button up-button" data-player="0" data-direction="up">UP</div>
+          <div class="touch-button down-button" data-player="0" data-direction="down">DOWN</div>
+        </div>
+        <div class="touch-zone right-zone">
+          <div class="touch-button up-button" data-player="1" data-direction="up">UP</div>
+          <div class="touch-button down-button" data-player="1" data-direction="down">DOWN</div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="/assets/pong/pong-runner.js"></script>
+    <script type="text/javascript" src="/assets/pong/pong-page.js"></script>
+  </body>
+</html>

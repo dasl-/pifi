@@ -157,6 +157,20 @@
         "game_color_mode": "random",
     },
 
+    // Configuration specific to playing pong.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "pong": {
+
+        // Optional, integer, default: 3. Height of the paddles in pixels.
+        "paddle_height": 3,
+
+        // Optional, float, default: 0.5. Initial ball speed.
+        "ball_speed": 0.5,
+
+        // Optional, float, default: 1.5. Maximum ball speed.
+        "max_ball_speed": 1.5,
+    },
+
     // Configuration specific to boids flocking screensaver.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "boids": {

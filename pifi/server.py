@@ -13,6 +13,7 @@ from pifi.directoryutils import DirectoryUtils
 from pifi.volumecontroller import VolumeController
 from pifi.games.scores import Scores
 from pifi.games.snake import Snake
+from pifi.games.pong import Pong
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.settingsdb import SettingsDb
 from pifi.database import Database
@@ -77,7 +78,7 @@ class PifiAPI():
         game_playlist_video_id = None
         did_join_existing_game = None
         num_players = None
-        apple_count = None
+        game_settings = {}
 
         current_video = self.__playlist.get_current_video()
         if (
@@ -87,23 +88,43 @@ class PifiAPI():
             # join game
             game_playlist_video_id = current_video['playlist_video_id']
             did_join_existing_game = True
-            settings = Snake.make_settings_from_playlist_item(current_video)
-            num_players = settings['num_players']
-            apple_count = settings['apple_count']
+            if title == Snake.GAME_TITLE:
+                settings = Snake.make_settings_from_playlist_item(current_video)
+                num_players = settings['num_players']
+                game_settings['apple_count'] = settings['apple_count']
+            elif title == Pong.GAME_TITLE:
+                settings = Pong.make_settings_from_playlist_item(current_video)
+                num_players = settings['num_players']
+                game_settings['target_score'] = settings['target_score']
         else:
             # enqueue game
             game_type = Playlist.TYPE_GAME
             url = None
-            thumbnail = '/assets/snake/snake-thumbnail.png'
-            num_players = int(post_data['num_players'])
-            apple_count = int(post_data['apple_count'])
-            settings = json.dumps({
-                'difficulty': int(post_data['difficulty']),
-                'num_players': num_players,
-                'apple_count': apple_count,
-            })
             duration = 'n/a'
             color_mode = ''
+
+            if title == Snake.GAME_TITLE:
+                thumbnail = '/assets/snake/snake-thumbnail.png'
+                num_players = int(post_data['num_players'])
+                apple_count = int(post_data['apple_count'])
+                game_settings['apple_count'] = apple_count
+                settings = json.dumps({
+                    'difficulty': int(post_data['difficulty']),
+                    'num_players': num_players,
+                    'apple_count': apple_count,
+                })
+            elif title == Pong.GAME_TITLE:
+                thumbnail = '/assets/pong/pong-thumbnail.png'
+                num_players = 2  # Pong is always 2 players
+                target_score = int(post_data.get('target_score', 5))
+                game_settings['target_score'] = target_score
+                settings = json.dumps({
+                    'difficulty': int(post_data.get('difficulty', 5)),
+                    'target_score': target_score,
+                })
+            else:
+                return {'success': False, 'error': f'Unknown game: {title}'}
+
             game_playlist_video_id = self.__playlist.enqueue(
                 url, color_mode, thumbnail, title, duration, game_type, settings
             )
@@ -122,13 +143,14 @@ class PifiAPI():
                 else:
                     break
 
-        return {
+        response = {
             'success': True,
             'playlist_video_id': game_playlist_video_id,
             'did_join_existing_game': did_join_existing_game,
             'num_players': num_players,
-            'apple_count': apple_count
         }
+        response.update(game_settings)
+        return response
 
     def submit_game_score_initials(self, post_data):
         if len(post_data['initials']) != 3:
@@ -292,6 +314,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
         if self.path == '/snake' or self.path == '/snake/':
             self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
+        elif self.path == '/pong' or self.path == '/pong/':
+            self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'
         elif self.path.startswith('/assets/'):
             self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
         else:
