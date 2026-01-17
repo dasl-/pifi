@@ -123,7 +123,7 @@
                     if (data.success) {
                         originalEnabled = enabled.slice();
                         $('#save-btn').prop('disabled', true);
-                        showStatus('Settings saved! Changes will take effect on the next screensaver.', 'success');
+                        showStatus('Settings saved! Screensaver restarting...', 'success');
                     } else {
                         showStatus('Error saving settings', 'error');
                     }

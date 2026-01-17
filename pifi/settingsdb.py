@@ -15,6 +15,9 @@ class SettingsDb:
     # Which screensavers are enabled (JSON array)
     ENABLED_SCREENSAVERS = 'enabled_screensavers'
 
+    # Flag to trigger screensaver restart (checked and cleared by queue)
+    RESTART_SCREENSAVER = 'restart_screensaver'
+
     SETTING_YOUTUBE_API_KEY = 'youtube_api_key'
 
     def __init__(self):

@@ -239,6 +239,8 @@ class PifiAPI():
     def set_screensavers(self, post_data):
         enabled = post_data.get('enabled', [])
         self.__settings_db.set(SettingsDb.ENABLED_SCREENSAVERS, json.dumps(enabled))
+        # Signal queue to restart screensaver so changes take effect immediately
+        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
         return {'success': True, 'enabled': enabled}
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):

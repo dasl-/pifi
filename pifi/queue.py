@@ -259,6 +259,14 @@ class Queue:
                 self.__clear_screen()
                 self.__last_screen_clear_while_screensaver_disabled_time = now
 
+        # Check if screensaver restart was requested (e.g., from settings page)
+        if self.__is_screensaver_playing():
+            restart_flag = self.__settings_db.get(SettingsDb.RESTART_SCREENSAVER)
+            if restart_flag == '1':
+                self.__logger.info("Restarting screensaver due to settings change...")
+                self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '0')
+                self.__stop_playback_if_playing()
+
         return self.__is_screensaver_enabled
 
     def __clear_screen(self):
