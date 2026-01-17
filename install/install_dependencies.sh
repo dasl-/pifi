@@ -93,6 +93,7 @@ installLedDriverRgbMatrix(){
     fi
 
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
+    sudo apt -y install python3-pillow
 
     make build-python PYTHON="$(command -v python3)"
     sudo make install-python PYTHON="$(command -v python3)"
