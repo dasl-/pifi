@@ -92,11 +92,11 @@ installLedDriverRgbMatrix(){
         pushd "$clone_dir"
     fi
 
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
+
     make build-python PYTHON="$(command -v python3)"
     sudo make install-python PYTHON="$(command -v python3)"
     popd
-
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
 }
 
 installLedDriverWs2812b(){
