@@ -221,6 +221,13 @@ class PifiAPI():
             {'id': 'melting_clock', 'name': 'Melting Clock', 'description': 'Dali-style clock'},
             {'id': 'aurora', 'name': 'Aurora Borealis', 'description': 'Northern lights'},
             {'id': 'shadebobs', 'name': 'Shadebobs', 'description': 'Glowing trails'},
+            {'id': 'flowfield', 'name': 'Flow Field', 'description': 'Particles in wind'},
+            {'id': 'lavalamp', 'name': 'Lava Lamp', 'description': 'Rising and falling blobs'},
+            {'id': 'reactiondiffusion', 'name': 'Reaction Diffusion', 'description': 'Organic coral patterns'},
+            {'id': 'inkinwater', 'name': 'Ink in Water', 'description': 'Diffusing color blooms'},
+            {'id': 'perlinworms', 'name': 'Perlin Worms', 'description': 'Slithering noise trails'},
+            {'id': 'pendulumwaves', 'name': 'Pendulum Waves', 'description': 'Synchronized wave patterns'},
+            {'id': 'stringart', 'name': 'String Art', 'description': 'Curved envelopes from lines'},
         ]
 
         # Get enabled screensavers from settings, fall back to config

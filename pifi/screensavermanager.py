@@ -14,6 +14,13 @@ from pifi.games.matrixrain import MatrixRain
 from pifi.games.meltingclock import MeltingClock
 from pifi.games.aurora import Aurora
 from pifi.games.shadebobs import Shadebobs
+from pifi.games.flowfield import FlowField
+from pifi.games.lavalamp import LavaLamp
+from pifi.games.reactiondiffusion import ReactionDiffusion
+from pifi.games.inkinwater import InkInWater
+from pifi.games.perlinworms import PerlinWorms
+from pifi.games.pendulumwaves import PendulumWaves
+from pifi.games.stringart import StringArt
 from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.games.cellularautomata.gameoflife import GameOfLife
 from pifi.video.videoscreensaver import VideoScreensaver
@@ -39,6 +46,13 @@ class ScreensaverManager:
         'melting_clock': MeltingClock,
         'aurora': Aurora,
         'shadebobs': Shadebobs,
+        'flowfield': FlowField,
+        'lavalamp': LavaLamp,
+        'reactiondiffusion': ReactionDiffusion,
+        'inkinwater': InkInWater,
+        'perlinworms': PerlinWorms,
+        'pendulumwaves': PendulumWaves,
+        'stringart': StringArt,
     }
 
     def __init__(self):

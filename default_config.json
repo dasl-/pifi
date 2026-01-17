@@ -474,4 +474,173 @@
         "max_ticks": 2000,
     },
 
+    // Configuration specific to flow field screensaver.
+    "flowfield": {
+
+        // Optional, integer, default: 50. Number of particles.
+        "num_particles": 50,
+
+        // Optional, float, default: 0.95. Fade rate per frame.
+        "fade": 0.95,
+
+        // Optional, float, default: 0.5. Particle movement speed.
+        "speed": 0.5,
+
+        // Optional, float, default: 0.03. Tick sleep time.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 2500. Maximum ticks.
+        "max_ticks": 2500,
+    },
+
+    // Configuration specific to lava lamp screensaver.
+    "lavalamp": {
+
+        // Optional, integer, default: 10. Number of blobs.
+        "num_blobs": 10,
+
+        // Optional, float, default: 0.03. How fast blobs heat up.
+        "heat_rate": 0.03,
+
+        // Optional, float, default: 0.02. How fast blobs cool down.
+        "cool_rate": 0.02,
+
+        // Optional, float, default: 0.08. Buoyancy force strength.
+        "buoyancy": 0.08,
+
+        // Optional, float, default: 0.05. Tick sleep time.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum ticks.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to reaction diffusion screensaver.
+    "reactiondiffusion": {
+
+        // Optional, integer, default: 8. Number of initial seed points.
+        "num_seeds": 8,
+
+        // Optional, integer, default: 10. Simulation steps per frame.
+        "steps_per_frame": 10,
+
+        // Optional, integer, default: 100. Frames between injecting new seeds.
+        "inject_interval": 100,
+
+        // Optional, float, default: 0.05. Tick sleep time.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 2000. Maximum ticks.
+        "max_ticks": 2000,
+    },
+
+    // Configuration specific to ink in water screensaver.
+    "inkinwater": {
+
+        // Optional, float, default: 0.06. Chance of new drop per frame.
+        "drop_chance": 0.06,
+
+        // Optional, float, default: 0.15. How fast ink diffuses.
+        "diffusion_rate": 0.15,
+
+        // Optional, float, default: 0.03. Upward flow strength (0 to disable).
+        "flow_strength": 0.03,
+
+        // Optional, float, default: 0.997. Slow fade rate.
+        "fade": 0.997,
+
+        // Optional, float, default: 0.04. Tick sleep time.
+        "tick_sleep": 0.04,
+
+        // Optional, integer, default: 2500. Maximum ticks.
+        "max_ticks": 2500,
+    },
+
+    // Configuration specific to perlin worms screensaver.
+    "perlinworms": {
+
+        // Optional, integer, default: 8. Number of worms.
+        "num_worms": 8,
+
+        // Optional, integer, default: 12. Length of each worm in segments.
+        "worm_length": 12,
+
+        // Optional, float, default: 0.8. Worm movement speed.
+        "speed": 0.8,
+
+        // Optional, float, default: 0.1. Scale of noise field.
+        "noise_scale": 0.1,
+
+        // Optional, float, default: 0.02. How fast noise field evolves.
+        "time_speed": 0.02,
+
+        // Optional, float, default: 0.92. Trail fade rate.
+        "fade": 0.92,
+
+        // Optional, float, default: 1.5. Glow radius around worm segments.
+        "glow_size": 1.5,
+
+        // Optional, float, default: 0.03. Tick sleep time.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
+    // Configuration specific to pendulum waves screensaver.
+    "pendulumwaves": {
+
+        // Optional, integer, default: 0. Number of pendulums (0 = auto based on width).
+        "num_pendulums": 0,
+
+        // Optional, float, default: 60.0. Base period in frames for longest pendulum.
+        "base_period": 60.0,
+
+        // Optional, integer, default: 600. Frames for full pattern cycle.
+        "cycle_time": 600,
+
+        // Optional, float, default: 1.5. Size of pendulum bob.
+        "bob_size": 1.5,
+
+        // Optional, float, default: 0.85. Trail fade rate.
+        "trail_fade": 0.85,
+
+        // Optional, string, default: rainbow. Color mode: rainbow, gradient, white.
+        "color_mode": "rainbow",
+
+        // Optional, float, default: 0.03. Tick sleep time.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
+    // Configuration specific to string art screensaver.
+    "stringart": {
+
+        // Optional, integer, default: 64. Number of points on the circle.
+        "num_points": 64,
+
+        // Optional, integer, default: 32. Number of strings to draw.
+        "num_strings": 32,
+
+        // Optional, float, default: 0.02. Speed of multiplier change.
+        "multiplier_speed": 0.02,
+
+        // Optional, float, default: 0.01. Rotation speed.
+        "rotation_speed": 0.01,
+
+        // Optional, float, default: 0.15. Fade rate per frame.
+        "fade": 0.15,
+
+        // Optional, float, default: 0.4. Line brightness.
+        "line_brightness": 0.4,
+
+        // Optional, float, default: 0.03. Tick sleep time.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
 }
