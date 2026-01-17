@@ -10,6 +10,8 @@ from pifi.games.lorenz import Lorenz
 from pifi.games.metaballs import Metaballs
 from pifi.games.starfield import Starfield
 from pifi.games.matrixrain import MatrixRain
+from pifi.games.meltingclock import MeltingClock
+from pifi.games.aurora import Aurora
 from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.games.cellularautomata.gameoflife import GameOfLife
 from pifi.video.videoscreensaver import VideoScreensaver
@@ -50,6 +52,10 @@ class ScreensaverManager:
             self.__screensavers.append(Starfield(led_frame_player = self.__led_frame_player))
         if "matrix_rain" in screensaver_types:
             self.__screensavers.append(MatrixRain(led_frame_player = self.__led_frame_player))
+        if "melting_clock" in screensaver_types:
+            self.__screensavers.append(MeltingClock(led_frame_player = self.__led_frame_player))
+        if "aurora" in screensaver_types:
+            self.__screensavers.append(Aurora(led_frame_player = self.__led_frame_player))
         if saved_videos != []:
             self.__screensavers.append(VideoScreensaver(video_list = saved_videos))
 

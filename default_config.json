@@ -95,7 +95,7 @@
     "screensavers": {
 
         // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
-        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain"],
+        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain", "aurora", "cosmic_dream"],
 
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
@@ -385,6 +385,59 @@
 
         // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
         "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to melting clock screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "melting_clock": {
+
+        // Optional, boolean, default: false. Whether to show seconds (HH:MM:SS vs HH:MM).
+        "show_seconds": false,
+
+        // Optional, float, default: 0.15. Speed of melting/dripping animation.
+        "melt_speed": 0.15,
+
+        // Optional, float, default: 0.05. Speed of new digit forming.
+        "form_speed": 0.05,
+
+        // Optional, float, default: 0.85. Trail fade rate per tick (0-1).
+        "trail_fade": 0.85,
+
+        // Optional, float, default: 0.001. Speed of color hue cycling.
+        "hue_speed": 0.001,
+
+        // Optional, string, default: "rainbow". Color mode.
+        // Valid values: "rainbow", "green", "blue", "red", "white".
+        "color_mode": "rainbow",
+
+        // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 5000. Maximum number of ticks before ending.
+        "max_ticks": 5000,
+    },
+
+    // Configuration specific to aurora borealis screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "aurora": {
+
+        // Optional, integer, default: 4. Number of aurora curtains.
+        "num_curtains": 4,
+
+        // Optional, boolean, default: true. Whether to show twinkling background stars.
+        "show_stars": true,
+
+        // Optional, integer, default: 15. Number of background stars.
+        "num_stars": 15,
+
+        // Optional, float, default: 1.0. Overall animation speed multiplier.
+        "time_speed": 1.0,
+
+        // Optional, float, default: 0.04. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.04,
 
         // Optional, integer, default: 3000. Maximum number of ticks before ending.
         "max_ticks": 3000,

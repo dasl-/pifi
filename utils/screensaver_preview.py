@@ -59,6 +59,12 @@ SCREENSAVER_REGISTRY = [
 
     ('matrix_rain', 'pifi.games.matrixrain', 'MatrixRain',
      'Falling green characters', 'matrix_rain'),
+
+    ('melting_clock', 'pifi.games.meltingclock', 'MeltingClock',
+     'Time display with melting digits', 'melting_clock'),
+
+    ('aurora', 'pifi.games.aurora', 'Aurora',
+     'Northern lights with curtains', 'aurora'),
 ]
 
 # Build lookup dicts
@@ -245,6 +251,24 @@ def get_default_config():
             'spawn_rate': 0.08,
             'color_mode': 'green',
             'tick_sleep': 0.05,
+            'max_ticks': 10000,
+        },
+        'melting_clock': {
+            'show_seconds': True,
+            'melt_speed': 0.15,
+            'form_speed': 0.05,
+            'trail_fade': 0.85,
+            'hue_speed': 0.001,
+            'color_mode': 'rainbow',
+            'tick_sleep': 0.05,
+            'max_ticks': 100000,
+        },
+        'aurora': {
+            'num_curtains': 4,
+            'show_stars': True,
+            'num_stars': 15,
+            'time_speed': 1.0,
+            'tick_sleep': 0.04,
             'max_ticks': 10000,
         },
     }
