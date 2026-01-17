@@ -343,8 +343,8 @@ Examples:
     parser.add_argument(
         '-s', '--scale',
         type=int,
-        default=2,
-        help='Horizontal scale factor for terminal display (default: 2)'
+        default=1,
+        help='Horizontal scale factor (default: 1 for ~square pixels, increase if too narrow)'
     )
 
     parser.add_argument(
