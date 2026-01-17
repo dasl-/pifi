@@ -5,10 +5,8 @@ Inspired by the iconic Joy Division album cover - stacked
 waveforms that pulse and evolve, evoking pulsar radio signals.
 """
 
-import math
 import numpy as np
 import time
-import random
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
@@ -35,7 +33,7 @@ class UnknownPleasures:
         self.__amplitude = Config.get('unknownpleasures.amplitude', 0.4)
         self.__line_brightness = Config.get('unknownpleasures.line_brightness', 1.0)
         self.__fill_below = Config.get('unknownpleasures.fill_below', True)
-        self.__color_mode = Config.get('unknownpleasures.color_mode', 'white')  # white, blue, rainbow
+        self.__color_mode = Config.get('unknownpleasures.color_mode', 'white')
         self.__tick_sleep = Config.get('unknownpleasures.tick_sleep', 0.05)
         self.__max_ticks = Config.get('unknownpleasures.max_ticks', 10000)
 
@@ -43,10 +41,36 @@ class UnknownPleasures:
         if self.__num_lines <= 0:
             self.__num_lines = max(6, self.__height // 2)
 
+        # Pre-compute arrays for vectorized operations
+        self.__x_coords = np.arange(self.__width, dtype=np.float32)
+        self.__x_indices = np.arange(self.__width, dtype=np.int32)
+        self.__y_grid = np.arange(self.__height, dtype=np.int32)[:, np.newaxis]
+
         # Perlin noise setup
-        self.__perm = self.__generate_permutation()
+        self.__perm = None
+
+        # Pre-compute line colors
+        self.__line_colors = None
 
         self.__time = 0.0
+
+    def __init_colors(self):
+        """Pre-compute colors for all lines."""
+        self.__line_colors = np.zeros((self.__num_lines, 3), dtype=np.uint8)
+        b = self.__line_brightness
+
+        for i in range(self.__num_lines):
+            if self.__color_mode == 'white':
+                val = int(255 * b)
+                self.__line_colors[i] = (val, val, val)
+            elif self.__color_mode == 'blue':
+                self.__line_colors[i] = (int(80 * b), int(120 * b), int(255 * b))
+            elif self.__color_mode == 'rainbow':
+                hue = i / self.__num_lines
+                self.__line_colors[i] = self.__hsv_to_rgb(hue, 0.7, b)
+            else:
+                val = int(255 * b)
+                self.__line_colors[i] = (val, val, val)
 
     def __generate_permutation(self):
         """Generate permutation table for Perlin noise."""
@@ -54,10 +78,10 @@ class UnknownPleasures:
         np.random.shuffle(p)
         return np.concatenate([p, p])
 
-    def __noise1d(self, x):
-        """1D Perlin-like noise."""
-        xi = int(np.floor(x)) & 255
-        xf = x - np.floor(x)
+    def __noise1d_vectorized(self, x_array):
+        """Vectorized 1D Perlin-like noise."""
+        xi = np.floor(x_array).astype(np.int32) & 255
+        xf = x_array - np.floor(x_array)
 
         # Fade curve
         u = xf * xf * xf * (xf * (xf * 6 - 15) + 10)
@@ -66,29 +90,31 @@ class UnknownPleasures:
         a = self.__perm[xi]
         b = self.__perm[xi + 1]
 
-        # Gradient values
-        ga = (a & 1) * 2 - 1  # -1 or 1
+        # Gradient values (-1 or 1)
+        ga = (a & 1) * 2 - 1
         gb = (b & 1) * 2 - 1
 
         # Interpolate
         return ga * xf * (1 - u) + gb * (xf - 1) * u
 
-    def __get_wave_value(self, x, line_index, time_offset):
-        """Get wave height at position x for a given line."""
-        # Multiple octaves of noise for interesting patterns
-        value = 0
+    def __get_wave_values(self, line_index, time_offset):
+        """Get wave heights for all x positions (vectorized)."""
+        x = self.__x_coords
+
+        # Multiple octaves of noise
+        value = np.zeros(self.__width, dtype=np.float32)
         freq = 1.0
         amp = 1.0
 
         for _ in range(3):
             noise_x = x * self.__noise_scale * freq + time_offset + line_index * 10
-            value += self.__noise1d(noise_x) * amp
+            value += self.__noise1d_vectorized(noise_x) * amp
             freq *= 2
             amp *= 0.5
 
-        # Add some sine wave components for smoother peaks
-        value += math.sin(x * 0.3 + time_offset * 2 + line_index) * 0.3
-        value += math.sin(x * 0.7 - time_offset + line_index * 0.5) * 0.2
+        # Add sine wave components
+        value += np.sin(x * 0.3 + time_offset * 2 + line_index) * 0.3
+        value += np.sin(x * 0.7 - time_offset + line_index * 0.5) * 0.2
 
         return value * self.__amplitude
 
@@ -120,77 +146,35 @@ class UnknownPleasures:
 
         return (int(r * 255), int(g * 255), int(b * 255))
 
-    def __get_line_color(self, line_index, brightness=1.0):
-        """Get color for a line based on color mode."""
-        b = self.__line_brightness * brightness
-
-        if self.__color_mode == 'white':
-            val = int(255 * b)
-            return (val, val, val)
-        elif self.__color_mode == 'blue':
-            # Cool blue like some variations of the cover
-            return (int(80 * b), int(120 * b), int(255 * b))
-        elif self.__color_mode == 'rainbow':
-            hue = line_index / self.__num_lines
-            return self.__hsv_to_rgb(hue, 0.7, b)
-        else:  # default white
-            val = int(255 * b)
-            return (val, val, val)
-
     def __render(self):
         """Render the waveforms."""
         frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
 
-        # Calculate vertical spacing
-        # Lines are drawn from back (top) to front (bottom) for proper occlusion
         line_spacing = self.__height / (self.__num_lines + 1)
 
-        # Store wave heights for each line (for occlusion)
-        wave_heights = []
+        # Pre-compute all wave heights as a 2D array (num_lines x width)
+        all_heights = np.zeros((self.__num_lines, self.__width), dtype=np.float32)
+        all_base_y = np.zeros(self.__num_lines, dtype=np.float32)
 
         for line_idx in range(self.__num_lines):
-            # Base Y position (center of this line's row)
             base_y = (line_idx + 1) * line_spacing
-
-            # Calculate wave heights for this line
-            heights = []
-            for x in range(self.__width):
-                wave = self.__get_wave_value(x, line_idx, self.__time)
-                # Wave displaces upward (negative Y)
-                y = base_y - wave * line_spacing * 1.5
-                heights.append(y)
-
-            wave_heights.append((line_idx, base_y, heights))
+            wave_values = self.__get_wave_values(line_idx, self.__time)
+            all_heights[line_idx] = base_y - wave_values * line_spacing * 1.5
+            all_base_y[line_idx] = base_y
 
         # Draw from back to front (top to bottom) for occlusion
-        for line_idx, base_y, heights in wave_heights:
-            color = self.__get_line_color(line_idx)
-            fill_color = tuple(c // 4 for c in color)  # Darker fill
+        for line_idx in range(self.__num_lines):
+            pixel_heights = np.clip(all_heights[line_idx].astype(np.int32), 0, self.__height - 1)
+            fill_end = min(int(all_base_y[line_idx]), self.__height - 1)
+            color = self.__line_colors[line_idx]
 
-            for x in range(self.__width):
-                wave_y = heights[x]
-                pixel_y = int(wave_y)
+            if self.__fill_below:
+                # Vectorized: create mask where y > pixel_height and y <= fill_end
+                mask = (self.__y_grid > pixel_heights) & (self.__y_grid <= fill_end)
+                frame[mask] = 0  # Black fill
 
-                if self.__fill_below:
-                    # Fill from wave line down to base (creates solid mountain effect)
-                    fill_end = int(base_y)
-                    for y in range(max(0, pixel_y), min(self.__height, fill_end + 1)):
-                        if y == pixel_y:
-                            # Bright line at the top edge
-                            frame[y, x] = color
-                        else:
-                            # Black fill below (occludes lines behind)
-                            frame[y, x] = (0, 0, 0)
-                else:
-                    # Just draw the line
-                    if 0 <= pixel_y < self.__height:
-                        frame[pixel_y, x] = color
-
-            # Draw the wave line on top
-            for x in range(self.__width):
-                pixel_y = int(heights[x])
-                if 0 <= pixel_y < self.__height:
-                    frame[pixel_y, x] = color
+            # Draw the wave line using advanced indexing
+            frame[pixel_heights, self.__x_indices] = color
 
         self.__led_frame_player.play_frame(frame)
 
@@ -198,8 +182,9 @@ class UnknownPleasures:
         """Run the screensaver."""
         self.__logger.info("Starting Unknown Pleasures screensaver")
 
-        # Re-seed for variety
+        # Initialize
         self.__perm = self.__generate_permutation()
+        self.__init_colors()
         self.__time = 0.0
 
         for tick in range(self.__max_ticks):
