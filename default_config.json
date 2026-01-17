@@ -674,4 +674,29 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to cloudscape screensaver.
+    "cloudscape": {
+
+        // Optional, integer, default: 3. Number of cloud layers.
+        "num_layers": 3,
+
+        // Optional, float, default: 0.3. Cloud drift speed.
+        "drift_speed": 0.3,
+
+        // Optional, string, default: sunset. Sky mode: sunset, dawn, day, night.
+        "sky_mode": "sunset",
+
+        // Optional, float, default: 0.5. Cloud density (0-1).
+        "cloud_density": 0.5,
+
+        // Optional, float, default: 0.001. Sky color shift speed.
+        "sky_shift_speed": 0.001,
+
+        // Optional, float, default: 0.05. Tick sleep time.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
 }

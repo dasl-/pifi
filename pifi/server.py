@@ -229,6 +229,7 @@ class PifiAPI():
             {'id': 'pendulumwaves', 'name': 'Pendulum Waves', 'description': 'Synchronized wave patterns'},
             {'id': 'stringart', 'name': 'String Art', 'description': 'Curved envelopes from lines'},
             {'id': 'unknownpleasures', 'name': 'Unknown Pleasures', 'description': 'Joy Division pulsar waves'},
+            {'id': 'cloudscape', 'name': 'Cloudscape', 'description': 'Drifting clouds over gradient sky'},
         ]
 
         # Get enabled screensavers from settings, fall back to config

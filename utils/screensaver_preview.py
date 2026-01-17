@@ -92,6 +92,9 @@ SCREENSAVER_REGISTRY = [
 
     ('unknownpleasures', 'pifi.games.unknownpleasures', 'UnknownPleasures',
      'Joy Division pulsar waves', 'unknownpleasures'),
+
+    ('cloudscape', 'pifi.games.cloudscape', 'Cloudscape',
+     'Drifting clouds over gradient sky', 'cloudscape'),
 ]
 
 # Build lookup dicts
@@ -337,6 +340,15 @@ def get_default_config():
             'line_brightness': 1.0,
             'fill_below': True,
             'color_mode': 'white',
+            'tick_sleep': 0.05,
+            'max_ticks': 10000,
+        },
+        'cloudscape': {
+            'num_layers': 3,
+            'drift_speed': 0.3,
+            'sky_mode': 'sunset',
+            'cloud_density': 0.5,
+            'sky_shift_speed': 0.001,
             'tick_sleep': 0.05,
             'max_ticks': 10000,
         },
