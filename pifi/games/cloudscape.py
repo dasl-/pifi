@@ -28,9 +28,10 @@ class Cloudscape:
 
         # Config
         self.__num_layers = Config.get('cloudscape.num_layers', 3)
-        self.__drift_speed = Config.get('cloudscape.drift_speed', 0.3)
-        self.__sky_mode = Config.get('cloudscape.sky_mode', 'sunset')  # sunset, day, night, dawn
-        self.__cloud_density = Config.get('cloudscape.cloud_density', 0.5)
+        self.__drift_speed = Config.get('cloudscape.drift_speed', 0.2)
+        self.__sky_mode = Config.get('cloudscape.sky_mode', 'pastel')  # pastel, day, night, dawn, sunset
+        self.__cloud_density = Config.get('cloudscape.cloud_density', 0.7)
+        self.__cloud_scale = Config.get('cloudscape.cloud_scale', 0.04)  # Smaller = bigger clouds
         self.__sky_shift_speed = Config.get('cloudscape.sky_shift_speed', 0.001)
         self.__tick_sleep = Config.get('cloudscape.tick_sleep', 0.05)
         self.__max_ticks = Config.get('cloudscape.max_ticks', 10000)
@@ -109,7 +110,22 @@ class Cloudscape:
 
     def __get_sky_colors(self, mode):
         """Get gradient colors for sky mode."""
-        if mode == 'sunset':
+        if mode == 'pastel':
+            # Soft, relaxing cartoon sky
+            return [
+                (120, 180, 255),   # Soft sky blue (top)
+                (150, 200, 255),   # Light blue
+                (180, 220, 255),   # Pale blue
+                (210, 235, 255),   # Almost white blue (horizon)
+            ]
+        elif mode == 'day':
+            return [
+                (80, 140, 220),    # Sky blue (top)
+                (120, 180, 240),   # Light sky blue
+                (160, 210, 250),   # Pale blue
+                (200, 230, 255),   # Horizon haze
+            ]
+        elif mode == 'sunset':
             return [
                 (25, 25, 60),      # Deep blue (top)
                 (80, 50, 80),      # Purple
@@ -118,27 +134,20 @@ class Cloudscape:
             ]
         elif mode == 'dawn':
             return [
-                (20, 30, 60),      # Dark blue
-                (60, 50, 80),      # Dusty purple
-                (150, 100, 120),   # Pink
-                (255, 180, 140),   # Soft peach
-            ]
-        elif mode == 'day':
-            return [
-                (30, 80, 180),     # Deep sky blue
-                (80, 150, 220),    # Sky blue
-                (150, 200, 240),   # Light blue
-                (200, 230, 255),   # Horizon haze
+                (100, 140, 180),   # Soft blue
+                (140, 160, 190),   # Dusty blue
+                (180, 180, 200),   # Lavender
+                (220, 200, 210),   # Soft pink
             ]
         elif mode == 'night':
             return [
-                (5, 5, 20),        # Near black
-                (10, 15, 40),      # Dark blue
-                (20, 30, 60),      # Night blue
-                (30, 40, 70),      # Horizon glow
+                (15, 20, 40),      # Dark blue
+                (25, 35, 60),      # Night blue
+                (40, 55, 80),      # Lighter night
+                (55, 70, 95),      # Horizon glow
             ]
-        else:  # Default sunset
-            return self.__get_sky_colors('sunset')
+        else:  # Default pastel
+            return self.__get_sky_colors('pastel')
 
     def __compute_sky_gradient(self, time_offset=0):
         """Compute sky gradient with optional color shifting."""
@@ -179,23 +188,26 @@ class Cloudscape:
 
         return gradient
 
-    def __get_cloud_color(self, layer, density):
+    def __get_cloud_color(self, layer):
         """Get cloud color based on layer depth and sky mode."""
-        # Deeper layers are darker/more distant
-        layer_brightness = 0.6 + 0.4 * (layer / max(1, self.__num_layers - 1))
+        # Deeper layers are slightly darker for depth
+        layer_brightness = 0.85 + 0.15 * (layer / max(1, self.__num_layers - 1))
 
-        if self.__sky_mode == 'sunset':
-            # Warm tinted clouds
-            base = np.array([255, 220, 200], dtype=np.float32)
-        elif self.__sky_mode == 'dawn':
-            # Pink/peach clouds
-            base = np.array([255, 200, 180], dtype=np.float32)
-        elif self.__sky_mode == 'day':
-            # White fluffy clouds
+        if self.__sky_mode == 'pastel':
+            # Bright white fluffy cartoon clouds
             base = np.array([255, 255, 255], dtype=np.float32)
+        elif self.__sky_mode == 'day':
+            # Pure white clouds
+            base = np.array([255, 255, 255], dtype=np.float32)
+        elif self.__sky_mode == 'sunset':
+            # Warm tinted clouds
+            base = np.array([255, 230, 210], dtype=np.float32)
+        elif self.__sky_mode == 'dawn':
+            # Soft lavender clouds
+            base = np.array([240, 230, 245], dtype=np.float32)
         elif self.__sky_mode == 'night':
-            # Dark grey clouds
-            base = np.array([60, 70, 90], dtype=np.float32)
+            # Silvery grey clouds
+            base = np.array([100, 110, 130], dtype=np.float32)
         else:
             base = np.array([255, 255, 255], dtype=np.float32)
 
@@ -210,34 +222,35 @@ class Cloudscape:
         for layer in range(self.__num_layers):
             # Layer properties - back layers move slower (parallax)
             layer_depth = layer / max(1, self.__num_layers - 1)  # 0 = back, 1 = front
-            layer_speed = 0.3 + layer_depth * 0.7  # Back = slow, front = fast
-            layer_scale = 0.08 + layer_depth * 0.04  # Back = larger clouds
-            layer_alpha = 0.4 + layer_depth * 0.4  # Back = more transparent
+            layer_speed = 0.4 + layer_depth * 0.6  # Back = slow, front = fast
+            # Use cloud_scale config - smaller values = bigger clouds
+            layer_scale = self.__cloud_scale * (0.8 + layer_depth * 0.4)
+            layer_alpha = 0.7 + layer_depth * 0.3  # More opaque for cartoon look
 
             # Calculate cloud noise with drift
             drift_x = self.__time * self.__drift_speed * layer_speed
             noise_x = (self.__x_grid + drift_x) * layer_scale
-            noise_y = self.__y_grid * layer_scale * 1.5 + layer * 100  # Offset each layer
+            noise_y = self.__y_grid * layer_scale * 1.2 + layer * 100  # Offset each layer
 
-            # Generate cloud density using fractal noise
-            cloud_noise = self.__fbm(noise_x, noise_y, octaves=4)
+            # Generate cloud density using fractal noise (fewer octaves = puffier)
+            cloud_noise = self.__fbm(noise_x, noise_y, octaves=3)
 
-            # Map noise to cloud density (threshold and smooth)
-            threshold = 0.5 - self.__cloud_density * 0.4
-            cloud_mask = (cloud_noise - threshold) / (1 - threshold)
+            # Map noise to cloud density (lower threshold = more clouds)
+            threshold = 0.3 - self.__cloud_density * 0.35
+            cloud_mask = (cloud_noise - threshold) / (0.6 - threshold)
             cloud_mask = np.clip(cloud_mask, 0, 1)
 
-            # Soften cloud edges
-            cloud_mask = cloud_mask * cloud_mask * (3 - 2 * cloud_mask)
+            # Slightly sharper edges for cartoon look (steeper curve)
+            cloud_mask = cloud_mask * cloud_mask
 
-            # Add vertical falloff (more clouds near horizon for depth)
+            # Spread clouds across more of the sky
             y_factor = self.__y_grid / self.__height
-            # Clouds more prominent in middle/lower portion
-            vertical_weight = np.sin(y_factor * np.pi * 0.8) ** 0.5
+            # Clouds visible across most of the sky, slightly less at very top
+            vertical_weight = 0.6 + 0.4 * np.sin(y_factor * np.pi * 0.9)
             cloud_mask = cloud_mask * vertical_weight
 
             # Get cloud color for this layer
-            cloud_color = self.__get_cloud_color(layer, cloud_mask)
+            cloud_color = self.__get_cloud_color(layer)
 
             # Blend clouds onto frame
             alpha = cloud_mask[:, :, np.newaxis] * layer_alpha

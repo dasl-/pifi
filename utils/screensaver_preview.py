@@ -345,9 +345,10 @@ def get_default_config():
         },
         'cloudscape': {
             'num_layers': 3,
-            'drift_speed': 0.3,
-            'sky_mode': 'sunset',
-            'cloud_density': 0.5,
+            'drift_speed': 0.2,
+            'sky_mode': 'pastel',
+            'cloud_density': 0.7,
+            'cloud_scale': 0.04,
             'sky_shift_speed': 0.001,
             'tick_sleep': 0.05,
             'max_ticks': 10000,
