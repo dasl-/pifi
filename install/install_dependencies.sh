@@ -44,7 +44,7 @@ updateAndInstallPackages(){
     sudo apt -y full-upgrade
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade yt-dlp pytz websockets pygame pyjson5 \
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade "yt-dlp[default]" pytz websockets pygame pyjson5 \
         git+https://github.com/cexen/py-simple-audio.git
 }
 
