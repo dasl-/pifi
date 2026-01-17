@@ -2,6 +2,14 @@ import random
 
 from pifi.config import Config
 from pifi.games.boids import Boids
+from pifi.games.cosmicdream import CosmicDream
+from pifi.games.mandelbrot import Mandelbrot
+from pifi.games.waveinterference import WaveInterference
+from pifi.games.spirograph import Spirograph
+from pifi.games.lorenz import Lorenz
+from pifi.games.metaballs import Metaballs
+from pifi.games.starfield import Starfield
+from pifi.games.matrixrain import MatrixRain
 from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.games.cellularautomata.gameoflife import GameOfLife
 from pifi.video.videoscreensaver import VideoScreensaver
@@ -26,6 +34,22 @@ class ScreensaverManager:
             self.__screensavers.append(CyclicAutomaton(led_frame_player = self.__led_frame_player))
         if "boids" in screensaver_types:
             self.__screensavers.append(Boids(led_frame_player = self.__led_frame_player))
+        if "cosmic_dream" in screensaver_types:
+            self.__screensavers.append(CosmicDream(led_frame_player = self.__led_frame_player))
+        if "mandelbrot" in screensaver_types:
+            self.__screensavers.append(Mandelbrot(led_frame_player = self.__led_frame_player))
+        if "wave_interference" in screensaver_types:
+            self.__screensavers.append(WaveInterference(led_frame_player = self.__led_frame_player))
+        if "spirograph" in screensaver_types:
+            self.__screensavers.append(Spirograph(led_frame_player = self.__led_frame_player))
+        if "lorenz" in screensaver_types:
+            self.__screensavers.append(Lorenz(led_frame_player = self.__led_frame_player))
+        if "metaballs" in screensaver_types:
+            self.__screensavers.append(Metaballs(led_frame_player = self.__led_frame_player))
+        if "starfield" in screensaver_types:
+            self.__screensavers.append(Starfield(led_frame_player = self.__led_frame_player))
+        if "matrix_rain" in screensaver_types:
+            self.__screensavers.append(MatrixRain(led_frame_player = self.__led_frame_player))
         if saved_videos != []:
             self.__screensavers.append(VideoScreensaver(video_list = saved_videos))
 
