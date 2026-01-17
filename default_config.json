@@ -643,4 +643,35 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to unknown pleasures screensaver.
+    "unknownpleasures": {
+
+        // Optional, integer, default: 0. Number of wave lines (0 = auto based on height).
+        "num_lines": 0,
+
+        // Optional, float, default: 0.05. Wave animation speed.
+        "wave_speed": 0.05,
+
+        // Optional, float, default: 0.15. Noise scale for wave generation.
+        "noise_scale": 0.15,
+
+        // Optional, float, default: 0.4. Wave amplitude.
+        "amplitude": 0.4,
+
+        // Optional, float, default: 1.0. Line brightness.
+        "line_brightness": 1.0,
+
+        // Optional, boolean, default: true. Fill below wave lines (solid mountain effect).
+        "fill_below": true,
+
+        // Optional, string, default: white. Color mode: white, blue, rainbow.
+        "color_mode": "white",
+
+        // Optional, float, default: 0.05. Tick sleep time.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
 }

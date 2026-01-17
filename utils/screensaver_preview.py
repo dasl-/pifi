@@ -89,6 +89,9 @@ SCREENSAVER_REGISTRY = [
 
     ('stringart', 'pifi.games.stringart', 'StringArt',
      'Curved envelopes from lines', 'stringart'),
+
+    ('unknownpleasures', 'pifi.games.unknownpleasures', 'UnknownPleasures',
+     'Joy Division pulsar waves', 'unknownpleasures'),
 ]
 
 # Build lookup dicts
@@ -324,6 +327,17 @@ def get_default_config():
             'fade': 0.15,
             'line_brightness': 0.4,
             'tick_sleep': 0.03,
+            'max_ticks': 10000,
+        },
+        'unknownpleasures': {
+            'num_lines': 0,
+            'wave_speed': 0.05,
+            'noise_scale': 0.15,
+            'amplitude': 0.4,
+            'line_brightness': 1.0,
+            'fill_below': True,
+            'color_mode': 'white',
+            'tick_sleep': 0.05,
             'max_ticks': 10000,
         },
     }

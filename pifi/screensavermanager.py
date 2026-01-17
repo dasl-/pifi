@@ -21,6 +21,7 @@ from pifi.games.inkinwater import InkInWater
 from pifi.games.perlinworms import PerlinWorms
 from pifi.games.pendulumwaves import PendulumWaves
 from pifi.games.stringart import StringArt
+from pifi.games.unknownpleasures import UnknownPleasures
 from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.games.cellularautomata.gameoflife import GameOfLife
 from pifi.video.videoscreensaver import VideoScreensaver
@@ -53,6 +54,7 @@ class ScreensaverManager:
         'perlinworms': PerlinWorms,
         'pendulumwaves': PendulumWaves,
         'stringart': StringArt,
+        'unknownpleasures': UnknownPleasures,
     }
 
     def __init__(self):

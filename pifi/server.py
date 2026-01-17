@@ -228,6 +228,7 @@ class PifiAPI():
             {'id': 'perlinworms', 'name': 'Perlin Worms', 'description': 'Slithering noise trails'},
             {'id': 'pendulumwaves', 'name': 'Pendulum Waves', 'description': 'Synchronized wave patterns'},
             {'id': 'stringart', 'name': 'String Art', 'description': 'Curved envelopes from lines'},
+            {'id': 'unknownpleasures', 'name': 'Unknown Pleasures', 'description': 'Joy Division pulsar waves'},
         ]
 
         # Get enabled screensavers from settings, fall back to config
