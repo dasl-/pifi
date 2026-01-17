@@ -1,0 +1,188 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #eee;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #fff;
+}
+
+.back-link {
+    color: #4ecca3;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.settings-section h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+    color: #4ecca3;
+}
+
+.description {
+    color: #888;
+    margin: 0 0 20px 0;
+    font-size: 0.9em;
+}
+
+.screensaver-list {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+
+.screensaver-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.screensaver-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.screensaver-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 15px;
+    cursor: pointer;
+    accent-color: #4ecca3;
+}
+
+.screensaver-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.screensaver-name {
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.screensaver-desc {
+    font-size: 0.85em;
+    color: #888;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.save-btn {
+    background: #4ecca3;
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+}
+
+.save-btn:hover:not(:disabled) {
+    background: #3db892;
+}
+
+.save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    background: transparent;
+    color: #888;
+    border: 1px solid #444;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.secondary-btn:hover {
+    border-color: #666;
+    color: #ccc;
+}
+
+.status-message {
+    display: none;
+    margin-top: 15px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
+.status-message.success {
+    background: rgba(78, 204, 163, 0.2);
+    color: #4ecca3;
+    border: 1px solid rgba(78, 204, 163, 0.3);
+}
+
+.status-message.error {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .save-btn, .secondary-btn {
+        width: 100%;
+    }
+}

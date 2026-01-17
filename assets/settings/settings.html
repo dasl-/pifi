@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi-Fi Settings</title>
+    <link rel="stylesheet" href="/assets/settings/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pi-Fi Settings</h1>
+            <a href="/" class="back-link">Back to Pi-Fi</a>
+        </header>
+
+        <section class="settings-section">
+            <h2>Screensavers</h2>
+            <p class="description">Select which screensavers to include in the rotation.</p>
+
+            <div class="screensaver-list" id="screensaver-list">
+                <div class="loading">Loading...</div>
+            </div>
+
+            <div class="actions">
+                <button id="save-btn" class="save-btn" disabled>Save Changes</button>
+                <button id="select-all-btn" class="secondary-btn">Select All</button>
+                <button id="select-none-btn" class="secondary-btn">Select None</button>
+            </div>
+
+            <div id="status-message" class="status-message"></div>
+        </section>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function() {
+            var originalEnabled = [];
+
+            function loadScreensavers() {
+                $.get('/api/screensavers', function(data) {
+                    if (!data.success) {
+                        showStatus('Error loading screensavers', 'error');
+                        return;
+                    }
+
+                    originalEnabled = data.enabled.slice();
+                    renderScreensavers(data.screensavers, data.enabled);
+                    $('#save-btn').prop('disabled', true);
+                }).fail(function() {
+                    showStatus('Failed to load screensavers', 'error');
+                });
+            }
+
+            function renderScreensavers(screensavers, enabled) {
+                var $list = $('#screensaver-list');
+                $list.empty();
+
+                screensavers.forEach(function(s) {
+                    var isEnabled = enabled.indexOf(s.id) !== -1;
+                    var $item = $('<label class="screensaver-item">' +
+                        '<input type="checkbox" value="' + s.id + '"' + (isEnabled ? ' checked' : '') + '>' +
+                        '<span class="screensaver-info">' +
+                            '<span class="screensaver-name">' + s.name + '</span>' +
+                            '<span class="screensaver-desc">' + s.description + '</span>' +
+                        '</span>' +
+                    '</label>');
+                    $list.append($item);
+                });
+
+                // Enable save button when changes are made
+                $list.find('input').on('change', function() {
+                    var currentEnabled = getEnabledIds();
+                    var hasChanges = !arraysEqual(currentEnabled, originalEnabled);
+                    $('#save-btn').prop('disabled', !hasChanges);
+                });
+            }
+
+            function getEnabledIds() {
+                var enabled = [];
+                $('#screensaver-list input:checked').each(function() {
+                    enabled.push($(this).val());
+                });
+                return enabled;
+            }
+
+            function arraysEqual(a, b) {
+                if (a.length !== b.length) return false;
+                var sortedA = a.slice().sort();
+                var sortedB = b.slice().sort();
+                for (var i = 0; i < sortedA.length; i++) {
+                    if (sortedA[i] !== sortedB[i]) return false;
+                }
+                return true;
+            }
+
+            function showStatus(message, type) {
+                var $status = $('#status-message');
+                $status.text(message)
+                    .removeClass('success error')
+                    .addClass(type)
+                    .fadeIn();
+
+                if (type === 'success') {
+                    setTimeout(function() {
+                        $status.fadeOut();
+                    }, 3000);
+                }
+            }
+
+            $('#save-btn').on('click', function() {
+                var enabled = getEnabledIds();
+
+                if (enabled.length === 0) {
+                    showStatus('Please select at least one screensaver', 'error');
+                    return;
+                }
+
+                $.post({
+                    url: '/api/screensavers',
+                    data: JSON.stringify({ enabled: enabled }),
+                    contentType: 'application/json'
+                }).done(function(data) {
+                    if (data.success) {
+                        originalEnabled = enabled.slice();
+                        $('#save-btn').prop('disabled', true);
+                        showStatus('Settings saved! Changes will take effect on the next screensaver.', 'success');
+                    } else {
+                        showStatus('Error saving settings', 'error');
+                    }
+                }).fail(function() {
+                    showStatus('Failed to save settings', 'error');
+                });
+            });
+
+            $('#select-all-btn').on('click', function() {
+                $('#screensaver-list input').prop('checked', true).trigger('change');
+            });
+
+            $('#select-none-btn').on('click', function() {
+                $('#screensaver-list input').prop('checked', false).trigger('change');
+            });
+
+            loadScreensavers();
+        });
+    </script>
+</body>
+</html>
