@@ -121,7 +121,7 @@ class Mandelbrot:
         self.__render()
 
     def __render(self):
-        max_iter = Config.get('mandelbrot.max_iterations', 100)
+        max_iter = Config.get('mandelbrot.max_iterations', 50)
 
         # Calculate view bounds
         aspect = self.__width / self.__height
@@ -133,57 +133,38 @@ class Mandelbrot:
         y_min = self.__center_y - view_height / 2
         y_max = self.__center_y + view_height / 2
 
-        # Create coordinate grids
-        x = np.linspace(x_min, x_max, self.__width)
-        y = np.linspace(y_min, y_max, self.__height)
+        # Create coordinate grids using float32 for speed
+        x = np.linspace(x_min, x_max, self.__width, dtype=np.float32)
+        y = np.linspace(y_min, y_max, self.__height, dtype=np.float32)
         X, Y = np.meshgrid(x, y)
         C = X + 1j * Y
 
-        # Mandelbrot iteration with smooth coloring
+        # Mandelbrot iteration - fully vectorized
         Z = np.zeros_like(C)
-        M = np.zeros(C.shape)  # Smooth iteration count
-        mask = np.ones(C.shape, dtype=bool)
+        M = np.zeros(C.shape, dtype=np.float32)  # Iteration count
 
         for i in range(max_iter):
-            Z[mask] = Z[mask] ** 2 + C[mask]
-            escaped = mask & (np.abs(Z) > 2)
-
-            # Smooth coloring: add fractional escape count
-            if np.any(escaped):
-                # Smooth iteration count using log-log formula
-                log_zn = np.log(np.abs(Z[escaped]))
-                nu = np.log(log_zn / np.log(2)) / np.log(2)
-                M[escaped] = i + 1 - nu
-
-            mask[escaped] = False
-
+            mask = np.abs(Z) <= 2
             if not np.any(mask):
                 break
+            Z[mask] = Z[mask] * Z[mask] + C[mask]
+            # Record iteration for newly escaped points
+            newly_escaped = (np.abs(Z) > 2) & (M == 0)
+            M[newly_escaped] = i + 1
 
-        # Points that never escaped get 0 (inside the set = black)
-        M[mask] = 0
+        # Points still inside get 0 (black)
+        # M already has 0 for points that never escaped
 
-        # Map iteration counts to colors
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        # Vectorized color mapping (no Python loops!)
+        M_normalized = (M * 4) % 256  # Scale for more color variation
+        idx = M_normalized.astype(np.int32)
+        idx = np.clip(idx, 0, 255)
 
-        # Normalize and apply palette
-        M_normalized = M % 256
-        for row in range(self.__height):
-            for col in range(self.__width):
-                if M[row, col] == 0:
-                    # Inside the set - black
-                    frame[row, col] = [0, 0, 0]
-                else:
-                    # Use smooth color interpolation
-                    idx = int(M_normalized[row, col])
-                    idx_next = (idx + 1) % 256
-                    frac = M_normalized[row, col] - idx
+        # Direct palette lookup - fully vectorized
+        frame = self.__palette[idx].copy()
 
-                    color = (
-                        self.__palette[idx] * (1 - frac) +
-                        self.__palette[idx_next] * frac
-                    )
-                    frame[row, col] = color.astype(np.uint8)
+        # Set interior points to black
+        frame[M == 0] = 0
 
         self.__led_frame_player.play_frame(frame)
 
