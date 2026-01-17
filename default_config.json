@@ -95,7 +95,7 @@
     "screensavers": {
 
         // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
-        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain", "aurora", "cosmic_dream"],
+        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain", "aurora", "cosmic_dream", "shadebobs"],
 
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
@@ -455,6 +455,23 @@
 
         // Optional, integer, default: 3000. Maximum number of ticks before ending.
         "max_ticks": 3000,
+    },
+
+    // Configuration specific to shadebobs screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "shadebobs": {
+
+        // Optional, integer, default: 5. Number of bobs (glowing circles).
+        "num_bobs": 5,
+
+        // Optional, float, default: 0.92. Fade rate per frame (lower = faster fade).
+        "fade": 0.92,
+
+        // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 2000. Maximum number of ticks before ending.
+        "max_ticks": 2000,
     },
 
 }

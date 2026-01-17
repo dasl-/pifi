@@ -65,6 +65,9 @@ SCREENSAVER_REGISTRY = [
 
     ('aurora', 'pifi.games.aurora', 'Aurora',
      'Northern lights with curtains', 'aurora'),
+
+    ('shadebobs', 'pifi.games.shadebobs', 'Shadebobs',
+     'Glowing Lissajous trails', 'shadebobs'),
 ]
 
 # Build lookup dicts
