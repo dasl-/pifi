@@ -59,6 +59,9 @@ class Mandelbrot:
         # Color palette
         self.__palette = None
 
+        # Track consecutive black frames for reset detection
+        self.__black_frame_count = 0
+
     def play(self):
         self.__logger.info("Starting Mandelbrot screensaver")
         self.__reset()
@@ -86,6 +89,9 @@ class Mandelbrot:
 
         # Generate a random color palette
         self.__palette = self.__generate_palette()
+
+        # Reset black frame counter
+        self.__black_frame_count = 0
 
         self.__logger.info(f"Zoom target: ({self.__target_x}, {self.__target_y})")
 
@@ -118,7 +124,16 @@ class Mandelbrot:
         zoom_speed = Config.get('mandelbrot.zoom_speed', 1.02)
         self.__zoom *= zoom_speed
 
-        self.__render()
+        black_ratio = self.__render()
+
+        # If frame is all black, we've zoomed into the set interior
+        if black_ratio == 1.0:
+            self.__black_frame_count += 1
+            if self.__black_frame_count >= 5:
+                self.__logger.info("Zoomed into black region, picking new target")
+                self.__reset()
+        else:
+            self.__black_frame_count = 0
 
     def __render(self):
         max_iter = Config.get('mandelbrot.max_iterations', 50)
@@ -164,9 +179,15 @@ class Mandelbrot:
         frame = self.__palette[idx].copy()
 
         # Set interior points to black
-        frame[M == 0] = 0
+        interior_mask = (M == 0)
+        frame[interior_mask] = 0
 
         self.__led_frame_player.play_frame(frame)
+
+        # Return ratio of black (interior) pixels
+        total_pixels = self.__width * self.__height
+        black_pixels = np.sum(interior_mask)
+        return black_pixels / total_pixels
 
     def __hsv_to_rgb(self, h, s, v):
         """Convert HSV color to RGB."""
