@@ -215,8 +215,11 @@ var pong_runner = (() => {
     }
 
     function sendDirection(direction, player_index) {
-        if (web_sockets[player_index] && web_sockets[player_index].readyState === WebSocket.OPEN) {
-            web_sockets[player_index].send(direction + ' ' + (new Date() / 1000));
+        // Each browser has only one WebSocket connection, stored at index 0
+        // player_index is the server-assigned index, not the local array index
+        var socket = web_sockets[0];
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(direction + ' ' + (new Date() / 1000));
 
             // Visual feedback
             $(".touch-button[data-direction='" + direction + "']").addClass("active");
