@@ -1,9 +1,11 @@
+import json
+import socket
 import time
 import traceback
 
 from pifi.config import Config
 from pifi.logger import Logger
-from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException
+from pifi.games.unixsockethelper import UnixSocketHelper, SocketClosedException, SocketConnectionHandshakeException
 
 
 class PongPlayer:
@@ -53,12 +55,48 @@ class PongPlayer:
 
     def accept_socket(self, playlist_video_id, accept_loop_start_time, max_wait_time):
         """Accept a socket connection from a player."""
-        try:
-            self.__unix_socket_helper.accept(playlist_video_id, accept_loop_start_time, max_wait_time)
+        while True:
+            if (time.time() - accept_loop_start_time) > max_wait_time:
+                self.__logger.info('Player did not join within the time limit.')
+                return False
+
+            try:
+                self.__unix_socket_helper.accept()
+            except socket.timeout:
+                # Keep trying to accept until max_wait_time expires
+                continue
+            except SocketConnectionHandshakeException:
+                # Error during handshake, try again to clear stale connections
+                self.__logger.info(f'Calling accept again due to handshake error: {traceback.format_exc()}')
+                continue
+            except Exception:
+                self.__logger.error(f'Error accepting socket: {traceback.format_exc()}')
+                return False
+
+            # Verify this is the right client by checking playlist_video_id
+            try:
+                client_playlist_video_id = json.loads(self.__unix_socket_helper.recv_msg())['playlist_video_id']
+                if client_playlist_video_id != playlist_video_id:
+                    self.__logger.warning(f'Server was playing playlist_video_id: {playlist_video_id}, but client was ' +
+                        f'playing playlist_video_id: {client_playlist_video_id}. Calling accept again.')
+                    self.__unix_socket_helper.close()
+                    continue
+            except Exception:
+                self.__logger.error(f'Error reading playlist_video_id from client: {traceback.format_exc()}')
+                continue
+
+            # Send player index message to client
+            player_index_message = json.dumps({
+                'message_type': 'player_index_message',
+                'player_index': self.__player_index
+            })
+            try:
+                self.__unix_socket_helper.send_msg(player_index_message)
+            except Exception:
+                self.__logger.error(f'Error sending player_index_message: {traceback.format_exc()}')
+                return False
+
             return True
-        except Exception:
-            self.__logger.error(f'Error accepting socket: {traceback.format_exc()}')
-            return False
 
     def read_move(self):
         """Read move from socket and store it."""
