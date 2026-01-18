@@ -4,8 +4,18 @@ class Screensaver(ABC):
     """Abstract base class for all screensavers."""
 
     def __init__(self, led_frame_player=None):
-        """Standard constructor. Subclasses should call super().__init__()"""
-        pass
+        """
+        Standard constructor signature for all screensavers.
+
+        Args:
+            led_frame_player: Optional LedFramePlayer instance. If None, subclasses
+                            typically create their own instance.
+
+        Note: Subclasses must call super().__init__(led_frame_player) as the first
+              line of their __init__ method.
+        """
+        # Flag to verify subclasses call super().__init__()
+        self._screensaver_base_init_called = True
 
     @abstractmethod
     def play(self) -> None:

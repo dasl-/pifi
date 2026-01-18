@@ -21,6 +21,7 @@ class MatrixRain(Screensaver):
     # On a small LED matrix, we show the effect rather than actual characters
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:

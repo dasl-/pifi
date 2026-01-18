@@ -104,6 +104,7 @@ class MeltingClock(Screensaver):
     DIGIT_HEIGHT = 5
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:

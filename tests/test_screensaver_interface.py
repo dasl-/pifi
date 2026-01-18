@@ -219,6 +219,27 @@ class TestScreensaverInterface(unittest.TestCase):
             "Expected exactly 24 screensavers in SCREENSAVER_CLASSES"
         )
 
+    def test_all_screensavers_call_super_init(self):
+        """Verify all screensaver subclasses call super().__init__() in their __init__ method."""
+        for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
+            with self.subTest(screensaver=screensaver_id):
+                # Instantiate the screensaver
+                try:
+                    instance = cls(led_frame_player=None)
+                except Exception as e:
+                    self.fail(f"{screensaver_id} failed to instantiate: {e}")
+
+                # Check if the base class __init__ was called by verifying the flag
+                self.assertTrue(
+                    hasattr(instance, '_screensaver_base_init_called'),
+                    f"{screensaver_id} does not call super().__init__() - "
+                    f"missing _screensaver_base_init_called attribute"
+                )
+                self.assertTrue(
+                    instance._screensaver_base_init_called,
+                    f"{screensaver_id}._screensaver_base_init_called is not True"
+                )
+
 
 class TestSpecificScreensavers(unittest.TestCase):
     """Test specific screensaver implementations."""

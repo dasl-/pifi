@@ -14,6 +14,7 @@ class CellularAutomaton(Screensaver, ABC):
     _DEFAULT_MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
 
     def __init__(self, led_frame_player = None):
+        super().__init__(led_frame_player)
         self._logger = Logger().set_namespace(self.__class__.__name__)
         self._board = None
         if led_frame_player is None:
