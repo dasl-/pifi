@@ -27,73 +27,73 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Registry of all screensavers - add new ones here
 # Format: (name, module_path, class_name, description, config_key)
 SCREENSAVER_REGISTRY = [
-    ('cosmic_dream', 'pifi.games.cosmicdream', 'CosmicDream',
+    ('cosmic_dream', 'pifi.screensaver.cosmicdream', 'CosmicDream',
      'Psychedelic plasma waves, particles, and geometry', 'cosmicdream'),
 
-    ('boids', 'pifi.games.boids', 'Boids',
+    ('boids', 'pifi.screensaver.boids', 'Boids',
      'Flocking simulation', 'boids'),
 
-    ('mandelbrot', 'pifi.games.mandelbrot', 'Mandelbrot',
+    ('mandelbrot', 'pifi.screensaver.mandelbrot', 'Mandelbrot',
      'Mandelbrot set zoom', 'mandelbrot'),
 
-    ('game_of_life', 'pifi.games.cellularautomata.gameoflife', 'GameOfLife',
+    ('game_of_life', 'pifi.screensaver.cellularautomata.gameoflife', 'GameOfLife',
      "Conway's Game of Life", 'game_of_life'),
 
-    ('cyclic_automaton', 'pifi.games.cellularautomata.cyclicautomaton', 'CyclicAutomaton',
+    ('cyclic_automaton', 'pifi.screensaver.cellularautomata.cyclicautomaton', 'CyclicAutomaton',
      'Cyclic cellular automaton', 'cyclic_automaton'),
 
-    ('wave_interference', 'pifi.games.waveinterference', 'WaveInterference',
+    ('wave_interference', 'pifi.screensaver.waveinterference', 'WaveInterference',
      'Ripple interference patterns', 'wave_interference'),
 
-    ('spirograph', 'pifi.games.spirograph', 'Spirograph',
+    ('spirograph', 'pifi.screensaver.spirograph', 'Spirograph',
      'Rotating geometric patterns', 'spirograph'),
 
-    ('lorenz', 'pifi.games.lorenz', 'Lorenz',
+    ('lorenz', 'pifi.screensaver.lorenz', 'Lorenz',
      'Lorenz attractor butterfly', 'lorenz'),
 
-    ('metaballs', 'pifi.games.metaballs', 'Metaballs',
+    ('metaballs', 'pifi.screensaver.metaballs', 'Metaballs',
      'Blobby merging shapes', 'metaballs'),
 
-    ('starfield', 'pifi.games.starfield', 'Starfield',
+    ('starfield', 'pifi.screensaver.starfield', 'Starfield',
      '3D flying through stars', 'starfield'),
 
-    ('matrix_rain', 'pifi.games.matrixrain', 'MatrixRain',
+    ('matrix_rain', 'pifi.screensaver.matrixrain', 'MatrixRain',
      'Falling green characters', 'matrix_rain'),
 
-    ('melting_clock', 'pifi.games.meltingclock', 'MeltingClock',
+    ('melting_clock', 'pifi.screensaver.meltingclock', 'MeltingClock',
      'Time display with melting digits', 'melting_clock'),
 
-    ('aurora', 'pifi.games.aurora', 'Aurora',
+    ('aurora', 'pifi.screensaver.aurora', 'Aurora',
      'Northern lights with curtains', 'aurora'),
 
-    ('shadebobs', 'pifi.games.shadebobs', 'Shadebobs',
+    ('shadebobs', 'pifi.screensaver.shadebobs', 'Shadebobs',
      'Glowing Lissajous trails', 'shadebobs'),
 
-    ('flowfield', 'pifi.games.flowfield', 'FlowField',
+    ('flowfield', 'pifi.screensaver.flowfield', 'FlowField',
      'Particles flowing through noise', 'flowfield'),
 
-    ('lavalamp', 'pifi.games.lavalamp', 'LavaLamp',
+    ('lavalamp', 'pifi.screensaver.lavalamp', 'LavaLamp',
      'Rising and falling blobs', 'lavalamp'),
 
-    ('reactiondiffusion', 'pifi.games.reactiondiffusion', 'ReactionDiffusion',
+    ('reactiondiffusion', 'pifi.screensaver.reactiondiffusion', 'ReactionDiffusion',
      'Gray-Scott organic patterns', 'reactiondiffusion'),
 
-    ('inkinwater', 'pifi.games.inkinwater', 'InkInWater',
+    ('inkinwater', 'pifi.screensaver.inkinwater', 'InkInWater',
      'Diffusing color blooms', 'inkinwater'),
 
-    ('perlinworms', 'pifi.games.perlinworms', 'PerlinWorms',
+    ('perlinworms', 'pifi.screensaver.perlinworms', 'PerlinWorms',
      'Slithering noise trails', 'perlinworms'),
 
-    ('pendulumwaves', 'pifi.games.pendulumwaves', 'PendulumWaves',
+    ('pendulumwaves', 'pifi.screensaver.pendulumwaves', 'PendulumWaves',
      'Synchronized wave patterns', 'pendulumwaves'),
 
-    ('stringart', 'pifi.games.stringart', 'StringArt',
+    ('stringart', 'pifi.screensaver.stringart', 'StringArt',
      'Curved envelopes from lines', 'stringart'),
 
-    ('unknownpleasures', 'pifi.games.unknownpleasures', 'UnknownPleasures',
+    ('unknownpleasures', 'pifi.screensaver.unknownpleasures', 'UnknownPleasures',
      'Joy Division pulsar waves', 'unknownpleasures'),
 
-    ('cloudscape', 'pifi.games.cloudscape', 'Cloudscape',
+    ('cloudscape', 'pifi.screensaver.cloudscape', 'Cloudscape',
      'Drifting clouds over gradient sky', 'cloudscape'),
 ]
 

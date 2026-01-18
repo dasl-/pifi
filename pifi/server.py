@@ -17,7 +17,7 @@ from pifi.games.pong import Pong
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.settingsdb import SettingsDb
 from pifi.database import Database
-from pifi.screensavermanager import ScreensaverManager
+from pifi.screensaver.screensavermanager import ScreensaverManager
 
 class PifiAPI():
 
