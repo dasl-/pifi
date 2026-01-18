@@ -94,9 +94,6 @@
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "screensavers": {
 
-        // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
-        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain", "aurora", "cosmic_dream", "shadebobs"],
-
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
         "saved_videos": [],

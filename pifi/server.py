@@ -17,6 +17,7 @@ from pifi.games.pong import Pong
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.settingsdb import SettingsDb
 from pifi.database import Database
+from pifi.screensavermanager import ScreensaverManager
 
 class PifiAPI():
 
@@ -232,12 +233,8 @@ class PifiAPI():
             {'id': 'cloudscape', 'name': 'Cloudscape', 'description': 'Drifting clouds over gradient sky'},
         ]
 
-        # Get enabled screensavers from settings, fall back to config
-        enabled_json = self.__settings_db.get(SettingsDb.ENABLED_SCREENSAVERS)
-        if enabled_json:
-            enabled = json.loads(enabled_json)
-        else:
-            enabled = Config.get('screensavers.screensavers', ['game_of_life', 'cyclic_automaton'])
+        # Get enabled screensavers from settings
+        enabled = ScreensaverManager.get_enabled_screensavers()
 
         return {
             'success': True,

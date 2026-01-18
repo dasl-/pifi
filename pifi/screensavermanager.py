@@ -70,12 +70,18 @@ class ScreensaverManager:
         # Cache of instantiated screensavers
         self.__screensaver_cache = {}
 
-    def __get_enabled_screensavers(self):
-        """Get list of enabled screensaver IDs, checking SettingsDb first, then Config."""
-        enabled_json = self.__settings_db.get(SettingsDb.ENABLED_SCREENSAVERS)
+    @staticmethod
+    def get_enabled_screensavers():
+        """Get list of enabled screensaver IDs from database."""
+        settings_db = SettingsDb()
+        enabled_json = settings_db.get(SettingsDb.ENABLED_SCREENSAVERS)
         if enabled_json:
             return json.loads(enabled_json)
-        return Config.get("screensavers.screensavers", ['game_of_life', 'cyclic_automaton'])
+        return ['game_of_life', 'cyclic_automaton']
+
+    def __get_enabled_screensavers(self):
+        """Get list of enabled screensaver IDs from SettingsDb."""
+        return ScreensaverManager.get_enabled_screensavers()
 
     def __get_screensaver(self, screensaver_id):
         """Get or create a screensaver instance."""
