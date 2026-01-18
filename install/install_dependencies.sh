@@ -44,7 +44,7 @@ updateAndInstallPackages(){
     sudo apt -y full-upgrade
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade yt-dlp pytz websockets pygame pyjson5 \
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade "yt-dlp[default]" pytz websockets pygame pyjson5 \
         git+https://github.com/cexen/py-simple-audio.git
 }
 
@@ -92,11 +92,12 @@ installLedDriverRgbMatrix(){
         pushd "$clone_dir"
     fi
 
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
+    sudo apt -y install python3-pillow
+
     make build-python PYTHON="$(command -v python3)"
     sudo make install-python PYTHON="$(command -v python3)"
     popd
-
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
 }
 
 installLedDriverWs2812b(){
