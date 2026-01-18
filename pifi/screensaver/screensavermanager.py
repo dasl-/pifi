@@ -65,6 +65,9 @@ class ScreensaverManager:
     # This eliminates duplication - the ID comes from the class itself
     SCREENSAVER_CLASSES = {cls.get_id(): cls for cls in _SCREENSAVER_CLASSES}
 
+    # Cache for get_all_screensavers() result
+    _all_screensavers_cache = None
+
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__settings_db = SettingsDb()
@@ -83,14 +86,18 @@ class ScreensaverManager:
     @staticmethod
     def get_all_screensavers():
         """Get metadata for all available screensavers."""
-        screensavers = []
-        for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
-            screensavers.append({
-                'id': cls.get_id(),
-                'name': cls.get_name(),
-                'description': cls.get_description(),
-            })
-        return sorted(screensavers, key=lambda x: x['id'])
+        # Lazy initialization of cache - build once, return many times
+        if ScreensaverManager._all_screensavers_cache is None:
+            screensavers = []
+            for cls in ScreensaverManager._SCREENSAVER_CLASSES:
+                screensavers.append({
+                    'id': cls.get_id(),
+                    'name': cls.get_name(),
+                    'description': cls.get_description(),
+                })
+            ScreensaverManager._all_screensavers_cache = sorted(screensavers, key=lambda x: x['id'])
+
+        return ScreensaverManager._all_screensavers_cache
 
     @staticmethod
     def get_enabled_screensavers():
