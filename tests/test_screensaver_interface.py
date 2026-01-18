@@ -335,6 +335,24 @@ class TestScreensaverPreviewIntegration(unittest.TestCase):
         output = result.stdout + result.stderr
         self.assertIn('Unknown screensaver', output)
 
+    def test_preview_game_of_life(self):
+        """Verify we can successfully preview game_of_life screensaver."""
+        # Run the screensaver for a short time then kill it
+        # This verifies the entire pipeline works: loading, instantiating, and running
+        try:
+            result = subprocess.run(
+                ['python3', 'utils/screensaver_preview.py', 'game_of_life', '--width', '16', '--height', '16'],
+                capture_output=True,
+                text=True,
+                timeout=2  # Let it run for 2 seconds then timeout
+            )
+            # If it completes within 2 seconds, that's also fine (shouldn't happen but acceptable)
+            self.assertEqual(result.returncode, 0, f"Command failed with stderr: {result.stderr}")
+        except subprocess.TimeoutExpired:
+            # This is expected - the screensaver runs indefinitely
+            # The fact that it timed out (rather than crashing) means it's working
+            pass
+
 
 if __name__ == '__main__':
     unittest.main()
