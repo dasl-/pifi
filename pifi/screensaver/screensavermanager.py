@@ -73,8 +73,12 @@ class ScreensaverManager:
         # See: https://github.com/dasl-/pifi/commit/fd48ba5b41bba6c6aa0034d743e40de153482f21
         self.__led_frame_player = LedFramePlayer()
 
-        # Cache of instantiated screensavers
-        self.__screensaver_cache = {}
+        # Pre-instantiate all screensavers upfront
+        # This provides fail-fast behavior if there are instantiation issues
+        self.__screensaver_cache = {
+            screensaver_id: cls(led_frame_player=self.__led_frame_player)
+            for screensaver_id, cls in self.SCREENSAVER_CLASSES.items()
+        }
 
     @staticmethod
     def get_all_screensavers():
@@ -102,11 +106,7 @@ class ScreensaverManager:
         return ScreensaverManager.get_enabled_screensavers()
 
     def __get_screensaver(self, screensaver_id):
-        """Get or create a screensaver instance."""
-        if screensaver_id not in self.__screensaver_cache:
-            if screensaver_id in self.SCREENSAVER_CLASSES:
-                cls = self.SCREENSAVER_CLASSES[screensaver_id]
-                self.__screensaver_cache[screensaver_id] = cls(led_frame_player=self.__led_frame_player)
+        """Get a screensaver instance from the pre-instantiated cache."""
         return self.__screensaver_cache.get(screensaver_id)
 
     def run(self):
