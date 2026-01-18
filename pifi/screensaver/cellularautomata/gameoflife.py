@@ -3,7 +3,7 @@ import random
 
 from pifi.config import Config
 from pifi.games.gamecolorhelper import GameColorHelper
-from pifi.games.cellularautomata.cellularautomaton import CellularAutomaton
+from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 
 class GameOfLife(CellularAutomaton):
 

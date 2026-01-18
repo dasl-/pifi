@@ -9,7 +9,7 @@ sys.path.append(root_dir)
 
 import argparse
 from pifi.config import Config
-from pifi.games.cellularautomata.cyclicautomaton import CyclicAutomaton
+from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.logger import Logger
 
 def parseArgs():

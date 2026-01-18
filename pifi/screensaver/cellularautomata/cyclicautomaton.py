@@ -2,8 +2,8 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.games.cellularautomata.palette import palettes
-from pifi.games.cellularautomata.cellularautomaton import CellularAutomaton
+from pifi.screensaver.cellularautomata.palette import palettes
+from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 
 # https://en.wikipedia.org/wiki/Cyclic_cellular_automaton
 class CyclicAutomaton(CellularAutomaton):
