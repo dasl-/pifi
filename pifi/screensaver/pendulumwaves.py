@@ -12,9 +12,10 @@ import time
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import Screensaver
 
 
-class PendulumWaves:
+class PendulumWaves(Screensaver):
     """Pendulums creating wave patterns through phase differences."""
 
     def __init__(self, led_frame_player=None):
@@ -176,3 +177,15 @@ class PendulumWaves:
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("Pendulum Waves screensaver ended")
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'pendulumwaves'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Pendulum Waves'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Synchronized wave patterns'

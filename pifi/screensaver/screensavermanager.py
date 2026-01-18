@@ -57,6 +57,7 @@ class ScreensaverManager:
         'stringart': StringArt,
         'unknownpleasures': UnknownPleasures,
         'cloudscape': Cloudscape,
+        'video_screensaver': VideoScreensaver,
     }
 
     def __init__(self):
@@ -69,6 +70,18 @@ class ScreensaverManager:
 
         # Cache of instantiated screensavers
         self.__screensaver_cache = {}
+
+    @staticmethod
+    def get_all_screensavers():
+        """Get metadata for all available screensavers."""
+        screensavers = []
+        for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
+            screensavers.append({
+                'id': cls.get_id(),
+                'name': cls.get_name(),
+                'description': cls.get_description(),
+            })
+        return sorted(screensavers, key=lambda x: x['id'])
 
     @staticmethod
     def get_enabled_screensavers():
@@ -93,7 +106,7 @@ class ScreensaverManager:
 
     def run(self):
         saved_videos = Config.get("screensavers.saved_videos", [])
-        video_screensaver = VideoScreensaver(video_list=saved_videos) if saved_videos else None
+        video_screensaver = VideoScreensaver(led_frame_player=self.__led_frame_player) if saved_videos else None
 
         while True:
             # Re-read enabled screensavers each iteration so changes take effect

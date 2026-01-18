@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class LavaLamp:
+class LavaLamp(Screensaver):
     """
     Classic lava lamp simulation.
 
@@ -206,3 +207,15 @@ class LavaLamp:
 
     def __get_tick_sleep(self):
         return Config.get('lavalamp.tick_sleep', 0.05)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'lavalamp'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Lava Lamp'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Rising and falling blobs'

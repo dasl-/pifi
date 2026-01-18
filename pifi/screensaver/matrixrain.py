@@ -5,9 +5,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class MatrixRain:
+class MatrixRain(Screensaver):
     """
     Matrix digital rain screensaver.
 
@@ -220,3 +221,15 @@ class MatrixRain:
 
     def __get_tick_sleep(self):
         return Config.get('matrix_rain.tick_sleep', 0.05)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'matrix_rain'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Matrix Rain'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Falling green characters'

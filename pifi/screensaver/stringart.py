@@ -12,9 +12,10 @@ import time
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import Screensaver
 
 
-class StringArt:
+class StringArt(Screensaver):
     """Animated string art patterns with evolving parameters."""
 
     def __init__(self, led_frame_player=None):
@@ -175,3 +176,15 @@ class StringArt:
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("String Art screensaver ended")
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'stringart'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'String Art'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Curved envelopes from lines'

@@ -12,9 +12,10 @@ import time
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import Screensaver
 
 
-class PerlinWorms:
+class PerlinWorms(Screensaver):
     """Worms following Perlin noise gradients with glowing trails."""
 
     def __init__(self, led_frame_player=None):
@@ -238,3 +239,15 @@ class PerlinWorms:
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("Perlin Worms screensaver ended")
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'perlinworms'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Perlin Worms'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Slithering noise trails'

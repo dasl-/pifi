@@ -11,9 +11,10 @@ import time
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import Screensaver
 
 
-class UnknownPleasures:
+class UnknownPleasures(Screensaver):
     """Stacked waveform visualization inspired by pulsar data."""
 
     def __init__(self, led_frame_player=None):
@@ -193,3 +194,15 @@ class UnknownPleasures:
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("Unknown Pleasures screensaver ended")
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'unknownpleasures'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Unknown Pleasures'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Joy Division pulsar waves'

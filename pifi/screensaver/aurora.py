@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Aurora:
+class Aurora(Screensaver):
     """
     Aurora borealis (northern lights) screensaver.
 
@@ -246,3 +247,15 @@ class Aurora:
 
     def __get_tick_sleep(self):
         return Config.get('aurora.tick_sleep', 0.04)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'aurora'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Aurora Borealis'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Northern lights with curtains'
