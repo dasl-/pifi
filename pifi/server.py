@@ -204,6 +204,54 @@ class PifiAPI():
             'success': True,
         }
 
+    def get_screensavers(self):
+        # All available screensavers
+        all_screensavers = [
+            {'id': 'game_of_life', 'name': 'Game of Life', 'description': "Conway's cellular automaton"},
+            {'id': 'cyclic_automaton', 'name': 'Cyclic Automaton', 'description': 'Colorful cyclic patterns'},
+            {'id': 'boids', 'name': 'Boids', 'description': 'Flocking simulation'},
+            {'id': 'cosmic_dream', 'name': 'Cosmic Dream', 'description': 'Psychedelic plasma waves'},
+            {'id': 'mandelbrot', 'name': 'Mandelbrot', 'description': 'Fractal zoom'},
+            {'id': 'wave_interference', 'name': 'Wave Interference', 'description': 'Ripple patterns'},
+            {'id': 'spirograph', 'name': 'Spirograph', 'description': 'Geometric curves'},
+            {'id': 'lorenz', 'name': 'Lorenz Attractor', 'description': 'Chaotic butterfly'},
+            {'id': 'metaballs', 'name': 'Metaballs', 'description': 'Blobby shapes'},
+            {'id': 'starfield', 'name': 'Starfield', 'description': '3D star flight'},
+            {'id': 'matrix_rain', 'name': 'Matrix Rain', 'description': 'Falling green code'},
+            {'id': 'melting_clock', 'name': 'Melting Clock', 'description': 'Dali-style clock'},
+            {'id': 'aurora', 'name': 'Aurora Borealis', 'description': 'Northern lights'},
+            {'id': 'shadebobs', 'name': 'Shadebobs', 'description': 'Glowing trails'},
+            {'id': 'flowfield', 'name': 'Flow Field', 'description': 'Particles in wind'},
+            {'id': 'lavalamp', 'name': 'Lava Lamp', 'description': 'Rising and falling blobs'},
+            {'id': 'reactiondiffusion', 'name': 'Reaction Diffusion', 'description': 'Organic coral patterns'},
+            {'id': 'inkinwater', 'name': 'Ink in Water', 'description': 'Diffusing color blooms'},
+            {'id': 'perlinworms', 'name': 'Perlin Worms', 'description': 'Slithering noise trails'},
+            {'id': 'pendulumwaves', 'name': 'Pendulum Waves', 'description': 'Synchronized wave patterns'},
+            {'id': 'stringart', 'name': 'String Art', 'description': 'Curved envelopes from lines'},
+            {'id': 'unknownpleasures', 'name': 'Unknown Pleasures', 'description': 'Joy Division pulsar waves'},
+            {'id': 'cloudscape', 'name': 'Cloudscape', 'description': 'Drifting clouds over gradient sky'},
+        ]
+
+        # Get enabled screensavers from settings, fall back to config
+        enabled_json = self.__settings_db.get(SettingsDb.ENABLED_SCREENSAVERS)
+        if enabled_json:
+            enabled = json.loads(enabled_json)
+        else:
+            enabled = Config.get('screensavers.screensavers', ['game_of_life', 'cyclic_automaton'])
+
+        return {
+            'success': True,
+            'screensavers': all_screensavers,
+            'enabled': enabled,
+        }
+
+    def set_screensavers(self, post_data):
+        enabled = post_data.get('enabled', [])
+        self.__settings_db.set(SettingsDb.ENABLED_SCREENSAVERS, json.dumps(enabled))
+        # Signal queue to restart screensaver so changes take effect immediately
+        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
+        return {'success': True, 'enabled': enabled}
+
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
@@ -257,6 +305,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_snake_data()
         elif parsed_path.path == 'youtube_api_key':
             response = self.__api.get_youtube_api_key()
+        elif parsed_path.path == 'screensavers':
+            response = self.__api.get_screensavers()
         else:
             self.__do_404()
             return
@@ -295,6 +345,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.enqueue_or_join_game(post_data)
         elif path == 'submit_game_score_initials':
             response = self.__api.submit_game_score_initials(post_data)
+        elif path == 'screensavers':
+            response = self.__api.set_screensavers(post_data)
         else:
             self.__do_404()
             return
@@ -316,6 +368,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
         elif self.path == '/pong' or self.path == '/pong/':
             self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'
+        elif self.path == '/settings' or self.path == '/settings/':
+            self.path = DirectoryUtils().root_dir + '/assets/settings/settings.html'
         elif self.path.startswith('/assets/'):
             self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
         else:

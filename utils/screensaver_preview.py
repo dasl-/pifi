@@ -65,6 +65,36 @@ SCREENSAVER_REGISTRY = [
 
     ('aurora', 'pifi.games.aurora', 'Aurora',
      'Northern lights with curtains', 'aurora'),
+
+    ('shadebobs', 'pifi.games.shadebobs', 'Shadebobs',
+     'Glowing Lissajous trails', 'shadebobs'),
+
+    ('flowfield', 'pifi.games.flowfield', 'FlowField',
+     'Particles flowing through noise', 'flowfield'),
+
+    ('lavalamp', 'pifi.games.lavalamp', 'LavaLamp',
+     'Rising and falling blobs', 'lavalamp'),
+
+    ('reactiondiffusion', 'pifi.games.reactiondiffusion', 'ReactionDiffusion',
+     'Gray-Scott organic patterns', 'reactiondiffusion'),
+
+    ('inkinwater', 'pifi.games.inkinwater', 'InkInWater',
+     'Diffusing color blooms', 'inkinwater'),
+
+    ('perlinworms', 'pifi.games.perlinworms', 'PerlinWorms',
+     'Slithering noise trails', 'perlinworms'),
+
+    ('pendulumwaves', 'pifi.games.pendulumwaves', 'PendulumWaves',
+     'Synchronized wave patterns', 'pendulumwaves'),
+
+    ('stringart', 'pifi.games.stringart', 'StringArt',
+     'Curved envelopes from lines', 'stringart'),
+
+    ('unknownpleasures', 'pifi.games.unknownpleasures', 'UnknownPleasures',
+     'Joy Division pulsar waves', 'unknownpleasures'),
+
+    ('cloudscape', 'pifi.games.cloudscape', 'Cloudscape',
+     'Drifting clouds over gradient sky', 'cloudscape'),
 ]
 
 # Build lookup dicts
@@ -269,6 +299,58 @@ def get_default_config():
             'num_stars': 15,
             'time_speed': 1.0,
             'tick_sleep': 0.04,
+            'max_ticks': 10000,
+        },
+        'perlinworms': {
+            'num_worms': 8,
+            'worm_length': 12,
+            'speed': 0.8,
+            'noise_scale': 0.1,
+            'time_speed': 0.02,
+            'fade': 0.92,
+            'glow_size': 1.5,
+            'tick_sleep': 0.03,
+            'max_ticks': 10000,
+        },
+        'pendulumwaves': {
+            'num_pendulums': 0,
+            'base_period': 60.0,
+            'cycle_time': 600,
+            'bob_size': 1.5,
+            'trail_fade': 0.85,
+            'color_mode': 'rainbow',
+            'tick_sleep': 0.03,
+            'max_ticks': 10000,
+        },
+        'stringart': {
+            'num_points': 64,
+            'num_strings': 32,
+            'multiplier_speed': 0.02,
+            'rotation_speed': 0.01,
+            'fade': 0.15,
+            'line_brightness': 0.4,
+            'tick_sleep': 0.03,
+            'max_ticks': 10000,
+        },
+        'unknownpleasures': {
+            'num_lines': 0,
+            'wave_speed': 0.05,
+            'noise_scale': 0.15,
+            'amplitude': 0.4,
+            'line_brightness': 1.0,
+            'fill_below': True,
+            'color_mode': 'white',
+            'tick_sleep': 0.05,
+            'max_ticks': 10000,
+        },
+        'cloudscape': {
+            'num_layers': 3,
+            'drift_speed': 0.2,
+            'sky_mode': 'pastel',
+            'cloud_density': 0.7,
+            'cloud_scale': 0.04,
+            'sky_shift_speed': 0.001,
+            'tick_sleep': 0.05,
             'max_ticks': 10000,
         },
     }
