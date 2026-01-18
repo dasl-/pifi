@@ -112,14 +112,7 @@ class ScreensaverManager:
         """Get list of enabled screensaver IDs from SettingsDb."""
         return ScreensaverManager.get_enabled_screensavers()
 
-    def __get_screensaver(self, screensaver_id):
-        """Get a screensaver instance from the pre-instantiated cache."""
-        return self.__screensaver_cache.get(screensaver_id)
-
     def run(self):
-        saved_videos = Config.get("screensavers.saved_videos", [])
-        video_screensaver = VideoScreensaver(led_frame_player=self.__led_frame_player) if saved_videos else None
-
         while True:
             # Re-read enabled screensavers each iteration so changes take effect
             enabled = self.__get_enabled_screensavers()
@@ -127,17 +120,13 @@ class ScreensaverManager:
             # Build list of available screensavers
             available = []
             for screensaver_id in enabled:
-                screensaver = self.__get_screensaver(screensaver_id)
+                screensaver = self.__screensaver_cache.get(screensaver_id)
                 if screensaver:
                     available.append(screensaver)
 
-            # Add video screensaver if configured
-            if video_screensaver:
-                available.append(video_screensaver)
-
             # Fall back to game of life if nothing enabled
             if not available:
-                available.append(self.__get_screensaver('game_of_life'))
+                available.append(self.__screensaver_cache.get('game_of_life'))
 
             screensaver = random.choice(available)
             screensaver.play()

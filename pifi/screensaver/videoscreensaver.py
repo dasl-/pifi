@@ -20,6 +20,10 @@ class VideoScreensaver(Screensaver):
         return save_dir
 
     def play(self):
+        # If no videos are configured, do nothing
+        if not self.video_list:
+            return
+
         url = self.__getScreensaverPath() + '/' + random.choice(self.video_list)
         VideoProcessor(
             url = url,

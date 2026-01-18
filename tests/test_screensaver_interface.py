@@ -254,6 +254,22 @@ class TestSpecificScreensavers(unittest.TestCase):
         self.assertTrue(hasattr(instance, 'video_list'))
         self.assertIsInstance(instance.video_list, list)
 
+    def test_video_screensaver_handles_empty_list(self):
+        """Verify VideoScreensaver.play() handles empty video list gracefully."""
+        from pifi.screensaver.videoscreensaver import VideoScreensaver
+
+        # Create instance with empty video list (from default config)
+        instance = VideoScreensaver(led_frame_player=None)
+
+        # Should have empty list from config
+        self.assertEqual(instance.video_list, [])
+
+        # play() should return gracefully without error
+        try:
+            instance.play()
+        except Exception as e:
+            self.fail(f"VideoScreensaver.play() raised exception with empty video_list: {e}")
+
     def test_cellular_automaton_hierarchy(self):
         """Verify CellularAutomaton inherits from Screensaver."""
         from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
