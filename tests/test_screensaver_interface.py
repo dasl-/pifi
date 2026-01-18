@@ -12,6 +12,7 @@ Verifies that all screensavers:
 import unittest
 import sys
 import os
+import subprocess
 from unittest.mock import MagicMock, patch
 
 # Add project root to path
@@ -274,6 +275,65 @@ class TestSpecificScreensavers(unittest.TestCase):
         self.assertEqual(CyclicAutomaton.get_id(), 'cyclic_automaton')
         self.assertEqual(CyclicAutomaton.get_name(), 'Cyclic Automaton')
         self.assertIn("cyclic", CyclicAutomaton.get_description().lower())
+
+
+class TestScreensaverPreviewIntegration(unittest.TestCase):
+    """Integration tests for the screensaver_preview.py command-line tool."""
+
+    def test_preview_list_command(self):
+        """Verify screensaver_preview.py --list runs successfully and shows all screensavers."""
+        result = subprocess.run(
+            ['python3', 'utils/screensaver_preview.py', '--list'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        # Should exit successfully
+        self.assertEqual(result.returncode, 0, f"Command failed with stderr: {result.stderr}")
+
+        # Should have output
+        self.assertGreater(len(result.stdout), 0, "No output from --list command")
+
+        # Should contain header
+        self.assertIn('Available screensavers:', result.stdout)
+
+        # Should list all 24 screensavers (verify a few key ones)
+        expected_screensavers = [
+            'boids',
+            'aurora',
+            'game_of_life',
+            'cosmic_dream',
+            'starfield',
+            'video_screensaver',
+        ]
+
+        for screensaver in expected_screensavers:
+            self.assertIn(screensaver, result.stdout,
+                         f"Expected screensaver '{screensaver}' not in list output")
+
+        # Count lines (should have at least 24 screensaver lines + header)
+        lines = result.stdout.strip().split('\n')
+        # Filter out empty lines and the header
+        screensaver_lines = [line for line in lines if line.strip() and not line.startswith('Available')]
+        self.assertGreaterEqual(len(screensaver_lines), 24,
+                               f"Expected at least 24 screensavers, found {len(screensaver_lines)}")
+
+    def test_preview_unknown_screensaver(self):
+        """Verify screensaver_preview.py fails gracefully with unknown screensaver."""
+        result = subprocess.run(
+            ['python3', 'utils/screensaver_preview.py', 'nonexistent_screensaver'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        # Should fail
+        self.assertNotEqual(result.returncode, 0, "Expected non-zero exit code for unknown screensaver")
+
+        # Should have error message
+        output = result.stdout + result.stderr
+        self.assertIn('Unknown screensaver', output)
 
 
 if __name__ == '__main__':

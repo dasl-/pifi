@@ -32,33 +32,38 @@ from pifi.logger import Logger
 
 class ScreensaverManager:
 
-    # Map of screensaver ID to class
-    SCREENSAVER_CLASSES = {
-        'game_of_life': GameOfLife,
-        'cyclic_automaton': CyclicAutomaton,
-        'boids': Boids,
-        'cosmic_dream': CosmicDream,
-        'mandelbrot': Mandelbrot,
-        'wave_interference': WaveInterference,
-        'spirograph': Spirograph,
-        'lorenz': Lorenz,
-        'metaballs': Metaballs,
-        'starfield': Starfield,
-        'matrix_rain': MatrixRain,
-        'melting_clock': MeltingClock,
-        'aurora': Aurora,
-        'shadebobs': Shadebobs,
-        'flowfield': FlowField,
-        'lavalamp': LavaLamp,
-        'reactiondiffusion': ReactionDiffusion,
-        'inkinwater': InkInWater,
-        'perlinworms': PerlinWorms,
-        'pendulumwaves': PendulumWaves,
-        'stringart': StringArt,
-        'unknownpleasures': UnknownPleasures,
-        'cloudscape': Cloudscape,
-        'video_screensaver': VideoScreensaver,
-    }
+    # List of all available screensaver classes
+    # To add a new screensaver: import it above and add the class to this list
+    _SCREENSAVER_CLASSES = [
+        GameOfLife,
+        CyclicAutomaton,
+        Boids,
+        CosmicDream,
+        Mandelbrot,
+        WaveInterference,
+        Spirograph,
+        Lorenz,
+        Metaballs,
+        Starfield,
+        MatrixRain,
+        MeltingClock,
+        Aurora,
+        Shadebobs,
+        FlowField,
+        LavaLamp,
+        ReactionDiffusion,
+        InkInWater,
+        PerlinWorms,
+        PendulumWaves,
+        StringArt,
+        UnknownPleasures,
+        Cloudscape,
+        VideoScreensaver,
+    ]
+
+    # Build map of screensaver ID to class using get_id() from each class
+    # This eliminates duplication - the ID comes from the class itself
+    SCREENSAVER_CLASSES = {cls.get_id(): cls for cls in _SCREENSAVER_CLASSES}
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
