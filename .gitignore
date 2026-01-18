@@ -20,4 +20,4 @@ app/src/css/themes/*.css
 app/src/css/**/*.css.map
 
 # Claude instructions file
-CLAUDE_INSTRUCTIONS.md
+CLAUDE.local.md
