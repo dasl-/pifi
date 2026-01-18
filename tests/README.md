@@ -50,14 +50,6 @@ python3 -m pytest tests/ -v
 python3 -m pytest tests/test_screensaver_interface.py -v
 ```
 
-## Test Files
-
-- `test_screensaver_interface.py` - Tests for the Screensaver ABC interface
-  - Verifies all screensavers implement the required interface
-  - Checks metadata consistency
-  - Validates constructor signatures
-  - 15 tests total
-
 ## Writing New Tests
 
 New test files should:
