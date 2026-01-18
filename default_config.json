@@ -95,7 +95,7 @@
     "screensavers": {
 
         // Optional, array, default: ["game_of_life", "cyclic_automaton"]. The screensavers to cycle through.
-        "screensavers": ["game_of_life", "cyclic_automaton"],
+        "screensavers": ["game_of_life", "cyclic_automaton", "boids", "starfield", "mandelbrot", "wave_interference", "starfield", "matrix_rain", "aurora", "cosmic_dream"],
 
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
@@ -155,6 +155,292 @@
         // Optional, string, default: "random". The color mode for the game.
         // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
         "game_color_mode": "random",
+    },
+
+    // Configuration specific to boids flocking screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "boids": {
+
+        // Optional, integer, default: 15. Number of boids in the simulation.
+        "num_boids": 15,
+
+        // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 2000. Maximum number of ticks before ending.
+        "max_ticks": 2000,
+
+        // Optional, float, default: 1.5. Maximum speed of boids.
+        "max_speed": 1.5,
+
+        // Optional, float, default: 8.0. Perception radius for flocking behavior.
+        "perception_radius": 8.0,
+
+        // Optional, float, default: 2.0. Minimum distance for separation behavior.
+        "min_distance": 2.0,
+
+        // Optional, float, default: 1.5. Weight for separation steering.
+        "separation_weight": 1.5,
+
+        // Optional, float, default: 1.0. Weight for alignment steering.
+        "alignment_weight": 1.0,
+
+        // Optional, float, default: 1.0. Weight for cohesion steering.
+        "cohesion_weight": 1.0,
+    },
+
+    // Configuration specific to cosmic dream psychedelic screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "cosmicdream": {
+
+        // Optional, integer, default: 20. Number of particles in the flow field.
+        "num_particles": 20,
+
+        // Optional, integer, default: 8. Length of particle trails.
+        "trail_length": 8,
+
+        // Optional, float, default: 0.5. Speed of particles.
+        "particle_speed": 0.5,
+
+        // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to mandelbrot zoom screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "mandelbrot": {
+
+        // Optional, integer, default: 100. Maximum iterations for escape calculation.
+        // Higher values show more detail but are slower.
+        "max_iterations": 100,
+
+        // Optional, float, default: 1.02. Zoom multiplier per tick.
+        // Values closer to 1.0 zoom slower.
+        "zoom_speed": 1.02,
+
+        // Optional, float, default: 0.02. How fast the view moves toward the target.
+        // Values closer to 0 move slower.
+        "lerp_factor": 0.02,
+
+        // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 1500. Maximum number of ticks before ending.
+        "max_ticks": 1500,
+    },
+
+    // Configuration specific to wave interference screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "wave_interference": {
+
+        // Optional, integer, default: 4. Number of wave sources.
+        "num_sources": 4,
+
+        // Optional, float, default: 0.5. Frequency of the waves (higher = tighter ripples).
+        "wave_frequency": 0.5,
+
+        // Optional, float, default: 0.15. How fast time advances (wave animation speed).
+        "time_speed": 0.15,
+
+        // Optional, float, default: 0.3. How fast sources drift around.
+        "drift_speed": 0.3,
+
+        // Optional, string, default: "rainbow". Color mode for the waves.
+        // Valid values: "rainbow", "monochrome", "plasma", "classic".
+        "color_mode": "rainbow",
+
+        // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 2000. Maximum number of ticks before ending.
+        "max_ticks": 2000,
+    },
+
+    // Configuration specific to spirograph screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "spirograph": {
+
+        // Optional, integer, default: 500. Number of points in the trail.
+        "trail_length": 500,
+
+        // Optional, boolean, default: true. Whether older trail points fade out.
+        "fade_trail": true,
+
+        // Optional, float, default: 1.0. Speed multiplier for pattern generation.
+        "time_speed": 1.0,
+
+        // Optional, float, default: 0.02. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.02,
+
+        // Optional, integer, default: 2000. Maximum number of ticks before ending.
+        "max_ticks": 2000,
+    },
+
+    // Configuration specific to lorenz attractor screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "lorenz": {
+
+        // Optional, float, default: 10.0. Lorenz sigma parameter.
+        "sigma": 10.0,
+
+        // Optional, float, default: 28.0. Lorenz rho parameter.
+        "rho": 28.0,
+
+        // Optional, float, default: 2.667. Lorenz beta parameter.
+        "beta": 2.667,
+
+        // Optional, float, default: 0.01. Time step for integration.
+        "dt": 0.01,
+
+        // Optional, integer, default: 5. Integration steps per frame.
+        "steps_per_frame": 5,
+
+        // Optional, integer, default: 800. Number of points in the trail.
+        "trail_length": 800,
+
+        // Optional, float, default: 0.005. Speed of view rotation.
+        "rotation_speed": 0.005,
+
+        // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to metaballs screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "metaballs": {
+
+        // Optional, integer, default: 5. Number of metaballs.
+        "num_balls": 5,
+
+        // Optional, float, default: 0.5. Movement speed of metaballs.
+        "speed": 0.5,
+
+        // Optional, float, default: 1.0. Threshold for blob surface (lower = larger blobs).
+        "threshold": 1.0,
+
+        // Optional, boolean, default: true. Whether to add glow effect at blob edges.
+        "glow": true,
+
+        // Optional, float, default: 0.04. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.04,
+
+        // Optional, integer, default: 2000. Maximum number of ticks before ending.
+        "max_ticks": 2000,
+    },
+
+    // Configuration specific to starfield screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "starfield": {
+
+        // Optional, integer, default: 80. Number of stars.
+        "num_stars": 80,
+
+        // Optional, float, default: 0.02. Speed of stars moving toward viewer.
+        "speed": 0.02,
+
+        // Optional, boolean, default: true. Whether to show motion trails on close stars.
+        "show_trails": true,
+
+        // Optional, integer, default: 3. Length of motion trails.
+        "trail_length": 3,
+
+        // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to matrix rain screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "matrix_rain": {
+
+        // Optional, float, default: 0.2. Minimum drop fall speed.
+        "min_speed": 0.2,
+
+        // Optional, float, default: 0.8. Maximum drop fall speed.
+        "max_speed": 0.8,
+
+        // Optional, integer, default: 4. Minimum trail length.
+        "min_length": 4,
+
+        // Optional, integer, default: 12. Maximum trail length.
+        "max_length": 12,
+
+        // Optional, float, default: 0.85. Trail fade rate per tick (0-1).
+        "fade_rate": 0.85,
+
+        // Optional, float, default: 0.08. Probability of spawning new drops.
+        "spawn_rate": 0.08,
+
+        // Optional, string, default: "green". Color mode for the rain.
+        // Valid values: "green", "blue", "rainbow", "white".
+        "color_mode": "green",
+
+        // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to melting clock screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "melting_clock": {
+
+        // Optional, boolean, default: false. Whether to show seconds (HH:MM:SS vs HH:MM).
+        "show_seconds": false,
+
+        // Optional, float, default: 0.15. Speed of melting/dripping animation.
+        "melt_speed": 0.15,
+
+        // Optional, float, default: 0.05. Speed of new digit forming.
+        "form_speed": 0.05,
+
+        // Optional, float, default: 0.85. Trail fade rate per tick (0-1).
+        "trail_fade": 0.85,
+
+        // Optional, float, default: 0.001. Speed of color hue cycling.
+        "hue_speed": 0.001,
+
+        // Optional, string, default: "rainbow". Color mode.
+        // Valid values: "rainbow", "green", "blue", "red", "white".
+        "color_mode": "rainbow",
+
+        // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 5000. Maximum number of ticks before ending.
+        "max_ticks": 5000,
+    },
+
+    // Configuration specific to aurora borealis screensaver.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "aurora": {
+
+        // Optional, integer, default: 4. Number of aurora curtains.
+        "num_curtains": 4,
+
+        // Optional, boolean, default: true. Whether to show twinkling background stars.
+        "show_stars": true,
+
+        // Optional, integer, default: 15. Number of background stars.
+        "num_stars": 15,
+
+        // Optional, float, default: 1.0. Overall animation speed multiplier.
+        "time_speed": 1.0,
+
+        // Optional, float, default: 0.04. How long to sleep between ticks, in seconds.
+        "tick_sleep": 0.04,
+
+        // Optional, integer, default: 3000. Maximum number of ticks before ending.
+        "max_ticks": 3000,
     },
 
 }
