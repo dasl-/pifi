@@ -25,7 +25,7 @@ from pifi.screensaver.unknownpleasures import UnknownPleasures
 from pifi.screensaver.cloudscape import Cloudscape
 from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
-from pifi.video.videoscreensaver import VideoScreensaver
+from pifi.screensaver.videoscreensaver import VideoScreensaver
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.settingsdb import SettingsDb
 from pifi.logger import Logger
