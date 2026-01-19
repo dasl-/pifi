@@ -8,7 +8,7 @@
 # is too old to be supported by yt-dlp. See: https://github.com/dasl-/piwall2/issues/31
 
 echo "starting update_yt-dlp at $(date -u)"
-/usr/local/bin/uv tool install 'yt-dlp[default]@latest'
+UV_TOOL_BIN_DIR=/home/pi/.local/bin /usr/local/bin/uv tool install 'yt-dlp[default]@latest'
 
 # symlink yt-dlp to a place that's on our path by default
 sudo ln -sf /home/pi/.local/bin/yt-dlp /usr/bin/yt-dlp
