@@ -74,8 +74,10 @@ installDeno(){
 setupUv(){
     info "\\nSetting up uv..."
 
-    # install a version of python that is supported by the latest version of yt-dlp
-    uv python install 3.13
+    # Install a version of python that is supported by the latest version of yt-dlp
+    # Install as root. Always invoke uv as root such that it uses a consistent set of working directories.
+    # See: https://github.com/astral-sh/uv/issues/11360
+    sudo uv python install 3.13
 }
 
 installYtDlp(){
