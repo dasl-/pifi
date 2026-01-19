@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""
-Terminal-based screensaver preview tool.
-
-Renders screensavers to the terminal using ANSI 24-bit colors,
-allowing you to test and preview without a Raspberry Pi.
-
-Usage:
-    python utils/screensaver_preview.py [screensaver_name] [options]
-
-Examples:
-    python utils/screensaver_preview.py cosmic_dream
-    python utils/screensaver_preview.py boids --width 32 --height 16
-    python utils/screensaver_preview.py game_of_life --scale 2
-"""
 
 import argparse
 import os
@@ -129,7 +115,58 @@ class TerminalFramePlayer:
         sys.stdout.flush()
 
 
-def setup_mock_config(width, height):
+def parse_config_value(value):
+    """
+    Auto-detect and parse config value type.
+
+    Tries to parse as int, float, bool, then falls back to string.
+    """
+    # Try boolean
+    if value.lower() in ('true', 'false'):
+        return value.lower() == 'true'
+
+    # Try int
+    try:
+        return int(value)
+    except ValueError:
+        pass
+
+    # Try float
+    try:
+        return float(value)
+    except ValueError:
+        pass
+
+    # Default to string
+    return value
+
+
+def parse_config_options(config_args):
+    """
+    Parse config options from command line arguments.
+
+    Args:
+        config_args: List of "key=value" strings
+
+    Returns:
+        Dict mapping config keys to parsed values
+    """
+    if not config_args:
+        return {}
+
+    config_overrides = {}
+    for config_arg in config_args:
+        if '=' not in config_arg:
+            print(f"Error: Invalid config format '{config_arg}'. Expected KEY=VALUE", file=sys.stderr)
+            sys.exit(1)
+
+        key, value = config_arg.split('=', 1)
+        config_overrides[key] = parse_config_value(value)
+
+    return config_overrides
+
+
+def setup_mock_config(width, height, config_overrides=None):
     """Set up a mock configuration for testing."""
     from pifi.config import Config
     import traceback
@@ -157,6 +194,11 @@ def setup_mock_config(width, height):
     Config.set('leds.brightness', 31)
     Config.set('leds.flip_x', False)
     Config.set('leds.flip_y', False)
+
+    # Apply user-specified config overrides
+    if config_overrides:
+        for key, value in config_overrides.items():
+            Config.set(key, value)
 
 
 def get_screensaver(name, frame_player):
@@ -189,7 +231,10 @@ def main():
     )
 
     parser = argparse.ArgumentParser(
-        description='Preview screensavers in the terminal',
+        description='''Terminal-based screensaver preview tool.
+
+Renders screensavers to the terminal using ANSI 24-bit colors,
+allowing you to test and preview without a Raspberry Pi.''',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 Available screensavers:
@@ -199,6 +244,12 @@ Examples:
   %(prog)s cosmic_dream
   %(prog)s boids --width 48 --height 24
   %(prog)s game_of_life --scale 2
+  %(prog)s melting_clock --config melting_clock.timezone=America/New_York
+  %(prog)s boids --config boids.num_boids=25 --config boids.max_speed=2.0
+  %(prog)s starfield --width 64 --height 32 --config starfield.num_stars=150
+
+Config options use dot notation (e.g., screensaver_name.setting_name).
+Config values are auto-detected as int, float, bool, or string.
         """
     )
 
@@ -236,14 +287,24 @@ Examples:
         help='List available screensavers and exit'
     )
 
+    parser.add_argument(
+        '-c', '--config',
+        action='append',
+        metavar='KEY=VALUE',
+        help='Set arbitrary config option using dot notation (can be used multiple times). Example: --config melting_clock.timezone=America/New_York'
+    )
+
     args = parser.parse_args()
 
     if args.list:
         list_screensavers()
         return 0
 
+    # Parse config overrides
+    config_overrides = parse_config_options(args.config)
+
     # Set up mock config
-    setup_mock_config(args.width, args.height)
+    setup_mock_config(args.width, args.height, config_overrides)
 
     # Create terminal frame player
     frame_player = TerminalFramePlayer(args.width, args.height, args.scale)
