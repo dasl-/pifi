@@ -1,9 +1,8 @@
 var pong_page = (() => {
 
-    var is_touch_device = false;
+    var is_touch_device = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     function init() {
-        is_touch_device = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
         // Initialize volume from server
         $.get("/api/vol_pct", function(data) {

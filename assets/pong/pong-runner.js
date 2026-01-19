@@ -88,21 +88,26 @@ var pong_runner = (() => {
         player_counter += 1;
 
         // Update UI to show which player you are
-        $(".player-indicator").text("You are Player " + (my_player_index + 1)).fadeIn();
+        updatePlayerIndicator();
 
         // Highlight your score
-        if (my_player_index === 0) {
-            $(".player1-score").addClass("my-score");
-        } else {
-            $(".player2-score").addClass("my-score");
+        highlightPlayerScores();
+
+        // Reset scores display (only on first join)
+        if (player_counter === 1) {
+            $("#p1-score").text("0");
+            $("#p2-score").text("0");
         }
 
-        // Reset scores display
-        $("#p1-score").text("0");
-        $("#p2-score").text("0");
-
-        // In pong, each browser can only be one player (unlike snake where desktop can be 2)
-        // Keep button disabled until game ends
+        // Re-enable button if we haven't reached max local players yet
+        // Desktop: allow 2 players, Mobile: allow 1 player
+        if ((player_counter >= 2 && !pong_page.is_touch_device) ||
+            (player_counter >= 1 && pong_page.is_touch_device)
+        ) {
+            // Keep button disabled - max players joined from this device
+        } else {
+            enableNewGameButton();
+        }
     }
 
     function onWebSocketOpen(event) {
@@ -136,7 +141,12 @@ var pong_runner = (() => {
             case 'game_over':
                 var winner = message.winner;
                 var winner_text;
-                if (winner === my_player_index) {
+
+                // If both players are local, show who won without YOU WIN/YOU LOSE
+                if (player_counter >= 2) {
+                    winner_text = "PLAYER " + (winner + 1) + " WINS!";
+                    $(".winner-display").addClass("victory");
+                } else if (winner === my_player_index) {
                     winner_text = "YOU WIN!";
                     $(".winner-display").addClass("victory");
                 } else {
@@ -155,57 +165,85 @@ var pong_runner = (() => {
                 break;
 
             case 'player_index_message':
+                // This message is sent when joining a game in progress
+                // For new games, player index is set in handleNewGamePromisesSuccess
                 my_player_index = message.player_index;
-                $(".player-indicator").text("You are Player " + (my_player_index + 1)).fadeIn();
+                updatePlayerIndicator();
+                highlightPlayerScores();
                 break;
         }
     }
 
     function registerEventListeners(player_index) {
-        // Keyboard controls
-        $(document).on('keydown.pong-runner', function(e) {
-            var keyCode = e.keyCode;
-            var direction = null;
+        if (player_index === 0) {
+            // Player 1: W/S keys and arrow keys
+            $(document).on('keydown.pong-runner.player0', function(e) {
+                var keyCode = e.keyCode;
+                var direction = null;
 
-            // Player 1: W/S keys
-            if (player_index === 0 || my_player_index === 0) {
                 if (keyCode === 87) { direction = 'up'; }   // W
                 if (keyCode === 83) { direction = 'down'; } // S
-            }
-
-            // Player 2: Arrow keys
-            if (player_index === 1 || my_player_index === 1) {
                 if (keyCode === 38) { direction = 'up'; }   // Up arrow
                 if (keyCode === 40) { direction = 'down'; } // Down arrow
-            }
 
-            // Allow either control scheme for single player testing
-            if (my_player_index === 0) {
-                if (keyCode === 38) { direction = 'up'; }
-                if (keyCode === 40) { direction = 'down'; }
-            }
-            if (my_player_index === 1) {
-                if (keyCode === 87) { direction = 'up'; }
-                if (keyCode === 83) { direction = 'down'; }
-            }
+                if (direction) {
+                    e.preventDefault();
+                    sendDirection(direction, player_index);
+                }
+            });
 
-            if (direction) {
+            // Touch controls for player 1 (left zone)
+            $(".left-zone .touch-button").on("touchstart.pong-runner.player0 mousedown.pong-runner.player0", function(e) {
                 e.preventDefault();
-                sendDirection(direction, my_player_index);
-            }
-        });
+                var direction = $(this).data("direction");
+                sendDirection(direction, player_index);
+            });
+        } else if (player_index === 1) {
+            // Player 2 joins - need to unregister arrow keys from player 0 and use them for player 1
+            $(document).off('keydown.pong-runner.player0');
 
-        // Touch controls
-        $(".touch-button").on("touchstart mousedown", function(e) {
-            e.preventDefault();
-            var direction = $(this).data("direction");
-            sendDirection(direction, my_player_index);
-        });
+            // Re-register player 0 with only W/S
+            $(document).on('keydown.pong-runner.player0', function(e) {
+                var keyCode = e.keyCode;
+                var direction = null;
+
+                if (keyCode === 87) { direction = 'up'; }   // W
+                if (keyCode === 83) { direction = 'down'; } // S
+
+                if (direction) {
+                    e.preventDefault();
+                    sendDirection(direction, 0);
+                }
+            });
+
+            // Register player 1 with arrow keys
+            $(document).on('keydown.pong-runner.player1', function(e) {
+                var keyCode = e.keyCode;
+                var direction = null;
+
+                if (keyCode === 38) { direction = 'up'; }   // Up arrow
+                if (keyCode === 40) { direction = 'down'; } // Down arrow
+
+                if (direction) {
+                    e.preventDefault();
+                    sendDirection(direction, player_index);
+                }
+            });
+
+            // Touch controls for player 2 (right zone)
+            $(".right-zone .touch-button").on("touchstart.pong-runner.player1 mousedown.pong-runner.player1", function(e) {
+                e.preventDefault();
+                var direction = $(this).data("direction");
+                sendDirection(direction, player_index);
+            });
+        }
     }
 
     function unregisterEventListeners() {
-        $(document).off("keydown.pong-runner");
-        $(".touch-button").off("touchstart mousedown");
+        $(document).off("keydown.pong-runner.player0");
+        $(document).off("keydown.pong-runner.player1");
+        $(".touch-button").off("touchstart.pong-runner.player0 mousedown.pong-runner.player0");
+        $(".touch-button").off("touchstart.pong-runner.player1 mousedown.pong-runner.player1");
 
         web_sockets.forEach(web_socket => {
             if (web_socket && web_socket.readyState === WebSocket.OPEN) {
@@ -215,9 +253,7 @@ var pong_runner = (() => {
     }
 
     function sendDirection(direction, player_index) {
-        // Each browser has only one WebSocket connection, stored at index 0
-        // player_index is the server-assigned index, not the local array index
-        var socket = web_sockets[0];
+        var socket = web_sockets[player_index];
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(direction + ' ' + (new Date() / 1000));
 
@@ -226,6 +262,27 @@ var pong_runner = (() => {
             setTimeout(function() {
                 $(".touch-button[data-direction='" + direction + "']").removeClass("active");
             }, 100);
+        }
+    }
+
+    function updatePlayerIndicator() {
+        var indicator_text = "";
+        if (player_counter === 1) {
+            indicator_text = "You are Player " + (my_player_index + 1);
+        } else if (player_counter === 2) {
+            indicator_text = "You are both players (local 2P)";
+        }
+        $(".player-indicator").text(indicator_text).fadeIn();
+    }
+
+    function highlightPlayerScores() {
+        // Highlight all local players' scores
+        for (var i = 0; i < player_counter; i++) {
+            if (i === 0) {
+                $(".player1-score").addClass("my-score");
+            } else if (i === 1) {
+                $(".player2-score").addClass("my-score");
+            }
         }
     }
 
