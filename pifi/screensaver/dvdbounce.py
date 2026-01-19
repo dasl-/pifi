@@ -183,28 +183,61 @@ class DvdBounce(Screensaver):
 
         # Optional: Draw "DVD" text if logo is big enough
         show_text = Config.get('dvd_bounce.show_text', False)
-        if show_text and self.__logo_width >= 5 and self.__logo_height >= 3:
+        if show_text and self.__logo_width >= 12 and self.__logo_height >= 3:
             self.__draw_dvd_text(frame, x_start, y_start)
 
         self.__led_frame_player.play_frame(frame)
 
     def __draw_dvd_text(self, frame, x_offset, y_offset):
         """Draw simple 'DVD' text pattern in the logo."""
-        # Simple 3x5 pixel patterns for D, V, D
+        # 3x3 pixel patterns for D, V, D
         # Only draw if there's enough space
-        if self.__logo_width < 5 or self.__logo_height < 3:
+        if self.__logo_width < 12 or self.__logo_height < 3:
             return
 
         # Center the text vertically
         text_y = y_offset + (self.__logo_height - 3) // 2
         text_x = x_offset + 1
 
-        # Simple patterns (3 pixels wide each, with gaps)
-        # D pattern
+        # Each letter is 3 pixels wide with 1 pixel gaps
+        # D pattern: ##
+        #            # #
+        #            ##
+
+        # First D (3 pixels wide)
         if text_x + 2 < x_offset + self.__logo_width and text_y + 2 < y_offset + self.__logo_height:
-            frame[text_y:text_y+3, text_x] = [255, 255, 255]  # Left edge
-            frame[text_y, text_x+1] = [255, 255, 255]         # Top
-            frame[text_y+2, text_x+1] = [255, 255, 255]       # Bottom
+            # Top row
+            frame[text_y, text_x:text_x+2] = [255, 255, 255]
+            # Middle row
+            frame[text_y+1, text_x] = [255, 255, 255]
+            frame[text_y+1, text_x+2] = [255, 255, 255]
+            # Bottom row
+            frame[text_y+2, text_x:text_x+2] = [255, 255, 255]
+
+        # V pattern: # #
+        #            # #
+        #             #
+        text_x_v = text_x + 4
+        if text_x_v + 2 < x_offset + self.__logo_width and text_y + 2 < y_offset + self.__logo_height:
+            # Top row
+            frame[text_y, text_x_v] = [255, 255, 255]
+            frame[text_y, text_x_v+2] = [255, 255, 255]
+            # Middle row
+            frame[text_y+1, text_x_v] = [255, 255, 255]
+            frame[text_y+1, text_x_v+2] = [255, 255, 255]
+            # Bottom row (center)
+            frame[text_y+2, text_x_v+1] = [255, 255, 255]
+
+        # Second D (3 pixels wide)
+        text_x_d2 = text_x + 8
+        if text_x_d2 + 2 < x_offset + self.__logo_width and text_y + 2 < y_offset + self.__logo_height:
+            # Top row
+            frame[text_y, text_x_d2:text_x_d2+2] = [255, 255, 255]
+            # Middle row
+            frame[text_y+1, text_x_d2] = [255, 255, 255]
+            frame[text_y+1, text_x_d2+2] = [255, 255, 255]
+            # Bottom row
+            frame[text_y+2, text_x_d2:text_x_d2+2] = [255, 255, 255]
 
     def __hsv_to_rgb(self, h, s, v):
         """Convert HSV color to RGB."""
