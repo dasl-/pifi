@@ -7,7 +7,6 @@ var pong_runner = (() => {
     var web_sockets = [];
     var player_counter = 0;
     var playlist_video_id = null;
-    var my_player_index = null;
 
     function newGameOrJoinGame() {
         if (is_new_game_request_in_progress) {
@@ -70,11 +69,11 @@ var pong_runner = (() => {
         var new_playlist_video_id = enqueue_or_join_game_response.playlist_video_id;
 
         if (playlist_video_id !== new_playlist_video_id) {
+            // This client is starting / joining a game that it hasn't been a part of before
             playlist_video_id = new_playlist_video_id;
             unregisterEventListeners();
             player_counter = 0;
             web_sockets = [];
-            my_player_index = null;
         }
 
         console.log("Sending playlist_video_id:", playlist_video_id);
@@ -83,18 +82,11 @@ var pong_runner = (() => {
         }));
 
         web_sockets[player_counter] = pending_web_socket;
-        my_player_index = player_counter;
         registerEventListeners(player_counter);
         player_counter += 1;
 
-        // Update UI to show which player you are
-        updatePlayerIndicator();
-
-        // Highlight your score
-        highlightPlayerScores();
-
-        // Reset scores display (only on first join)
         if (player_counter === 1) {
+            // Only necessary to do this once, even if two players are joining from a single browser
             $("#p1-score").text("0");
             $("#p2-score").text("0");
         }
@@ -104,7 +96,10 @@ var pong_runner = (() => {
         if ((player_counter >= 2 && !pong_page.is_touch_device) ||
             (player_counter >= 1 && pong_page.is_touch_device)
         ) {
-            // Keep button disabled - max players joined from this device
+            // Keep the new game button disabled to prevent it from showing a multiplayer game as "joinable"
+            // even after the max number of players has joined from this client. In multiplayer games, mobile
+            // clients support one player joining from the device, and desktop clients support two players
+            // joining from the device.
         } else {
             enableNewGameButton();
         }
@@ -146,12 +141,22 @@ var pong_runner = (() => {
                 if (player_counter >= 2) {
                     winner_text = "PLAYER " + (winner + 1) + " WINS!";
                     $(".winner-display").addClass("victory");
-                } else if (winner === my_player_index) {
-                    winner_text = "YOU WIN!";
-                    $(".winner-display").addClass("victory");
                 } else {
-                    winner_text = "YOU LOSE";
-                    $(".winner-display").removeClass("victory");
+                    // For single local player, check if our highlighted score matches winner
+                    var is_winner = false;
+                    if (winner === 0 && $(".player1-score").hasClass("my-score")) {
+                        is_winner = true;
+                    } else if (winner === 1 && $(".player2-score").hasClass("my-score")) {
+                        is_winner = true;
+                    }
+
+                    if (is_winner) {
+                        winner_text = "YOU WIN!";
+                        $(".winner-display").addClass("victory");
+                    } else {
+                        winner_text = "YOU LOSE";
+                        $(".winner-display").removeClass("victory");
+                    }
                 }
                 $(".winner-text").text(winner_text);
                 $(".winner-display").fadeIn();
@@ -165,11 +170,17 @@ var pong_runner = (() => {
                 break;
 
             case 'player_index_message':
-                // This message is sent when joining a game in progress
-                // For new games, player index is set in handleNewGamePromisesSuccess
-                my_player_index = message.player_index;
-                updatePlayerIndicator();
-                highlightPlayerScores();
+                // Server tells us which player index was assigned to this connection
+                // This allows us to highlight that player's score
+                var player = message.player_index + 1;
+                $(".player" + player + "-score").addClass("my-score");
+
+                // Update player indicator text
+                if (player_counter === 1) {
+                    $(".player-indicator").text("You are Player " + player).fadeIn();
+                } else if (player_counter === 2) {
+                    $(".player-indicator").text("You are both players (local 2P)").fadeIn();
+                }
                 break;
         }
     }
@@ -262,27 +273,6 @@ var pong_runner = (() => {
             setTimeout(function() {
                 $(".touch-button[data-direction='" + direction + "']").removeClass("active");
             }, 100);
-        }
-    }
-
-    function updatePlayerIndicator() {
-        var indicator_text = "";
-        if (player_counter === 1) {
-            indicator_text = "You are Player " + (my_player_index + 1);
-        } else if (player_counter === 2) {
-            indicator_text = "You are both players (local 2P)";
-        }
-        $(".player-indicator").text(indicator_text).fadeIn();
-    }
-
-    function highlightPlayerScores() {
-        // Highlight all local players' scores
-        for (var i = 0; i < player_counter; i++) {
-            if (i === 0) {
-                $(".player1-score").addClass("my-score");
-            } else if (i === 1) {
-                $(".player2-score").addClass("my-score");
-            }
         }
     }
 
