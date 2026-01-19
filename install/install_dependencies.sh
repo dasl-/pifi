@@ -62,8 +62,8 @@ installYtDlp(){
     info "\\nInstalling yt-dlp..."
 
     # Remove the pip installed yt-dlp in case it's present (we used to install yt-dlp with pip).
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall 'yt-dlp[default]'
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall 'yt-dlp'
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp[default]'
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp'
     "$BASE_DIR"/utils/update_yt-dlp.sh
 }
 
