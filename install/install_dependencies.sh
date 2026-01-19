@@ -11,11 +11,11 @@ main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
+    installDeno
     setupUv
     installYtDlp
     enableSpi
     installLedDriver
-    clearYoutubeDlCache
     installNode
 
     if [ -f $RESTART_REQUIRED_FILE ]; then
@@ -49,6 +49,23 @@ updateAndInstallPackages(){
     # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
         git+https://github.com/cexen/py-simple-audio.git uv
+}
+
+# yt-dlp now requires a JS interpreter. They recommend Deno:
+# https://github.com/yt-dlp/yt-dlp/wiki/EJS
+installDeno(){
+    info "\\nInstalling deno..."
+    if command -v deno >/dev/null 2>&1 && deno --version | head -n1 | grep -q '^deno 2\.6\.5 '; then
+        echo "Deno 2.6.5 is already installed"
+        return
+    fi
+
+    sudo rm -rf /tmp/deno
+    mkdir -p /tmp/deno
+    wget -P /tmp/deno https://github.com/denoland/deno/releases/download/v2.6.5/deno-aarch64-unknown-linux-gnu.zip
+    unzip -d /tmp/deno /tmp/deno/deno-aarch64-unknown-linux-gnu.zip
+    sudo mv /tmp/deno/deno /usr/bin/deno
+    sudo rm -rf /tmp/deno
 }
 
 setupUv(){
@@ -157,19 +174,6 @@ installLedDriverWs2812b(){
             touch $RESTART_REQUIRED_FILE
         fi
     fi
-}
-
-clearYoutubeDlCache(){
-    info "Clearing yt-dlp caches..."
-
-    # https://askubuntu.com/a/329689
-    local users
-    users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
-
-    # Just in case the yt-dlp cache got polluted, as it has before...
-    # https://github.com/ytdl-org/youtube-dl/issues/24780
-    # shellcheck disable=SC1083
-    parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root "$users"
 }
 
 installNode(){
