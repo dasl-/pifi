@@ -129,194 +129,34 @@ class TerminalFramePlayer:
         sys.stdout.flush()
 
 
-def get_default_config():
-    """Get default config values for all screensavers."""
-    return {
-        'game_of_life': {
-            'seed_liveness_probability': 0.3333,
-            'tick_sleep': 0.07,
-            'game_over_detection_lookback': 16,
-            'game_color_mode': 'rainbow',
-            'variant': 'normal',
-            'fade': False,
-            'invert': False,
-        },
-        'cyclic_automaton': {
-            'tick_sleep': 0.07,
-            'game_over_detection_lookback': 16,
-            'fade': False,
-        },
-        'boids': {
-            'num_boids': 15,
-            'tick_sleep': 0.05,
-            'max_ticks': 10000,
-            'max_speed': 1.5,
-            'perception_radius': 8.0,
-            'min_distance': 2.0,
-            'separation_weight': 1.5,
-            'alignment_weight': 1.0,
-            'cohesion_weight': 1.0,
-        },
-        'cosmicdream': {
-            'num_particles': 20,
-            'trail_length': 8,
-            'particle_speed': 0.5,
-            'tick_sleep': 0.03,
-            'max_ticks': 100000,
-        },
-        'mandelbrot': {
-            'max_iterations': 100,
-            'zoom_speed': 1.02,
-            'lerp_factor': 0.02,
-            'tick_sleep': 0.05,
-            'max_ticks': 10000,
-        },
-        'wave_interference': {
-            'num_sources': 4,
-            'wave_frequency': 0.5,
-            'time_speed': 0.15,
-            'drift_speed': 0.3,
-            'color_mode': 'rainbow',
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'spirograph': {
-            'trail_length': 500,
-            'fade_trail': True,
-            'time_speed': 1.0,
-            'tick_sleep': 0.02,
-            'max_ticks': 10000,
-        },
-        'lorenz': {
-            'sigma': 10.0,
-            'rho': 28.0,
-            'beta': 8.0 / 3.0,
-            'dt': 0.01,
-            'steps_per_frame': 5,
-            'trail_length': 800,
-            'rotation_speed': 0.005,
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'metaballs': {
-            'num_balls': 5,
-            'speed': 0.5,
-            'threshold': 1.0,
-            'glow': False,
-            'tick_sleep': 0.04,
-            'max_ticks': 10000,
-        },
-        'starfield': {
-            'num_stars': 80,
-            'speed': 0.02,
-            'show_trails': True,
-            'trail_length': 3,
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'matrix_rain': {
-            'min_speed': 0.2,
-            'max_speed': 0.8,
-            'min_length': 4,
-            'max_length': 12,
-            'fade_rate': 0.85,
-            'spawn_rate': 0.08,
-            'color_mode': 'green',
-            'tick_sleep': 0.05,
-            'max_ticks': 10000,
-        },
-        'melting_clock': {
-            'show_seconds': True,
-            'melt_speed': 0.15,
-            'form_speed': 0.05,
-            'trail_fade': 0.85,
-            'hue_speed': 0.001,
-            'color_mode': 'rainbow',
-            'tick_sleep': 0.05,
-            'max_ticks': 100000,
-        },
-        'aurora': {
-            'num_curtains': 4,
-            'show_stars': True,
-            'num_stars': 15,
-            'time_speed': 1.0,
-            'tick_sleep': 0.04,
-            'max_ticks': 10000,
-        },
-        'perlinworms': {
-            'num_worms': 8,
-            'worm_length': 12,
-            'speed': 0.8,
-            'noise_scale': 0.1,
-            'time_speed': 0.02,
-            'fade': 0.92,
-            'glow_size': 1.5,
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'pendulumwaves': {
-            'num_pendulums': 0,
-            'base_period': 60.0,
-            'cycle_time': 600,
-            'bob_size': 1.5,
-            'trail_fade': 0.85,
-            'color_mode': 'rainbow',
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'stringart': {
-            'num_points': 64,
-            'num_strings': 32,
-            'multiplier_speed': 0.02,
-            'rotation_speed': 0.01,
-            'fade': 0.15,
-            'line_brightness': 0.4,
-            'tick_sleep': 0.03,
-            'max_ticks': 10000,
-        },
-        'unknownpleasures': {
-            'num_lines': 0,
-            'wave_speed': 0.05,
-            'noise_scale': 0.15,
-            'amplitude': 0.4,
-            'line_brightness': 1.0,
-            'fill_below': True,
-            'color_mode': 'white',
-            'tick_sleep': 0.05,
-            'max_ticks': 10000,
-        },
-        'cloudscape': {
-            'num_layers': 3,
-            'drift_speed': 0.2,
-            'sky_mode': 'pastel',
-            'cloud_density': 0.7,
-            'cloud_scale': 0.04,
-            'sky_shift_speed': 0.001,
-            'tick_sleep': 0.05,
-            'max_ticks': 10000,
-        },
-    }
-
-
 def setup_mock_config(width, height):
     """Set up a mock configuration for testing."""
     from pifi.config import Config
+    import traceback
 
-    config = {
-        'log_level': 'warning',
-        'leds': {
-            'driver': 'terminal',
-            'display_width': width,
-            'display_height': height,
-            'brightness': 31,
-            'flip_x': False,
-            'flip_y': False,
-        },
-    }
-    config.update(get_default_config())
+    # Load actual config files using existing Config class
+    # This reads and merges default_config.json and config.json
+    try:
+        Config.load_config_if_not_loaded(should_set_log_level=False)
+    except Exception as e:
+        print("Error loading config files:", file=sys.stderr)
+        print("", file=sys.stderr)
+        traceback.print_exc()
+        print("", file=sys.stderr)
+        print("To use the screensaver preview tool, create a config.json file with:", file=sys.stderr)
+        print("", file=sys.stderr)
+        print('echo "{}" > config.json', file=sys.stderr)
+        print("", file=sys.stderr)
+        sys.exit(1)
 
-    Config._Config__is_loaded = True
-    Config._Config__config = config
+    # Override LED configuration for terminal preview
+    Config.set('log_level', 'warning')
+    Config.set('leds.driver', 'terminal')
+    Config.set('leds.display_width', width)
+    Config.set('leds.display_height', height)
+    Config.set('leds.brightness', 31)
+    Config.set('leds.flip_x', False)
+    Config.set('leds.flip_y', False)
 
 
 def get_screensaver(name, frame_player):

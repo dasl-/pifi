@@ -23,6 +23,7 @@ from pifi.screensaver.pendulumwaves import PendulumWaves
 from pifi.screensaver.stringart import StringArt
 from pifi.screensaver.unknownpleasures import UnknownPleasures
 from pifi.screensaver.cloudscape import Cloudscape
+from pifi.screensaver.dvdbounce import DvdBounce
 from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
 from pifi.screensaver.videoscreensaver import VideoScreensaver
@@ -58,6 +59,7 @@ class ScreensaverManager:
         StringArt,
         UnknownPleasures,
         Cloudscape,
+        DvdBounce,
         VideoScreensaver,
     ]
 

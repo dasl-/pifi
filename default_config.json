@@ -704,4 +704,33 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to DVD bounce screensaver.
+    "dvd_bounce": {
+
+        // Optional, integer, default: 8. Width of the bouncing logo in pixels.
+        "logo_width": 8,
+
+        // Optional, integer, default: 4. Height of the bouncing logo in pixels.
+        "logo_height": 4,
+
+        // Optional, float, default: 0.5. Movement speed of the logo.
+        "speed": 0.5,
+
+        // Optional, string, default: random. Color mode for the logo.
+        // Valid values: "random", "rainbow", "pastel", "white".
+        "color_mode": "random",
+
+        // Optional, boolean, default: true. Whether to show a border around the logo.
+        "show_border": true,
+
+        // Optional, boolean, default: false. Whether to show "DVD" text in the logo.
+        "show_text": false,
+
+        // Optional, float, default: 0.03. Tick sleep time.
+        "tick_sleep": 0.03,
+
+        // Optional, integer, default: 10000. Maximum ticks.
+        "max_ticks": 10000,
+    },
+
 }
