@@ -29,9 +29,18 @@ class DvdBounce(Screensaver):
         self.__width = Config.get_or_throw('leds.display_width')
         self.__height = Config.get_or_throw('leds.display_height')
 
-        # Logo dimensions
-        self.__logo_width = Config.get('dvd_bounce.logo_width', 8)
-        self.__logo_height = Config.get('dvd_bounce.logo_height', 4)
+        # Logo dimensions (clamp to display size)
+        requested_width = Config.get('dvd_bounce.logo_width', 8)
+        requested_height = Config.get('dvd_bounce.logo_height', 4)
+
+        self.__logo_width = min(requested_width, self.__width - 1)
+        self.__logo_height = min(requested_height, self.__height - 1)
+
+        if requested_width >= self.__width or requested_height >= self.__height:
+            self.__logger.warning(
+                f"Logo dimensions ({requested_width}x{requested_height}) too large for display "
+                f"({self.__width}x{self.__height}). Clamped to {self.__logo_width}x{self.__logo_height}."
+            )
 
         # Position (float for smooth movement)
         self.__x = 0.0
@@ -158,8 +167,9 @@ class DvdBounce(Screensaver):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
 
         # Draw the logo as a filled rectangle
-        x_start = int(self.__x)
-        y_start = int(self.__y)
+        # Clamp coordinates to prevent negative indices
+        x_start = max(0, int(self.__x))
+        y_start = max(0, int(self.__y))
         x_end = min(x_start + self.__logo_width, self.__width)
         y_end = min(y_start + self.__logo_height, self.__height)
 
