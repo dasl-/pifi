@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Lorenz:
+class Lorenz(Screensaver):
     """
     Lorenz attractor screensaver.
 
@@ -18,6 +19,7 @@ class Lorenz:
     """
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -184,3 +186,15 @@ class Lorenz:
 
     def __get_tick_sleep(self):
         return Config.get('lorenz.tick_sleep', 0.03)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'lorenz'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Lorenz Attractor'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Lorenz attractor butterfly'

@@ -5,14 +5,16 @@ import time
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
+from pifi.screensaver.screensaver import Screensaver
 
 # Base class for cellular automaton games
-class CellularAutomaton(ABC):
+class CellularAutomaton(Screensaver, ABC):
 
     _DEFAULT_MAX_GAME_LENGTH_SECONDS = 0 # unlimited
     _DEFAULT_MAX_STATE_REPETITIONS_FOR_GAME_OVER = 10
 
     def __init__(self, led_frame_player = None):
+        super().__init__(led_frame_player)
         self._logger = Logger().set_namespace(self.__class__.__name__)
         self._board = None
         if led_frame_player is None:

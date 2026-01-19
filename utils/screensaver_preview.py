@@ -24,78 +24,20 @@ import signal
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-# Registry of all screensavers - add new ones here
-# Format: (name, module_path, class_name, description, config_key)
-SCREENSAVER_REGISTRY = [
-    ('cosmic_dream', 'pifi.screensaver.cosmicdream', 'CosmicDream',
-     'Psychedelic plasma waves, particles, and geometry', 'cosmicdream'),
+# Build registry dynamically from ScreensaverManager
+from pifi.screensaver.screensavermanager import ScreensaverManager
 
-    ('boids', 'pifi.screensaver.boids', 'Boids',
-     'Flocking simulation', 'boids'),
+SCREENSAVER_REGISTRY = []
+for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
+    module_path = cls.__module__
+    class_name = cls.__name__
+    name = cls.get_id()
+    description = cls.get_description()
+    config_key = cls.get_id()
 
-    ('mandelbrot', 'pifi.screensaver.mandelbrot', 'Mandelbrot',
-     'Mandelbrot set zoom', 'mandelbrot'),
+    SCREENSAVER_REGISTRY.append((name, module_path, class_name, description, config_key))
 
-    ('game_of_life', 'pifi.screensaver.cellularautomata.gameoflife', 'GameOfLife',
-     "Conway's Game of Life", 'game_of_life'),
-
-    ('cyclic_automaton', 'pifi.screensaver.cellularautomata.cyclicautomaton', 'CyclicAutomaton',
-     'Cyclic cellular automaton', 'cyclic_automaton'),
-
-    ('wave_interference', 'pifi.screensaver.waveinterference', 'WaveInterference',
-     'Ripple interference patterns', 'wave_interference'),
-
-    ('spirograph', 'pifi.screensaver.spirograph', 'Spirograph',
-     'Rotating geometric patterns', 'spirograph'),
-
-    ('lorenz', 'pifi.screensaver.lorenz', 'Lorenz',
-     'Lorenz attractor butterfly', 'lorenz'),
-
-    ('metaballs', 'pifi.screensaver.metaballs', 'Metaballs',
-     'Blobby merging shapes', 'metaballs'),
-
-    ('starfield', 'pifi.screensaver.starfield', 'Starfield',
-     '3D flying through stars', 'starfield'),
-
-    ('matrix_rain', 'pifi.screensaver.matrixrain', 'MatrixRain',
-     'Falling green characters', 'matrix_rain'),
-
-    ('melting_clock', 'pifi.screensaver.meltingclock', 'MeltingClock',
-     'Time display with melting digits', 'melting_clock'),
-
-    ('aurora', 'pifi.screensaver.aurora', 'Aurora',
-     'Northern lights with curtains', 'aurora'),
-
-    ('shadebobs', 'pifi.screensaver.shadebobs', 'Shadebobs',
-     'Glowing Lissajous trails', 'shadebobs'),
-
-    ('flowfield', 'pifi.screensaver.flowfield', 'FlowField',
-     'Particles flowing through noise', 'flowfield'),
-
-    ('lavalamp', 'pifi.screensaver.lavalamp', 'LavaLamp',
-     'Rising and falling blobs', 'lavalamp'),
-
-    ('reactiondiffusion', 'pifi.screensaver.reactiondiffusion', 'ReactionDiffusion',
-     'Gray-Scott organic patterns', 'reactiondiffusion'),
-
-    ('inkinwater', 'pifi.screensaver.inkinwater', 'InkInWater',
-     'Diffusing color blooms', 'inkinwater'),
-
-    ('perlinworms', 'pifi.screensaver.perlinworms', 'PerlinWorms',
-     'Slithering noise trails', 'perlinworms'),
-
-    ('pendulumwaves', 'pifi.screensaver.pendulumwaves', 'PendulumWaves',
-     'Synchronized wave patterns', 'pendulumwaves'),
-
-    ('stringart', 'pifi.screensaver.stringart', 'StringArt',
-     'Curved envelopes from lines', 'stringart'),
-
-    ('unknownpleasures', 'pifi.screensaver.unknownpleasures', 'UnknownPleasures',
-     'Joy Division pulsar waves', 'unknownpleasures'),
-
-    ('cloudscape', 'pifi.screensaver.cloudscape', 'Cloudscape',
-     'Drifting clouds over gradient sky', 'cloudscape'),
-]
+SCREENSAVER_REGISTRY.sort(key=lambda x: x[0])
 
 # Build lookup dicts
 SCREENSAVER_BY_NAME = {s[0]: s for s in SCREENSAVER_REGISTRY}
@@ -379,20 +321,15 @@ def setup_mock_config(width, height):
 
 def get_screensaver(name, frame_player):
     """Get a screensaver instance by name."""
-    import importlib
+    from pifi.screensaver.screensavermanager import ScreensaverManager
 
     name = name.lower().replace('-', '_').replace(' ', '_')
 
-    # Look up in registry
-    if name not in SCREENSAVER_BY_NAME:
-        available = [s[0] for s in SCREENSAVER_REGISTRY]
+    if name not in ScreensaverManager.SCREENSAVER_CLASSES:
+        available = [cls.get_id() for cls in ScreensaverManager.SCREENSAVER_CLASSES.values()]
         raise ValueError(f"Unknown screensaver: {name}\nAvailable: {', '.join(available)}")
 
-    _, module_path, class_name, _, _ = SCREENSAVER_BY_NAME[name]
-
-    # Dynamically import and instantiate
-    module = importlib.import_module(module_path)
-    cls = getattr(module, class_name)
+    cls = ScreensaverManager.SCREENSAVER_CLASSES[name]
     return cls(led_frame_player=frame_player)
 
 

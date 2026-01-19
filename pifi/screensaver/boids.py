@@ -5,9 +5,10 @@ import time
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Boids:
+class Boids(Screensaver):
     """
     Boids flocking simulation screensaver.
 
@@ -18,6 +19,7 @@ class Boids:
     """
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -211,3 +213,15 @@ class Boids:
 
     def __get_perception_radius(self):
         return Config.get('boids.perception_radius', 8.0)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'boids'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Boids'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Flocking simulation'

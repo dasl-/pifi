@@ -11,12 +11,14 @@ import time
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Cloudscape:
+class Cloudscape(Screensaver):
     """Layered clouds drifting across a gradient sky."""
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -274,3 +276,15 @@ class Cloudscape:
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("Cloudscape screensaver ended")
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'cloudscape'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Cloudscape'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Drifting clouds over gradient sky'

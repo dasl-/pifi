@@ -137,3 +137,15 @@ class GameOfLife(CellularAutomaton):
         new_board[1:-1,1:-1][new_cells & (twos > ones)] = 2
 
         self._board = new_board
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'game_of_life'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Game of Life'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return "Conway's Game of Life"

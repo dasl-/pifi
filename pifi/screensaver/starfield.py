@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Starfield:
+class Starfield(Screensaver):
     """
     Classic 3D starfield screensaver.
 
@@ -18,6 +19,7 @@ class Starfield:
     """
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -158,3 +160,15 @@ class Starfield:
 
     def __get_tick_sleep(self):
         return Config.get('starfield.tick_sleep', 0.03)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'starfield'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Starfield'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return '3D flying through stars'

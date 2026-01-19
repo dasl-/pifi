@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class Spirograph:
+class Spirograph(Screensaver):
     """
     Spirograph screensaver.
 
@@ -18,6 +19,7 @@ class Spirograph:
     """
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -162,3 +164,15 @@ class Spirograph:
 
     def __get_tick_sleep(self):
         return Config.get('spirograph.tick_sleep', 0.02)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'spirograph'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Spirograph'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Rotating geometric patterns'

@@ -32,32 +32,41 @@ from pifi.logger import Logger
 
 class ScreensaverManager:
 
-    # Map of screensaver ID to class
-    SCREENSAVER_CLASSES = {
-        'game_of_life': GameOfLife,
-        'cyclic_automaton': CyclicAutomaton,
-        'boids': Boids,
-        'cosmic_dream': CosmicDream,
-        'mandelbrot': Mandelbrot,
-        'wave_interference': WaveInterference,
-        'spirograph': Spirograph,
-        'lorenz': Lorenz,
-        'metaballs': Metaballs,
-        'starfield': Starfield,
-        'matrix_rain': MatrixRain,
-        'melting_clock': MeltingClock,
-        'aurora': Aurora,
-        'shadebobs': Shadebobs,
-        'flowfield': FlowField,
-        'lavalamp': LavaLamp,
-        'reactiondiffusion': ReactionDiffusion,
-        'inkinwater': InkInWater,
-        'perlinworms': PerlinWorms,
-        'pendulumwaves': PendulumWaves,
-        'stringart': StringArt,
-        'unknownpleasures': UnknownPleasures,
-        'cloudscape': Cloudscape,
-    }
+    # List of all available screensaver classes
+    # To add a new screensaver: import it above and add the class to this list
+    _SCREENSAVER_CLASSES = [
+        GameOfLife,
+        CyclicAutomaton,
+        Boids,
+        CosmicDream,
+        Mandelbrot,
+        WaveInterference,
+        Spirograph,
+        Lorenz,
+        Metaballs,
+        Starfield,
+        MatrixRain,
+        MeltingClock,
+        Aurora,
+        Shadebobs,
+        FlowField,
+        LavaLamp,
+        ReactionDiffusion,
+        InkInWater,
+        PerlinWorms,
+        PendulumWaves,
+        StringArt,
+        UnknownPleasures,
+        Cloudscape,
+        VideoScreensaver,
+    ]
+
+    # Build map of screensaver ID to class using get_id() from each class
+    # This eliminates duplication - the ID comes from the class itself
+    SCREENSAVER_CLASSES = {cls.get_id(): cls for cls in _SCREENSAVER_CLASSES}
+
+    # Cache for get_all_screensavers() result
+    _all_screensavers_cache = None
 
     def __init__(self):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
@@ -67,8 +76,28 @@ class ScreensaverManager:
         # See: https://github.com/dasl-/pifi/commit/fd48ba5b41bba6c6aa0034d743e40de153482f21
         self.__led_frame_player = LedFramePlayer()
 
-        # Cache of instantiated screensavers
-        self.__screensaver_cache = {}
+        # Pre-instantiate all screensavers upfront
+        # This provides fail-fast behavior if there are instantiation issues
+        self.__screensaver_cache = {
+            screensaver_id: cls(led_frame_player=self.__led_frame_player)
+            for screensaver_id, cls in self.SCREENSAVER_CLASSES.items()
+        }
+
+    @staticmethod
+    def get_all_screensavers():
+        """Get metadata for all available screensavers."""
+        # Lazy initialization of cache - build once, return many times
+        if ScreensaverManager._all_screensavers_cache is None:
+            screensavers = []
+            for cls in ScreensaverManager._SCREENSAVER_CLASSES:
+                screensavers.append({
+                    'id': cls.get_id(),
+                    'name': cls.get_name(),
+                    'description': cls.get_description(),
+                })
+            ScreensaverManager._all_screensavers_cache = sorted(screensavers, key=lambda x: x['id'])
+
+        return ScreensaverManager._all_screensavers_cache
 
     @staticmethod
     def get_enabled_screensavers():
@@ -83,18 +112,7 @@ class ScreensaverManager:
         """Get list of enabled screensaver IDs from SettingsDb."""
         return ScreensaverManager.get_enabled_screensavers()
 
-    def __get_screensaver(self, screensaver_id):
-        """Get or create a screensaver instance."""
-        if screensaver_id not in self.__screensaver_cache:
-            if screensaver_id in self.SCREENSAVER_CLASSES:
-                cls = self.SCREENSAVER_CLASSES[screensaver_id]
-                self.__screensaver_cache[screensaver_id] = cls(led_frame_player=self.__led_frame_player)
-        return self.__screensaver_cache.get(screensaver_id)
-
     def run(self):
-        saved_videos = Config.get("screensavers.saved_videos", [])
-        video_screensaver = VideoScreensaver(video_list=saved_videos) if saved_videos else None
-
         while True:
             # Re-read enabled screensavers each iteration so changes take effect
             enabled = self.__get_enabled_screensavers()
@@ -102,17 +120,13 @@ class ScreensaverManager:
             # Build list of available screensavers
             available = []
             for screensaver_id in enabled:
-                screensaver = self.__get_screensaver(screensaver_id)
+                screensaver = self.__screensaver_cache.get(screensaver_id)
                 if screensaver:
                     available.append(screensaver)
 
-            # Add video screensaver if configured
-            if video_screensaver:
-                available.append(video_screensaver)
-
             # Fall back to game of life if nothing enabled
             if not available:
-                available.append(self.__get_screensaver('game_of_life'))
+                available.append(self.__screensaver_cache.get('game_of_life'))
 
             screensaver = random.choice(available)
             screensaver.play()

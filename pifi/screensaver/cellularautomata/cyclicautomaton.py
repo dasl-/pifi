@@ -59,3 +59,15 @@ class CyclicAutomaton(CellularAutomaton):
         b[1:-1, 1:-1][succ] = ((bpad[succ] + 1) % self.__num_states)
 
         self._board = b
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'cyclic_automaton'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Cyclic Automaton'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Cyclic cellular automaton'

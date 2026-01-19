@@ -6,9 +6,10 @@ import random
 from pifi.config import Config
 from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.screensaver import Screensaver
 
 
-class FlowField:
+class FlowField(Screensaver):
     """
     Particles flowing through a Perlin noise vector field.
 
@@ -17,6 +18,7 @@ class FlowField:
     """
 
     def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
@@ -209,3 +211,15 @@ class FlowField:
 
     def __get_tick_sleep(self):
         return Config.get('flowfield.tick_sleep', 0.03)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'flowfield'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'Flow Field'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Particles flowing through noise'

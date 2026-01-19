@@ -206,32 +206,8 @@ class PifiAPI():
         }
 
     def get_screensavers(self):
-        # All available screensavers
-        all_screensavers = [
-            {'id': 'game_of_life', 'name': 'Game of Life', 'description': "Conway's cellular automaton"},
-            {'id': 'cyclic_automaton', 'name': 'Cyclic Automaton', 'description': 'Colorful cyclic patterns'},
-            {'id': 'boids', 'name': 'Boids', 'description': 'Flocking simulation'},
-            {'id': 'cosmic_dream', 'name': 'Cosmic Dream', 'description': 'Psychedelic plasma waves'},
-            {'id': 'mandelbrot', 'name': 'Mandelbrot', 'description': 'Fractal zoom'},
-            {'id': 'wave_interference', 'name': 'Wave Interference', 'description': 'Ripple patterns'},
-            {'id': 'spirograph', 'name': 'Spirograph', 'description': 'Geometric curves'},
-            {'id': 'lorenz', 'name': 'Lorenz Attractor', 'description': 'Chaotic butterfly'},
-            {'id': 'metaballs', 'name': 'Metaballs', 'description': 'Blobby shapes'},
-            {'id': 'starfield', 'name': 'Starfield', 'description': '3D star flight'},
-            {'id': 'matrix_rain', 'name': 'Matrix Rain', 'description': 'Falling green code'},
-            {'id': 'melting_clock', 'name': 'Melting Clock', 'description': 'Dali-style clock'},
-            {'id': 'aurora', 'name': 'Aurora Borealis', 'description': 'Northern lights'},
-            {'id': 'shadebobs', 'name': 'Shadebobs', 'description': 'Glowing trails'},
-            {'id': 'flowfield', 'name': 'Flow Field', 'description': 'Particles in wind'},
-            {'id': 'lavalamp', 'name': 'Lava Lamp', 'description': 'Rising and falling blobs'},
-            {'id': 'reactiondiffusion', 'name': 'Reaction Diffusion', 'description': 'Organic coral patterns'},
-            {'id': 'inkinwater', 'name': 'Ink in Water', 'description': 'Diffusing color blooms'},
-            {'id': 'perlinworms', 'name': 'Perlin Worms', 'description': 'Slithering noise trails'},
-            {'id': 'pendulumwaves', 'name': 'Pendulum Waves', 'description': 'Synchronized wave patterns'},
-            {'id': 'stringart', 'name': 'String Art', 'description': 'Curved envelopes from lines'},
-            {'id': 'unknownpleasures', 'name': 'Unknown Pleasures', 'description': 'Joy Division pulsar waves'},
-            {'id': 'cloudscape', 'name': 'Cloudscape', 'description': 'Drifting clouds over gradient sky'},
-        ]
+        # Get all available screensavers dynamically from the classes
+        all_screensavers = ScreensaverManager.get_all_screensavers()
 
         # Get enabled screensavers from settings
         enabled = ScreensaverManager.get_enabled_screensavers()
