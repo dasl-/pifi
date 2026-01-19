@@ -408,6 +408,11 @@
         // Optional, boolean, default: false. Whether to show seconds (HH:MM:SS vs HH:MM).
         "show_seconds": false,
 
+        // Optional, string, default: null (local time). Timezone to display time in.
+        // Examples: "America/New_York", "Europe/London", "Asia/Tokyo", "UTC".
+        // See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        "timezone": null,
+
         // Optional, float, default: 0.15. Speed of melting/dripping animation.
         "melt_speed": 0.15,
 

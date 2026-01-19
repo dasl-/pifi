@@ -2,6 +2,7 @@ import numpy as np
 import time
 import random
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from pifi.config import Config
 from pifi.logger import Logger
@@ -115,6 +116,18 @@ class MeltingClock(Screensaver):
         self.__width = Config.get_or_throw('leds.display_width')
         self.__height = Config.get_or_throw('leds.display_height')
 
+        # Get timezone configuration
+        timezone_str = Config.get('melting_clock.timezone', None)
+        if timezone_str:
+            try:
+                self.__timezone = ZoneInfo(timezone_str)
+                self.__logger.info(f"Using timezone: {timezone_str}")
+            except Exception as e:
+                self.__logger.warning(f"Invalid timezone '{timezone_str}': {e}. Using local time.")
+                self.__timezone = None
+        else:
+            self.__timezone = None
+
         # Current displayed time string
         self.__current_time = ""
 
@@ -149,12 +162,17 @@ class MeltingClock(Screensaver):
         self.__hue = random.random()
 
     def __tick(self):
-        # Get current time
+        # Get current time in configured timezone
+        if self.__timezone:
+            current_datetime = datetime.now(self.__timezone)
+        else:
+            current_datetime = datetime.now()
+
         show_seconds = Config.get('melting_clock.show_seconds', False)
         if show_seconds:
-            new_time = datetime.now().strftime("%H:%M:%S")
+            new_time = current_datetime.strftime("%H:%M:%S")
         else:
-            new_time = datetime.now().strftime("%H:%M")
+            new_time = current_datetime.strftime("%H:%M")
 
         # Check for time changes and trigger melting
         if new_time != self.__current_time:
