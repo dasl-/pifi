@@ -74,6 +74,9 @@ var pong_runner = (() => {
             unregisterEventListeners();
             player_counter = 0;
             web_sockets = [];
+            // Clear score highlights from previous game
+            $(".player1-score").removeClass("my-score");
+            $(".player2-score").removeClass("my-score");
         }
 
         console.log("Sending playlist_video_id:", playlist_video_id);
