@@ -11,6 +11,8 @@ main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
+    setupUv
+    installYtDlp
     enableSpi
     installLedDriver
     clearYoutubeDlCache
@@ -44,8 +46,25 @@ updateAndInstallPackages(){
     sudo apt -y full-upgrade
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade "yt-dlp[default]" pytz websockets pygame pyjson5 \
-        git+https://github.com/cexen/py-simple-audio.git
+    # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
+        git+https://github.com/cexen/py-simple-audio.git uv
+}
+
+setupUv(){
+    info "\\nSetting up uv..."
+
+    # install a version of python that is supported by the latest version of yt-dlp
+    uv python install 3.13
+}
+
+installYtDlp(){
+    info "\\nInstalling yt-dlp..."
+
+    # Remove the pip installed yt-dlp in case it's present (we used to install yt-dlp with pip).
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp[default]'
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp'
+    "$BASE_DIR"/utils/update_yt-dlp.sh
 }
 
 enableSpi(){
