@@ -55,15 +55,18 @@ updateAndInstallPackages(){
 # https://github.com/yt-dlp/yt-dlp/wiki/EJS
 installDeno(){
     info "\\nInstalling deno..."
-    if command -v deno >/dev/null 2>&1 && deno --version | head -n1 | grep -q '^deno 2\.6\.5 '; then
-        echo "Deno 2.6.5 is already installed"
+    local deno_version
+    deno_version='2.6.5'
+    if command -v deno >/dev/null 2>&1 && deno --version | head -n1 | grep -q "^deno $deno_version "; then
+        echo "Deno $deno_version is already installed"
         return
     fi
 
     sudo rm -rf /tmp/deno
     mkdir -p /tmp/deno
-    wget -P /tmp/deno https://github.com/denoland/deno/releases/download/v2.6.5/deno-aarch64-unknown-linux-gnu.zip
+    wget -P /tmp/deno "https://github.com/denoland/deno/releases/download/v$deno_version/deno-aarch64-unknown-linux-gnu.zip"
     unzip -d /tmp/deno /tmp/deno/deno-aarch64-unknown-linux-gnu.zip
+    sudo chmod a+x /tmp/deno/deno
     sudo mv /tmp/deno/deno /usr/bin/deno
     sudo rm -rf /tmp/deno
 }
