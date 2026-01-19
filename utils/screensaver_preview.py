@@ -132,10 +132,22 @@ class TerminalFramePlayer:
 def setup_mock_config(width, height):
     """Set up a mock configuration for testing."""
     from pifi.config import Config
+    import traceback
 
     # Load actual config files using existing Config class
     # This reads and merges default_config.json and config.json
-    Config.load_config_if_not_loaded(should_set_log_level=False)
+    try:
+        Config.load_config_if_not_loaded(should_set_log_level=False)
+    except Exception as e:
+        print("Error loading config files:", file=sys.stderr)
+        print("", file=sys.stderr)
+        traceback.print_exc()
+        print("", file=sys.stderr)
+        print("To use the screensaver preview tool, create a config.json file with:", file=sys.stderr)
+        print("", file=sys.stderr)
+        print('echo "{}" > config.json', file=sys.stderr)
+        print("", file=sys.stderr)
+        sys.exit(1)
 
     # Override LED configuration for terminal preview
     Config.set('log_level', 'warning')
