@@ -148,6 +148,10 @@ class NycSubway(Screensaver):
         self.__fetch_lock = threading.Lock()  # Protect shared state
         self.__tick_count = 0  # For animations
 
+        # Animation state for smooth transitions
+        self.__display_rows = []  # Currently displayed rows with animation state
+        self.__row_height = 8
+
     def __init_feed(self):
         """Initialize the underground library."""
         if self.__underground is not None:
@@ -400,81 +404,15 @@ class NycSubway(Screensaver):
 
         if self.__error_message:
             self.__draw_text(frame, self.__error_message, 1, 1, (255, 100, 100))
-        elif not grouped_arrivals:
+        elif not grouped_arrivals and not self.__display_rows:
             self.__draw_text(frame, "---", 1, 1, (100, 100, 100))
         else:
-            # Layout: each row is one (station, line) pair
-            # [Line bullet] [Direction] [Station name scrolling] [Times]
-            row_height = 8  # 7px content + 1px spacing
-            max_rows = self.__height // row_height
+            # Update display rows with animation
+            self.__update_display_rows(grouped_arrivals)
 
-            for i, group in enumerate(grouped_arrivals[:max_rows]):
-                y = i * row_height
-
-                line = group['line']
-                direction = group['direction']
-                station_name = group['station_name']
-                times = group['times']
-
-                # Draw line bullet
-                color = self.LINE_COLORS.get(line, (150, 150, 150))
-                self.__draw_bullet(frame, 0, y, line, color)
-
-                # Position after bullet
-                after_bullet = 8
-
-                # Draw direction arrow
-                if direction == 'N':
-                    self.__draw_char(frame, '^', after_bullet, y + 1, (100, 100, 100))
-                elif direction == 'S':
-                    self.__draw_char(frame, 'v', after_bullet, y + 1, (100, 100, 100))
-
-                # Build times with color coding
-                # Green = arriving now (0-1 min), Yellow = soon (2-5 min), White = later
-                times_display = []
-                for t in times[:2]:
-                    if t <= 1:
-                        times_display.append((str(t), (0, 255, 100)))  # Green - arriving!
-                    elif t <= 5:
-                        times_display.append((str(t), (255, 220, 0)))  # Yellow - soon
-                    else:
-                        times_display.append((str(t), (255, 255, 255)))  # White - later
-
-                # Calculate total times width
-                times_str = ','.join(t[0] for t in times_display)
-                times_width = len(times_str) * 4
-                times_x = self.__width - times_width
-
-                # Station name scrolls in the middle section (tighter margins)
-                name_start_x = after_bullet + 4
-                name_end_x = times_x - 1
-                name_width = name_end_x - name_start_x
-
-                if name_width > 0:
-                    # Draw scrolling station name
-                    self.__draw_scrolling_text(
-                        frame, station_name,
-                        name_start_x, y + 1,
-                        name_width,
-                        (180, 180, 180)
-                    )
-
-                # Draw times with individual colors
-                cursor_x = times_x
-                for idx, (time_text, time_color) in enumerate(times_display):
-                    # Pulse effect for imminent arrivals
-                    if int(time_text) <= 1:
-                        pulse = abs((self.__tick_count % 20) - 10) / 10.0  # 0 to 1 pulse
-                        time_color = (
-                            int(time_color[0] * (0.5 + 0.5 * pulse)),
-                            int(time_color[1] * (0.5 + 0.5 * pulse)),
-                            int(time_color[2] * (0.5 + 0.5 * pulse))
-                        )
-                    self.__draw_text(frame, time_text, cursor_x, y + 1, time_color)
-                    cursor_x += len(time_text) * 4
-                    if idx < len(times_display) - 1:
-                        self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
-                        cursor_x += 4
+            # Render each display row with its animation offset
+            for row in self.__display_rows:
+                self.__render_row(frame, row)
 
             # Advance scroll
             self.__scroll_offset += 1.0
@@ -483,6 +421,160 @@ class NycSubway(Screensaver):
         self.__tick_count += 1
 
         self.__led_frame_player.play_frame(frame)
+
+    def __update_display_rows(self, new_arrivals):
+        """Update display rows, triggering animations for changes."""
+        max_rows = self.__height // self.__row_height
+
+        # Create keys for comparison
+        def make_key(arrival):
+            return (arrival['stop_id'], arrival['line'])
+
+        new_keys = set(make_key(a) for a in new_arrivals[:max_rows])
+        current_keys = set(make_key(r['data']) for r in self.__display_rows if not r.get('exiting'))
+
+        # Mark rows that should exit (slide off right)
+        for row in self.__display_rows:
+            if not row.get('exiting'):
+                key = make_key(row['data'])
+                if key not in new_keys:
+                    row['exiting'] = True
+                    row['exit_speed'] = 4  # pixels per tick
+
+        # Update exit animations
+        rows_to_remove = []
+        for row in self.__display_rows:
+            if row.get('exiting'):
+                row['x_offset'] = row.get('x_offset', 0) + row.get('exit_speed', 4)
+                if row['x_offset'] > self.__width:
+                    rows_to_remove.append(row)
+
+        for row in rows_to_remove:
+            self.__display_rows.remove(row)
+
+        # Add new arrivals that aren't already displayed
+        existing_keys = set(make_key(r['data']) for r in self.__display_rows)
+        for arrival in new_arrivals[:max_rows]:
+            key = make_key(arrival)
+            if key not in existing_keys:
+                self.__display_rows.append({
+                    'data': arrival,
+                    'x_offset': 0,
+                    'y_offset': 0,
+                    'target_y': 0,
+                    'exiting': False,
+                })
+
+        # Update data for existing rows (refresh times)
+        for row in self.__display_rows:
+            if not row.get('exiting'):
+                key = make_key(row['data'])
+                for arrival in new_arrivals:
+                    if make_key(arrival) == key:
+                        row['data'] = arrival
+                        break
+
+        # Sort by earliest arrival time and assign target positions
+        active_rows = [r for r in self.__display_rows if not r.get('exiting')]
+        active_rows.sort(key=lambda r: r['data'].get('earliest', 999))
+
+        for i, row in enumerate(active_rows):
+            row['target_y'] = i * self.__row_height
+
+        # Animate y positions smoothly
+        for row in self.__display_rows:
+            if not row.get('exiting'):
+                current_y = row.get('y_offset', row['target_y'])
+                target_y = row['target_y']
+                if current_y != target_y:
+                    # Move towards target
+                    diff = target_y - current_y
+                    step = max(1, abs(diff) // 3)  # Smooth easing
+                    if diff > 0:
+                        row['y_offset'] = min(current_y + step, target_y)
+                    else:
+                        row['y_offset'] = max(current_y - step, target_y)
+                else:
+                    row['y_offset'] = target_y
+
+    def __render_row(self, frame, row):
+        """Render a single row with its animation offsets."""
+        x_offset = int(row.get('x_offset', 0))
+        y_offset = int(row.get('y_offset', 0))
+
+        group = row['data']
+        line = group['line']
+        direction = group['direction']
+        station_name = group['station_name']
+        times = group['times']
+
+        y = y_offset
+
+        # Skip if completely off screen
+        if y < -self.__row_height or y >= self.__height:
+            return
+        if x_offset >= self.__width:
+            return
+
+        # Draw line bullet
+        color = self.LINE_COLORS.get(line, (150, 150, 150))
+        self.__draw_bullet(frame, x_offset, y, line, color)
+
+        # Position after bullet
+        after_bullet = x_offset + 8
+
+        # Draw direction arrow
+        if direction == 'N':
+            self.__draw_char(frame, '^', after_bullet, y + 1, (100, 100, 100))
+        elif direction == 'S':
+            self.__draw_char(frame, 'v', after_bullet, y + 1, (100, 100, 100))
+
+        # Build times with color coding
+        times_display = []
+        for t in times[:2]:
+            if t <= 1:
+                times_display.append((str(t), (255, 60, 60)))  # Red - arriving!
+            elif t <= 5:
+                times_display.append((str(t), (255, 220, 0)))  # Yellow - soon
+            else:
+                times_display.append((str(t), (255, 255, 255)))  # White - later
+
+        # Calculate total times width
+        times_str = ','.join(t[0] for t in times_display)
+        times_width = len(times_str) * 4
+        times_x = self.__width - times_width + x_offset
+
+        # Station name scrolls in the middle section
+        name_start_x = after_bullet + 4
+        name_end_x = min(times_x - 1, self.__width)
+        name_width = name_end_x - name_start_x
+
+        if name_width > 0 and name_start_x < self.__width:
+            self.__draw_scrolling_text(
+                frame, station_name,
+                name_start_x, y + 1,
+                name_width,
+                (180, 180, 180)
+            )
+
+        # Draw times with individual colors
+        cursor_x = times_x
+        for idx, (time_text, time_color) in enumerate(times_display):
+            # Pulse effect for imminent arrivals
+            if int(time_text) <= 1:
+                pulse = abs((self.__tick_count % 20) - 10) / 10.0
+                time_color = (
+                    int(time_color[0] * (0.5 + 0.5 * pulse)),
+                    int(time_color[1] * (0.5 + 0.5 * pulse)),
+                    int(time_color[2] * (0.5 + 0.5 * pulse))
+                )
+            if cursor_x < self.__width:
+                self.__draw_text(frame, time_text, cursor_x, y + 1, time_color)
+            cursor_x += len(time_text) * 4
+            if idx < len(times_display) - 1:
+                if cursor_x < self.__width:
+                    self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
+                cursor_x += 4
 
     def __draw_scrolling_text(self, frame, text, x, y, max_width, color):
         """Draw text that scrolls horizontally if too wide, with partial character clipping."""
