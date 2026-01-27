@@ -50,6 +50,22 @@ class GradientTest(Screensaver):
                 b = 255                  # constant
                 frame[y, :] = [r, g, b]
 
+        elif self.__mode == 'pastel_quantized':
+            # Same gradient but quantized to fewer color levels
+            # This tests if reducing PWM complexity helps
+            levels = 8  # Only 8 brightness levels per channel
+            step = 256 // levels
+            for y in range(self.__height):
+                t = y / max(1, self.__height - 1)
+                r = int(120 + t * 90)
+                g = int(180 + t * 55)
+                b = 255
+                # Quantize to fewer levels (rounds to nearest step)
+                r = (r // step) * step
+                g = (g // step) * step
+                b = (b // step) * step
+                frame[y, :] = [min(255, r), min(255, g), min(255, b)]
+
         elif self.__mode == 'white':
             # Full white - maximum power draw
             frame[:, :] = [255, 255, 255]
@@ -73,6 +89,22 @@ class GradientTest(Screensaver):
         elif self.__mode == 'blue':
             # Full blue only
             frame[:, :] = [0, 0, 255]
+
+        elif self.__mode == 'half_red':
+            # Mid-brightness red only - tests single channel PWM
+            frame[:, :] = [128, 0, 0]
+
+        elif self.__mode == 'half_green':
+            # Mid-brightness green only
+            frame[:, :] = [0, 128, 0]
+
+        elif self.__mode == 'half_blue':
+            # Mid-brightness blue only
+            frame[:, :] = [0, 0, 128]
+
+        elif self.__mode == 'mixed_mid':
+            # Different mid values per channel - like pastel but uniform
+            frame[:, :] = [180, 200, 255]
 
         elif self.__mode == 'horizontal_gradient':
             # Left to right gradient
