@@ -576,6 +576,30 @@ class NycSubway(Screensaver):
                     self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
                 cursor_x += 4
 
+    def __ease_scroll(self, progress, ease_zone=0.2):
+        """Apply gentle easing at scroll ends, linear in middle.
+
+        Creates smooth acceleration at start and deceleration at end,
+        with constant velocity through the middle section.
+        """
+        if progress <= 0:
+            return 0.0
+        if progress >= 1:
+            return 1.0
+
+        if progress < ease_zone:
+            # Quadratic ease in (slow start, accelerate)
+            t = progress / ease_zone
+            return 0.5 * ease_zone * t * t
+        elif progress > 1 - ease_zone:
+            # Quadratic ease out (decelerate, slow end)
+            t = (1 - progress) / ease_zone
+            return 1 - 0.5 * ease_zone * t * t
+        else:
+            # Linear middle - constant velocity
+            mid_progress = (progress - ease_zone) / (1 - 2 * ease_zone)
+            return 0.5 * ease_zone + mid_progress * (1 - ease_zone)
+
     def __draw_scrolling_text(self, frame, text, x, y, max_width, color):
         """Draw text that scrolls horizontally if too wide, with partial character clipping."""
         text_width = len(text) * 4
@@ -598,7 +622,11 @@ class NycSubway(Screensaver):
             if cycle_pos < pause_duration:
                 scroll_pos = 0
             else:
-                scroll_pos = cycle_pos - pause_duration
+                # Apply easing for smooth acceleration/deceleration
+                scroll_ticks = cycle_pos - pause_duration
+                progress = scroll_ticks / total_scroll  # 0 to 1
+                eased_progress = self.__ease_scroll(progress)
+                scroll_pos = int(eased_progress * total_scroll)
 
             # Draw characters with clipping for partial visibility
             cursor = x - scroll_pos
