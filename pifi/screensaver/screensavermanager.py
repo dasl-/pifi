@@ -78,12 +78,18 @@ class ScreensaverManager:
         # See: https://github.com/dasl-/pifi/commit/fd48ba5b41bba6c6aa0034d743e40de153482f21
         self.__led_frame_player = LedFramePlayer()
 
-        # Pre-instantiate all screensavers upfront
-        # This provides fail-fast behavior if there are instantiation issues
-        self.__screensaver_cache = {
-            screensaver_id: cls(led_frame_player=self.__led_frame_player)
-            for screensaver_id, cls in self.SCREENSAVER_CLASSES.items()
-        }
+        # Validate all screensavers can be instantiated (fail-fast behavior)
+        # We don't cache these instances because screensavers read config in __init__,
+        # and we need fresh instances each time to pick up config changes from the UI.
+        self.__logger.info("Validating screensaver instantiation...")
+        for screensaver_id, cls in self.SCREENSAVER_CLASSES.items():
+            try:
+                cls(led_frame_player=self.__led_frame_player)
+                self.__logger.debug(f"  {screensaver_id}: OK")
+            except Exception as e:
+                self.__logger.error(f"  {screensaver_id}: FAILED - {e}")
+                raise
+        self.__logger.info("All screensavers validated successfully")
 
     @staticmethod
     def get_all_screensavers():
@@ -123,16 +129,19 @@ class ScreensaverManager:
             # This picks up any changes made via the settings UI
             Config.reload_screensaver_overrides()
 
-            # Build list of available screensavers
-            available = []
+            # Build list of available screensaver IDs
+            available_ids = []
             for screensaver_id in enabled:
-                screensaver = self.__screensaver_cache.get(screensaver_id)
-                if screensaver:
-                    available.append(screensaver)
+                if screensaver_id in self.SCREENSAVER_CLASSES:
+                    available_ids.append(screensaver_id)
 
             # Fall back to game of life if nothing enabled
-            if not available:
-                available.append(self.__screensaver_cache.get('game_of_life'))
+            if not available_ids:
+                available_ids.append('game_of_life')
 
-            screensaver = random.choice(available)
+            # Pick a random screensaver and instantiate fresh
+            # Fresh instance is needed to pick up config changes from the UI
+            screensaver_id = random.choice(available_ids)
+            screensaver_cls = self.SCREENSAVER_CLASSES[screensaver_id]
+            screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
             screensaver.play()
