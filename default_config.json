@@ -808,4 +808,23 @@
         "max_ticks": 3000,
     },
 
+    // Configuration specific to WFMU radio now-playing screensaver.
+    // Shows current track, artist, and show name from WFMU streams.
+    "wfmu": {
+
+        // Optional, string, default: "wfmu". Which WFMU stream to display.
+        // Valid values: "wfmu" (main 91.1), "gtd" (Give the Drummer Radio),
+        // "rock_n_soul" (Rock'n'Soul Radio).
+        "channel": "wfmu",
+
+        // Optional, integer, default: 15. How often to refresh data, in seconds.
+        "update_interval": 15,
+
+        // Optional, float, default: 0.05. How long to sleep between display updates.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
+        "max_ticks": 3000,
+    },
+
 }

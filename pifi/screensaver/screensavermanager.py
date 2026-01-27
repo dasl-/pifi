@@ -26,6 +26,7 @@ from pifi.screensaver.cloudscape import Cloudscape
 from pifi.screensaver.dvdbounce import DvdBounce
 from pifi.screensaver.gradienttest import GradientTest
 from pifi.screensaver.nycsubway import NycSubway
+from pifi.screensaver.wfmu import Wfmu
 from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
 from pifi.screensaver.videoscreensaver import VideoScreensaver
@@ -64,6 +65,7 @@ class ScreensaverManager:
         DvdBounce,
         GradientTest,
         NycSubway,
+        Wfmu,
         VideoScreensaver,
     ]
 
