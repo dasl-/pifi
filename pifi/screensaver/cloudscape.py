@@ -66,7 +66,7 @@ class Cloudscape(Screensaver):
         self.__vertical_weight = 0.6 + 0.4 * np.sin(self.__y_factor * np.pi * 0.9)
 
         # Sky gradient cache (updated less frequently)
-        self.__sky_cache_tick = -1
+        self.__sky_cache_tick = -999  # Ensures first frame triggers update
         self.__sky_update_interval = 30  # Update sky every N frames
 
         self.__time = 0.0
