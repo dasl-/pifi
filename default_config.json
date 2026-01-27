@@ -106,6 +106,27 @@
         "saved_videos": [],
     },
 
+    // Configuration specific to the RGB Matrix driver (HUB75 panels).
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "rgbmatrix": {
+
+        // Optional, integer, default: 4. GPIO slowdown for Pi 3/4. Try 2-5 if you see issues.
+        "gpio_slowdown": 4,
+
+        // Optional, integer, default: 11. PWM bits for color depth (1-11). Lower = faster refresh.
+        "pwm_bits": 11,
+
+        // Optional, integer, default: 130. PWM timing in nanoseconds. Try 100-300.
+        "pwm_lsb_nanoseconds": 130,
+
+        // Optional, integer, default: 0. Limit refresh rate in Hz (0 = unlimited).
+        "limit_refresh_rate_hz": 0,
+
+        // Optional, boolean, default: false. Use software PWM instead of hardware.
+        // Enable if you have audio conflicts.
+        "disable_hardware_pulsing": false,
+    },
+
     // Configuration specific to the game of life.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "game_of_life": {
@@ -781,7 +802,7 @@
         "max_arrivals": 4,
 
         // Optional, float, default: 1.0. How long to sleep between display updates, in seconds.
-        "tick_sleep": 0.5,
+        "tick_sleep": 0.05,
 
         // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
         "max_ticks": 3000,

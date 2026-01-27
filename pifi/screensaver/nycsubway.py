@@ -133,7 +133,7 @@ class NycSubway(Screensaver):
         self.__update_interval = Config.get('nycsubway.update_interval', 30)
         self.__max_arrivals = Config.get('nycsubway.max_arrivals', 4)
         self.__max_ticks = Config.get('nycsubway.max_ticks', 3000)
-        self.__tick_sleep = Config.get('nycsubway.tick_sleep', 1.0)
+        self.__tick_sleep = Config.get('nycsubway.tick_sleep', 0.05)
 
         # State
         self.__arrivals = []
@@ -146,6 +146,7 @@ class NycSubway(Screensaver):
         self.__station_names_loaded = False
         self.__fetch_in_progress = False  # Background fetch flag
         self.__fetch_lock = threading.Lock()  # Protect shared state
+        self.__tick_count = 0  # For animations
 
     def __init_feed(self):
         """Initialize the underground library."""
@@ -428,11 +429,19 @@ class NycSubway(Screensaver):
                 elif direction == 'S':
                     self.__draw_char(frame, 'v', after_bullet, y + 1, (100, 100, 100))
 
-                # Build times string: "3,7" (max 2 times to leave room for station name)
-                times_str = ','.join(str(t) for t in times[:2])
+                # Build times with color coding
+                # Green = arriving now (0-1 min), Yellow = soon (2-5 min), White = later
+                times_display = []
+                for t in times[:2]:
+                    if t <= 1:
+                        times_display.append((str(t), (0, 255, 100)))  # Green - arriving!
+                    elif t <= 5:
+                        times_display.append((str(t), (255, 220, 0)))  # Yellow - soon
+                    else:
+                        times_display.append((str(t), (255, 255, 255)))  # White - later
 
-                # Calculate positions for scrolling station name
-                # Times go on the right side
+                # Calculate total times width
+                times_str = ','.join(t[0] for t in times_display)
                 times_width = len(times_str) * 4
                 times_x = self.__width - times_width
 
@@ -450,11 +459,28 @@ class NycSubway(Screensaver):
                         (180, 180, 180)
                     )
 
-                # Draw times on the right
-                self.__draw_text(frame, times_str, times_x, y + 1, (255, 255, 255))
+                # Draw times with individual colors
+                cursor_x = times_x
+                for idx, (time_text, time_color) in enumerate(times_display):
+                    # Pulse effect for imminent arrivals
+                    if int(time_text) <= 1:
+                        pulse = abs((self.__tick_count % 20) - 10) / 10.0  # 0 to 1 pulse
+                        time_color = (
+                            int(time_color[0] * (0.5 + 0.5 * pulse)),
+                            int(time_color[1] * (0.5 + 0.5 * pulse)),
+                            int(time_color[2] * (0.5 + 0.5 * pulse))
+                        )
+                    self.__draw_text(frame, time_text, cursor_x, y + 1, time_color)
+                    cursor_x += len(time_text) * 4
+                    if idx < len(times_display) - 1:
+                        self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
+                        cursor_x += 4
 
-            # Advance scroll (1.0 per tick for smooth, readable speed)
+            # Advance scroll
             self.__scroll_offset += 1.0
+
+        # Advance animation tick
+        self.__tick_count += 1
 
         self.__led_frame_player.play_frame(frame)
 
@@ -463,18 +489,29 @@ class NycSubway(Screensaver):
         text_width = len(text) * 4
 
         if text_width <= max_width:
-            # Text fits, just draw it centered
+            # Text fits, just draw it
             self.__draw_text(frame, text, x, y, color)
         else:
-            # Text needs to scroll
+            # Text needs to scroll with pause at start
             # Add spacing for wrap-around
-            padded_text = text + "   " + text
+            gap = 20  # pixels of gap between repeats
+            total_scroll = text_width + gap
+            pause_duration = 60  # ticks to pause at start position
 
-            # Calculate scroll position
-            scroll_pos = int(self.__scroll_offset) % (text_width + 12)  # 12 = 3 spaces * 4
+            # Calculate where we are in the scroll cycle
+            cycle_length = total_scroll + pause_duration
+            cycle_pos = int(self.__scroll_offset) % cycle_length
+
+            # Pause at the beginning
+            if cycle_pos < pause_duration:
+                scroll_pos = 0
+            else:
+                scroll_pos = cycle_pos - pause_duration
 
             # Draw characters with clipping for partial visibility
             cursor = x - scroll_pos
+            padded_text = text + "     " + text  # 5 space gap
+
             for char in padded_text:
                 char_end = cursor + 3  # 3-pixel wide characters
 
