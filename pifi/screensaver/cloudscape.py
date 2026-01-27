@@ -3,6 +3,8 @@ Cloudscape screensaver.
 
 Dreamy drifting clouds over a gradient sky.
 Multiple cloud layers create depth with parallax motion.
+
+Optimized for low-power devices with buffer reuse and caching.
 """
 
 import numpy as np
@@ -31,24 +33,41 @@ class Cloudscape(Screensaver):
         # Config
         self.__num_layers = Config.get('cloudscape.num_layers', 3)
         self.__drift_speed = Config.get('cloudscape.drift_speed', 0.2)
-        self.__sky_mode = Config.get('cloudscape.sky_mode', 'pastel')  # pastel, day, night, dawn, sunset
+        self.__sky_mode = Config.get('cloudscape.sky_mode', 'pastel')
         self.__cloud_density = Config.get('cloudscape.cloud_density', 0.7)
-        self.__cloud_scale = Config.get('cloudscape.cloud_scale', 0.04)  # Smaller = bigger clouds
+        self.__cloud_scale = Config.get('cloudscape.cloud_scale', 0.04)
         self.__sky_shift_speed = Config.get('cloudscape.sky_shift_speed', 0.001)
         self.__tick_sleep = Config.get('cloudscape.tick_sleep', 0.05)
         self.__max_ticks = Config.get('cloudscape.max_ticks', 10000)
 
-        # Pre-compute coordinate grids
+        # Pre-compute coordinate grids (reused every frame)
         self.__x_grid, self.__y_grid = np.meshgrid(
             np.arange(self.__width, dtype=np.float32),
             np.arange(self.__height, dtype=np.float32)
         )
 
+        # Pre-allocate all buffers to avoid per-frame allocations
+        self.__frame = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__sky_gradient = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__cloud_buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__alpha_buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__output_frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+
+        # Noise buffers (reused in fbm)
+        self.__noise_buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__noise_x = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__noise_y = np.zeros((self.__height, self.__width), dtype=np.float32)
+
         # Perlin noise permutation table
         self.__perm = None
 
-        # Sky gradient (pre-computed each mode change)
-        self.__sky_gradient = None
+        # Pre-compute y-factor for vertical cloud distribution
+        self.__y_factor = self.__y_grid / self.__height
+        self.__vertical_weight = 0.6 + 0.4 * np.sin(self.__y_factor * np.pi * 0.9)
+
+        # Sky gradient cache (updated less frequently)
+        self.__sky_cache_tick = -1
+        self.__sky_update_interval = 30  # Update sky every N frames
 
         self.__time = 0.0
 
@@ -58,8 +77,8 @@ class Cloudscape(Screensaver):
         np.random.shuffle(p)
         return np.concatenate([p, p])
 
-    def __noise2d_vectorized(self, x, y):
-        """Vectorized 2D Perlin noise."""
+    def __noise2d_fast(self, x, y, out):
+        """Fast 2D Perlin noise with output buffer reuse."""
         # Find unit square
         xi = np.floor(x).astype(np.int32) & 255
         yi = np.floor(y).astype(np.int32) & 255
@@ -68,199 +87,164 @@ class Cloudscape(Screensaver):
         xf = x - np.floor(x)
         yf = y - np.floor(y)
 
-        # Fade curves
+        # Fade curves (in-place where possible)
         u = xf * xf * xf * (xf * (xf * 6 - 15) + 10)
         v = yf * yf * yf * (yf * (yf * 6 - 15) + 10)
 
         # Hash corners
-        aa = self.__perm[self.__perm[xi] + yi]
-        ab = self.__perm[self.__perm[xi] + yi + 1]
-        ba = self.__perm[self.__perm[xi + 1] + yi]
-        bb = self.__perm[self.__perm[xi + 1] + yi + 1]
+        perm = self.__perm
+        aa = perm[perm[xi] + yi]
+        ab = perm[perm[xi] + yi + 1]
+        ba = perm[perm[xi + 1] + yi]
+        bb = perm[perm[xi + 1] + yi + 1]
 
-        # Simplified gradients (just use hash bits)
-        def grad(h, x, y):
+        # Simplified gradient computation (avoiding np.where calls)
+        def grad_dot(h, px, py):
             # Use bottom 2 bits to pick gradient direction
             g = h & 3
-            result = np.zeros_like(x)
-            result = np.where(g == 0, x + y, result)
-            result = np.where(g == 1, -x + y, result)
-            result = np.where(g == 2, x - y, result)
-            result = np.where(g == 3, -x - y, result)
-            return result
+            # Compute all variants and select
+            signs_x = np.where(g & 1, -1.0, 1.0)
+            signs_y = np.where(g & 2, -1.0, 1.0)
+            return signs_x * px + signs_y * py
 
-        # Gradient dot products and interpolation
-        x1 = grad(aa, xf, yf) * (1 - u) + grad(ba, xf - 1, yf) * u
-        x2 = grad(ab, xf, yf - 1) * (1 - u) + grad(bb, xf - 1, yf - 1) * u
+        # Gradient dot products
+        g_aa = grad_dot(aa, xf, yf)
+        g_ba = grad_dot(ba, xf - 1, yf)
+        g_ab = grad_dot(ab, xf, yf - 1)
+        g_bb = grad_dot(bb, xf - 1, yf - 1)
 
-        return x1 * (1 - v) + x2 * v
+        # Bilinear interpolation
+        x1 = g_aa + u * (g_ba - g_aa)
+        x2 = g_ab + u * (g_bb - g_ab)
+        np.add(x1, v * (x2 - x1), out=out)
 
-    def __fbm(self, x, y, octaves=4):
-        """Fractal Brownian Motion - layered noise for clouds."""
-        value = np.zeros_like(x)
+    def __fbm_fast(self, x, y, out, octaves=3):
+        """Fast Fractal Brownian Motion with buffer reuse."""
+        out.fill(0)
         amplitude = 1.0
         frequency = 1.0
         max_value = 0.0
 
         for _ in range(octaves):
-            value += self.__noise2d_vectorized(x * frequency, y * frequency) * amplitude
+            # Reuse noise buffer
+            np.multiply(x, frequency, out=self.__noise_x)
+            np.multiply(y, frequency, out=self.__noise_y)
+            self.__noise2d_fast(self.__noise_x, self.__noise_y, self.__noise_buffer)
+
+            # Accumulate (in-place)
+            out += self.__noise_buffer * amplitude
+
             max_value += amplitude
             amplitude *= 0.5
             frequency *= 2.0
 
-        return value / max_value
+        out /= max_value
 
     def __get_sky_colors(self, mode):
         """Get gradient colors for sky mode."""
-        if mode == 'pastel':
-            # Soft, relaxing cartoon sky
-            return [
-                (120, 180, 255),   # Soft sky blue (top)
-                (150, 200, 255),   # Light blue
-                (180, 220, 255),   # Pale blue
-                (210, 235, 255),   # Almost white blue (horizon)
-            ]
-        elif mode == 'day':
-            return [
-                (80, 140, 220),    # Sky blue (top)
-                (120, 180, 240),   # Light sky blue
-                (160, 210, 250),   # Pale blue
-                (200, 230, 255),   # Horizon haze
-            ]
-        elif mode == 'sunset':
-            return [
-                (25, 25, 60),      # Deep blue (top)
-                (80, 50, 80),      # Purple
-                (180, 80, 50),     # Orange
-                (255, 150, 80),    # Light orange (horizon)
-            ]
-        elif mode == 'dawn':
-            return [
-                (100, 140, 180),   # Soft blue
-                (140, 160, 190),   # Dusty blue
-                (180, 180, 200),   # Lavender
-                (220, 200, 210),   # Soft pink
-            ]
-        elif mode == 'night':
-            return [
-                (15, 20, 40),      # Dark blue
-                (25, 35, 60),      # Night blue
-                (40, 55, 80),      # Lighter night
-                (55, 70, 95),      # Horizon glow
-            ]
-        else:  # Default pastel
-            return self.__get_sky_colors('pastel')
+        colors = {
+            'pastel': [(120, 180, 255), (150, 200, 255), (180, 220, 255), (210, 235, 255)],
+            'day': [(80, 140, 220), (120, 180, 240), (160, 210, 250), (200, 230, 255)],
+            'sunset': [(25, 25, 60), (80, 50, 80), (180, 80, 50), (255, 150, 80)],
+            'dawn': [(100, 140, 180), (140, 160, 190), (180, 180, 200), (220, 200, 210)],
+            'night': [(15, 20, 40), (25, 35, 60), (40, 55, 80), (55, 70, 95)],
+        }
+        return colors.get(mode, colors['pastel'])
 
-    def __compute_sky_gradient(self, time_offset=0):
-        """Compute sky gradient with optional color shifting."""
-        colors = self.__get_sky_colors(self.__sky_mode)
+    def __compute_sky_gradient(self):
+        """Compute sky gradient (vectorized, no Python loops)."""
+        colors = np.array(self.__get_sky_colors(self.__sky_mode), dtype=np.float32)
+        num_colors = len(colors)
 
-        # Create gradient based on y position
-        gradient = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        # Normalized y positions (0 = top, 1 = bottom)
+        t = self.__y_grid[:, 0:1] / max(1, self.__height - 1)
 
-        for y in range(self.__height):
-            # Normalized position (0 = top, 1 = bottom)
-            t = y / max(1, self.__height - 1)
+        # Find color segment indices
+        segment = t * (num_colors - 1)
+        idx = np.clip(segment.astype(np.int32), 0, num_colors - 2)
+        frac = segment - idx
 
-            # Find which color segment we're in
-            segment = t * (len(colors) - 1)
-            idx = int(segment)
-            frac = segment - idx
+        # Smooth interpolation
+        frac = frac * frac * (3 - 2 * frac)
 
-            if idx >= len(colors) - 1:
-                idx = len(colors) - 2
-                frac = 1.0
+        # Gather colors and interpolate
+        c1 = colors[idx.flatten()]
+        c2 = colors[(idx + 1).flatten()]
 
-            # Interpolate between colors
-            c1 = colors[idx]
-            c2 = colors[idx + 1]
+        # Interpolate RGB
+        gradient_flat = c1 + (c2 - c1) * frac.flatten()[:, np.newaxis]
 
-            # Smooth interpolation
-            frac = frac * frac * (3 - 2 * frac)
-
-            r = c1[0] + (c2[0] - c1[0]) * frac
-            g = c1[1] + (c2[1] - c1[1]) * frac
-            b = c1[2] + (c2[2] - c1[2]) * frac
-
-            # Slight horizontal variation for more organic feel
-            variation = np.sin(np.arange(self.__width) * 0.2 + time_offset) * 5
-            gradient[y, :, 0] = np.clip(r + variation, 0, 255)
-            gradient[y, :, 1] = np.clip(g + variation * 0.5, 0, 255)
-            gradient[y, :, 2] = np.clip(b + variation * 0.3, 0, 255)
-
-        return gradient
+        # Reshape and broadcast to full width
+        self.__sky_gradient[:] = gradient_flat.reshape(self.__height, 1, 3)
 
     def __get_cloud_color(self, layer):
         """Get cloud color based on layer depth and sky mode."""
-        # Deeper layers are slightly darker for depth
         layer_brightness = 0.85 + 0.15 * (layer / max(1, self.__num_layers - 1))
 
-        if self.__sky_mode == 'pastel':
-            # Bright white fluffy cartoon clouds
-            base = np.array([255, 255, 255], dtype=np.float32)
-        elif self.__sky_mode == 'day':
-            # Pure white clouds
-            base = np.array([255, 255, 255], dtype=np.float32)
-        elif self.__sky_mode == 'sunset':
-            # Warm tinted clouds
-            base = np.array([255, 230, 210], dtype=np.float32)
-        elif self.__sky_mode == 'dawn':
-            # Soft lavender clouds
-            base = np.array([240, 230, 245], dtype=np.float32)
-        elif self.__sky_mode == 'night':
-            # Silvery grey clouds
-            base = np.array([100, 110, 130], dtype=np.float32)
-        else:
-            base = np.array([255, 255, 255], dtype=np.float32)
-
+        cloud_colors = {
+            'pastel': (255, 255, 255),
+            'day': (255, 255, 255),
+            'sunset': (255, 230, 210),
+            'dawn': (240, 230, 245),
+            'night': (100, 110, 130),
+        }
+        base = np.array(cloud_colors.get(self.__sky_mode, (255, 255, 255)), dtype=np.float32)
         return base * layer_brightness
 
-    def __render(self):
-        """Render the cloudscape."""
-        # Start with sky gradient
-        frame = self.__compute_sky_gradient(self.__time * self.__sky_shift_speed)
+    def __render(self, tick):
+        """Render the cloudscape with optimized buffer reuse."""
+        # Update sky gradient less frequently (it changes slowly)
+        if tick - self.__sky_cache_tick >= self.__sky_update_interval:
+            self.__compute_sky_gradient()
+            self.__sky_cache_tick = tick
+
+        # Start with cached sky gradient
+        np.copyto(self.__frame, self.__sky_gradient)
 
         # Render each cloud layer (back to front)
-        for layer in range(self.__num_layers):
-            # Layer properties - back layers move slower (parallax)
-            layer_depth = layer / max(1, self.__num_layers - 1)  # 0 = back, 1 = front
-            layer_speed = 0.4 + layer_depth * 0.6  # Back = slow, front = fast
-            # Use cloud_scale config - smaller values = bigger clouds
-            layer_scale = self.__cloud_scale * (0.8 + layer_depth * 0.4)
-            layer_alpha = 0.7 + layer_depth * 0.3  # More opaque for cartoon look
+        threshold_base = 0.3 - self.__cloud_density * 0.35
+        threshold_range = 0.6 - threshold_base
 
-            # Calculate cloud noise with drift
+        for layer in range(self.__num_layers):
+            # Layer properties
+            layer_depth = layer / max(1, self.__num_layers - 1)
+            layer_speed = 0.4 + layer_depth * 0.6
+            layer_scale = self.__cloud_scale * (0.8 + layer_depth * 0.4)
+            layer_alpha = 0.7 + layer_depth * 0.3
+
+            # Calculate noise coordinates (reuse grid)
             drift_x = self.__time * self.__drift_speed * layer_speed
             noise_x = (self.__x_grid + drift_x) * layer_scale
-            noise_y = self.__y_grid * layer_scale * 1.2 + layer * 100  # Offset each layer
+            noise_y = self.__y_grid * layer_scale * 1.2 + layer * 100
 
-            # Generate cloud density using fractal noise (fewer octaves = puffier)
-            cloud_noise = self.__fbm(noise_x, noise_y, octaves=3)
+            # Generate cloud density (reuse buffer)
+            self.__fbm_fast(noise_x, noise_y, self.__cloud_buffer, octaves=2)
 
-            # Map noise to cloud density (lower threshold = more clouds)
-            threshold = 0.3 - self.__cloud_density * 0.35
-            cloud_mask = (cloud_noise - threshold) / (0.6 - threshold)
-            cloud_mask = np.clip(cloud_mask, 0, 1)
+            # Map noise to cloud density (in-place operations)
+            cloud_mask = self.__cloud_buffer
+            np.subtract(cloud_mask, threshold_base, out=cloud_mask)
+            np.divide(cloud_mask, threshold_range, out=cloud_mask)
+            np.clip(cloud_mask, 0, 1, out=cloud_mask)
 
-            # Slightly sharper edges for cartoon look (steeper curve)
-            cloud_mask = cloud_mask * cloud_mask
+            # Sharper edges for cartoon look
+            np.multiply(cloud_mask, cloud_mask, out=cloud_mask)
 
-            # Spread clouds across more of the sky
-            y_factor = self.__y_grid / self.__height
-            # Clouds visible across most of the sky, slightly less at very top
-            vertical_weight = 0.6 + 0.4 * np.sin(y_factor * np.pi * 0.9)
-            cloud_mask = cloud_mask * vertical_weight
+            # Apply vertical weight
+            np.multiply(cloud_mask, self.__vertical_weight, out=cloud_mask)
 
-            # Get cloud color for this layer
+            # Get cloud color
             cloud_color = self.__get_cloud_color(layer)
 
-            # Blend clouds onto frame
-            alpha = cloud_mask[:, :, np.newaxis] * layer_alpha
-            frame = frame * (1 - alpha) + cloud_color * alpha
+            # Blend clouds onto frame (minimize temp arrays)
+            alpha = cloud_mask * layer_alpha
+            for c in range(3):
+                self.__frame[:, :, c] *= (1 - alpha)
+                self.__frame[:, :, c] += cloud_color[c] * alpha
 
-        # Convert to uint8
-        frame = np.clip(frame, 0, 255).astype(np.uint8)
-        self.__led_frame_player.play_frame(frame)
+        # Convert to uint8 output
+        np.clip(self.__frame, 0, 255, out=self.__frame)
+        np.copyto(self.__output_frame, self.__frame.astype(np.uint8))
+        self.__led_frame_player.play_frame(self.__output_frame)
 
     def play(self):
         """Run the screensaver."""
@@ -269,10 +253,11 @@ class Cloudscape(Screensaver):
         # Initialize
         self.__perm = self.__generate_permutation()
         self.__time = 0.0
+        self.__sky_cache_tick = -1
 
         for tick in range(self.__max_ticks):
             self.__time += 1
-            self.__render()
+            self.__render(tick)
             time.sleep(self.__tick_sleep)
 
         self.__logger.info("Cloudscape screensaver ended")
