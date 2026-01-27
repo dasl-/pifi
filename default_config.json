@@ -755,4 +755,36 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to NYC Subway arrival times screensaver.
+    // Requires nyct-gtfs library: pip install nyct-gtfs
+    "nycsubway": {
+
+        // Optional, array of strings, default: ["127N", "127S"].
+        // Stop IDs to monitor. Format: stop_id + direction (N=uptown/north, S=downtown/south).
+        // Find stop IDs at: https://transitfeeds.com/p/mta/79/latest/stops
+        // Examples:
+        //   "127N"/"127S" = 34 St-Penn Station (1/2/3)
+        //   "A32N"/"A32S" = 34 St-Penn Station (A/C/E)
+        //   "R17N"/"R17S" = 34 St-Herald Sq (N/Q/R/W/B/D/F/M)
+        //   "L01N"/"L01S" = 8 Av (L)
+        //   "631N"/"631S" = Grand Central-42 St (4/5/6)
+        "stop_ids": ["D25N", "237N", "A44N"],
+
+        // Optional, array of strings, default: ["1", "2", "3"].
+        // Subway lines to display. Use line letters/numbers.
+        "lines": ["B", "Q", "2", "3", "4", "5", "A", "C"],
+
+        // Optional, integer, default: 30. How often to refresh data from MTA, in seconds.
+        "update_interval": 30,
+
+        // Optional, integer, default: 4. Maximum number of arrivals to show.
+        "max_arrivals": 4,
+
+        // Optional, float, default: 1.0. How long to sleep between display updates, in seconds.
+        "tick_sleep": 0.5,
+
+        // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
+        "max_ticks": 3000,
+    },
+
 }
