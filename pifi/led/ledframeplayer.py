@@ -14,6 +14,14 @@ class LedFramePlayer:
     # video_color_mode: only applicable when playing videos
     def __init__(self, clear_screen = True, video_color_mode = VideoColorMode.COLOR_MODE_COLOR):
         self.__current_frame = None
+
+        # Check if gamma correction should be applied
+        # RGB Matrix panels typically don't need the aggressive gamma/color correction
+        # that was calibrated for APA102 LED strips
+        led_driver = Config.get_or_throw('leds.driver')
+        default_gamma = led_driver != LedDrivers.DRIVER_RGBMATRIX
+        self.__gamma_enabled = Config.get('leds.gamma_enabled', default_gamma)
+
         self.__gamma_controller = Gamma(video_color_mode = video_color_mode)
 
         # static gamma curve
@@ -38,8 +46,6 @@ class LedFramePlayer:
             self.__scale_red_gamma_curves = self.__gamma_controller.scale_red_curves
             self.__scale_green_gamma_curves = self.__gamma_controller.scale_green_curves
             self.__scale_blue_gamma_curves = self.__gamma_controller.scale_blue_curves
-
-        led_driver = Config.get_or_throw('leds.driver')
         if led_driver == LedDrivers.DRIVER_APA102:
             from pifi.led.drivers.driverapa102 import DriverApa102
             self.__driver = DriverApa102(clear_screen)
@@ -103,6 +109,20 @@ class LedFramePlayer:
     # such as color mode and flipping. The output is a 3d byte array suitable
     # for final display.
     def __transform_frame(self, frame):
+        # If gamma is disabled, just apply flips and return
+        if not self.__gamma_enabled:
+            transformed_frame = frame.astype(np.uint8) if frame.dtype != np.uint8 else frame.copy()
+
+            flips = ()
+            if Config.get('leds.flip_y'):
+                flips += (0,)
+            if Config.get('leds.flip_x'):
+                flips += (1,)
+            if flips:
+                transformed_frame = np.flip(transformed_frame, flips)
+
+            return transformed_frame
+
         if not (VideoColorMode.is_color_mode_rgb(self.__video_color_mode)):
             gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(frame)
 

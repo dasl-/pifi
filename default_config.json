@@ -43,6 +43,13 @@
         // Optional, boolean, default: false. Whether to swap top to bottom when outputting to the LED matrix.
         // Setting this might be necessary if you wired your LEDs differently.
         "flip_y": false,
+
+        // Optional, boolean. Whether to apply gamma correction and per-channel color balancing.
+        // Default: true for apa102/ws2812b (LED strips need gamma correction),
+        //          false for rgbmatrix (HUB75 panels have their own color handling).
+        // The gamma correction was calibrated for APA102 strips and includes aggressive
+        // per-channel scaling (green to 45%, blue to 37.5%) which is wrong for RGB matrices.
+        // "gamma_enabled": false,
     },
 
     // Configuration specific to displaying videos.
