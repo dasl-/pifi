@@ -704,6 +704,21 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to gradient test screensaver (for debugging flicker).
+    "gradienttest": {
+
+        // Optional, string, default: pastel_sky. Test pattern to display.
+        // Valid values: pastel_sky, white, half_white, dim_white, red, green, blue,
+        // horizontal_gradient, vertical_gradient, checkerboard, stripes, color_bars
+        "mode": "pastel_sky",
+
+        // Optional, float, default: 0.1. Tick sleep time (high = low CPU).
+        "tick_sleep": 0.1,
+
+        // Optional, integer, default: 3000. Maximum ticks.
+        "max_ticks": 3000,
+    },
+
     // Configuration specific to DVD bounce screensaver.
     "dvd_bounce": {
 
