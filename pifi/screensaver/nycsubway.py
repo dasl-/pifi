@@ -13,6 +13,7 @@ os.environ.setdefault('PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION', 'python')
 
 import numpy as np
 import time
+import threading
 from datetime import datetime, timezone
 
 from pifi.config import Config
@@ -143,6 +144,8 @@ class NycSubway(Screensaver):
         self.__grouped_arrivals = []  # Arrivals grouped by (stop_id, line)
         self.__station_names = {}  # Cache: stop_id -> station name
         self.__station_names_loaded = False
+        self.__fetch_in_progress = False  # Background fetch flag
+        self.__fetch_lock = threading.Lock()  # Protect shared state
 
     def __init_feed(self):
         """Initialize the underground library."""
@@ -346,17 +349,23 @@ class NycSubway(Screensaver):
             g['earliest'] = g['times'][0] if g['times'] else 999
 
         grouped.sort(key=lambda x: x['earliest'])
-        self.__grouped_arrivals = grouped[:self.__max_arrivals]
+
+        # Thread-safe update of grouped arrivals
+        with self.__fetch_lock:
+            self.__grouped_arrivals = grouped[:self.__max_arrivals]
 
     def play(self):
         """Run the screensaver."""
         self.__logger.info("Starting NYC Subway screensaver")
 
+        # Start initial fetch in background
+        self.__start_background_fetch()
+
         for tick in range(self.__max_ticks):
-            # Update arrivals periodically
+            # Start background fetch if needed (non-blocking)
             current_time = time.time()
             if current_time - self.__last_update > self.__update_interval:
-                self.__fetch_arrivals()
+                self.__start_background_fetch()
                 self.__last_update = current_time
 
             self.__render()
@@ -364,13 +373,33 @@ class NycSubway(Screensaver):
 
         self.__logger.info("NYC Subway screensaver ended")
 
+    def __start_background_fetch(self):
+        """Start a background thread to fetch arrivals."""
+        if self.__fetch_in_progress:
+            return  # Already fetching
+
+        self.__fetch_in_progress = True
+        thread = threading.Thread(target=self.__fetch_arrivals_background, daemon=True)
+        thread.start()
+
+    def __fetch_arrivals_background(self):
+        """Fetch arrivals in background thread."""
+        try:
+            self.__fetch_arrivals()
+        finally:
+            self.__fetch_in_progress = False
+
     def __render(self):
         """Render the current arrivals to the display."""
         frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
 
+        # Thread-safe copy of arrivals
+        with self.__fetch_lock:
+            grouped_arrivals = list(self.__grouped_arrivals)
+
         if self.__error_message:
             self.__draw_text(frame, self.__error_message, 1, 1, (255, 100, 100))
-        elif not self.__grouped_arrivals:
+        elif not grouped_arrivals:
             self.__draw_text(frame, "---", 1, 1, (100, 100, 100))
         else:
             # Layout: each row is one (station, line) pair
@@ -378,7 +407,7 @@ class NycSubway(Screensaver):
             row_height = 8  # 7px content + 1px spacing
             max_rows = self.__height // row_height
 
-            for i, group in enumerate(self.__grouped_arrivals[:max_rows]):
+            for i, group in enumerate(grouped_arrivals[:max_rows]):
                 y = i * row_height
 
                 line = group['line']
