@@ -169,9 +169,32 @@ class NycSubway(Screensaver):
             return False
 
     def __load_station_names(self):
-        """Load station names from MTA's GTFS static data."""
+        """Load station names from cache or MTA's GTFS static data."""
         self.__station_names_loaded = True
 
+        import json
+        from pathlib import Path
+
+        # Cache file location
+        cache_dir = Path.home() / '.cache' / 'pifi'
+        cache_file = cache_dir / 'mta_stations.json'
+        cache_max_age = 7 * 24 * 60 * 60  # 7 days in seconds
+
+        # Try to load from cache first
+        try:
+            if cache_file.exists():
+                cache_age = time.time() - cache_file.stat().st_mtime
+                if cache_age < cache_max_age:
+                    with open(cache_file, 'r') as f:
+                        self.__station_names = json.load(f)
+                    self.__logger.info(f"Loaded {len(self.__station_names)} station names from cache")
+                    return
+                else:
+                    self.__logger.info("Station cache expired, refreshing...")
+        except Exception as e:
+            self.__logger.warning(f"Failed to load cache: {e}")
+
+        # Fetch from MTA
         try:
             import requests
             import csv
@@ -209,7 +232,16 @@ class NycSubway(Screensaver):
                             short_name = short_name.replace('TIMES SQUARE', 'TIMES SQ')
                             self.__station_names[stop_id] = short_name
 
-            self.__logger.info(f"Loaded {len(self.__station_names)} station names")
+            self.__logger.info(f"Loaded {len(self.__station_names)} station names from MTA")
+
+            # Save to cache
+            try:
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                with open(cache_file, 'w') as f:
+                    json.dump(self.__station_names, f)
+                self.__logger.info("Saved station names to cache")
+            except Exception as e:
+                self.__logger.warning(f"Failed to save cache: {e}")
 
         except Exception as e:
             self.__logger.warning(f"Failed to load station names: {e}")
