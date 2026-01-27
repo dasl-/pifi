@@ -119,6 +119,10 @@ class ScreensaverManager:
             # Re-read enabled screensavers each iteration so changes take effect
             enabled = self.__get_enabled_screensavers()
 
+            # Reload config overrides from database before playing
+            # This picks up any changes made via the settings UI
+            Config.reload_screensaver_overrides()
+
             # Build list of available screensavers
             available = []
             for screensaver_id in enabled:

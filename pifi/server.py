@@ -225,6 +225,111 @@ class PifiAPI():
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
         return {'success': True, 'enabled': enabled}
 
+    def get_screensaver_config(self, screensaver_id):
+        """Get config for a specific screensaver, merging defaults with overrides."""
+        from pifi.config import Config
+
+        # Get default config from Config (reads from default_config.json)
+        default_config = Config.get(screensaver_id, {})
+        if not isinstance(default_config, dict):
+            default_config = {}
+
+        # Get user overrides from SettingsDb
+        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+        overrides = {}
+        if overrides_json:
+            all_overrides = json.loads(overrides_json)
+            overrides = all_overrides.get(screensaver_id, {})
+
+        # Merge defaults with overrides
+        config = {**default_config, **overrides}
+
+        return {
+            'success': True,
+            'screensaver_id': screensaver_id,
+            'config': config,
+            'defaults': default_config,
+        }
+
+    def get_all_screensaver_configs(self):
+        """Get configs for all screensavers."""
+        from pifi.config import Config
+
+        all_screensavers = ScreensaverManager.get_all_screensavers()
+
+        # Get all user overrides
+        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+        all_overrides = {}
+        if overrides_json:
+            all_overrides = json.loads(overrides_json)
+
+        configs = {}
+        for s in all_screensavers:
+            sid = s['id']
+            default_config = Config.get(sid, {})
+            if not isinstance(default_config, dict):
+                default_config = {}
+            overrides = all_overrides.get(sid, {})
+            configs[sid] = {
+                'config': {**default_config, **overrides},
+                'defaults': default_config,
+            }
+
+        return {
+            'success': True,
+            'configs': configs,
+        }
+
+    def set_screensaver_config(self, post_data):
+        """Set config overrides for a screensaver."""
+        screensaver_id = post_data.get('screensaver_id')
+        config = post_data.get('config', {})
+
+        if not screensaver_id:
+            return {'success': False, 'error': 'screensaver_id required'}
+
+        # Get existing overrides
+        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+        all_overrides = {}
+        if overrides_json:
+            all_overrides = json.loads(overrides_json)
+
+        # Update overrides for this screensaver
+        all_overrides[screensaver_id] = config
+
+        # Save back to database
+        self.__settings_db.set(SettingsDb.SCREENSAVER_CONFIGS, json.dumps(all_overrides))
+
+        # Signal restart
+        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
+
+        return {'success': True, 'screensaver_id': screensaver_id, 'config': config}
+
+    def reset_screensaver_config(self, post_data):
+        """Reset a screensaver's config to defaults."""
+        screensaver_id = post_data.get('screensaver_id')
+
+        if not screensaver_id:
+            return {'success': False, 'error': 'screensaver_id required'}
+
+        # Get existing overrides
+        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+        all_overrides = {}
+        if overrides_json:
+            all_overrides = json.loads(overrides_json)
+
+        # Remove overrides for this screensaver
+        if screensaver_id in all_overrides:
+            del all_overrides[screensaver_id]
+
+        # Save back to database
+        self.__settings_db.set(SettingsDb.SCREENSAVER_CONFIGS, json.dumps(all_overrides))
+
+        # Signal restart
+        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
+
+        return {'success': True, 'screensaver_id': screensaver_id}
+
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
@@ -280,6 +385,11 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_youtube_api_key()
         elif parsed_path.path == 'screensavers':
             response = self.__api.get_screensavers()
+        elif parsed_path.path == 'screensaver_configs':
+            response = self.__api.get_all_screensaver_configs()
+        elif parsed_path.path.startswith('screensaver_config/'):
+            screensaver_id = parsed_path.path.split('/')[1]
+            response = self.__api.get_screensaver_config(screensaver_id)
         else:
             self.__do_404()
             return
@@ -320,6 +430,10 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.submit_game_score_initials(post_data)
         elif path == 'screensavers':
             response = self.__api.set_screensavers(post_data)
+        elif path == 'screensaver_config':
+            response = self.__api.set_screensaver_config(post_data)
+        elif path == 'screensaver_config_reset':
+            response = self.__api.reset_screensaver_config(post_data)
         else:
             self.__do_404()
             return

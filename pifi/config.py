@@ -1,4 +1,5 @@
 import os
+import json
 import pyjson5
 from pifi.logger import Logger
 from pifi.directoryutils import DirectoryUtils
@@ -126,3 +127,50 @@ class Config:
                 Config.__merge_dicts(d1[k], d2[k])
             else:
                 d1[k] = d2[k]
+
+    @staticmethod
+    def reload_screensaver_overrides():
+        """
+        Reload screensaver config overrides from the database.
+
+        This should be called before playing a screensaver to pick up
+        any changes made via the settings UI.
+
+        The database stores overrides in the format:
+        {screensaver_id: {key: value, ...}, ...}
+
+        These are merged into the config, so boids.num_boids in the
+        database override would be applied to Config['boids']['num_boids'].
+        """
+        Config.load_config_if_not_loaded()
+
+        # Import here to avoid circular dependency
+        from pifi.settingsdb import SettingsDb
+
+        settings_db = SettingsDb()
+        overrides_json = settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+
+        if not overrides_json:
+            return
+
+        try:
+            all_overrides = json.loads(overrides_json)
+        except (json.JSONDecodeError, TypeError):
+            Config.__logger.warning("Failed to parse screensaver config overrides")
+            return
+
+        # Apply each screensaver's overrides to the config
+        for screensaver_id, overrides in all_overrides.items():
+            if not isinstance(overrides, dict):
+                continue
+
+            # Get the existing screensaver config section
+            if screensaver_id not in Config.__config:
+                Config.__config[screensaver_id] = {}
+            elif not isinstance(Config.__config[screensaver_id], dict):
+                Config.__config[screensaver_id] = {}
+
+            # Merge overrides into the screensaver config
+            Config.__config[screensaver_id].update(overrides)
+
+        Config.__logger.debug(f"Applied screensaver config overrides: {all_overrides}")

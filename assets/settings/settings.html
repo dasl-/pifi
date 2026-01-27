@@ -15,7 +15,7 @@
 
         <section class="settings-section">
             <h2>Screensavers</h2>
-            <p class="description">Select which screensavers to include in the rotation.</p>
+            <p class="description">Select which screensavers to include in the rotation. Click "Settings" to configure options.</p>
 
             <div class="screensaver-list" id="screensaver-list">
                 <div class="loading">Loading...</div>
@@ -35,20 +35,92 @@
     <script>
         $(function() {
             var originalEnabled = [];
+            var screensaverConfigs = {};  // Stores configs for each screensaver
 
             function loadScreensavers() {
-                $.get('/api/screensavers', function(data) {
-                    if (!data.success) {
+                // Load both screensavers and their configs in parallel
+                $.when(
+                    $.get('/api/screensavers'),
+                    $.get('/api/screensaver_configs')
+                ).done(function(screensaversResp, configsResp) {
+                    var screensaversData = screensaversResp[0];
+                    var configsData = configsResp[0];
+
+                    if (!screensaversData.success) {
                         showStatus('Error loading screensavers', 'error');
                         return;
                     }
 
-                    originalEnabled = data.enabled.slice();
-                    renderScreensavers(data.screensavers, data.enabled);
+                    screensaverConfigs = configsData.configs || {};
+                    originalEnabled = screensaversData.enabled.slice();
+                    renderScreensavers(screensaversData.screensavers, screensaversData.enabled);
                     $('#save-btn').prop('disabled', true);
                 }).fail(function() {
                     showStatus('Failed to load screensavers', 'error');
                 });
+            }
+
+            function formatConfigKey(key) {
+                // Convert snake_case to Title Case
+                return key.replace(/_/g, ' ').replace(/\b\w/g, function(l) {
+                    return l.toUpperCase();
+                });
+            }
+
+            function getInputType(value) {
+                if (typeof value === 'boolean') return 'checkbox';
+                if (typeof value === 'number') return 'number';
+                return 'text';
+            }
+
+            function renderConfigFields(screensaverId, config, defaults) {
+                var fields = [];
+                var keys = Object.keys(defaults).sort();
+
+                if (keys.length === 0) {
+                    return '<div class="no-config">No configurable options</div>';
+                }
+
+                keys.forEach(function(key) {
+                    var value = config[key];
+                    var defaultValue = defaults[key];
+                    var inputType = getInputType(defaultValue);
+                    var isModified = JSON.stringify(value) !== JSON.stringify(defaultValue);
+                    var modifiedClass = isModified ? ' modified' : '';
+                    var modifiedBadge = isModified ? '<span class="modified">*</span>' : '';
+
+                    var inputHtml;
+                    if (inputType === 'checkbox') {
+                        inputHtml = '<input type="checkbox" class="config-input' + modifiedClass + '" ' +
+                            'data-key="' + key + '" data-default="' + defaultValue + '"' +
+                            (value ? ' checked' : '') + '>';
+                    } else if (inputType === 'number') {
+                        var step = (defaultValue % 1 !== 0) ? '0.01' : '1';
+                        inputHtml = '<input type="number" class="config-input' + modifiedClass + '" ' +
+                            'data-key="' + key + '" data-default="' + defaultValue + '" ' +
+                            'value="' + value + '" step="' + step + '">';
+                    } else {
+                        inputHtml = '<input type="text" class="config-input' + modifiedClass + '" ' +
+                            'data-key="' + key + '" data-default="' + defaultValue + '" ' +
+                            'value="' + value + '">';
+                    }
+
+                    fields.push(
+                        '<div class="config-field">' +
+                            '<label class="config-label">' + formatConfigKey(key) + modifiedBadge + '</label>' +
+                            inputHtml +
+                        '</div>'
+                    );
+                });
+
+                fields.push(
+                    '<div class="config-actions">' +
+                        '<button class="config-save-btn" data-id="' + screensaverId + '">Save Config</button>' +
+                        '<button class="config-reset-btn" data-id="' + screensaverId + '">Reset to Defaults</button>' +
+                    '</div>'
+                );
+
+                return fields.join('');
             }
 
             function renderScreensavers(screensavers, enabled) {
@@ -57,6 +129,11 @@
 
                 screensavers.forEach(function(s) {
                     var isEnabled = enabled.indexOf(s.id) !== -1;
+                    var configData = screensaverConfigs[s.id] || { config: {}, defaults: {} };
+                    var hasConfig = Object.keys(configData.defaults).length > 0;
+
+                    var $container = $('<div class="screensaver-container" data-id="' + s.id + '"></div>');
+
                     var $item = $('<label class="screensaver-item">' +
                         '<input type="checkbox" value="' + s.id + '"' + (isEnabled ? ' checked' : '') + '>' +
                         '<span class="screensaver-info">' +
@@ -64,20 +141,184 @@
                             '<span class="screensaver-desc">' + s.description + '</span>' +
                         '</span>' +
                     '</label>');
-                    $list.append($item);
+
+                    // Add settings button if there are configurable options
+                    if (hasConfig) {
+                        var $toggle = $('<button class="screensaver-toggle" data-id="' + s.id + '">Settings</button>');
+                        $item.append($toggle);
+                    }
+
+                    var $config = $('<div class="screensaver-config" data-id="' + s.id + '">' +
+                        renderConfigFields(s.id, configData.config, configData.defaults) +
+                    '</div>');
+
+                    $container.append($item);
+                    $container.append($config);
+                    $list.append($container);
                 });
 
-                // Enable save button when changes are made
-                $list.find('input').on('change', function() {
+                // Enable save button when checkbox changes are made
+                $list.find('input[type="checkbox"][value]').on('change', function() {
                     var currentEnabled = getEnabledIds();
                     var hasChanges = !arraysEqual(currentEnabled, originalEnabled);
                     $('#save-btn').prop('disabled', !hasChanges);
+                });
+
+                // Handle settings toggle
+                $list.on('click', '.screensaver-toggle', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var id = $(this).data('id');
+                    var $config = $('.screensaver-config[data-id="' + id + '"]');
+                    var $toggle = $(this);
+
+                    $config.toggleClass('expanded');
+                    $toggle.toggleClass('active');
+                });
+
+                // Handle config save
+                $list.on('click', '.config-save-btn', function(e) {
+                    e.preventDefault();
+                    var screensaverId = $(this).data('id');
+                    saveScreensaverConfig(screensaverId);
+                });
+
+                // Handle config reset
+                $list.on('click', '.config-reset-btn', function(e) {
+                    e.preventDefault();
+                    var screensaverId = $(this).data('id');
+                    resetScreensaverConfig(screensaverId);
+                });
+            }
+
+            function getConfigValues(screensaverId) {
+                var $config = $('.screensaver-config[data-id="' + screensaverId + '"]');
+                var values = {};
+
+                $config.find('.config-input').each(function() {
+                    var $input = $(this);
+                    var key = $input.data('key');
+                    var type = $input.attr('type');
+
+                    if (type === 'checkbox') {
+                        values[key] = $input.is(':checked');
+                    } else if (type === 'number') {
+                        var val = $input.val();
+                        values[key] = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                    } else {
+                        values[key] = $input.val();
+                    }
+                });
+
+                return values;
+            }
+
+            function saveScreensaverConfig(screensaverId) {
+                var config = getConfigValues(screensaverId);
+
+                $.post({
+                    url: '/api/screensaver_config',
+                    data: JSON.stringify({
+                        screensaver_id: screensaverId,
+                        config: config
+                    }),
+                    contentType: 'application/json'
+                }).done(function(data) {
+                    if (data.success) {
+                        // Update local cache
+                        if (!screensaverConfigs[screensaverId]) {
+                            screensaverConfigs[screensaverId] = { config: {}, defaults: {} };
+                        }
+                        screensaverConfigs[screensaverId].config = config;
+
+                        // Update UI to show modified state
+                        updateConfigFieldStates(screensaverId);
+                        showStatus('Config saved for ' + screensaverId + '. Screensaver restarting...', 'success');
+                    } else {
+                        showStatus('Error saving config: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                }).fail(function() {
+                    showStatus('Failed to save config', 'error');
+                });
+            }
+
+            function resetScreensaverConfig(screensaverId) {
+                if (!confirm('Reset ' + screensaverId + ' to default settings?')) {
+                    return;
+                }
+
+                $.post({
+                    url: '/api/screensaver_config_reset',
+                    data: JSON.stringify({
+                        screensaver_id: screensaverId
+                    }),
+                    contentType: 'application/json'
+                }).done(function(data) {
+                    if (data.success) {
+                        // Reset local cache to defaults
+                        var defaults = screensaverConfigs[screensaverId]?.defaults || {};
+                        screensaverConfigs[screensaverId].config = Object.assign({}, defaults);
+
+                        // Update UI inputs to default values
+                        var $config = $('.screensaver-config[data-id="' + screensaverId + '"]');
+                        $config.find('.config-input').each(function() {
+                            var $input = $(this);
+                            var defaultVal = $input.data('default');
+                            var type = $input.attr('type');
+
+                            if (type === 'checkbox') {
+                                $input.prop('checked', defaultVal === true || defaultVal === 'true');
+                            } else {
+                                $input.val(defaultVal);
+                            }
+                            $input.removeClass('modified');
+                        });
+
+                        $config.find('.config-label .modified').remove();
+                        showStatus('Config reset for ' + screensaverId + '. Screensaver restarting...', 'success');
+                    } else {
+                        showStatus('Error resetting config: ' + (data.error || 'Unknown error'), 'error');
+                    }
+                }).fail(function() {
+                    showStatus('Failed to reset config', 'error');
+                });
+            }
+
+            function updateConfigFieldStates(screensaverId) {
+                var $config = $('.screensaver-config[data-id="' + screensaverId + '"]');
+                var defaults = screensaverConfigs[screensaverId]?.defaults || {};
+
+                $config.find('.config-input').each(function() {
+                    var $input = $(this);
+                    var key = $input.data('key');
+                    var defaultVal = defaults[key];
+                    var currentVal;
+                    var type = $input.attr('type');
+
+                    if (type === 'checkbox') {
+                        currentVal = $input.is(':checked');
+                    } else if (type === 'number') {
+                        var val = $input.val();
+                        currentVal = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                    } else {
+                        currentVal = $input.val();
+                    }
+
+                    var isModified = JSON.stringify(currentVal) !== JSON.stringify(defaultVal);
+                    $input.toggleClass('modified', isModified);
+
+                    // Update label badge
+                    var $label = $input.closest('.config-field').find('.config-label');
+                    $label.find('.modified').remove();
+                    if (isModified) {
+                        $label.append('<span class="modified">*</span>');
+                    }
                 });
             }
 
             function getEnabledIds() {
                 var enabled = [];
-                $('#screensaver-list input:checked').each(function() {
+                $('#screensaver-list input:checked[value]').each(function() {
                     enabled.push($(this).val());
                 });
                 return enabled;
@@ -133,11 +374,11 @@
             });
 
             $('#select-all-btn').on('click', function() {
-                $('#screensaver-list input').prop('checked', true).trigger('change');
+                $('#screensaver-list input[type="checkbox"][value]').prop('checked', true).trigger('change');
             });
 
             $('#select-none-btn').on('click', function() {
-                $('#screensaver-list input').prop('checked', false).trigger('change');
+                $('#screensaver-list input[type="checkbox"][value]').prop('checked', false).trigger('change');
             });
 
             loadScreensavers();

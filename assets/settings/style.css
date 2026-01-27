@@ -67,15 +67,6 @@ header h1 {
     color: #888;
 }
 
-.screensaver-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
 .screensaver-item:hover {
     background: rgba(255, 255, 255, 0.08);
 }
@@ -167,6 +158,159 @@ header h1 {
     border: 1px solid rgba(255, 107, 107, 0.3);
 }
 
+/* Screensaver config expansion */
+.screensaver-container {
+    border-radius: 6px;
+    margin-bottom: 2px;
+}
+
+.screensaver-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.screensaver-toggle {
+    margin-left: auto;
+    padding: 4px 8px;
+    font-size: 0.75em;
+    color: #666;
+    background: transparent;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.screensaver-toggle:hover {
+    color: #4ecca3;
+    border-color: #4ecca3;
+}
+
+.screensaver-toggle.active {
+    color: #4ecca3;
+    border-color: #4ecca3;
+}
+
+.screensaver-config {
+    display: none;
+    background: rgba(0, 0, 0, 0.2);
+    margin: 0 10px 10px 10px;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+.screensaver-config.expanded {
+    display: block;
+}
+
+.screensaver-config.no-config {
+    color: #666;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.config-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.config-field:last-of-type {
+    margin-bottom: 0;
+}
+
+.config-label {
+    flex: 0 0 140px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+
+.config-label .modified {
+    color: #4ecca3;
+    font-size: 0.8em;
+    margin-left: 4px;
+}
+
+.config-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: #fff;
+    font-size: 0.9em;
+}
+
+.config-input:focus {
+    outline: none;
+    border-color: #4ecca3;
+}
+
+.config-input[type="number"] {
+    max-width: 100px;
+}
+
+.config-input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #4ecca3;
+    flex: 0 0 20px;
+}
+
+.config-input.modified {
+    border-color: #4ecca3;
+}
+
+.config-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.config-save-btn {
+    background: #4ecca3;
+    color: #1a1a2e;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.config-save-btn:hover {
+    background: #3db892;
+}
+
+.config-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.config-reset-btn {
+    background: transparent;
+    color: #888;
+    border: 1px solid #444;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.config-reset-btn:hover {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 15px;
@@ -183,6 +327,32 @@ header h1 {
     }
 
     .save-btn, .secondary-btn {
+        width: 100%;
+    }
+
+    .config-field {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .config-label {
+        flex: none;
+        margin-bottom: 4px;
+    }
+
+    .config-input {
+        width: 100%;
+    }
+
+    .config-input[type="number"] {
+        max-width: 100%;
+    }
+
+    .config-actions {
+        flex-direction: column;
+    }
+
+    .config-save-btn, .config-reset-btn {
         width: 100%;
     }
 }
