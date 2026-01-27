@@ -13,11 +13,11 @@ class DriverRgbMatrix(DriverBase):
         options.cols = Config.get_or_throw('leds.display_width')
         options.chain_length = 1
         options.parallel = 1
-        options.hardware_mapping = 'adafruit-hat'
+        options.hardware_mapping = 'adafruit-hat-pwm'
         options.drop_privileges = False
 
         # Performance tuning - reduce flickering from timing issues
-        options.gpio_slowdown = Config.get('rgbmatrix.gpio_slowdown', 4)
+        options.gpio_slowdown = Config.get('rgbmatrix.gpio_slowdown', 1)
         options.pwm_bits = Config.get('rgbmatrix.pwm_bits', 11)
         options.pwm_lsb_nanoseconds = Config.get('rgbmatrix.pwm_lsb_nanoseconds', 130)
         options.limit_refresh_rate_hz = Config.get('rgbmatrix.limit_refresh_rate_hz', 0)
