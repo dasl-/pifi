@@ -23,6 +23,9 @@ class SettingsDb:
 
     SETTING_YOUTUBE_API_KEY = 'youtube_api_key'
 
+    # Global LED brightness (0-100 percentage)
+    BRIGHTNESS = 'brightness'
+
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)

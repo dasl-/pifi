@@ -4,6 +4,7 @@ from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.led.gamma import Gamma
 from pifi.led.drivers.leddrivers import LedDrivers
+from pifi.settingsdb import SettingsDb
 from pifi.video.videocolormode import VideoColorMode
 
 class LedFramePlayer:
@@ -103,13 +104,24 @@ class LedFramePlayer:
     def can_multiple_driver_instances_coexist(self):
         return self.__driver.can_multiple_driver_instances_coexist()
 
+    def __get_brightness(self):
+        """Get brightness from settings (0-100), returns 1.0 if not set or 100."""
+        try:
+            brightness_str = SettingsDb().get(SettingsDb.BRIGHTNESS)
+            if brightness_str is not None:
+                brightness = int(brightness_str)
+                return max(0, min(100, brightness)) / 100.0
+        except (ValueError, TypeError):
+            pass
+        return 1.0  # Default to full brightness
+
     # This method transforms an input frame, which may be either a 2-dimensional
     # byte array if VideoColorMode.is_color_mode_rgb() is false, or 3d
     # otherwise, into an output frame by applying the user-provided transforms
     # such as color mode and flipping. The output is a 3d byte array suitable
     # for final display.
     def __transform_frame(self, frame):
-        # If gamma is disabled, just apply flips and return
+        # If gamma is disabled, just apply flips and brightness, then return
         if not self.__gamma_enabled:
             transformed_frame = frame.astype(np.uint8) if frame.dtype != np.uint8 else frame.copy()
 
@@ -120,6 +132,11 @@ class LedFramePlayer:
                 flips += (1,)
             if flips:
                 transformed_frame = np.flip(transformed_frame, flips)
+
+            # Apply software brightness from settings
+            brightness = self.__get_brightness()
+            if brightness < 1.0:
+                transformed_frame = (transformed_frame.astype(np.float32) * brightness).astype(np.uint8)
 
             return transformed_frame
 
@@ -161,6 +178,11 @@ class LedFramePlayer:
             flips += (1,)
         if flips:
             transformed_frame = np.flip(transformed_frame, flips)
+
+        # Apply software brightness from settings
+        brightness = self.__get_brightness()
+        if brightness < 1.0:
+            transformed_frame = (transformed_frame.astype(np.float32) * brightness).astype(np.uint8)
 
         return transformed_frame
 

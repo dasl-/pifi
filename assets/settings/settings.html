@@ -14,6 +14,17 @@
         </header>
 
         <section class="settings-section">
+            <h2>Display</h2>
+            <div class="brightness-control">
+                <label for="brightness-slider">Brightness</label>
+                <div class="slider-container">
+                    <input type="range" id="brightness-slider" min="0" max="100" value="100">
+                    <span id="brightness-value">100%</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="settings-section">
             <h2>Screensavers</h2>
             <p class="description">Select which screensavers to include in the rotation. Click "Settings" to configure options.</p>
 
@@ -36,6 +47,45 @@
         $(function() {
             var originalEnabled = [];
             var screensaverConfigs = {};  // Stores configs for each screensaver
+            var brightnessTimeout = null;
+
+            // Load and setup brightness control
+            function loadBrightness() {
+                $.get('/api/brightness').done(function(data) {
+                    if (data.success) {
+                        $('#brightness-slider').val(data.brightness);
+                        $('#brightness-value').text(data.brightness + '%');
+                    }
+                });
+            }
+
+            function saveBrightness(value) {
+                $.post({
+                    url: '/api/brightness',
+                    data: JSON.stringify({ brightness: value }),
+                    contentType: 'application/json'
+                }).done(function(data) {
+                    if (!data.success) {
+                        showStatus('Error saving brightness', 'error');
+                    }
+                }).fail(function() {
+                    showStatus('Failed to save brightness', 'error');
+                });
+            }
+
+            // Brightness slider handler - debounced to avoid spamming the server
+            $('#brightness-slider').on('input', function() {
+                var value = $(this).val();
+                $('#brightness-value').text(value + '%');
+
+                // Debounce the save
+                clearTimeout(brightnessTimeout);
+                brightnessTimeout = setTimeout(function() {
+                    saveBrightness(value);
+                }, 200);
+            });
+
+            loadBrightness();
 
             function loadScreensavers() {
                 // Load both screensavers and their configs in parallel

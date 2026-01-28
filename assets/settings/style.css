@@ -54,6 +54,72 @@ header h1 {
     font-size: 0.9em;
 }
 
+/* Brightness control */
+.brightness-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 30px;
+}
+
+.brightness-control label {
+    font-size: 0.95em;
+    color: #ccc;
+    min-width: 80px;
+}
+
+.slider-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#brightness-slider {
+    flex: 1;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    outline: none;
+}
+
+#brightness-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    background: #4ecca3;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#brightness-slider::-webkit-slider-thumb:hover {
+    background: #3db892;
+}
+
+#brightness-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: #4ecca3;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#brightness-value {
+    min-width: 45px;
+    text-align: right;
+    font-size: 0.95em;
+    color: #4ecca3;
+    font-weight: 500;
+}
+
 .screensaver-list {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;

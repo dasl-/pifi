@@ -199,6 +199,26 @@ class PifiAPI():
             'success': True
         }
 
+    def get_brightness(self):
+        brightness = self.__settings_db.get(SettingsDb.BRIGHTNESS, '100')
+        try:
+            brightness = int(brightness)
+        except (ValueError, TypeError):
+            brightness = 100
+        return {
+            'brightness': brightness,
+            'success': True
+        }
+
+    def set_brightness(self, post_data):
+        brightness = int(post_data['brightness'])
+        brightness = max(0, min(100, brightness))  # Clamp to 0-100
+        self.__settings_db.set(SettingsDb.BRIGHTNESS, str(brightness))
+        return {
+            'brightness': brightness,
+            'success': True
+        }
+
     def get_youtube_api_key(self):
         return {
             SettingsDb.SETTING_YOUTUBE_API_KEY: self.__settings_db.get(SettingsDb.SETTING_YOUTUBE_API_KEY),
@@ -377,6 +397,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_queue()
         elif parsed_path.path == 'vol_pct':
             response = self.__api.get_volume()
+        elif parsed_path.path == 'brightness':
+            response = self.__api.get_brightness()
         elif parsed_path.path == 'high_scores':
             response = self.__api.get_high_scores(get_data)
         elif parsed_path.path == 'snake':
@@ -424,6 +446,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.set_screensaver_enabled(post_data)
         elif path == 'vol_pct':
             response = self.__api.set_vol_pct(post_data)
+        elif path == 'brightness':
+            response = self.__api.set_brightness(post_data)
         elif path == 'enqueue_or_join_game':
             response = self.__api.enqueue_or_join_game(post_data)
         elif path == 'submit_game_score_initials':
