@@ -14,6 +14,7 @@ from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
+from pifi.screensaver import textutils
 
 
 class Wfmu(Screensaver):
@@ -33,59 +34,6 @@ class Wfmu(Screensaver):
         'artist': (255, 220, 100),   # Yellow for artist
         'divider': (80, 80, 80),     # Gray for dividers
         'logo': (255, 100, 50),      # Orange for WFMU logo
-    }
-
-    # Simple 3x5 font for characters
-    FONT = {
-        '0': [[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],
-        '1': [[0,1,0],[1,1,0],[0,1,0],[0,1,0],[1,1,1]],
-        '2': [[1,1,1],[0,0,1],[1,1,1],[1,0,0],[1,1,1]],
-        '3': [[1,1,1],[0,0,1],[0,1,1],[0,0,1],[1,1,1]],
-        '4': [[1,0,1],[1,0,1],[1,1,1],[0,0,1],[0,0,1]],
-        '5': [[1,1,1],[1,0,0],[1,1,1],[0,0,1],[1,1,1]],
-        '6': [[1,1,1],[1,0,0],[1,1,1],[1,0,1],[1,1,1]],
-        '7': [[1,1,1],[0,0,1],[0,0,1],[0,1,0],[0,1,0]],
-        '8': [[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,1,1]],
-        '9': [[1,1,1],[1,0,1],[1,1,1],[0,0,1],[1,1,1]],
-        'A': [[0,1,0],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
-        'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
-        'C': [[0,1,1],[1,0,0],[1,0,0],[1,0,0],[0,1,1]],
-        'D': [[1,1,0],[1,0,1],[1,0,1],[1,0,1],[1,1,0]],
-        'E': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,1,1]],
-        'F': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,0,0]],
-        'G': [[0,1,1],[1,0,0],[1,0,1],[1,0,1],[0,1,1]],
-        'H': [[1,0,1],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
-        'I': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
-        'J': [[0,1,1],[0,0,1],[0,0,1],[1,0,1],[0,1,0]],
-        'K': [[1,0,1],[1,1,0],[1,0,0],[1,1,0],[1,0,1]],
-        'L': [[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,1,1]],
-        'M': [[1,0,1],[1,1,1],[1,0,1],[1,0,1],[1,0,1]],
-        'N': [[1,0,1],[1,1,1],[1,1,1],[1,0,1],[1,0,1]],
-        'O': [[0,1,0],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
-        'P': [[1,1,0],[1,0,1],[1,1,0],[1,0,0],[1,0,0]],
-        'Q': [[0,1,0],[1,0,1],[1,0,1],[1,0,1],[0,1,1]],
-        'R': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,0,1]],
-        'S': [[0,1,1],[1,0,0],[0,1,0],[0,0,1],[1,1,0]],
-        'T': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],
-        'U': [[1,0,1],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
-        'V': [[1,0,1],[1,0,1],[1,0,1],[0,1,0],[0,1,0]],
-        'W': [[1,0,1],[1,0,1],[1,0,1],[1,1,1],[1,0,1]],
-        'X': [[1,0,1],[1,0,1],[0,1,0],[1,0,1],[1,0,1]],
-        'Y': [[1,0,1],[1,0,1],[0,1,0],[0,1,0],[0,1,0]],
-        'Z': [[1,1,1],[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
-        ' ': [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]],
-        '-': [[0,0,0],[0,0,0],[1,1,1],[0,0,0],[0,0,0]],
-        '.': [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,1,0]],
-        ',': [[0,0,0],[0,0,0],[0,0,0],[0,1,0],[1,0,0]],
-        "'": [[0,1,0],[0,1,0],[0,0,0],[0,0,0],[0,0,0]],
-        '"': [[1,0,1],[1,0,1],[0,0,0],[0,0,0],[0,0,0]],
-        '!': [[0,1,0],[0,1,0],[0,1,0],[0,0,0],[0,1,0]],
-        '?': [[1,1,0],[0,0,1],[0,1,0],[0,0,0],[0,1,0]],
-        '(': [[0,1,0],[1,0,0],[1,0,0],[1,0,0],[0,1,0]],
-        ')': [[0,1,0],[0,0,1],[0,0,1],[0,0,1],[0,1,0]],
-        '/': [[0,0,1],[0,0,1],[0,1,0],[1,0,0],[1,0,0]],
-        '&': [[0,1,0],[1,0,1],[0,1,0],[1,0,1],[0,1,1]],
-        ':': [[0,0,0],[0,1,0],[0,0,0],[0,1,0],[0,0,0]],
     }
 
     def __init__(self, led_frame_player=None):
@@ -323,93 +271,16 @@ class Wfmu(Screensaver):
                         if x + dx < self.__width:
                             frame[bar_y, x + dx] = color
 
-    def __ease_scroll(self, progress, ease_zone=0.2):
-        """Apply gentle easing at scroll ends, linear in middle."""
-        if progress <= 0:
-            return 0.0
-        if progress >= 1:
-            return 1.0
-
-        if progress < ease_zone:
-            t = progress / ease_zone
-            return 0.5 * ease_zone * t * t
-        elif progress > 1 - ease_zone:
-            t = (1 - progress) / ease_zone
-            return 1 - 0.5 * ease_zone * t * t
-        else:
-            mid_progress = (progress - ease_zone) / (1 - 2 * ease_zone)
-            return 0.5 * ease_zone + mid_progress * (1 - ease_zone)
-
     def __draw_scrolling_text(self, frame, text, x, y, max_width, color):
         """Draw scrolling text with easing."""
-        text_width = len(text) * 4
-
-        if text_width <= max_width:
-            self.__draw_text(frame, text, x, y, color)
-        else:
-            gap = 20
-            total_scroll = text_width + gap
-            pause_duration = 60
-
-            cycle_length = total_scroll + pause_duration
-            cycle_pos = int(self.__scroll_offset) % cycle_length
-
-            if cycle_pos < pause_duration:
-                scroll_pos = 0
-            else:
-                scroll_ticks = cycle_pos - pause_duration
-                progress = scroll_ticks / total_scroll
-                eased_progress = self.__ease_scroll(progress)
-                scroll_pos = int(eased_progress * total_scroll)
-
-            cursor = x - scroll_pos
-            padded_text = text + "     " + text
-
-            for char in padded_text:
-                char_end = cursor + 3
-
-                if char_end >= x and cursor < x + max_width:
-                    self.__draw_char_clipped(frame, char, cursor, y, color, x, x + max_width)
-
-                if cursor >= x + max_width:
-                    break
-                cursor += 4
-
-    def __draw_char_clipped(self, frame, char, x, y, color, clip_left, clip_right):
-        """Draw a character with horizontal clipping."""
-        char = char.upper()
-        if char not in self.FONT:
-            return
-
-        pattern = self.FONT[char]
-        for dy, row in enumerate(pattern):
-            for dx, pixel in enumerate(row):
-                if pixel:
-                    px, py = x + dx, y + dy
-                    if clip_left <= px < clip_right:
-                        if 0 <= px < self.__width and 0 <= py < self.__height:
-                            frame[py, px] = color
-
-    def __draw_char(self, frame, char, x, y, color):
-        """Draw a single 3x5 character."""
-        char = char.upper()
-        if char not in self.FONT:
-            return
-
-        pattern = self.FONT[char]
-        for dy, row in enumerate(pattern):
-            for dx, pixel in enumerate(row):
-                if pixel:
-                    px, py = x + dx, y + dy
-                    if 0 <= px < self.__width and 0 <= py < self.__height:
-                        frame[py, px] = color
+        textutils.draw_scrolling_text(
+            frame, text, x, y, max_width, color,
+            self.__scroll_offset, self.__width, self.__height
+        )
 
     def __draw_text(self, frame, text, x, y, color):
         """Draw a text string."""
-        cursor = x
-        for char in text:
-            self.__draw_char(frame, char, cursor, y, color)
-            cursor += 4
+        textutils.draw_text(frame, text, x, y, color, self.__width, self.__height)
 
     @classmethod
     def get_id(cls) -> str:

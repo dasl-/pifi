@@ -20,6 +20,7 @@ from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
+from pifi.screensaver import textutils
 
 
 class NycSubway(Screensaver):
@@ -65,55 +66,6 @@ class NycSubway(Screensaver):
         'R': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
         'W': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-nqrw',
         'S': 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-si',
-    }
-
-    # Simple 3x5 font for digits and letters
-    # Optimized for readability at low resolution
-    FONT = {
-        '0': [[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],
-        '1': [[0,1,0],[1,1,0],[0,1,0],[0,1,0],[1,1,1]],
-        '2': [[1,1,1],[0,0,1],[1,1,1],[1,0,0],[1,1,1]],
-        '3': [[1,1,1],[0,0,1],[0,1,1],[0,0,1],[1,1,1]],
-        '4': [[1,0,1],[1,0,1],[1,1,1],[0,0,1],[0,0,1]],
-        '5': [[1,1,1],[1,0,0],[1,1,1],[0,0,1],[1,1,1]],
-        '6': [[1,1,1],[1,0,0],[1,1,1],[1,0,1],[1,1,1]],
-        '7': [[1,1,1],[0,0,1],[0,0,1],[0,1,0],[0,1,0]],
-        '8': [[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,1,1]],
-        '9': [[1,1,1],[1,0,1],[1,1,1],[0,0,1],[1,1,1]],
-        'A': [[0,1,0],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
-        'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
-        'C': [[0,1,1],[1,0,0],[1,0,0],[1,0,0],[0,1,1]],
-        'D': [[1,1,0],[1,0,1],[1,0,1],[1,0,1],[1,1,0]],
-        'E': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,1,1]],
-        'F': [[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,0,0]],
-        'G': [[0,1,1],[1,0,0],[1,0,1],[1,0,1],[0,1,1]],
-        'H': [[1,0,1],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
-        'I': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[1,1,1]],
-        'J': [[0,1,1],[0,0,1],[0,0,1],[1,0,1],[0,1,0]],
-        'K': [[1,0,1],[1,1,0],[1,0,0],[1,1,0],[1,0,1]],
-        'L': [[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,1,1]],
-        'M': [[1,0,1],[1,1,1],[1,0,1],[1,0,1],[1,0,1]],
-        'N': [[1,0,1],[1,1,1],[1,1,1],[1,0,1],[1,0,1]],
-        'O': [[0,1,0],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
-        'P': [[1,1,0],[1,0,1],[1,1,0],[1,0,0],[1,0,0]],
-        'Q': [[0,1,0],[1,0,1],[1,0,1],[1,0,1],[0,1,1]],  # Fixed: cleaner Q with small tail
-        'R': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,0,1]],
-        'S': [[0,1,1],[1,0,0],[0,1,0],[0,0,1],[1,1,0]],
-        'T': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],
-        'U': [[1,0,1],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
-        'V': [[1,0,1],[1,0,1],[1,0,1],[0,1,0],[0,1,0]],
-        'W': [[1,0,1],[1,0,1],[1,0,1],[1,1,1],[1,0,1]],
-        'X': [[1,0,1],[1,0,1],[0,1,0],[1,0,1],[1,0,1]],
-        'Y': [[1,0,1],[1,0,1],[0,1,0],[0,1,0],[0,1,0]],
-        'Z': [[1,1,1],[0,0,1],[0,1,0],[1,0,0],[1,1,1]],
-        ' ': [[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]],
-        ':': [[0,0,0],[0,1,0],[0,0,0],[0,1,0],[0,0,0]],
-        '-': [[0,0,0],[0,0,0],[1,1,1],[0,0,0],[0,0,0]],
-        '+': [[0,0,0],[0,1,0],[1,1,1],[0,1,0],[0,0,0]],
-        # Direction arrows (chevron style)
-        '^': [[0,1,0],[1,0,1],[0,0,0],[0,0,0],[0,0,0]],  # Up arrow
-        'v': [[0,0,0],[0,0,0],[0,0,0],[1,0,1],[0,1,0]],  # Down arrow
-        ',': [[0,0,0],[0,0,0],[0,0,0],[0,1,0],[1,0,0]],  # Comma
     }
 
     def __init__(self, led_frame_player=None):
@@ -576,88 +528,12 @@ class NycSubway(Screensaver):
                     self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
                 cursor_x += 4
 
-    def __ease_scroll(self, progress, ease_zone=0.2):
-        """Apply gentle easing at scroll ends, linear in middle.
-
-        Creates smooth acceleration at start and deceleration at end,
-        with constant velocity through the middle section.
-        """
-        if progress <= 0:
-            return 0.0
-        if progress >= 1:
-            return 1.0
-
-        if progress < ease_zone:
-            # Quadratic ease in (slow start, accelerate)
-            t = progress / ease_zone
-            return 0.5 * ease_zone * t * t
-        elif progress > 1 - ease_zone:
-            # Quadratic ease out (decelerate, slow end)
-            t = (1 - progress) / ease_zone
-            return 1 - 0.5 * ease_zone * t * t
-        else:
-            # Linear middle - constant velocity
-            mid_progress = (progress - ease_zone) / (1 - 2 * ease_zone)
-            return 0.5 * ease_zone + mid_progress * (1 - ease_zone)
-
     def __draw_scrolling_text(self, frame, text, x, y, max_width, color):
         """Draw text that scrolls horizontally if too wide, with partial character clipping."""
-        text_width = len(text) * 4
-
-        if text_width <= max_width:
-            # Text fits, just draw it
-            self.__draw_text(frame, text, x, y, color)
-        else:
-            # Text needs to scroll with pause at start
-            # Add spacing for wrap-around
-            gap = 20  # pixels of gap between repeats
-            total_scroll = text_width + gap
-            pause_duration = 60  # ticks to pause at start position
-
-            # Calculate where we are in the scroll cycle
-            cycle_length = total_scroll + pause_duration
-            cycle_pos = int(self.__scroll_offset) % cycle_length
-
-            # Pause at the beginning
-            if cycle_pos < pause_duration:
-                scroll_pos = 0
-            else:
-                # Apply easing for smooth acceleration/deceleration
-                scroll_ticks = cycle_pos - pause_duration
-                progress = scroll_ticks / total_scroll  # 0 to 1
-                eased_progress = self.__ease_scroll(progress)
-                scroll_pos = int(eased_progress * total_scroll)
-
-            # Draw characters with clipping for partial visibility
-            cursor = x - scroll_pos
-            padded_text = text + "     " + text  # 5 space gap
-
-            for char in padded_text:
-                char_end = cursor + 3  # 3-pixel wide characters
-
-                # Check if any part of this character is visible
-                if char_end >= x and cursor < x + max_width:
-                    self.__draw_char_clipped(frame, char, cursor, y, color, x, x + max_width)
-
-                if cursor >= x + max_width:
-                    break
-                cursor += 4
-
-    def __draw_char_clipped(self, frame, char, x, y, color, clip_left, clip_right):
-        """Draw a single 3x5 character with horizontal clipping."""
-        char = char.upper()
-        if char not in self.FONT:
-            return
-
-        pattern = self.FONT[char]
-        for dy, row in enumerate(pattern):
-            for dx, pixel in enumerate(row):
-                if pixel:
-                    px, py = x + dx, y + dy
-                    # Apply clipping
-                    if px >= clip_left and px < clip_right:
-                        if 0 <= px < self.__width and 0 <= py < self.__height:
-                            frame[py, px] = color
+        textutils.draw_scrolling_text(
+            frame, text, x, y, max_width, color,
+            self.__scroll_offset, self.__width, self.__height
+        )
 
     def __draw_bullet(self, frame, x, y, line, color):
         """Draw a 7x7 colored circle with line letter, MTA style."""
@@ -686,28 +562,15 @@ class NycSubway(Screensaver):
         brightness = (color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114)
         text_color = (0, 0, 0) if brightness > 128 else (255, 255, 255)
         # Center the 3x5 char in the 7x7 circle: x+2, y+1
-        self.__draw_char(frame, char, x + 2, y + 1, text_color)
+        textutils.draw_char(frame, char, x + 2, y + 1, text_color, self.__width, self.__height)
 
     def __draw_char(self, frame, char, x, y, color):
         """Draw a single 3x5 character."""
-        char = char.upper()
-        if char not in self.FONT:
-            return
-
-        pattern = self.FONT[char]
-        for dy, row in enumerate(pattern):
-            for dx, pixel in enumerate(row):
-                if pixel:
-                    px, py = x + dx, y + dy
-                    if 0 <= px < self.__width and 0 <= py < self.__height:
-                        frame[py, px] = color
+        textutils.draw_char(frame, char, x, y, color, self.__width, self.__height)
 
     def __draw_text(self, frame, text, x, y, color):
         """Draw a text string."""
-        cursor = x
-        for char in text:
-            self.__draw_char(frame, char, cursor, y, color)
-            cursor += 4  # 3px char + 1px spacing
+        textutils.draw_text(frame, text, x, y, color, self.__width, self.__height)
 
     @classmethod
     def get_id(cls) -> str:
