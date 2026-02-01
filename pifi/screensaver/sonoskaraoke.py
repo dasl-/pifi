@@ -65,6 +65,8 @@ class SonosKaraoke(Screensaver):
         self.__scroll_offset = 0
         self.__current_line_index = -1
         self.__line_scroll_offset = 0  # Per-line scroll, resets on line change
+        self.__line_start_time = 0  # When current line started
+        self.__line_duration = 5.0  # How long until next line (seconds)
         self.__line_transition_progress = 1.0  # 0 = transitioning, 1 = stable
 
         # Sonos speaker reference
@@ -271,27 +273,26 @@ class SonosKaraoke(Screensaver):
 
             import syncedlyrics
 
-            # Try synced lyrics first
-            lrc = syncedlyrics.search(search_query, synced_only=True)
-            quality = 'synced'
-
-            # Fall back to plain if no synced available
-            if not lrc:
-                self.__logger.debug("No synced lyrics, trying plain...")
-                lrc = syncedlyrics.search(search_query, plain_only=True)
-                quality = 'plain'
+            # Try enhanced (word-by-word) first - it falls back to synced automatically
+            # We only want timed lyrics - plain lyrics aren't useful on tiny display
+            lrc = syncedlyrics.search(search_query, synced_only=True, enhanced=True)
 
             if lrc:
                 self.__logger.debug(f"Raw LRC response ({len(lrc)} chars): {lrc[:200]}...")
+
+                # Detect if it's actually enhanced (has <> word timestamps) or just synced
+                # Enhanced format: [00:12.00] <00:12.00> Word <00:12.50> Word2
+                is_enhanced = '<' in lrc and '>' in lrc
+                quality = 'enhanced' if is_enhanced else 'synced'
+
                 lyrics = self.__parse_lrc(lrc)
 
-                # Check if it's actually synced (has timestamps) or plain
-                if lyrics and quality == 'synced':
-                    # Verify timestamps are varied (not all 0)
+                # Verify timestamps are actually varied (not all 0)
+                if lyrics:
                     timestamps = [l[0] for l in lyrics[:5]]
                     if len(set(timestamps)) <= 1:
-                        quality = 'plain'
-                        self.__logger.debug("Lyrics have no real timestamps, treating as plain")
+                        self.__logger.debug("Lyrics have no real timestamps, discarding")
+                        lyrics = []
 
                 with self.__fetch_lock:
                     # Verify we're still on the same track
@@ -299,11 +300,13 @@ class SonosKaraoke(Screensaver):
                         self.__lyrics = lyrics
                         self.__lyrics_available = len(lyrics) > 0
                         self.__lyrics_quality = quality if lyrics else None
-                        self.__logger.info(f"Found {len(lyrics)} lyric lines (quality={quality})")
                         if lyrics:
+                            self.__logger.info(f"Found {len(lyrics)} lyric lines (quality={quality})")
                             self.__logger.debug(f"First line: [{lyrics[0][0]:.1f}s] {lyrics[0][1]}")
+                        else:
+                            self.__logger.info(f"No usable timed lyrics for: '{search_query}'")
             else:
-                self.__logger.info(f"No lyrics found for: '{search_query}'")
+                self.__logger.info(f"No synced lyrics found for: '{search_query}'")
                 with self.__fetch_lock:
                     self.__lyrics = []
                     self.__lyrics_available = False
@@ -437,18 +440,24 @@ class SonosKaraoke(Screensaver):
         """Render synced lyrics."""
         current_idx = self.__get_current_lyric_index()
 
-        # Detect line change - reset scroll for new line
+        # Detect line change - reset scroll and calculate duration
         if current_idx != self.__current_line_index:
             self.__current_line_index = current_idx
             self.__line_transition_progress = 0.0
-            self.__line_scroll_offset = 0  # Reset scroll for new line
+            self.__line_scroll_offset = 0
+            self.__line_start_time = time.time()
+
+            # Calculate how long until next line
+            if current_idx >= 0 and current_idx + 1 < len(self.__lyrics):
+                current_ts = self.__lyrics[current_idx][0]
+                next_ts = self.__lyrics[current_idx + 1][0]
+                self.__line_duration = max(1.0, next_ts - current_ts)
+            else:
+                self.__line_duration = 5.0  # Default
 
         # Animate transition
         if self.__line_transition_progress < 1.0:
             self.__line_transition_progress = min(1.0, self.__line_transition_progress + 0.1)
-
-        # Increment per-line scroll
-        self.__line_scroll_offset += 0.5
 
         # Get current and next lines
         current_line = ""
@@ -460,43 +469,75 @@ class SonosKaraoke(Screensaver):
         if current_idx + 1 < len(self.__lyrics):
             next_line = self.__lyrics[current_idx + 1][1].upper()
 
-        # Layout: current line in top half, next line in bottom half
-        # Current line at y=6, next line at y=18
+        # Calculate time-based scroll progress for current line
+        elapsed = time.time() - self.__line_start_time
+        line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
-        # Render current line (with scroll if too long)
+        # Render current line - use 2 lines if very long
         if current_line:
-            # Pulse effect on current line
             pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
             current_color = tuple(int(c * pulse) for c in self.COLORS['current_line'])
 
             line_width = len(current_line) * 4
+            chars_per_line = self.__width // 4
+
             if line_width <= self.__width:
-                # Center short lines
+                # Short line - center it
                 x = (self.__width - line_width) // 2
                 textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
+            elif len(current_line) <= chars_per_line * 2:
+                # Medium line - split into 2 lines (no scroll needed)
+                mid = len(current_line) // 2
+                # Find a space near the middle to split
+                split_pos = mid
+                for i in range(min(5, mid)):
+                    if mid - i >= 0 and current_line[mid - i] == ' ':
+                        split_pos = mid - i
+                        break
+                    if mid + i < len(current_line) and current_line[mid + i] == ' ':
+                        split_pos = mid + i
+                        break
+
+                line1 = current_line[:split_pos].strip()
+                line2 = current_line[split_pos:].strip()
+
+                # Center each line
+                x1 = (self.__width - len(line1) * 4) // 2
+                x2 = (self.__width - len(line2) * 4) // 2
+                textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
+                textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
-                # Scroll long lines - use per-line scroll offset
+                # Very long line - scroll with speed based on duration
+                # Calculate scroll offset based on progress through the line
+                total_scroll = line_width - self.__width + 20  # Extra padding
+                scroll_offset = line_progress * total_scroll * 2  # *2 to complete scroll before line ends
+
                 textutils.draw_scrolling_text(
                     frame, current_line, 0, 6, self.__width,
-                    current_color, self.__line_scroll_offset,
-                    self.__width, self.__height
+                    current_color, scroll_offset,
+                    self.__width, self.__height, pause_duration=10
                 )
 
-        # Render next line (dimmer)
+        # Render next line (dimmer) - single line, scroll if needed
         if next_line:
             next_color = self.COLORS['next_line']
-
             line_width = len(next_line) * 4
+
+            # Position depends on whether current used 2 lines
+            next_y = 18 if len(current_line) <= (self.__width // 4) * 2 else 20
+
             if line_width <= self.__width:
                 x = (self.__width - line_width) // 2
-                textutils.draw_text(frame, next_line, x, 18, next_color, self.__width, self.__height)
+                textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Next line scrolls slower
                 textutils.draw_scrolling_text(
-                    frame, next_line, 0, 18, self.__width,
-                    next_color, self.__line_scroll_offset * 0.7,
+                    frame, next_line, 0, next_y, self.__width,
+                    next_color, self.__line_scroll_offset,
                     self.__width, self.__height
                 )
+
+        # Increment scroll for next line (separate from current line's time-based scroll)
+        self.__line_scroll_offset += 0.5
 
         # Quality indicator pixel (top-right corner)
         self.__render_quality_indicator(frame)
@@ -507,9 +548,9 @@ class SonosKaraoke(Screensaver):
     def __render_quality_indicator(self, frame):
         """Render a small pixel in top-right showing lyrics quality.
 
-        Green = synced (good timing)
-        Yellow = plain (no timing, just showing text)
-        Off = no lyrics
+        Green = enhanced (word-by-word timing, best quality)
+        Yellow = synced (line-by-line timing, good quality)
+        Off = no timed lyrics available
         """
         if not self.__lyrics_quality:
             return
@@ -518,10 +559,10 @@ class SonosKaraoke(Screensaver):
         x = self.__width - 2
         y = 1
 
-        if self.__lyrics_quality == 'synced':
-            color = (0, 255, 0)  # Green
-        elif self.__lyrics_quality == 'plain':
-            color = (255, 200, 0)  # Yellow
+        if self.__lyrics_quality == 'enhanced':
+            color = (0, 255, 0)  # Green - best quality
+        elif self.__lyrics_quality == 'synced':
+            color = (255, 200, 0)  # Yellow - good quality
         else:
             return
 
