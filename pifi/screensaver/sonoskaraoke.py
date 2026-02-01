@@ -40,8 +40,6 @@ class SonosKaraoke(Screensaver):
     INTRO_COUNTDOWN_THRESHOLD = 10.0
     # Time after last lyric to switch to outro mode
     OUTRO_THRESHOLD = 16.0
-    # Maximum effective duration for scroll speed calculation (ensures minimum speed)
-    MAX_SCROLL_DURATION = 8.0
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
@@ -84,8 +82,6 @@ class SonosKaraoke(Screensaver):
         self.__line_duration = 5.0  # How long until next line (seconds)
         self.__line_transition_progress = 1.0  # 0 = transitioning, 1 = stable
         self.__max_intro_progress = 0  # Monotonic progress for intro (never goes backward)
-        self.__max_line_progress = 0  # Monotonic progress for current line (never goes backward)
-        self.__max_scroll_progress = 0  # Monotonic scroll progress (never goes backward)
 
         # Sonos speaker reference
         self.__speaker = None
@@ -491,8 +487,6 @@ class SonosKaraoke(Screensaver):
             self.__line_transition_progress = 0.0
             self.__line_scroll_offset = 0
             self.__line_start_time = time.time()
-            self.__max_line_progress = 0  # Reset monotonic progress for new line
-            self.__max_scroll_progress = 0  # Reset monotonic scroll progress for new line
 
             # Calculate how long until next line
             if current_idx >= 0 and current_idx + 1 < len(self.__lyrics):
@@ -554,9 +548,9 @@ class SonosKaraoke(Screensaver):
         elapsed = time.time() - self.__line_start_time
         line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
-        # Calculate scroll progress with minimum speed (cap effective duration)
-        scroll_duration = min(self.__line_duration, self.MAX_SCROLL_DURATION)
-        scroll_progress = min(1.0, elapsed / scroll_duration) if scroll_duration > 0 else 0
+        # Scroll duration with 1 second buffer so scroll finishes before transition
+        # (Minimum scroll speed is handled by draw_scrolling_text's complete_in_ticks logic)
+        scroll_duration = max(1.0, self.__line_duration - 1.0)
 
         # Check if we're in a long break - show progress dots AFTER current lyrics displayed
         if self.__line_duration >= self.BREAK_THRESHOLD and elapsed >= self.LYRICS_DISPLAY_TIME:
@@ -615,7 +609,8 @@ class SonosKaraoke(Screensaver):
                     frame, current_line, 0, 6, self.__width,
                     current_color, elapsed_ticks,
                     self.__width, self.__height,
-                    complete_in_ticks=scroll_ticks
+                    complete_in_ticks=scroll_ticks,
+                    loop=False
                 )
 
         # Render next line (dimmer) - must complete scroll before it becomes current

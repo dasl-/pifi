@@ -169,7 +169,7 @@ def draw_char_clipped(frame, char, x, y, color, clip_left, clip_right, width, he
 
 def draw_scrolling_text(frame, text, x, y, max_width, color, scroll_offset,
                         width, height, font=None, gap=20, pause_duration=60,
-                        complete_in_ticks=None):
+                        complete_in_ticks=None, loop=True):
     """Draw text that scrolls horizontally if too wide.
 
     Args:
@@ -183,36 +183,69 @@ def draw_scrolling_text(frame, text, x, y, max_width, color, scroll_offset,
         font: Font dictionary to use (default: FONT_3X5)
         gap: Pixel gap between text repeats when scrolling
         pause_duration: Ticks to pause at start position
-        complete_in_ticks: If provided, complete exactly one scroll (no loop) in this many ticks.
-                          scroll_offset is treated as current tick count (0 to complete_in_ticks).
+        complete_in_ticks: If provided, ensures scroll completes by this tick count.
+                          scroll_offset is treated as current tick count.
+                          - If deadline requires faster than default: scrolls faster
+                          - If deadline allows default speed: uses default, aligned to finish on time
                           Easing is applied. Useful for timed scroll that must finish by a deadline.
+        loop: If True (default), loops continuously when time allows.
+              If False with complete_in_ticks, scrolls once and holds at end.
     """
     text_width = len(text) * 4
 
     if text_width <= max_width:
         draw_text(frame, text, x, y, color, width, height, font)
     else:
-        total_scroll = text_width - max_width  # Distance to scroll (not including gap for timed mode)
+        total_scroll = text_width - max_width  # Distance to scroll
 
         if complete_in_ticks is not None and complete_in_ticks > 0:
-            # Timed scroll mode: complete one scroll in exactly complete_in_ticks ticks
-            # scroll_offset is the current tick count
-            progress = min(1.0, scroll_offset / complete_in_ticks)
-            eased_progress = ease_in_out(progress)
-            scroll_pos = int(eased_progress * total_scroll)
+            # Calculate default speed: ~1 pixel per 2 ticks (smooth default)
+            default_ticks_per_scroll = total_scroll * 2 + pause_duration
+
+            if complete_in_ticks < default_ticks_per_scroll:
+                # Deadline requires faster than default - use timed mode (no pause)
+                progress = min(1.0, scroll_offset / complete_in_ticks)
+                eased_progress = ease_in_out(progress)
+                scroll_pos = int(eased_progress * total_scroll)
+            elif not loop:
+                # No looping - scroll once at default speed, hold at end
+                scroll_ticks = default_ticks_per_scroll - pause_duration
+                if scroll_offset < pause_duration:
+                    scroll_pos = 0
+                else:
+                    progress = min(1.0, (scroll_offset - pause_duration) / scroll_ticks)
+                    eased_progress = ease_in_out(progress)
+                    scroll_pos = int(eased_progress * total_scroll)
+            else:
+                # Looping mode - scroll text fully off screen for smooth loop
+                loop_scroll = text_width + gap
+                loop_ticks = loop_scroll * 2 + pause_duration  # Default speed for full loop
+
+                # Calculate cycles aligned to finish on deadline
+                num_cycles = max(1, int(complete_in_ticks / loop_ticks))
+                adjusted_cycle = complete_in_ticks / num_cycles
+
+                cycle_pos = scroll_offset % adjusted_cycle
+
+                if cycle_pos < pause_duration:
+                    scroll_pos = 0
+                else:
+                    scroll_progress = (cycle_pos - pause_duration) / (adjusted_cycle - pause_duration)
+                    eased_progress = ease_in_out(min(1.0, scroll_progress))
+                    scroll_pos = int(eased_progress * loop_scroll)
         else:
             # Normal looping scroll mode
-            total_scroll = text_width + gap  # Include gap for looping
-            cycle_length = total_scroll + pause_duration
+            loop_scroll = text_width + gap  # Include gap for looping
+            cycle_length = loop_scroll + pause_duration
             cycle_pos = int(scroll_offset) % cycle_length
 
             if cycle_pos < pause_duration:
                 scroll_pos = 0
             else:
                 scroll_ticks = cycle_pos - pause_duration
-                progress = scroll_ticks / total_scroll
+                progress = scroll_ticks / loop_scroll
                 eased_progress = ease_in_out(progress)
-                scroll_pos = int(eased_progress * total_scroll)
+                scroll_pos = int(eased_progress * loop_scroll)
 
         cursor = x - scroll_pos
         padded_text = text + "     " + text  # 5 space gap for looping
