@@ -89,6 +89,7 @@ class SonosKaraoke(Screensaver):
         self.__word_start_times = {}  # Maps word_idx to wall-clock time for smooth fades
         self.__preview_line = None  # Track current preview line for scroll reset
         self.__preview_scroll_start = 0  # Tick count when preview line changed
+        self.__preview_wall_start = 0  # Wall-clock time when preview line changed
 
         # Sonos speaker reference
         self.__speaker = None
@@ -697,10 +698,6 @@ class SonosKaraoke(Screensaver):
         elapsed = time.time() - self.__line_start_time
         line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
-        # Scroll duration with 1 second buffer so scroll finishes before transition
-        # (Minimum scroll speed is handled by draw_scrolling_text's complete_in_ticks logic)
-        scroll_duration = max(1.0, self.__line_duration - 1.0)
-
         # Check if we're in a long break - show progress dots AFTER current lyrics displayed
         if self.__line_duration >= self.BREAK_THRESHOLD and elapsed >= self.LYRICS_DISPLAY_TIME:
             # Calculate progress through the break portion only (after lyrics display time)
@@ -857,6 +854,7 @@ class SonosKaraoke(Screensaver):
             if next_line != self.__preview_line:
                 self.__preview_line = next_line
                 self.__preview_scroll_start = self.__tick_count
+                self.__preview_wall_start = time.time()
 
             next_color = self.COLORS['next_line']
             next_line_width = len(next_line) * 4
@@ -869,13 +867,30 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Scroll using offset from when this preview line started
+                # Preview scroll timing is tricky - we need to guarantee:
+                # 1. The scroll completes AT LEAST one full cycle before promotion
+                # 2. If there's extra time (slow lyrics, countdown mode), loop as
+                #    many times as possible at the standard scroll speed
+                # 3. Always finish cleanly at the end position (not mid-scroll)
+                # 4. Leave 0.3s dwell time so final word is visible before promotion
+                #
+                # draw_scrolling_text handles this with complete_in_ticks + loop=True:
+                # - Calculates how many full loops fit evenly in the available time
+                # - Adjusts cycle timing so the last loop ends exactly at deadline
+                # - If not enough time for default speed, scrolls faster (1 cycle)
+                line_end_time = self.__line_start_time + self.__line_duration
+                dwell_buffer = 0.3  # Extra time for final word to be visible
+                time_for_scroll = max(0.5, line_end_time - self.__preview_wall_start - dwell_buffer)
+                complete_in_ticks = int(time_for_scroll / self.__tick_sleep)
+
                 preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, next_y, self.__width,
                     next_color, preview_scroll_offset,
                     self.__width, self.__height,
-                    pause_duration=30
+                    pause_duration=30,
+                    complete_in_ticks=complete_in_ticks,
+                    loop=True
                 )
 
         # Progress bar at bottom
@@ -933,6 +948,7 @@ class SonosKaraoke(Screensaver):
             if next_line != self.__preview_line:
                 self.__preview_line = next_line
                 self.__preview_scroll_start = self.__tick_count
+                self.__preview_wall_start = time.time()
 
             next_color = self.COLORS['next_line']
             next_line_width = len(next_line) * 4
@@ -941,13 +957,22 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, 20, next_color, self.__width, self.__height)
             else:
-                # Scroll using offset from when this preview line started
+                # Same scroll timing logic as main preview (see comment above)
+                # Guarantees complete cycles, loops if time allows, finishes clean
+                # with 0.3s dwell buffer for final word visibility
+                line_end_time = self.__line_start_time + self.__line_duration
+                dwell_buffer = 0.3
+                time_for_scroll = max(0.5, line_end_time - self.__preview_wall_start - dwell_buffer)
+                complete_in_ticks = int(time_for_scroll / self.__tick_sleep)
+
                 preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, 20, self.__width,
                     next_color, preview_scroll_offset,
                     self.__width, self.__height,
-                    pause_duration=30  # Brief pause between loops
+                    pause_duration=30,
+                    complete_in_ticks=complete_in_ticks,
+                    loop=True
                 )
 
     def __render_outro(self, frame):
