@@ -405,67 +405,51 @@ class SonosKaraoke(Screensaver):
 
         For enhanced lyrics, word_timings is a list of (timestamp, word) tuples.
         For synced lyrics, word_timings is None.
+
+        Handles both enhanced LRC formats:
+        - Start-only: <00:12.34>Word <00:12.89>next
+        - Start+end pairs: <00:12.34> Word <00:12.50> <00:12.89> next <00:13.00>
         """
         lyrics = []
 
         # LRC format: [mm:ss.xx] lyrics text
-        # or [mm:ss] lyrics text
         line_pattern = r'\[(\d+):(\d+)(?:\.(\d+))?\](.*)'
 
-        # Enhanced format word timestamps: <mm:ss.xx> word
-        word_pattern = r'<(\d+):(\d+)\.(\d+)>\s*'
+        # Enhanced format: captures timestamp and following content
+        # Matches <mm:ss.xx> followed by any content until next < or end
+        enhanced_pattern = r'<(\d+):(\d+)\.(\d+)>([^<]*)'
 
         for line in lrc_text.split('\n'):
             match = re.match(line_pattern, line)
             if match:
                 minutes = int(match.group(1))
                 seconds = int(match.group(2))
-                # Centiseconds (optional)
                 centiseconds = int(match.group(3)) if match.group(3) else 0
                 text = match.group(4).strip()
 
-                if text:  # Skip empty lines
+                if text:
                     timestamp = minutes * 60 + seconds + centiseconds / 100.0
 
-                    # Check for enhanced format (word timestamps)
                     if '<' in text and '>' in text:
-                        # Parse word timestamps and extract clean text
-                        word_timings = []
-                        clean_parts = []
-                        last_end = 0
+                        # Parse all timestamp+content pairs
+                        raw_pairs = []
+                        for m in re.finditer(enhanced_pattern, text):
+                            w_min = int(m.group(1))
+                            w_sec = int(m.group(2))
+                            w_cs = int(m.group(3))
+                            w_ts = w_min * 60 + w_sec + w_cs / 100.0
+                            content = m.group(4).strip()
+                            raw_pairs.append((w_ts, content))
 
-                        for word_match in re.finditer(word_pattern, text):
-                            # Add any text before this timestamp marker
-                            before_text = text[last_end:word_match.start()].strip()
-                            if before_text and word_timings:
-                                # This text belongs to the previous timestamp
-                                word_timings[-1] = (word_timings[-1][0], before_text)
-                                clean_parts.append(before_text)
-
-                            w_min = int(word_match.group(1))
-                            w_sec = int(word_match.group(2))
-                            w_cs = int(word_match.group(3))
-                            w_timestamp = w_min * 60 + w_sec + w_cs / 100.0
-
-                            # Add placeholder - actual word comes after
-                            word_timings.append((w_timestamp, ""))
-                            last_end = word_match.end()
-
-                        # Handle remaining text after last timestamp
-                        remaining = text[last_end:].strip()
-                        if remaining and word_timings:
-                            word_timings[-1] = (word_timings[-1][0], remaining)
-                            clean_parts.append(remaining)
-
-                        # Filter out empty words, uppercase, and join clean text
-                        # Store uppercase at parse time to avoid per-frame conversion
-                        word_timings = [(ts, w.upper()) for ts, w in word_timings if w]
-                        clean_text = ' '.join(clean_parts).upper()
+                        # Filter to only pairs with actual words (not just whitespace/empty)
+                        # This handles both formats:
+                        # - Start-only: each timestamp has a word
+                        # - Start+end: word timestamps alternate with empty end timestamps
+                        word_timings = [(ts, word.upper()) for ts, word in raw_pairs if word]
+                        clean_text = ' '.join(word for _, word in word_timings)
 
                         lyrics.append((timestamp, clean_text, word_timings))
                     else:
-                        # Regular synced lyrics - no word timings
-                        # Store uppercase at parse time
                         lyrics.append((timestamp, text.upper(), None))
 
         # Sort by timestamp

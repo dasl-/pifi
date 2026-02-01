@@ -138,14 +138,17 @@ def draw_text(frame, text, x, y, color, width, height, font=None):
         cursor += 4  # 3px char + 1px spacing
 
 
-def get_word_color(word_idx, word_timings, current_position, colors):
+def get_word_color(word_idx, word_timings, current_position, colors, fade_duration=0.8):
     """Determine color for a word based on current playback position.
+
+    Words glow bright when they "hit" and fade out smoothly over time.
 
     Args:
         word_idx: Index of the word in word_timings
         word_timings: List of (timestamp, word) tuples
         current_position: Current song position in seconds
         colors: Dict with 'sung', 'current', 'upcoming' RGB tuples
+        fade_duration: How long (seconds) for a word to fade from current to sung
 
     Returns:
         RGB tuple for this word
@@ -155,18 +158,30 @@ def get_word_color(word_idx, word_timings, current_position, colors):
 
     word_start = word_timings[word_idx][0]
 
-    # Get next word start time (or a large value if last word)
-    if word_idx + 1 < len(word_timings):
-        next_start = word_timings[word_idx + 1][0]
-    else:
-        next_start = word_start + 2.0  # Assume 2 seconds for last word
-
     if current_position < word_start:
+        # Word hasn't started yet
         return colors['upcoming']
-    elif current_position < next_start:
-        return colors['current']
     else:
-        return colors['sung']
+        # Word has started - calculate fade
+        time_since_start = current_position - word_start
+
+        if time_since_start >= fade_duration:
+            # Fully faded to sung
+            return colors['sung']
+        else:
+            # Interpolate between current and sung colors
+            fade_progress = time_since_start / fade_duration
+            # Use ease-out for natural fade (fast start, slow end)
+            fade_progress = 1 - (1 - fade_progress) ** 2
+
+            current_color = colors['current']
+            sung_color = colors['sung']
+
+            r = int(current_color[0] + (sung_color[0] - current_color[0]) * fade_progress)
+            g = int(current_color[1] + (sung_color[1] - current_color[1]) * fade_progress)
+            b = int(current_color[2] + (sung_color[2] - current_color[2]) * fade_progress)
+
+            return (r, g, b)
 
 
 def get_current_word_index(word_timings, current_position):
