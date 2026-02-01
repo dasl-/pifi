@@ -339,15 +339,22 @@ class SonosKaraoke(Screensaver):
             self.__fetch_in_progress = False
 
     def __parse_lrc(self, lrc_text):
-        """Parse LRC format lyrics into list of (timestamp_seconds, line)."""
+        """Parse LRC format lyrics into list of (timestamp_seconds, line, word_timings).
+
+        For enhanced lyrics, word_timings is a list of (timestamp, word) tuples.
+        For synced lyrics, word_timings is None.
+        """
         lyrics = []
 
         # LRC format: [mm:ss.xx] lyrics text
         # or [mm:ss] lyrics text
-        pattern = r'\[(\d+):(\d+)(?:\.(\d+))?\](.*)'
+        line_pattern = r'\[(\d+):(\d+)(?:\.(\d+))?\](.*)'
+
+        # Enhanced format word timestamps: <mm:ss.xx> word
+        word_pattern = r'<(\d+):(\d+)\.(\d+)>\s*'
 
         for line in lrc_text.split('\n'):
-            match = re.match(pattern, line)
+            match = re.match(line_pattern, line)
             if match:
                 minutes = int(match.group(1))
                 seconds = int(match.group(2))
@@ -357,7 +364,45 @@ class SonosKaraoke(Screensaver):
 
                 if text:  # Skip empty lines
                     timestamp = minutes * 60 + seconds + centiseconds / 100.0
-                    lyrics.append((timestamp, text))
+
+                    # Check for enhanced format (word timestamps)
+                    if '<' in text and '>' in text:
+                        # Parse word timestamps and extract clean text
+                        word_timings = []
+                        clean_parts = []
+                        last_end = 0
+
+                        for word_match in re.finditer(word_pattern, text):
+                            # Add any text before this timestamp marker
+                            before_text = text[last_end:word_match.start()].strip()
+                            if before_text and word_timings:
+                                # This text belongs to the previous timestamp
+                                word_timings[-1] = (word_timings[-1][0], before_text)
+                                clean_parts.append(before_text)
+
+                            w_min = int(word_match.group(1))
+                            w_sec = int(word_match.group(2))
+                            w_cs = int(word_match.group(3))
+                            w_timestamp = w_min * 60 + w_sec + w_cs / 100.0
+
+                            # Add placeholder - actual word comes after
+                            word_timings.append((w_timestamp, ""))
+                            last_end = word_match.end()
+
+                        # Handle remaining text after last timestamp
+                        remaining = text[last_end:].strip()
+                        if remaining and word_timings:
+                            word_timings[-1] = (word_timings[-1][0], remaining)
+                            clean_parts.append(remaining)
+
+                        # Filter out empty words and join clean text
+                        word_timings = [(ts, w) for ts, w in word_timings if w]
+                        clean_text = ' '.join(clean_parts)
+
+                        lyrics.append((timestamp, clean_text, word_timings))
+                    else:
+                        # Regular synced lyrics - no word timings
+                        lyrics.append((timestamp, text, None))
 
         # Sort by timestamp
         lyrics.sort(key=lambda x: x[0])
