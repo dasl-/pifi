@@ -520,7 +520,14 @@ class SonosKaraoke(Screensaver):
                 return
 
         # Calculate time-based scroll progress for current line
-        elapsed = time.time() - self.__line_start_time
+        # Use actual song position relative to lyric timestamp for accuracy
+        if current_idx >= 0 and current_idx < len(self.__lyrics):
+            current_lyric_time = self.__lyrics[current_idx][0]
+            position = self.__get_interpolated_position()
+            elapsed = max(0, position - current_lyric_time)
+        else:
+            elapsed = time.time() - self.__line_start_time
+
         line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
         # Check if we're in a long break - show progress dots AFTER current lyrics displayed
@@ -530,7 +537,10 @@ class SonosKaraoke(Screensaver):
             break_elapsed = elapsed - self.LYRICS_DISPLAY_TIME
             break_progress = min(1.0, break_elapsed / break_duration) if break_duration > 0 else 0
 
-            self.__render_break_indicator(frame, break_progress, next_line)
+            # For next line scroll, use full elapsed time to continue smoothly from lyrics display
+            full_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
+
+            self.__render_break_indicator(frame, break_progress, next_line, full_progress)
             self.__render_quality_indicator(frame)
             self.__render_progress_bar(frame)
             return
@@ -609,12 +619,19 @@ class SonosKaraoke(Screensaver):
         # Progress bar at bottom
         self.__render_progress_bar(frame)
 
-    def __render_break_indicator(self, frame, progress, next_line):
+    def __render_break_indicator(self, frame, progress, next_line, scroll_progress=None):
         """Render progress dots during instrumental break.
 
         Shows a row of dots that fill in as the break progresses,
         with the next lyric line visible below.
+
+        Args:
+            progress: Progress through the break (0-1) for dot filling
+            next_line: The upcoming lyric line to display
+            scroll_progress: Progress for scrolling next line (0-1), defaults to progress
         """
+        if scroll_progress is None:
+            scroll_progress = progress
         # Number of dots based on display width (roughly 5-8 dots)
         num_dots = min(8, max(5, self.__width // 10))
 
@@ -655,9 +672,9 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, 18, next_color, self.__width, self.__height)
             else:
-                # Scroll the preview - use progress to complete scroll during break
+                # Scroll the preview - use scroll_progress to continue smoothly
                 total_scroll = next_line_width - self.__width + 20
-                scroll_offset = progress * total_scroll * 2
+                scroll_offset = scroll_progress * total_scroll * 2
 
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, 18, self.__width,
