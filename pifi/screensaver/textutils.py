@@ -169,6 +169,54 @@ def get_word_color(word_idx, word_timings, current_position, colors):
         return colors['sung']
 
 
+def get_current_word_index(word_timings, current_position):
+    """Find the index of the current word based on playback position.
+
+    Returns:
+        Tuple of (word_index, progress_within_word) where progress is 0-1
+    """
+    if not word_timings:
+        return 0, 0.0
+
+    current_idx = 0
+    for i, (timestamp, _) in enumerate(word_timings):
+        if current_position >= timestamp:
+            current_idx = i
+        else:
+            break
+
+    # Calculate progress within current word
+    word_start = word_timings[current_idx][0]
+    if current_idx + 1 < len(word_timings):
+        word_end = word_timings[current_idx + 1][0]
+    else:
+        word_end = word_start + 2.0
+
+    if word_end > word_start:
+        progress = (current_position - word_start) / (word_end - word_start)
+        progress = max(0.0, min(1.0, progress))
+    else:
+        progress = 0.0
+
+    return current_idx, progress
+
+
+def get_word_pixel_positions(word_timings):
+    """Calculate the pixel x-position of each word's center.
+
+    Returns:
+        List of (center_x, width) for each word
+    """
+    positions = []
+    cursor = 0
+    for _, word in word_timings:
+        word_width = len(word) * 4
+        center = cursor + word_width // 2
+        positions.append((center, word_width))
+        cursor += word_width + 4  # word + space
+    return positions
+
+
 def draw_text_with_word_colors(frame, word_timings, x, y, current_position,
                                 colors, width, height, font=None):
     """Draw text with per-word colors based on playback position.
@@ -321,7 +369,7 @@ def draw_scrolling_text(frame, text, x, y, max_width, color, scroll_offset,
 def draw_scrolling_text_with_words(frame, word_timings, x, y, max_width,
                                    current_position, colors, scroll_offset,
                                    width, height, font=None, gap=20, pause_duration=60,
-                                   complete_in_ticks=None, loop=True):
+                                   complete_in_ticks=None, loop=True, word_sync=False):
     """Draw scrolling text with per-word colors based on playback position.
 
     Similar to draw_scrolling_text but colors each word based on whether
@@ -341,6 +389,7 @@ def draw_scrolling_text_with_words(frame, word_timings, x, y, max_width,
         pause_duration: Ticks to pause at start position
         complete_in_ticks: If provided, ensures scroll completes by this tick count
         loop: If True, loops continuously; if False, scrolls once and holds
+        word_sync: If True, scroll follows current word position (keeps it centered)
     """
     # Build full text and character-to-word mapping
     chars_with_colors = []
@@ -363,7 +412,32 @@ def draw_scrolling_text_with_words(frame, word_timings, x, y, max_width,
     else:
         total_scroll = text_width - max_width
 
-        if complete_in_ticks is not None and complete_in_ticks > 0:
+        if word_sync:
+            # Word-driven scrolling: scroll to keep current word visible
+            word_positions = get_word_pixel_positions(word_timings)
+            current_word_idx, word_progress = get_current_word_index(word_timings, current_position)
+
+            # Target position: 1/3 from left for comfortable reading
+            target_x = max_width // 3
+
+            # Get current word center, interpolate toward next word
+            if current_word_idx < len(word_positions):
+                current_center = word_positions[current_word_idx][0]
+                if current_word_idx + 1 < len(word_positions):
+                    next_center = word_positions[current_word_idx + 1][0]
+                    # Smooth interpolation between words
+                    center = current_center + (next_center - current_center) * word_progress
+                else:
+                    center = current_center
+            else:
+                center = 0
+
+            # Scroll so the current word center is at target_x
+            scroll_pos = int(center - target_x)
+            # Clamp to valid range
+            scroll_pos = max(0, min(total_scroll, scroll_pos))
+
+        elif complete_in_ticks is not None and complete_in_ticks > 0:
             default_ticks_per_scroll = total_scroll * 2 + pause_duration
 
             if complete_in_ticks < default_ticks_per_scroll:

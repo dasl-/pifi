@@ -32,7 +32,7 @@ class SonosKaraoke(Screensaver):
         'break_dot_filled': (150, 100, 255),   # Purple - filled progress dot
         # Word-by-word highlighting for enhanced lyrics
         'word_sung': (120, 120, 120),          # Dimmer - already sung
-        'word_current': (255, 255, 255),       # Bright white - current word
+        'word_current': (255, 180, 50),        # Orange - current word (hit!)
         'word_upcoming': (180, 180, 180),      # Medium - not yet sung
     }
 
@@ -718,7 +718,8 @@ class SonosKaraoke(Screensaver):
                         current_position, word_colors, elapsed_ticks,
                         self.__width, self.__height,
                         complete_in_ticks=scroll_ticks,
-                        loop=False
+                        loop=False,
+                        word_sync=True  # Scroll follows current word
                     )
                 else:
                     textutils.draw_scrolling_text(
