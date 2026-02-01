@@ -40,6 +40,8 @@ class SonosKaraoke(Screensaver):
     INTRO_COUNTDOWN_THRESHOLD = 10.0
     # Time after last lyric to switch to outro mode
     OUTRO_THRESHOLD = 16.0
+    # Maximum effective duration for scroll speed calculation (ensures minimum speed)
+    MAX_SCROLL_DURATION = 8.0
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
@@ -63,6 +65,7 @@ class SonosKaraoke(Screensaver):
         self.__current_artist = None
         self.__lyrics = []  # List of (timestamp_seconds, line_text)
         self.__position_seconds = 0
+        self.__max_position = 0  # Monotonic position (never goes backward)
         self.__song_duration = 0  # Actual song duration from Sonos
         self.__last_poll_time = 0  # For position interpolation
         self.__is_playing = False
@@ -80,6 +83,9 @@ class SonosKaraoke(Screensaver):
         self.__line_start_time = 0  # When current line started
         self.__line_duration = 5.0  # How long until next line (seconds)
         self.__line_transition_progress = 1.0  # 0 = transitioning, 1 = stable
+        self.__max_intro_progress = 0  # Monotonic progress for intro (never goes backward)
+        self.__max_line_progress = 0  # Monotonic progress for current line (never goes backward)
+        self.__max_scroll_progress = 0  # Monotonic scroll progress (never goes backward)
 
         # Sonos speaker reference
         self.__speaker = None
@@ -241,6 +247,7 @@ class SonosKaraoke(Screensaver):
                 self.__lyrics = []
                 self.__lyrics_available = False
                 self.__current_line_index = -1
+                self.__max_position = 0  # Reset monotonic position for new track
 
                 if title and artist:
                     self.__start_lyrics_fetch(title, artist)
@@ -361,13 +368,27 @@ class SonosKaraoke(Screensaver):
         return lyrics
 
     def __get_interpolated_position(self):
-        """Get current position with interpolation between polls."""
+        """Get current position with interpolation between polls.
+
+        Returns a monotonically increasing position to prevent backward jumps
+        from polling jitter.
+        """
         if not self.__is_playing or self.__last_poll_time == 0:
             return self.__position_seconds
 
         # Interpolate based on time since last poll
         elapsed = time.time() - self.__last_poll_time
-        return self.__position_seconds + elapsed
+        raw_position = self.__position_seconds + elapsed
+
+        # Make position monotonic - never go backward (except for seeks)
+        # Allow backward jumps of more than 2 seconds (indicates a seek)
+        if raw_position < self.__max_position - 2.0:
+            # This is a seek backward, reset max
+            self.__max_position = raw_position
+        else:
+            self.__max_position = max(self.__max_position, raw_position)
+
+        return self.__max_position
 
     def __get_current_lyric_index(self):
         """Find the current lyric line based on playback position."""
@@ -470,6 +491,8 @@ class SonosKaraoke(Screensaver):
             self.__line_transition_progress = 0.0
             self.__line_scroll_offset = 0
             self.__line_start_time = time.time()
+            self.__max_line_progress = 0  # Reset monotonic progress for new line
+            self.__max_scroll_progress = 0  # Reset monotonic scroll progress for new line
 
             # Calculate how long until next line
             if current_idx >= 0 and current_idx + 1 < len(self.__lyrics):
@@ -500,12 +523,19 @@ class SonosKaraoke(Screensaver):
 
             if first_lyric_time >= self.INTRO_COUNTDOWN_THRESHOLD:
                 # Show countdown to first lyrics
-                intro_progress = min(1.0, position / first_lyric_time) if first_lyric_time > 0 else 0
+                # Use monotonic progress to prevent backward scroll from position fluctuations
+                raw_progress = min(1.0, position / first_lyric_time) if first_lyric_time > 0 else 0
+                self.__max_intro_progress = max(self.__max_intro_progress, raw_progress)
+                intro_progress = self.__max_intro_progress
+
                 first_line = self.__lyrics[0][1].upper()
                 self.__render_break_indicator(frame, intro_progress, first_line)
                 self.__render_quality_indicator(frame)
                 self.__render_progress_bar(frame)
                 return
+        else:
+            # Reset intro progress when not in intro
+            self.__max_intro_progress = 0
 
         # Check for outro - past the last lyric by threshold
         if current_idx >= 0 and self.__lyrics and current_idx == len(self.__lyrics) - 1:
@@ -519,16 +549,14 @@ class SonosKaraoke(Screensaver):
                 self.__render_progress_bar(frame)
                 return
 
-        # Calculate time-based scroll progress for current line
-        # Use actual song position relative to lyric timestamp for accuracy
-        if current_idx >= 0 and current_idx < len(self.__lyrics):
-            current_lyric_time = self.__lyrics[current_idx][0]
-            position = self.__get_interpolated_position()
-            elapsed = max(0, position - current_lyric_time)
-        else:
-            elapsed = time.time() - self.__line_start_time
-
+        # Use simple wall-clock time for smooth scroll animation
+        # (Song position is only used for lyric line selection, not scroll)
+        elapsed = time.time() - self.__line_start_time
         line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
+
+        # Calculate scroll progress with minimum speed (cap effective duration)
+        scroll_duration = min(self.__line_duration, self.MAX_SCROLL_DURATION)
+        scroll_progress = min(1.0, elapsed / scroll_duration) if scroll_duration > 0 else 0
 
         # Check if we're in a long break - show progress dots AFTER current lyrics displayed
         if self.__line_duration >= self.BREAK_THRESHOLD and elapsed >= self.LYRICS_DISPLAY_TIME:
@@ -579,16 +607,13 @@ class SonosKaraoke(Screensaver):
                 textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
                 textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
-                # Very long line - scroll with speed based on duration
-                # Calculate scroll offset based on progress through the line
-                total_scroll = line_width - self.__width + 20  # Extra padding
-                scroll_offset = line_progress * total_scroll * 2  # *2 to complete scroll before line ends
+                # Very long line - eased scroll based on progress
+                total_scroll = line_width - self.__width
+                eased_progress = textutils.ease_in_out(scroll_progress)
+                scroll_x = -int(eased_progress * total_scroll)
 
-                textutils.draw_scrolling_text(
-                    frame, current_line, 0, 6, self.__width,
-                    current_color, scroll_offset,
-                    self.__width, self.__height, pause_duration=10
-                )
+                # Draw text at scrolled position with clipping
+                textutils.draw_text(frame, current_line, scroll_x, 6, current_color, self.__width, self.__height)
 
         # Render next line (dimmer) - must complete scroll before it becomes current
         if next_line:
@@ -602,16 +627,12 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Time-based scroll: complete full scroll during current line's duration
-                # so user has seen all of next line before it becomes current
-                total_scroll = next_line_width - self.__width + 20
-                next_scroll_offset = line_progress * total_scroll * 2
+                # Eased scroll based on progress
+                total_scroll = next_line_width - self.__width
+                eased_progress = textutils.ease_in_out(scroll_progress)
+                scroll_x = -int(eased_progress * total_scroll)
 
-                textutils.draw_scrolling_text(
-                    frame, next_line, 0, next_y, self.__width,
-                    next_color, next_scroll_offset,
-                    self.__width, self.__height, pause_duration=5
-                )
+                textutils.draw_text(frame, next_line, scroll_x, next_y, next_color, self.__width, self.__height)
 
         # Quality indicator pixel (top-right corner)
         self.__render_quality_indicator(frame)
@@ -673,25 +694,24 @@ class SonosKaraoke(Screensaver):
                 textutils.draw_text(frame, next_line, x, 18, next_color, self.__width, self.__height)
             else:
                 # Scroll the preview - use scroll_progress to continue smoothly
-                total_scroll = next_line_width - self.__width + 20
-                scroll_offset = scroll_progress * total_scroll * 2
+                total_scroll = next_line_width - self.__width
+                eased_progress = textutils.ease_in_out(scroll_progress)
+                scroll_x = -int(eased_progress * total_scroll)
 
-                textutils.draw_scrolling_text(
-                    frame, next_line, 0, 18, self.__width,
-                    next_color, scroll_offset,
-                    self.__width, self.__height, pause_duration=5
-                )
+                textutils.draw_text(frame, next_line, scroll_x, 18, next_color, self.__width, self.__height)
 
     def __render_outro(self, frame):
         """Render a subtle pulsing dot during the outro (after last lyric)."""
         # Single pulsing dot in center
         pulse = 0.4 + 0.6 * np.sin(self.__tick_count * 0.08)
-        color = tuple(int(c * pulse) for c in self.COLORS['break_dot_filled'])
+        base_color = self.COLORS['break_dot_filled']
+        # Clamp color values to valid uint8 range
+        color = tuple(max(0, min(255, int(c * pulse))) for c in base_color)
 
         cx = self.__width // 2
         cy = self.__height // 2
 
-        # Draw a 3x3 dot
+        # Draw a 3x3 dot with bounds checking
         for dy in range(-1, 2):
             for dx in range(-1, 2):
                 px, py = cx + dx, cy + dy
