@@ -138,10 +138,10 @@ def draw_text(frame, text, x, y, color, width, height, font=None):
         cursor += 4  # 3px char + 1px spacing
 
 
-def get_word_color(word_idx, word_timings, current_position, colors, fade_duration=0.8):
+def get_word_color(word_idx, word_timings, current_position, colors, fade_duration=2.0):
     """Determine color for a word based on current playback position.
 
-    Words glow bright when they "hit" and fade out smoothly over time.
+    Words start bright and fade smoothly to sung color.
 
     Args:
         word_idx: Index of the word in word_timings
@@ -169,19 +169,19 @@ def get_word_color(word_idx, word_timings, current_position, colors, fade_durati
             # Fully faded to sung
             return colors['sung']
         else:
-            # Interpolate between current and sung colors
-            fade_progress = time_since_start / fade_duration
-            # Use ease-out for natural fade (fast start, slow end)
-            fade_progress = 1 - (1 - fade_progress) ** 2
-
+            # Smooth fade from current to sung
             current_color = colors['current']
             sung_color = colors['sung']
 
-            r = int(current_color[0] + (sung_color[0] - current_color[0]) * fade_progress)
-            g = int(current_color[1] + (sung_color[1] - current_color[1]) * fade_progress)
-            b = int(current_color[2] + (sung_color[2] - current_color[2]) * fade_progress)
+            # Linear progress for smooth fade
+            fade_progress = time_since_start / fade_duration
 
-            return (r, g, b)
+            # Interpolate each channel
+            r = current_color[0] + (sung_color[0] - current_color[0]) * fade_progress
+            g = current_color[1] + (sung_color[1] - current_color[1]) * fade_progress
+            b = current_color[2] + (sung_color[2] - current_color[2]) * fade_progress
+
+            return (int(r), int(g), int(b))
 
 
 def get_current_word_index(word_timings, current_position):
@@ -575,7 +575,8 @@ def get_word_line_positions(word_timings, max_chars_per_line):
 def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
                                           current_position, colors, width, height,
                                           line_height=7, visible_lines=2,
-                                          word_complete_delay=0.3, font=None):
+                                          word_complete_delay=0.3, anticipation=0.3,
+                                          font=None):
     """Draw wrapped text that scrolls vertically based on word completion.
 
     Splits long text into multiple lines and shows 2 at a time.
@@ -592,6 +593,7 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         line_height: Pixels per line (including spacing)
         visible_lines: Number of lines to show at once
         word_complete_delay: Seconds after word starts before considering it "complete"
+        anticipation: Seconds to show next lines before they're triggered
         font: Font dictionary to use (default: FONT_3X5)
     """
     max_chars_per_line = max_width // 4
@@ -604,28 +606,33 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         # All lines fit, no scrolling needed
         target_scroll_line = 0
     else:
-        # Find the last word index on each line
-        last_word_per_line = {}
+        # Find the first word index on each line
+        first_word_per_line = {}
         for word_idx, (line_idx, _) in enumerate(word_line_positions):
-            last_word_per_line[line_idx] = word_idx
+            if line_idx not in first_word_per_line:
+                first_word_per_line[line_idx] = word_idx
 
-        # Determine scroll position based on which lines have completed
-        # Scroll up when the last word on the top visible line is complete
-        target_scroll_line = 0
+        # Scroll to keep the current/upcoming word's line visible
+        # We want the line with the next word to sing to be on screen
         max_scroll = num_lines - visible_lines
 
-        for scroll_pos in range(max_scroll):
-            top_line = scroll_pos
-            last_word_idx = last_word_per_line.get(top_line, 0)
-            last_word_time = word_timings[last_word_idx][0]
-
-            # Check if last word on this line is complete
-            if current_position >= last_word_time + word_complete_delay:
-                target_scroll_line = scroll_pos + 1
+        # Find which word is current/upcoming
+        current_word_idx = 0
+        for word_idx, (ts, _) in enumerate(word_timings):
+            if current_position + anticipation >= ts:
+                current_word_idx = word_idx
             else:
                 break
 
-        target_scroll_line = min(target_scroll_line, max_scroll)
+        # Find which line that word is on
+        if current_word_idx < len(word_line_positions):
+            current_word_line = word_line_positions[current_word_idx][0]
+        else:
+            current_word_line = num_lines - 1
+
+        # Scroll so current word's line is the top visible line
+        # (but not beyond max_scroll)
+        target_scroll_line = min(current_word_line, max_scroll)
 
     # Build lines with words
     lines = []

@@ -526,6 +526,9 @@ class SonosKaraoke(Screensaver):
 
         return self.__max_position
 
+    # Anticipation: show lyrics slightly before their timestamp
+    LYRIC_ANTICIPATION = 0.3
+
     def __get_current_lyric_index(self):
         """Find the current lyric line based on playback position."""
         if not self.__lyrics:
@@ -534,9 +537,10 @@ class SonosKaraoke(Screensaver):
         position = self.__get_interpolated_position()
 
         # Find the last lyric that started before current position
+        # Add anticipation so lyrics appear slightly before their timestamp
         new_index = -1
         for i, (timestamp, _, _) in enumerate(self.__lyrics):
-            if timestamp <= position:
+            if timestamp <= position + self.LYRIC_ANTICIPATION:
                 new_index = i
             else:
                 break
@@ -725,10 +729,10 @@ class SonosKaraoke(Screensaver):
             line_width = len(current_line) * 4
             chars_per_line = self.__width // 4
 
-            # Word colors for enhanced lyrics (apply pulse to current word)
+            # Word colors for enhanced lyrics
             word_colors = {
                 'sung': self.COLORS['word_sung'],
-                'current': tuple(int(c * pulse) for c in self.COLORS['word_current']),
+                'current': self.COLORS['word_current'],
                 'upcoming': self.COLORS['word_upcoming'],
             }
 
