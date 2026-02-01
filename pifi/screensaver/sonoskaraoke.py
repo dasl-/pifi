@@ -672,7 +672,6 @@ class SonosKaraoke(Screensaver):
 
                 first_line = self.__lyrics[0][1]  # Already uppercase from parsing
                 self.__render_break_indicator(frame, intro_progress, first_line)
-                self.__render_quality_indicator(frame)
                 self.__render_progress_bar(frame)
                 return
         else:
@@ -686,7 +685,7 @@ class SonosKaraoke(Screensaver):
             time_since_last = position - last_lyric_time
 
             if time_since_last >= self.OUTRO_THRESHOLD:
-                # Show just a pulsing dot for the outro
+                # Show song/artist info for the outro
                 self.__render_outro(frame)
                 self.__render_progress_bar(frame)
                 return
@@ -711,7 +710,6 @@ class SonosKaraoke(Screensaver):
             full_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
             self.__render_break_indicator(frame, break_progress, next_line, full_progress)
-            self.__render_quality_indicator(frame)
             self.__render_progress_bar(frame)
             return
 
@@ -873,9 +871,6 @@ class SonosKaraoke(Screensaver):
                     pause_duration=30
                 )
 
-        # Quality indicator pixel (top-right corner)
-        self.__render_quality_indicator(frame)
-
         # Progress bar at bottom
         self.__render_progress_bar(frame)
 
@@ -944,45 +939,23 @@ class SonosKaraoke(Screensaver):
                 )
 
     def __render_outro(self, frame):
-        """Render a subtle pulsing dot during the outro (after last lyric)."""
-        # Single pulsing dot in center
-        pulse = 0.4 + 0.6 * np.sin(self.__tick_count * 0.08)
-        base_color = self.COLORS['break_dot_filled']
-        # Clamp color values to valid uint8 range
-        color = tuple(max(0, min(255, int(c * pulse))) for c in base_color)
+        """Render song info during the outro (after last lyric)."""
+        # Show track and artist like in the no-lyrics state
+        if self.__current_track:
+            track_upper = self.__current_track.upper()
+            textutils.draw_scrolling_text(
+                frame, track_upper, 0, 8, self.__width,
+                self.COLORS['title'], self.__tick_count,
+                self.__width, self.__height
+            )
 
-        cx = self.__width // 2
-        cy = self.__height // 2
-
-        # Draw a 3x3 dot with bounds checking
-        for dy in range(-1, 2):
-            for dx in range(-1, 2):
-                px, py = cx + dx, cy + dy
-                if 0 <= px < self.__width and 0 <= py < self.__height:
-                    frame[py, px] = color
-
-    def __render_quality_indicator(self, frame):
-        """Render a small pixel in top-right showing lyrics quality.
-
-        Green = enhanced (word-by-word timing, best quality)
-        Yellow = synced (line-by-line timing, good quality)
-        Off = no timed lyrics available
-        """
-        if not self.__lyrics_quality:
-            return
-
-        # Top-right corner, 1 pixel
-        x = self.__width - 2
-        y = 1
-
-        if self.__lyrics_quality == 'enhanced':
-            color = (0, 255, 0)  # Green - best quality
-        elif self.__lyrics_quality == 'synced':
-            color = (255, 200, 0)  # Yellow - good quality
-        else:
-            return
-
-        frame[y, x] = color
+        if self.__current_artist:
+            artist_upper = self.__current_artist.upper()
+            textutils.draw_scrolling_text(
+                frame, artist_upper, 0, 18, self.__width,
+                self.COLORS['artist'], int(self.__tick_count * 0.8),
+                self.__width, self.__height
+            )
 
     def __render_progress_bar(self, frame):
         """Render a small progress bar showing position in song."""
