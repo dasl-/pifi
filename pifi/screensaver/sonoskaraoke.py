@@ -86,6 +86,7 @@ class SonosKaraoke(Screensaver):
         self.__line_duration = 5.0  # How long until next line (seconds)
         self.__line_transition_progress = 1.0  # 0 = transitioning, 1 = stable
         self.__max_intro_progress = 0  # Monotonic progress for intro (never goes backward)
+        self.__word_start_times = {}  # Maps word_idx to wall-clock time for smooth fades
 
         # Sonos speaker reference
         self.__speaker = None
@@ -633,6 +634,7 @@ class SonosKaraoke(Screensaver):
             self.__line_transition_progress = 0.0
             self.__line_scroll_offset = 0
             self.__line_start_time = time.time()
+            self.__word_start_times = {}  # Reset word timing for new line
 
             # Calculate how long until next line
             if current_idx >= 0 and current_idx + 1 < len(self.__lyrics):
@@ -722,6 +724,7 @@ class SonosKaraoke(Screensaver):
 
             # Get current song position for word highlighting
             current_position = self.__get_interpolated_position()
+            current_time = time.time()  # Wall-clock time for smooth fade animations
 
             pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
             current_color = tuple(int(c * pulse) for c in self.COLORS['current_line'])
@@ -742,7 +745,8 @@ class SonosKaraoke(Screensaver):
                 if word_timings:
                     textutils.draw_text_with_word_colors(
                         frame, word_timings, x, 6, current_position,
-                        word_colors, self.__width, self.__height
+                        word_colors, self.__width, self.__height,
+                        word_start_times=self.__word_start_times, current_time=current_time
                     )
                 else:
                     textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
@@ -772,7 +776,8 @@ class SonosKaraoke(Screensaver):
                     char_colors = []
                     for word_idx, (_, word) in enumerate(word_timings):
                         word_color = textutils.get_word_color(
-                            word_idx, word_timings, current_position, word_colors
+                            word_idx, word_timings, current_position, word_colors,
+                            word_start_times=self.__word_start_times, current_time=current_time
                         )
                         for _ in word:
                             char_colors.append(word_color)
@@ -805,7 +810,8 @@ class SonosKaraoke(Screensaver):
                         frame, word_timings, 0, 2, self.__width,
                         current_position, word_colors,
                         self.__width, self.__height,
-                        line_height=7, visible_lines=2
+                        line_height=7, visible_lines=2,
+                        word_start_times=self.__word_start_times, current_time=current_time
                     )
                 else:
                     # Non-enhanced lyrics: use time-based vertical scroll

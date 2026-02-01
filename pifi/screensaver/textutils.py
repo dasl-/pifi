@@ -138,7 +138,8 @@ def draw_text(frame, text, x, y, color, width, height, font=None):
         cursor += 4  # 3px char + 1px spacing
 
 
-def get_word_color(word_idx, word_timings, current_position, colors, fade_duration=2.0):
+def get_word_color(word_idx, word_timings, current_position, colors, fade_duration=2.0,
+                   word_start_times=None, current_time=None):
     """Determine color for a word based on current playback position.
 
     Words start bright and fade smoothly to sung color.
@@ -149,6 +150,9 @@ def get_word_color(word_idx, word_timings, current_position, colors, fade_durati
         current_position: Current song position in seconds
         colors: Dict with 'sung', 'current', 'upcoming' RGB tuples
         fade_duration: How long (seconds) for a word to fade from current to sung
+        word_start_times: Optional dict mapping word_idx to wall-clock start time.
+                         If provided, uses wall-clock time for smooth fades.
+        current_time: Current wall-clock time (time.time()). Required if word_start_times is used.
 
     Returns:
         RGB tuple for this word
@@ -163,7 +167,15 @@ def get_word_color(word_idx, word_timings, current_position, colors, fade_durati
         return colors['upcoming']
     else:
         # Word has started - calculate fade
-        time_since_start = current_position - word_start
+        # Use wall-clock time if available for smooth animation
+        if word_start_times is not None and current_time is not None:
+            if word_idx not in word_start_times:
+                # First time seeing this word as active - record wall-clock time
+                word_start_times[word_idx] = current_time
+            time_since_start = current_time - word_start_times[word_idx]
+        else:
+            # Fallback to song position (may be jerky)
+            time_since_start = current_position - word_start
 
         if time_since_start >= fade_duration:
             # Fully faded to sung
@@ -233,7 +245,8 @@ def get_word_pixel_positions(word_timings):
 
 
 def draw_text_with_word_colors(frame, word_timings, x, y, current_position,
-                                colors, width, height, font=None):
+                                colors, width, height, font=None,
+                                word_start_times=None, current_time=None):
     """Draw text with per-word colors based on playback position.
 
     Args:
@@ -244,10 +257,13 @@ def draw_text_with_word_colors(frame, word_timings, x, y, current_position,
         colors: Dict with 'sung', 'current', 'upcoming' RGB tuples
         width, height: Frame dimensions for bounds checking
         font: Font dictionary to use (default: FONT_3X5)
+        word_start_times: Optional dict for tracking word start times (for smooth fades)
+        current_time: Current wall-clock time
     """
     cursor = x
     for word_idx, (_, word) in enumerate(word_timings):
-        color = get_word_color(word_idx, word_timings, current_position, colors)
+        color = get_word_color(word_idx, word_timings, current_position, colors,
+                               word_start_times=word_start_times, current_time=current_time)
 
         for char in word:
             draw_char(frame, char, cursor, y, color, width, height, font)
@@ -576,7 +592,7 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
                                           current_position, colors, width, height,
                                           line_height=7, visible_lines=2,
                                           word_complete_delay=0.3, anticipation=0.3,
-                                          font=None):
+                                          font=None, word_start_times=None, current_time=None):
     """Draw wrapped text that scrolls vertically based on word completion.
 
     Splits long text into multiple lines and shows 2 at a time.
@@ -595,6 +611,8 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         word_complete_delay: Seconds after word starts before considering it "complete"
         anticipation: Seconds to show next lines before they're triggered
         font: Font dictionary to use (default: FONT_3X5)
+        word_start_times: Optional dict for tracking word start times (for smooth fades)
+        current_time: Current wall-clock time
     """
     max_chars_per_line = max_width // 4
 
@@ -661,7 +679,8 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         # Draw each word with its color
         cursor = line_x
         for word_idx, (_, word) in lines[line_idx]:
-            color = get_word_color(word_idx, word_timings, current_position, colors)
+            color = get_word_color(word_idx, word_timings, current_position, colors,
+                                   word_start_times=word_start_times, current_time=current_time)
 
             for char in word:
                 if 0 <= cursor < width and 0 <= line_y < height - 5:
