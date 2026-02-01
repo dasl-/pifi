@@ -518,26 +518,28 @@ class SonosKaraoke(Screensaver):
                     self.__width, self.__height, pause_duration=10
                 )
 
-        # Render next line (dimmer) - single line, scroll if needed
+        # Render next line (dimmer) - must complete scroll before it becomes current
         if next_line:
             next_color = self.COLORS['next_line']
-            line_width = len(next_line) * 4
+            next_line_width = len(next_line) * 4
 
             # Position depends on whether current used 2 lines
             next_y = 18 if len(current_line) <= (self.__width // 4) * 2 else 20
 
-            if line_width <= self.__width:
-                x = (self.__width - line_width) // 2
+            if next_line_width <= self.__width:
+                x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
+                # Time-based scroll: complete full scroll during current line's duration
+                # so user has seen all of next line before it becomes current
+                total_scroll = next_line_width - self.__width + 20
+                next_scroll_offset = line_progress * total_scroll * 2
+
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, next_y, self.__width,
-                    next_color, self.__line_scroll_offset,
-                    self.__width, self.__height
+                    next_color, next_scroll_offset,
+                    self.__width, self.__height, pause_duration=5
                 )
-
-        # Increment scroll for next line (separate from current line's time-based scroll)
-        self.__line_scroll_offset += 0.5
 
         # Quality indicator pixel (top-right corner)
         self.__render_quality_indicator(frame)
