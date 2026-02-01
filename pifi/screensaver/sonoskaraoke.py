@@ -697,7 +697,6 @@ class SonosKaraoke(Screensaver):
                     textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
             elif len(current_line) <= chars_per_line * 2:
                 # Medium line - split into 2 lines (no scroll needed)
-                # For enhanced lyrics, fall back to single color (splitting words is complex)
                 mid = len(current_line) // 2
                 # Find a space near the middle to split
                 split_pos = mid
@@ -715,8 +714,36 @@ class SonosKaraoke(Screensaver):
                 # Center each line
                 x1 = (self.__width - len(line1) * 4) // 2
                 x2 = (self.__width - len(line2) * 4) // 2
-                textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
-                textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
+
+                if word_timings:
+                    # Split word_timings between the two lines
+                    # Count characters to find the split point in words
+                    char_count = 0
+                    split_word_idx = 0
+                    for idx, (_, word) in enumerate(word_timings):
+                        char_count += len(word) + 1  # word + space
+                        if char_count > split_pos:
+                            split_word_idx = idx
+                            break
+                    else:
+                        split_word_idx = len(word_timings)
+
+                    line1_words = word_timings[:split_word_idx]
+                    line2_words = word_timings[split_word_idx:]
+
+                    if line1_words:
+                        textutils.draw_text_with_word_colors(
+                            frame, line1_words, x1, 2, current_position,
+                            word_colors, self.__width, self.__height
+                        )
+                    if line2_words:
+                        textutils.draw_text_with_word_colors(
+                            frame, line2_words, x2, 9, current_position,
+                            word_colors, self.__width, self.__height
+                        )
+                else:
+                    textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
+                    textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
                 # Very long line - timed scroll that completes within scroll_duration
                 elapsed_ticks = int(elapsed / self.__tick_sleep)  # Convert seconds to ticks
