@@ -827,4 +827,23 @@
         "max_ticks": 3000,
     },
 
+    // Configuration specific to Sonos Karaoke screensaver.
+    // Displays synced lyrics for music playing on Sonos speakers.
+    "sonoskaraoke": {
+
+        // Optional, string, default: null. Name of Sonos speaker to use.
+        // If null, uses first discovered speaker.
+        // Example: "Living Room", "Kitchen"
+        "speaker_name": null,
+
+        // Optional, float, default: 0.5. How often to poll Sonos for position (seconds).
+        "update_interval": 0.5,
+
+        // Optional, float, default: 0.05. How long to sleep between display updates.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
+        "max_ticks": 6000,
+    },
+
 }
