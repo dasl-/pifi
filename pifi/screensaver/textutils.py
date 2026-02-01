@@ -303,6 +303,35 @@ def draw_char_clipped(frame, char, x, y, color, clip_left, clip_right, width, he
                         frame[py, px] = color
 
 
+def draw_char_clipped_vertical(frame, char, x, y, color, clip_bottom, width, height, font=None):
+    """Draw a character with vertical clipping for partial visibility.
+
+    Args:
+        frame: numpy array of shape (height, width, 3)
+        char: Character to draw
+        x, y: Top-left position
+        color: RGB tuple (r, g, b)
+        clip_bottom: Y coordinate to stop drawing at (exclusive)
+        width, height: Frame dimensions for bounds checking
+        font: Font dictionary to use (default: FONT_3X5)
+    """
+    if font is None:
+        font = FONT_3X5
+
+    char = char.upper()
+    if char not in font:
+        return
+
+    pattern = font[char]
+    for dy, row in enumerate(pattern):
+        for dx, pixel in enumerate(row):
+            if pixel:
+                px, py = x + dx, y + dy
+                if py < clip_bottom:
+                    if 0 <= px < width and 0 <= py < height:
+                        frame[py, px] = color
+
+
 def draw_scrolling_text(frame, text, x, y, max_width, color, scroll_offset,
                         width, height, font=None, gap=20, pause_duration=60,
                         complete_in_ticks=None, loop=True):
@@ -674,7 +703,7 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         # Calculate x position to center this line
         line_text = ' '.join(word for _, (_, word) in lines[line_idx])
         line_pixel_width = len(line_text) * 4
-        line_x = (max_width - line_pixel_width) // 2
+        line_x = max(0, (max_width - line_pixel_width) // 2)
 
         # Draw each word with its color
         cursor = line_x
@@ -692,11 +721,12 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
 
 
 def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress,
-                               width, height, line_height=7, visible_lines=2, font=None):
-    """Draw wrapped text that scrolls vertically based on progress.
+                               width, height, line_height=7, visible_lines=2,
+                               clip_bottom=None, font=None):
+    """Draw wrapped text that scrolls smoothly vertically with easing.
 
-    Splits long text into multiple lines and shows 2 at a time,
-    scrolling up as line_progress increases.
+    Splits long text into multiple lines and scrolls continuously through them,
+    using ease-in-out for smooth motion. Similar to horizontal scroll behavior.
 
     Args:
         frame: numpy array of shape (height, width, 3)
@@ -708,6 +738,7 @@ def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress
         width, height: Frame dimensions
         line_height: Pixels per line (including spacing)
         visible_lines: Number of lines to show at once
+        clip_bottom: Y coordinate to stop drawing at (exclusive). If None, no clipping.
         font: Font dictionary to use (default: FONT_3X5)
     """
     max_chars_per_line = max_width // 4
@@ -721,25 +752,46 @@ def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress
         for line_idx, line in enumerate(lines):
             line_y = y + line_idx * line_height
             line_pixel_width = len(line) * 4
-            line_x = (max_width - line_pixel_width) // 2
+            line_x = max(0, (max_width - line_pixel_width) // 2)
             draw_text(frame, line, line_x, line_y, color, width, height, font)
         return
 
-    # Calculate which lines to show based on progress
-    # Progress 0 = show lines 0,1
-    # Progress 1 = show lines (n-2),(n-1)
-    max_scroll_lines = num_lines - visible_lines
-    target_scroll_line = int(line_progress * max_scroll_lines)
-    target_scroll_line = max(0, min(max_scroll_lines, target_scroll_line))
+    # Smooth continuous scroll with easing
+    # Total scroll distance in pixels
+    total_scroll_pixels = (num_lines - visible_lines) * line_height
 
-    # Draw visible lines
-    for i in range(visible_lines):
-        line_idx = target_scroll_line + i
-        if line_idx >= num_lines:
-            break
+    # Apply easing to progress for smooth start/end
+    eased_progress = ease_in_out(line_progress)
 
-        line = lines[line_idx]
-        line_y = y + i * line_height
+    # Calculate pixel offset
+    scroll_y = int(eased_progress * total_scroll_pixels)
+
+    # Determine effective clip boundary
+    effective_clip = clip_bottom if clip_bottom is not None else height
+
+    # Draw all lines that might be visible (with pixel-level offset)
+    for line_idx, line in enumerate(lines):
+        # Calculate y position with scroll offset
+        line_y = y + (line_idx * line_height) - scroll_y
+
+        # Skip lines that are completely off screen or below clip
+        if line_y < y - line_height or line_y >= effective_clip:
+            continue
+
+        # Skip if line would be completely below clip
+        if line_y + 5 <= 0:  # 5 is font height
+            continue
+
         line_pixel_width = len(line) * 4
-        line_x = (max_width - line_pixel_width) // 2
-        draw_text(frame, line, line_x, line_y, color, width, height, font)
+        line_x = max(0, (max_width - line_pixel_width) // 2)
+
+        # Draw with vertical clipping
+        if clip_bottom is not None and line_y + 5 > clip_bottom:
+            # Need to clip - draw character by character with pixel clipping
+            cursor = line_x
+            for char in line:
+                draw_char_clipped_vertical(frame, char, cursor, line_y, color,
+                                           clip_bottom, width, height, font)
+                cursor += 4
+        else:
+            draw_text(frame, line, line_x, line_y, color, width, height, font)

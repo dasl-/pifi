@@ -729,8 +729,12 @@ class SonosKaraoke(Screensaver):
             pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
             current_color = tuple(int(c * pulse) for c in self.COLORS['current_line'])
 
+            # Each char is 3 pixels wide + 1 pixel spacing, but last char has no trailing space
+            # So N chars = N*3 + (N-1)*1 = N*4 - 1 pixels
+            # For fitting, we use N*4 as a conservative estimate
             line_width = len(current_line) * 4
-            chars_per_line = self.__width // 4
+            # Max chars that fully fit: solve N*4 - 1 <= width, so N <= (width + 1) / 4
+            chars_per_line = (self.__width + 1) // 4
 
             # Word colors for enhanced lyrics
             word_colors = {
@@ -751,7 +755,7 @@ class SonosKaraoke(Screensaver):
                 else:
                     textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
             elif len(current_line) <= chars_per_line * 2:
-                # Medium line - split into 2 lines (no scroll needed)
+                # Medium line - try to split into 2 lines
                 mid = len(current_line) // 2
                 # Find a space near the middle to split
                 split_pos = mid
@@ -766,42 +770,62 @@ class SonosKaraoke(Screensaver):
                 line1 = current_line[:split_pos].strip()
                 line2 = current_line[split_pos:].strip()
 
-                # Center each line based on text width
-                x1 = (self.__width - len(line1) * 4) // 2
-                x2 = (self.__width - len(line2) * 4) // 2
-
-                if word_timings:
-                    # Build a color for each character position in the full line
-                    # by mapping characters to their words
-                    char_colors = []
-                    for word_idx, (_, word) in enumerate(word_timings):
-                        word_color = textutils.get_word_color(
-                            word_idx, word_timings, current_position, word_colors,
+                # Check if both lines fit - if not, fall through to vertical scroll
+                if len(line1) > chars_per_line or len(line2) > chars_per_line:
+                    # Lines don't fit - use vertical scroll instead
+                    if word_timings:
+                        textutils.draw_vertical_scroll_text_with_words(
+                            frame, word_timings, 0, 2, self.__width,
+                            current_position, word_colors,
+                            self.__width, self.__height,
+                            line_height=7, visible_lines=2,
                             word_start_times=self.__word_start_times, current_time=current_time
                         )
-                        for _ in word:
-                            char_colors.append(word_color)
-                        char_colors.append(word_color)  # space after word
-
-                    # Draw line1 character by character with colors
-                    cursor = x1
-                    for i, char in enumerate(line1):
-                        # Map line1 char position to full text position
-                        color = char_colors[i] if i < len(char_colors) else word_colors['sung']
-                        textutils.draw_char(frame, char, cursor, 2, color, self.__width, self.__height)
-                        cursor += 4
-
-                    # Draw line2 character by character with colors
-                    # Line2 starts after split_pos in the original text
-                    cursor = x2
-                    for i, char in enumerate(line2):
-                        full_pos = split_pos + 1 + i  # +1 for the space we split on
-                        color = char_colors[full_pos] if full_pos < len(char_colors) else word_colors['sung']
-                        textutils.draw_char(frame, char, cursor, 9, color, self.__width, self.__height)
-                        cursor += 4
+                    else:
+                        scroll_progress = min(1.0, line_progress * 1.67)
+                        textutils.draw_vertical_scroll_text(
+                            frame, current_line, 0, 2, self.__width,
+                            current_color, scroll_progress,
+                            self.__width, self.__height,
+                            line_height=7, visible_lines=2, clip_bottom=19
+                        )
                 else:
-                    textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
-                    textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
+                    # Both lines fit - center each line
+                    x1 = max(0, (self.__width - len(line1) * 4) // 2)
+                    x2 = max(0, (self.__width - len(line2) * 4) // 2)
+
+                    if word_timings:
+                        # Build a color for each character position in the full line
+                        # by mapping characters to their words
+                        char_colors = []
+                        for word_idx, (_, word) in enumerate(word_timings):
+                            word_color = textutils.get_word_color(
+                                word_idx, word_timings, current_position, word_colors,
+                                word_start_times=self.__word_start_times, current_time=current_time
+                            )
+                            for _ in word:
+                                char_colors.append(word_color)
+                            char_colors.append(word_color)  # space after word
+
+                        # Draw line1 character by character with colors
+                        cursor = x1
+                        for i, char in enumerate(line1):
+                            # Map line1 char position to full text position
+                            color = char_colors[i] if i < len(char_colors) else word_colors['sung']
+                            textutils.draw_char(frame, char, cursor, 2, color, self.__width, self.__height)
+                            cursor += 4
+
+                        # Draw line2 character by character with colors
+                        # Line2 starts after split_pos in the original text
+                        cursor = x2
+                        for i, char in enumerate(line2):
+                            full_pos = split_pos + 1 + i  # +1 for the space we split on
+                            color = char_colors[full_pos] if full_pos < len(char_colors) else word_colors['sung']
+                            textutils.draw_char(frame, char, cursor, 9, color, self.__width, self.__height)
+                            cursor += 4
+                    else:
+                        textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
+                        textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
                 # Very long line - use vertical scrolling (2 lines at a time)
                 if word_timings:
@@ -817,11 +841,12 @@ class SonosKaraoke(Screensaver):
                     # Non-enhanced lyrics: use time-based vertical scroll
                     # Complete scroll at 60% through, leaving 40% to read final lines
                     scroll_progress = min(1.0, line_progress * 1.67)
+                    # Clip at y=19 (one pixel above preview line at y=20)
                     textutils.draw_vertical_scroll_text(
                         frame, current_line, 0, 2, self.__width,
                         current_color, scroll_progress,
                         self.__width, self.__height,
-                        line_height=7, visible_lines=2
+                        line_height=7, visible_lines=2, clip_bottom=19
                     )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
@@ -836,15 +861,13 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Timed scroll that completes within scroll_duration
-                elapsed_ticks = int(elapsed / self.__tick_sleep)
-                scroll_ticks = int(scroll_duration / self.__tick_sleep)
-
+                # Continuous looping scroll using global tick count
+                # This ensures smooth transition to break mode (which also uses tick_count)
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, next_y, self.__width,
-                    next_color, elapsed_ticks,
+                    next_color, self.__tick_count,
                     self.__width, self.__height,
-                    complete_in_ticks=scroll_ticks
+                    pause_duration=30
                 )
 
         # Quality indicator pixel (top-right corner)
@@ -870,7 +893,9 @@ class SonosKaraoke(Screensaver):
         num_dots = min(8, max(5, self.__width // 10))
 
         # Calculate how many dots should be filled
-        filled_dots = int(progress * num_dots)
+        # With n dots, we have n+1 states (0 to n filled), each gets equal time
+        # At progress=0: 0 filled, at progress=1: all filled
+        filled_dots = min(num_dots, int(progress * (num_dots + 1)))
 
         # Dot spacing and positioning
         dot_spacing = 6  # pixels between dot centers
