@@ -326,17 +326,43 @@ class SonosKaraoke(Screensaver):
 
             import syncedlyrics
 
-            # Try enhanced (word-by-word) first - it falls back to synced automatically
-            # We only want timed lyrics - plain lyrics aren't useful on tiny display
-            lrc = syncedlyrics.search(search_query, synced_only=True, enhanced=True)
+            # Try providers in order, logging which one succeeds
+            # Musixmatch is the only one that supports enhanced (word-by-word) lyrics
+            providers_to_try = ['Musixmatch', 'Lrclib', 'NetEase', 'Megalobiz']
+            lrc = None
+            source_provider = None
+
+            for provider in providers_to_try:
+                try:
+                    # Try enhanced for Musixmatch, synced-only for others
+                    if provider == 'Musixmatch':
+                        result = syncedlyrics.search(
+                            search_query, synced_only=True, enhanced=True,
+                            providers=[provider]
+                        )
+                    else:
+                        result = syncedlyrics.search(
+                            search_query, synced_only=True,
+                            providers=[provider]
+                        )
+
+                    if result:
+                        lrc = result
+                        source_provider = provider
+                        self.__logger.info(f"Lyrics found via {provider}")
+                        break
+                except Exception as e:
+                    self.__logger.debug(f"Provider {provider} failed: {e}")
+                    continue
 
             if lrc:
-                self.__logger.debug(f"Raw LRC response ({len(lrc)} chars): {lrc[:200]}...")
+                self.__logger.debug(f"Raw LRC from {source_provider} ({len(lrc)} chars): {lrc[:200]}...")
 
                 # Detect if it's actually enhanced (has <> word timestamps) or just synced
                 # Enhanced format: [00:12.00] <00:12.00> Word <00:12.50> Word2
                 is_enhanced = '<' in lrc and '>' in lrc
                 quality = 'enhanced' if is_enhanced else 'synced'
+                self.__logger.info(f"Lyrics source: {source_provider}, quality: {quality}")
 
                 lyrics = self.__parse_lrc(lrc)
 
