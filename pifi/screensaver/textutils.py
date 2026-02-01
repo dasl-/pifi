@@ -510,3 +510,210 @@ def draw_scrolling_text_with_words(frame, word_timings, x, y, max_width,
             if cursor >= x + max_width:
                 break
             cursor += 4
+
+
+def split_text_to_lines(text, max_chars_per_line):
+    """Split text into lines that fit within max character width.
+
+    Tries to split at word boundaries (spaces) when possible.
+
+    Args:
+        text: Text to split
+        max_chars_per_line: Maximum characters per line
+
+    Returns:
+        List of line strings
+    """
+    words = text.split(' ')
+    lines = []
+    current_line = ""
+
+    for word in words:
+        if not current_line:
+            current_line = word
+        elif len(current_line) + 1 + len(word) <= max_chars_per_line:
+            current_line += " " + word
+        else:
+            lines.append(current_line)
+            current_line = word
+
+    if current_line:
+        lines.append(current_line)
+
+    return lines
+
+
+def get_word_line_positions(word_timings, max_chars_per_line):
+    """Calculate which line each word belongs to when text is wrapped.
+
+    Args:
+        word_timings: List of (timestamp, word) tuples
+        max_chars_per_line: Maximum characters per line
+
+    Returns:
+        List of (line_index, char_offset_in_line) for each word
+    """
+    positions = []
+    current_line = 0
+    current_char = 0
+
+    for _, word in word_timings:
+        word_len = len(word)
+
+        # Check if word fits on current line
+        if current_char > 0 and current_char + 1 + word_len > max_chars_per_line:
+            # Move to next line
+            current_line += 1
+            current_char = 0
+
+        positions.append((current_line, current_char))
+        current_char += word_len + 1  # +1 for space
+
+    return positions
+
+
+def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
+                                          current_position, colors, width, height,
+                                          line_height=7, visible_lines=2,
+                                          word_complete_delay=0.3, font=None):
+    """Draw wrapped text that scrolls vertically based on word completion.
+
+    Splits long text into multiple lines and shows 2 at a time.
+    Scrolls up when the last word on the top visible line is complete.
+
+    Args:
+        frame: numpy array of shape (height, width, 3)
+        word_timings: List of (timestamp, word) tuples
+        x, y: Top-left position
+        max_width: Maximum width for text
+        current_position: Current song position in seconds
+        colors: Dict with 'sung', 'current', 'upcoming' RGB tuples
+        width, height: Frame dimensions
+        line_height: Pixels per line (including spacing)
+        visible_lines: Number of lines to show at once
+        word_complete_delay: Seconds after word starts before considering it "complete"
+        font: Font dictionary to use (default: FONT_3X5)
+    """
+    max_chars_per_line = max_width // 4
+
+    # Build lines from word_timings
+    word_line_positions = get_word_line_positions(word_timings, max_chars_per_line)
+    num_lines = max(pos[0] for pos in word_line_positions) + 1 if word_line_positions else 1
+
+    if num_lines <= visible_lines:
+        # All lines fit, no scrolling needed
+        target_scroll_line = 0
+    else:
+        # Find the last word index on each line
+        last_word_per_line = {}
+        for word_idx, (line_idx, _) in enumerate(word_line_positions):
+            last_word_per_line[line_idx] = word_idx
+
+        # Determine scroll position based on which lines have completed
+        # Scroll up when the last word on the top visible line is complete
+        target_scroll_line = 0
+        max_scroll = num_lines - visible_lines
+
+        for scroll_pos in range(max_scroll):
+            top_line = scroll_pos
+            last_word_idx = last_word_per_line.get(top_line, 0)
+            last_word_time = word_timings[last_word_idx][0]
+
+            # Check if last word on this line is complete
+            if current_position >= last_word_time + word_complete_delay:
+                target_scroll_line = scroll_pos + 1
+            else:
+                break
+
+        target_scroll_line = min(target_scroll_line, max_scroll)
+
+    # Build lines with words
+    lines = []
+    for line_idx in range(num_lines):
+        lines.append([])
+
+    for word_idx, (line_idx, char_offset) in enumerate(word_line_positions):
+        lines[line_idx].append((word_idx, word_timings[word_idx]))
+
+    # Draw visible lines
+    visible_start = target_scroll_line
+    visible_end = min(num_lines, target_scroll_line + visible_lines)
+
+    for line_idx in range(visible_start, visible_end):
+        line_y = y + (line_idx - target_scroll_line) * line_height
+
+        # Skip if off screen
+        if line_y < -5 or line_y >= height:
+            continue
+
+        # Calculate x position to center this line
+        line_text = ' '.join(word for _, (_, word) in lines[line_idx])
+        line_pixel_width = len(line_text) * 4
+        line_x = (max_width - line_pixel_width) // 2
+
+        # Draw each word with its color
+        cursor = line_x
+        for word_idx, (_, word) in lines[line_idx]:
+            color = get_word_color(word_idx, word_timings, current_position, colors)
+
+            for char in word:
+                if 0 <= cursor < width and 0 <= line_y < height - 5:
+                    draw_char(frame, char, cursor, line_y, color, width, height, font)
+                cursor += 4
+
+            # Space after word
+            cursor += 4
+
+
+def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress,
+                               width, height, line_height=7, visible_lines=2, font=None):
+    """Draw wrapped text that scrolls vertically based on progress.
+
+    Splits long text into multiple lines and shows 2 at a time,
+    scrolling up as line_progress increases.
+
+    Args:
+        frame: numpy array of shape (height, width, 3)
+        text: Text to display
+        x, y: Top-left position
+        max_width: Maximum width for text
+        color: RGB tuple for text color
+        line_progress: Progress through the line (0-1), controls vertical scroll
+        width, height: Frame dimensions
+        line_height: Pixels per line (including spacing)
+        visible_lines: Number of lines to show at once
+        font: Font dictionary to use (default: FONT_3X5)
+    """
+    max_chars_per_line = max_width // 4
+
+    # Split text into lines
+    lines = split_text_to_lines(text, max_chars_per_line)
+    num_lines = len(lines)
+
+    if num_lines <= visible_lines:
+        # All lines fit, just draw centered
+        for line_idx, line in enumerate(lines):
+            line_y = y + line_idx * line_height
+            line_pixel_width = len(line) * 4
+            line_x = (max_width - line_pixel_width) // 2
+            draw_text(frame, line, line_x, line_y, color, width, height, font)
+        return
+
+    # Calculate which lines to show based on progress
+    # Progress 0 = show lines 0,1
+    # Progress 1 = show lines (n-2),(n-1)
+    max_scroll_lines = num_lines - visible_lines
+    target_scroll_line = int(line_progress * max_scroll_lines)
+    target_scroll_line = max(0, min(max_scroll_lines, target_scroll_line))
+
+    # Draw visible lines
+    for i in range(visible_lines):
+        line_idx = target_scroll_line + i
+        if line_idx >= num_lines:
+            break
+
+        line = lines[line_idx]
+        line_y = y + i * line_height
+        line_pixel_width = len(line) * 4
+        line_x = (max_width - line_pixel_width) // 2
+        draw_text(frame, line, line_x, line_y, color, width, height, font)

@@ -794,26 +794,24 @@ class SonosKaraoke(Screensaver):
                     textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
                     textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
-                # Very long line - timed scroll that completes within scroll_duration
-                elapsed_ticks = int(elapsed / self.__tick_sleep)  # Convert seconds to ticks
-                scroll_ticks = int(scroll_duration / self.__tick_sleep)  # Total ticks for scroll
-
+                # Very long line - use vertical scrolling (2 lines at a time)
                 if word_timings:
-                    textutils.draw_scrolling_text_with_words(
-                        frame, word_timings, 0, 6, self.__width,
-                        current_position, word_colors, elapsed_ticks,
+                    # Enhanced lyrics: scroll based on word completion
+                    textutils.draw_vertical_scroll_text_with_words(
+                        frame, word_timings, 0, 2, self.__width,
+                        current_position, word_colors,
                         self.__width, self.__height,
-                        complete_in_ticks=scroll_ticks,
-                        loop=False,
-                        word_sync=True  # Scroll follows current word
+                        line_height=7, visible_lines=2
                     )
                 else:
-                    textutils.draw_scrolling_text(
-                        frame, current_line, 0, 6, self.__width,
-                        current_color, elapsed_ticks,
+                    # Non-enhanced lyrics: use time-based vertical scroll
+                    # Complete scroll at 60% through, leaving 40% to read final lines
+                    scroll_progress = min(1.0, line_progress * 1.67)
+                    textutils.draw_vertical_scroll_text(
+                        frame, current_line, 0, 2, self.__width,
+                        current_color, scroll_progress,
                         self.__width, self.__height,
-                        complete_in_ticks=scroll_ticks,
-                        loop=False
+                        line_height=7, visible_lines=2
                     )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
