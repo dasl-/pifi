@@ -87,6 +87,8 @@ class SonosKaraoke(Screensaver):
         self.__line_transition_progress = 1.0  # 0 = transitioning, 1 = stable
         self.__max_intro_progress = 0  # Monotonic progress for intro (never goes backward)
         self.__word_start_times = {}  # Maps word_idx to wall-clock time for smooth fades
+        self.__preview_line = None  # Track current preview line for scroll reset
+        self.__preview_scroll_start = 0  # Tick count when preview line changed
 
         # Sonos speaker reference
         self.__speaker = None
@@ -851,6 +853,11 @@ class SonosKaraoke(Screensaver):
 
         # Render next line (dimmer) - must complete scroll before it becomes current
         if next_line:
+            # Track preview line changes to reset scroll
+            if next_line != self.__preview_line:
+                self.__preview_line = next_line
+                self.__preview_scroll_start = self.__tick_count
+
             next_color = self.COLORS['next_line']
             next_line_width = len(next_line) * 4
 
@@ -862,11 +869,11 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Continuous looping scroll using global tick count
-                # This ensures smooth transition to break mode (which also uses tick_count)
+                # Scroll using offset from when this preview line started
+                preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, next_y, self.__width,
-                    next_color, self.__tick_count,
+                    next_color, preview_scroll_offset,
                     self.__width, self.__height,
                     pause_duration=30
                 )
@@ -922,6 +929,11 @@ class SonosKaraoke(Screensaver):
 
         # Show next line below (so singer can prepare)
         if next_line:
+            # Track preview line changes to reset scroll
+            if next_line != self.__preview_line:
+                self.__preview_line = next_line
+                self.__preview_scroll_start = self.__tick_count
+
             next_color = self.COLORS['next_line']
             next_line_width = len(next_line) * 4
 
@@ -929,11 +941,11 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, 20, next_color, self.__width, self.__height)
             else:
-                # Use default looping scroll - text loops continuously during break
-                # scroll_offset based on tick count for smooth animation
+                # Scroll using offset from when this preview line started
+                preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
                     frame, next_line, 0, 20, self.__width,
-                    next_color, self.__tick_count,
+                    next_color, preview_scroll_offset,
                     self.__width, self.__height,
                     pause_duration=30  # Brief pause between loops
                 )
