@@ -169,6 +169,7 @@ def parse_config_options(config_args):
 def setup_mock_config(width, height, config_overrides=None):
     """Set up a mock configuration for testing."""
     from pifi.config import Config
+    from pifi.logger import Logger
     import traceback
 
     # Load actual config files using existing Config class
@@ -187,7 +188,8 @@ def setup_mock_config(width, height, config_overrides=None):
         sys.exit(1)
 
     # Override LED configuration for terminal preview
-    Config.set('log_level', 'warning')
+    Config.set('log_level', 'debug')
+    Logger.set_level('debug')
     Config.set('leds.driver', 'terminal')
     Config.set('leds.display_width', width)
     Config.set('leds.display_height', height)
