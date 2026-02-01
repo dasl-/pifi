@@ -607,13 +607,16 @@ class SonosKaraoke(Screensaver):
                 textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
                 textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
             else:
-                # Very long line - eased scroll based on progress
-                total_scroll = line_width - self.__width
-                eased_progress = textutils.ease_in_out(scroll_progress)
-                scroll_x = -int(eased_progress * total_scroll)
+                # Very long line - timed scroll that completes within scroll_duration
+                elapsed_ticks = int(elapsed / self.__tick_sleep)  # Convert seconds to ticks
+                scroll_ticks = int(scroll_duration / self.__tick_sleep)  # Total ticks for scroll
 
-                # Draw text at scrolled position with clipping
-                textutils.draw_text(frame, current_line, scroll_x, 6, current_color, self.__width, self.__height)
+                textutils.draw_scrolling_text(
+                    frame, current_line, 0, 6, self.__width,
+                    current_color, elapsed_ticks,
+                    self.__width, self.__height,
+                    complete_in_ticks=scroll_ticks
+                )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
         if next_line:
@@ -627,12 +630,16 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, next_y, next_color, self.__width, self.__height)
             else:
-                # Eased scroll based on progress
-                total_scroll = next_line_width - self.__width
-                eased_progress = textutils.ease_in_out(scroll_progress)
-                scroll_x = -int(eased_progress * total_scroll)
+                # Timed scroll that completes within scroll_duration
+                elapsed_ticks = int(elapsed / self.__tick_sleep)
+                scroll_ticks = int(scroll_duration / self.__tick_sleep)
 
-                textutils.draw_text(frame, next_line, scroll_x, next_y, next_color, self.__width, self.__height)
+                textutils.draw_scrolling_text(
+                    frame, next_line, 0, next_y, self.__width,
+                    next_color, elapsed_ticks,
+                    self.__width, self.__height,
+                    complete_in_ticks=scroll_ticks
+                )
 
         # Quality indicator pixel (top-right corner)
         self.__render_quality_indicator(frame)
@@ -693,12 +700,14 @@ class SonosKaraoke(Screensaver):
                 x = (self.__width - next_line_width) // 2
                 textutils.draw_text(frame, next_line, x, 18, next_color, self.__width, self.__height)
             else:
-                # Scroll the preview - use scroll_progress to continue smoothly
-                total_scroll = next_line_width - self.__width
-                eased_progress = textutils.ease_in_out(scroll_progress)
-                scroll_x = -int(eased_progress * total_scroll)
-
-                textutils.draw_text(frame, next_line, scroll_x, 18, next_color, self.__width, self.__height)
+                # Use default looping scroll - text loops continuously during break
+                # scroll_offset based on tick count for smooth animation
+                textutils.draw_scrolling_text(
+                    frame, next_line, 0, 18, self.__width,
+                    next_color, self.__tick_count,
+                    self.__width, self.__height,
+                    pause_duration=30  # Brief pause between loops
+                )
 
     def __render_outro(self, frame):
         """Render a subtle pulsing dot during the outro (after last lyric)."""
