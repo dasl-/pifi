@@ -30,6 +30,10 @@ class SonosKaraoke(Screensaver):
         'waiting': (80, 80, 80),               # Dim - waiting state
         'break_dot_empty': (60, 60, 60),       # Dim - empty progress dot
         'break_dot_filled': (150, 100, 255),   # Purple - filled progress dot
+        # Word-by-word highlighting for enhanced lyrics
+        'word_sung': (120, 120, 120),          # Dimmer - already sung
+        'word_current': (255, 255, 255),       # Bright white - current word
+        'word_upcoming': (180, 180, 180),      # Medium - not yet sung
     }
 
     # Threshold for showing break indicator (seconds)
@@ -440,7 +444,7 @@ class SonosKaraoke(Screensaver):
 
         # Find the last lyric that started before current position
         new_index = -1
-        for i, (timestamp, _) in enumerate(self.__lyrics):
+        for i, (timestamp, _, _) in enumerate(self.__lyrics):
             if timestamp <= position:
                 new_index = i
             else:
@@ -614,18 +618,40 @@ class SonosKaraoke(Screensaver):
 
         # Render current line - use 2 lines if very long
         if current_line:
+            # Get word timings for enhanced lyrics (if available)
+            word_timings = None
+            if current_idx >= 0 and current_idx < len(self.__lyrics):
+                word_timings = self.__lyrics[current_idx][2]
+
+            # Get current song position for word highlighting
+            current_position = self.__get_interpolated_position()
+
             pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
             current_color = tuple(int(c * pulse) for c in self.COLORS['current_line'])
 
             line_width = len(current_line) * 4
             chars_per_line = self.__width // 4
 
+            # Word colors for enhanced lyrics (apply pulse to current word)
+            word_colors = {
+                'sung': self.COLORS['word_sung'],
+                'current': tuple(int(c * pulse) for c in self.COLORS['word_current']),
+                'upcoming': self.COLORS['word_upcoming'],
+            }
+
             if line_width <= self.__width:
                 # Short line - center it
                 x = (self.__width - line_width) // 2
-                textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
+                if word_timings:
+                    textutils.draw_text_with_word_colors(
+                        frame, word_timings, x, 6, current_position,
+                        word_colors, self.__width, self.__height
+                    )
+                else:
+                    textutils.draw_text(frame, current_line, x, 6, current_color, self.__width, self.__height)
             elif len(current_line) <= chars_per_line * 2:
                 # Medium line - split into 2 lines (no scroll needed)
+                # For enhanced lyrics, fall back to single color (splitting words is complex)
                 mid = len(current_line) // 2
                 # Find a space near the middle to split
                 split_pos = mid
@@ -650,13 +676,22 @@ class SonosKaraoke(Screensaver):
                 elapsed_ticks = int(elapsed / self.__tick_sleep)  # Convert seconds to ticks
                 scroll_ticks = int(scroll_duration / self.__tick_sleep)  # Total ticks for scroll
 
-                textutils.draw_scrolling_text(
-                    frame, current_line, 0, 6, self.__width,
-                    current_color, elapsed_ticks,
-                    self.__width, self.__height,
-                    complete_in_ticks=scroll_ticks,
-                    loop=False
-                )
+                if word_timings:
+                    textutils.draw_scrolling_text_with_words(
+                        frame, word_timings, 0, 6, self.__width,
+                        current_position, word_colors, elapsed_ticks,
+                        self.__width, self.__height,
+                        complete_in_ticks=scroll_ticks,
+                        loop=False
+                    )
+                else:
+                    textutils.draw_scrolling_text(
+                        frame, current_line, 0, 6, self.__width,
+                        current_color, elapsed_ticks,
+                        self.__width, self.__height,
+                        complete_in_ticks=scroll_ticks,
+                        loop=False
+                    )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
         if next_line:
