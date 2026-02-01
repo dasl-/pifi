@@ -779,7 +779,8 @@ class SonosKaraoke(Screensaver):
                             current_position, word_colors,
                             self.__width, self.__height,
                             line_height=7, visible_lines=2,
-                            word_start_times=self.__word_start_times, current_time=current_time
+                            word_start_times=self.__word_start_times, current_time=current_time,
+                            clip_bottom=21
                         )
                     else:
                         scroll_progress = min(1.0, line_progress * 1.67)
@@ -787,7 +788,7 @@ class SonosKaraoke(Screensaver):
                             frame, current_line, 0, 2, self.__width,
                             current_color, scroll_progress,
                             self.__width, self.__height,
-                            line_height=7, visible_lines=2, clip_bottom=19
+                            line_height=7, visible_lines=2, clip_bottom=21
                         )
                 else:
                     # Both lines fit - center each line
@@ -835,18 +836,19 @@ class SonosKaraoke(Screensaver):
                         current_position, word_colors,
                         self.__width, self.__height,
                         line_height=7, visible_lines=2,
-                        word_start_times=self.__word_start_times, current_time=current_time
+                        word_start_times=self.__word_start_times, current_time=current_time,
+                        clip_bottom=21
                     )
                 else:
                     # Non-enhanced lyrics: use time-based vertical scroll
                     # Complete scroll at 60% through, leaving 40% to read final lines
                     scroll_progress = min(1.0, line_progress * 1.67)
-                    # Clip at y=19 (one pixel above preview line at y=20)
+                    # Clip at y=21 (one pixel above preview line at y=22)
                     textutils.draw_vertical_scroll_text(
                         frame, current_line, 0, 2, self.__width,
                         current_color, scroll_progress,
                         self.__width, self.__height,
-                        line_height=7, visible_lines=2, clip_bottom=19
+                        line_height=7, visible_lines=2, clip_bottom=21
                     )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
@@ -855,7 +857,8 @@ class SonosKaraoke(Screensaver):
             next_line_width = len(next_line) * 4
 
             # Position depends on whether current used 2 lines
-            next_y = 18 if len(current_line) <= (self.__width // 4) * 2 else 20
+            # Move preview down a bit for visual separation
+            next_y = 20 if len(current_line) <= (self.__width // 4) * 2 else 22
 
             if next_line_width <= self.__width:
                 x = (self.__width - next_line_width) // 2
@@ -929,12 +932,12 @@ class SonosKaraoke(Screensaver):
 
             if next_line_width <= self.__width:
                 x = (self.__width - next_line_width) // 2
-                textutils.draw_text(frame, next_line, x, 18, next_color, self.__width, self.__height)
+                textutils.draw_text(frame, next_line, x, 20, next_color, self.__width, self.__height)
             else:
                 # Use default looping scroll - text loops continuously during break
                 # scroll_offset based on tick count for smooth animation
                 textutils.draw_scrolling_text(
-                    frame, next_line, 0, 18, self.__width,
+                    frame, next_line, 0, 20, self.__width,
                     next_color, self.__tick_count,
                     self.__width, self.__height,
                     pause_duration=30  # Brief pause between loops
