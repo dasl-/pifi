@@ -326,40 +326,87 @@ class SonosKaraoke(Screensaver):
 
             import syncedlyrics
 
-            # Try providers in order, logging which one succeeds
-            # Musixmatch is the only one that supports enhanced (word-by-word) lyrics
-            providers_to_try = ['Musixmatch', 'Lrclib', 'NetEase', 'Megalobiz']
+            # Fetch from both Musixmatch (word-by-word) and LRCLIB (usually more accurate)
+            mm_lrc = None
+            ll_lrc = None
+
+            try:
+                mm_lrc = syncedlyrics.search(
+                    search_query, synced_only=True, enhanced=True,
+                    providers=['Musixmatch']
+                )
+                if mm_lrc:
+                    self.__logger.debug("Musixmatch: found lyrics")
+            except Exception as e:
+                self.__logger.debug(f"Musixmatch failed: {e}")
+
+            try:
+                ll_lrc = syncedlyrics.search(
+                    search_query, synced_only=True,
+                    providers=['Lrclib']
+                )
+                if ll_lrc:
+                    self.__logger.debug("LRCLIB: found lyrics")
+            except Exception as e:
+                self.__logger.debug(f"LRCLIB failed: {e}")
+
+            # Decide which to use based on timing comparison
             lrc = None
             source_provider = None
 
-            for provider in providers_to_try:
-                try:
-                    # Try enhanced for Musixmatch, synced-only for others
-                    if provider == 'Musixmatch':
-                        result = syncedlyrics.search(
-                            search_query, synced_only=True, enhanced=True,
-                            providers=[provider]
-                        )
-                    else:
-                        result = syncedlyrics.search(
-                            search_query, synced_only=True,
-                            providers=[provider]
-                        )
+            if mm_lrc and ll_lrc:
+                # Both available - compare first line timestamps
+                mm_parsed = self.__parse_lrc(mm_lrc)
+                ll_parsed = self.__parse_lrc(ll_lrc)
 
-                    if result:
-                        lrc = result
-                        source_provider = provider
-                        self.__logger.info(f"Lyrics found via {provider}")
-                        break
-                except Exception as e:
-                    self.__logger.debug(f"Provider {provider} failed: {e}")
-                    continue
+                if mm_parsed and ll_parsed:
+                    mm_first = mm_parsed[0][0]
+                    ll_first = ll_parsed[0][0]
+                    diff = abs(mm_first - ll_first)
+
+                    self.__logger.info(
+                        f"Timing comparison: Musixmatch={mm_first:.2f}s, LRCLIB={ll_first:.2f}s, diff={diff:.2f}s"
+                    )
+
+                    if diff <= 1.0:
+                        # Timings match - use Musixmatch for word-by-word
+                        lrc = mm_lrc
+                        source_provider = 'Musixmatch'
+                        self.__logger.info("Using Musixmatch (timings match, word-by-word available)")
+                    else:
+                        # Timings differ - trust LRCLIB
+                        lrc = ll_lrc
+                        source_provider = 'LRCLIB'
+                        self.__logger.info("Using LRCLIB (timing mismatch, LRCLIB more accurate)")
+                elif ll_parsed:
+                    lrc = ll_lrc
+                    source_provider = 'LRCLIB'
+                elif mm_parsed:
+                    lrc = mm_lrc
+                    source_provider = 'Musixmatch'
+            elif ll_lrc:
+                lrc = ll_lrc
+                source_provider = 'LRCLIB'
+            elif mm_lrc:
+                lrc = mm_lrc
+                source_provider = 'Musixmatch'
+            else:
+                # Try fallback providers
+                for provider in ['NetEase', 'Megalobiz']:
+                    try:
+                        result = syncedlyrics.search(
+                            search_query, synced_only=True, providers=[provider]
+                        )
+                        if result:
+                            lrc = result
+                            source_provider = provider
+                            self.__logger.info(f"Fallback: found lyrics via {provider}")
+                            break
+                    except Exception as e:
+                        self.__logger.debug(f"{provider} failed: {e}")
 
             if lrc:
-                self.__logger.debug(f"Raw LRC from {source_provider} ({len(lrc)} chars): {lrc[:200]}...")
-
-                # Detect if it's actually enhanced (has <> word timestamps) or just synced
-                # Enhanced format: [00:12.00] <00:12.00> Word <00:12.50> Word2
+                # Detect if it's enhanced (has <> word timestamps)
                 is_enhanced = '<' in lrc and '>' in lrc
                 quality = 'enhanced' if is_enhanced else 'synced'
                 self.__logger.info(f"Lyrics source: {source_provider}, quality: {quality}")
