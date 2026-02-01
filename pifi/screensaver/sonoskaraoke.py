@@ -711,36 +711,38 @@ class SonosKaraoke(Screensaver):
                 line1 = current_line[:split_pos].strip()
                 line2 = current_line[split_pos:].strip()
 
-                # Center each line
+                # Center each line based on text width
                 x1 = (self.__width - len(line1) * 4) // 2
                 x2 = (self.__width - len(line2) * 4) // 2
 
                 if word_timings:
-                    # Split word_timings between the two lines
-                    # Count characters to find the split point in words
-                    char_count = 0
-                    split_word_idx = 0
-                    for idx, (_, word) in enumerate(word_timings):
-                        char_count += len(word) + 1  # word + space
-                        if char_count > split_pos:
-                            split_word_idx = idx
-                            break
-                    else:
-                        split_word_idx = len(word_timings)
-
-                    line1_words = word_timings[:split_word_idx]
-                    line2_words = word_timings[split_word_idx:]
-
-                    if line1_words:
-                        textutils.draw_text_with_word_colors(
-                            frame, line1_words, x1, 2, current_position,
-                            word_colors, self.__width, self.__height
+                    # Build a color for each character position in the full line
+                    # by mapping characters to their words
+                    char_colors = []
+                    for word_idx, (_, word) in enumerate(word_timings):
+                        word_color = textutils.get_word_color(
+                            word_idx, word_timings, current_position, word_colors
                         )
-                    if line2_words:
-                        textutils.draw_text_with_word_colors(
-                            frame, line2_words, x2, 9, current_position,
-                            word_colors, self.__width, self.__height
-                        )
+                        for _ in word:
+                            char_colors.append(word_color)
+                        char_colors.append(word_color)  # space after word
+
+                    # Draw line1 character by character with colors
+                    cursor = x1
+                    for i, char in enumerate(line1):
+                        # Map line1 char position to full text position
+                        color = char_colors[i] if i < len(char_colors) else word_colors['sung']
+                        textutils.draw_char(frame, char, cursor, 2, color, self.__width, self.__height)
+                        cursor += 4
+
+                    # Draw line2 character by character with colors
+                    # Line2 starts after split_pos in the original text
+                    cursor = x2
+                    for i, char in enumerate(line2):
+                        full_pos = split_pos + 1 + i  # +1 for the space we split on
+                        color = char_colors[full_pos] if full_pos < len(char_colors) else word_colors['sung']
+                        textutils.draw_char(frame, char, cursor, 9, color, self.__width, self.__height)
+                        cursor += 4
                 else:
                     textutils.draw_text(frame, line1, x1, 2, current_color, self.__width, self.__height)
                     textutils.draw_text(frame, line2, x2, 9, current_color, self.__width, self.__height)
