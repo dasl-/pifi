@@ -90,6 +90,11 @@ class SonosKaraoke(Screensaver):
         # Sonos speaker reference
         self.__speaker = None
 
+        # Background polling thread
+        self.__poll_lock = threading.Lock()  # Protects position/track state
+        self.__polling_active = False
+        self.__poll_thread = None
+
         # Pre-allocated frame buffer (optimization: avoid allocation every frame)
         self.__frame_buffer = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
 
@@ -108,18 +113,33 @@ class SonosKaraoke(Screensaver):
 
         self.__logger.info(f"Connected to Sonos: {self.__speaker.player_name}")
 
-        for tick in range(self.__max_ticks):
-            # Periodic Sonos polling
-            current_time = time.time()
-            if current_time - self.__last_fetch_time > self.__update_interval:
-                self.__poll_sonos()
-                self.__last_fetch_time = current_time
+        # Start background polling thread
+        self.__polling_active = True
+        self.__poll_thread = threading.Thread(target=self.__polling_loop, daemon=True)
+        self.__poll_thread.start()
 
-            self.__render()
-            self.__tick_count += 1
-            time.sleep(self.__tick_sleep)
+        try:
+            for tick in range(self.__max_ticks):
+                self.__render()
+                self.__tick_count += 1
+                time.sleep(self.__tick_sleep)
+        finally:
+            # Stop background polling
+            self.__polling_active = False
+            if self.__poll_thread:
+                self.__poll_thread.join(timeout=1.0)
 
         self.__logger.info("Sonos Karaoke screensaver ended")
+
+    def __polling_loop(self):
+        """Background thread for Sonos polling."""
+        while self.__polling_active:
+            self.__poll_sonos()
+            # Sleep in small increments to allow quick shutdown
+            for _ in range(int(self.__update_interval * 10)):
+                if not self.__polling_active:
+                    break
+                time.sleep(0.1)
 
     def __connect_to_sonos(self):
         """Connect to a Sonos speaker.
@@ -216,12 +236,13 @@ class SonosKaraoke(Screensaver):
         return False
 
     def __poll_sonos(self):
-        """Poll Sonos for current track info."""
+        """Poll Sonos for current track info (runs in background thread)."""
         if not self.__speaker:
             self.__logger.debug("No speaker connected")
             return
 
         try:
+            # Network calls outside the lock
             track_info = self.__speaker.get_current_track_info()
             transport_info = self.__speaker.get_current_transport_info()
 
@@ -229,31 +250,39 @@ class SonosKaraoke(Screensaver):
             artist = track_info.get('artist', '')
             position = track_info.get('position', '0:00:00')
             duration = track_info.get('duration', '0:00:00')
-
-            # Parse position and duration to seconds
-            self.__position_seconds = self.__parse_time(position)
-            self.__song_duration = self.__parse_time(duration)
-            self.__last_poll_time = time.time()
-
-            # Check if playing
             state = transport_info.get('current_transport_state', '')
-            self.__is_playing = state == 'PLAYING'
 
-            self.__logger.debug(
-                f"Poll: state={state}, title='{title}', artist='{artist}', pos={position}"
-            )
+            # Parse times
+            position_seconds = self.__parse_time(position)
+            song_duration = self.__parse_time(duration)
+            poll_time = time.time()
+            is_playing = state == 'PLAYING'
 
-            # Check if track changed
-            if title != self.__current_track or artist != self.__current_artist:
-                self.__current_track = title
-                self.__current_artist = artist
-                self.__lyrics = []
-                self.__lyrics_available = False
-                self.__current_line_index = -1
-                self.__max_position = 0  # Reset monotonic position for new track
+            # Update state atomically under lock
+            with self.__poll_lock:
+                self.__position_seconds = position_seconds
+                self.__song_duration = song_duration
+                self.__last_poll_time = poll_time
+                self.__is_playing = is_playing
 
-                if title and artist:
-                    self.__start_lyrics_fetch(title, artist)
+                self.__logger.debug(
+                    f"Poll: state={state}, title='{title}', artist='{artist}', pos={position}"
+                )
+
+                # Check if track changed
+                track_changed = False
+                if title != self.__current_track or artist != self.__current_artist:
+                    self.__current_track = title
+                    self.__current_artist = artist
+                    self.__lyrics = []
+                    self.__lyrics_available = False
+                    self.__current_line_index = -1
+                    self.__max_position = 0  # Reset monotonic position for new track
+                    track_changed = True
+
+            # Start lyrics fetch outside lock (it spawns its own thread)
+            if track_changed and title and artist:
+                self.__start_lyrics_fetch(title, artist)
 
         except Exception as e:
             self.__logger.error(f"Error polling Sonos: {e}")
