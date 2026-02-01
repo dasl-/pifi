@@ -655,33 +655,33 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         # All lines fit, no scrolling needed
         target_scroll_line = 0
     else:
-        # Find the first word index on each line
-        first_word_per_line = {}
+        # Find the last word index on each line
+        last_word_per_line = {}
         for word_idx, (line_idx, _) in enumerate(word_line_positions):
-            if line_idx not in first_word_per_line:
-                first_word_per_line[line_idx] = word_idx
+            last_word_per_line[line_idx] = word_idx
 
-        # Scroll to keep the current/upcoming word's line visible
-        # We want the line with the next word to sing to be on screen
+        # Scroll based on word completion, not anticipation
+        # We scroll up when the last word on the top visible line is complete
         max_scroll = num_lines - visible_lines
 
-        # Find which word is current/upcoming
-        current_word_idx = 0
-        for word_idx, (ts, _) in enumerate(word_timings):
-            if current_position + anticipation >= ts:
-                current_word_idx = word_idx
+        # Start from scroll position 0, then check if we should scroll
+        target_scroll_line = 0
+
+        for scroll_pos in range(max_scroll + 1):
+            # Get the last word on the top visible line at this scroll position
+            top_line_idx = scroll_pos
+            if top_line_idx in last_word_per_line:
+                last_word_idx = last_word_per_line[top_line_idx]
+                last_word_ts = word_timings[last_word_idx][0]
+
+                # Scroll when the last word on top line is complete
+                # (past its timestamp by the completion delay)
+                if current_position >= last_word_ts + word_complete_delay:
+                    target_scroll_line = min(scroll_pos + 1, max_scroll)
+                else:
+                    break
             else:
                 break
-
-        # Find which line that word is on
-        if current_word_idx < len(word_line_positions):
-            current_word_line = word_line_positions[current_word_idx][0]
-        else:
-            current_word_line = num_lines - 1
-
-        # Scroll so current word's line is the top visible line
-        # (but not beyond max_scroll)
-        target_scroll_line = min(current_word_line, max_scroll)
 
     # Build lines with words
     lines = []
@@ -760,12 +760,21 @@ def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress
     num_lines = len(lines)
 
     if num_lines <= visible_lines:
-        # All lines fit, just draw centered
+        # All lines fit, just draw centered (but still respect clip_bottom)
         for line_idx, line in enumerate(lines):
             line_y = y + line_idx * line_height
             line_pixel_width = len(line) * 4
             line_x = max(0, (max_width - line_pixel_width) // 2)
-            draw_text(frame, line, line_x, line_y, color, width, height, font)
+
+            # Apply vertical clipping if needed
+            if clip_bottom is not None and line_y + 5 > clip_bottom:
+                cursor = line_x
+                for char in line:
+                    draw_char_clipped_vertical(frame, char, cursor, line_y, color,
+                                               clip_bottom, width, height, font)
+                    cursor += 4
+            elif clip_bottom is None or line_y < clip_bottom:
+                draw_text(frame, line, line_x, line_y, color, width, height, font)
         return
 
     # Smooth continuous scroll with easing

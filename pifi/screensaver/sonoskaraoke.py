@@ -780,7 +780,7 @@ class SonosKaraoke(Screensaver):
                             self.__width, self.__height,
                             line_height=7, visible_lines=2,
                             word_start_times=self.__word_start_times, current_time=current_time,
-                            clip_bottom=21
+                            clip_bottom=19
                         )
                     else:
                         scroll_progress = min(1.0, line_progress * 1.67)
@@ -788,7 +788,7 @@ class SonosKaraoke(Screensaver):
                             frame, current_line, 0, 2, self.__width,
                             current_color, scroll_progress,
                             self.__width, self.__height,
-                            line_height=7, visible_lines=2, clip_bottom=21
+                            line_height=7, visible_lines=2, clip_bottom=19
                         )
                 else:
                     # Both lines fit - center each line
@@ -837,7 +837,7 @@ class SonosKaraoke(Screensaver):
                         self.__width, self.__height,
                         line_height=7, visible_lines=2,
                         word_start_times=self.__word_start_times, current_time=current_time,
-                        clip_bottom=21
+                        clip_bottom=19
                     )
                 else:
                     # Non-enhanced lyrics: use time-based vertical scroll
@@ -848,7 +848,7 @@ class SonosKaraoke(Screensaver):
                         frame, current_line, 0, 2, self.__width,
                         current_color, scroll_progress,
                         self.__width, self.__height,
-                        line_height=7, visible_lines=2, clip_bottom=21
+                        line_height=7, visible_lines=2, clip_bottom=19
                     )
 
         # Render next line (dimmer) - must complete scroll before it becomes current
