@@ -90,6 +90,9 @@ class SonosKaraoke(Screensaver):
         # Sonos speaker reference
         self.__speaker = None
 
+        # Pre-allocated frame buffer (optimization: avoid allocation every frame)
+        self.__frame_buffer = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+
     def play(self):
         """Run the screensaver."""
         self.__logger.info("Starting Sonos Karaoke screensaver")
@@ -399,14 +402,16 @@ class SonosKaraoke(Screensaver):
                             word_timings[-1] = (word_timings[-1][0], remaining)
                             clean_parts.append(remaining)
 
-                        # Filter out empty words and join clean text
-                        word_timings = [(ts, w) for ts, w in word_timings if w]
-                        clean_text = ' '.join(clean_parts)
+                        # Filter out empty words, uppercase, and join clean text
+                        # Store uppercase at parse time to avoid per-frame conversion
+                        word_timings = [(ts, w.upper()) for ts, w in word_timings if w]
+                        clean_text = ' '.join(clean_parts).upper()
 
                         lyrics.append((timestamp, clean_text, word_timings))
                     else:
                         # Regular synced lyrics - no word timings
-                        lyrics.append((timestamp, text, None))
+                        # Store uppercase at parse time
+                        lyrics.append((timestamp, text.upper(), None))
 
         # Sort by timestamp
         lyrics.sort(key=lambda x: x[0])
@@ -464,7 +469,9 @@ class SonosKaraoke(Screensaver):
 
     def __render(self):
         """Render the display."""
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        # Reuse pre-allocated buffer (clear to black)
+        frame = self.__frame_buffer
+        frame.fill(0)
 
         if not self.__is_playing and not self.__current_track:
             if self.__tick_count % 100 == 0:
@@ -554,10 +561,10 @@ class SonosKaraoke(Screensaver):
         next_line = ""
 
         if current_idx >= 0 and current_idx < len(self.__lyrics):
-            current_line = self.__lyrics[current_idx][1].upper()
+            current_line = self.__lyrics[current_idx][1]  # Already uppercase from parsing
 
         if current_idx + 1 < len(self.__lyrics):
-            next_line = self.__lyrics[current_idx + 1][1].upper()
+            next_line = self.__lyrics[current_idx + 1][1]  # Already uppercase from parsing
 
         # Check for intro countdown - before first lyrics start
         if current_idx == -1 and self.__lyrics:
@@ -571,7 +578,7 @@ class SonosKaraoke(Screensaver):
                 self.__max_intro_progress = max(self.__max_intro_progress, raw_progress)
                 intro_progress = self.__max_intro_progress
 
-                first_line = self.__lyrics[0][1].upper()
+                first_line = self.__lyrics[0][1]  # Already uppercase from parsing
                 self.__render_break_indicator(frame, intro_progress, first_line)
                 self.__render_quality_indicator(frame)
                 self.__render_progress_bar(frame)
