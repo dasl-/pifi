@@ -47,8 +47,17 @@ updateAndInstallPackages(){
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
     # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
+    #
+    # Core packages:
+    #   pytz, websockets, pygame, pyjson5, simpleaudio, uv
+    # Screensaver packages:
+    #   soco - Sonos speaker control (for SonosKaraoke)
+    #   syncedlyrics - Lyrics fetching with timestamps (for SonosKaraoke)
+    #   underground - MTA GTFS-realtime feed (for NycSubway)
+    #   requests - HTTP requests (for NycSubway, WFMU)
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
-        git+https://github.com/cexen/py-simple-audio.git uv
+        git+https://github.com/cexen/py-simple-audio.git uv \
+        soco syncedlyrics underground requests
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
