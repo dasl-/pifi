@@ -582,15 +582,60 @@ class SonosKaraoke(Screensaver):
         self.__led_frame_player.play_frame(frame)
 
     def __render_waiting(self, frame):
-        """Render waiting for music state."""
-        # Pulsing effect
-        pulse = 0.5 + 0.5 * np.sin(self.__tick_count * 0.1)
-        color = tuple(int(c * pulse) for c in self.COLORS['waiting'])
+        """Render waiting for music state with animated idle display."""
+        t = self.__tick_count * 0.12  # Time factor for animation speed
 
-        text = "WAITING"
-        x = (self.__width - len(text) * 4) // 2
-        y = self.__height // 2 - 2
-        textutils.draw_text(frame, text, x, y, color, self.__width, self.__height)
+        # Draw gentle wave of dots across the middle
+        num_dots = 8
+        wave_y = self.__height // 2
+        dot_spacing = self.__width // (num_dots + 1)
+
+        for i in range(num_dots):
+            # Each dot has its own phase in the wave
+            phase = i * 0.7
+            # Vertical oscillation
+            y_offset = int(3 * np.sin(t + phase))
+            # Brightness oscillation (out of phase with position)
+            brightness = 0.5 + 0.5 * np.sin(t * 0.8 + phase + 1.5)
+
+            x = dot_spacing * (i + 1)
+            y = wave_y + y_offset
+
+            # Color: gentle purple/blue gradient based on position
+            hue_shift = i / num_dots
+            r = int(150 * brightness * (1 - hue_shift * 0.3))
+            g = int(100 * brightness * (0.5 + hue_shift * 0.3))
+            b = int(200 * brightness * (0.6 + hue_shift * 0.4))
+            color = (r, g, b)
+
+            # Draw 2x2 dot
+            for dy in range(2):
+                for dx in range(2):
+                    px, py = x + dx, y + dy
+                    if 0 <= px < self.__width and 0 <= py < self.__height:
+                        frame[py, px] = color
+
+        # Text at bottom - speaker name if available, otherwise prompt
+        text_pulse = 0.6 + 0.4 * np.sin(t * 0.5)
+        text_color = tuple(int(120 * text_pulse) for _ in range(3))
+
+        if self.__speaker_name:
+            text = self.__speaker_name.upper()
+        else:
+            text = "NO MUSIC ON SONOS"
+
+        text_width = len(text) * 4
+        if text_width <= self.__width:
+            x = (self.__width - text_width) // 2
+            textutils.draw_text(frame, text, x, self.__height - 7, text_color,
+                                self.__width, self.__height)
+        else:
+            # Scroll long text
+            textutils.draw_scrolling_text(
+                frame, text, 0, self.__height - 7, self.__width,
+                text_color, self.__tick_count,
+                self.__width, self.__height
+            )
 
     def __render_no_sonos(self):
         """Render no Sonos found error."""
@@ -603,6 +648,12 @@ class SonosKaraoke(Screensaver):
 
     def __render_no_lyrics(self, frame):
         """Render track info when no lyrics available."""
+        # If we have no track info at all (e.g., non-coordinator speaker),
+        # fall back to the waiting animation
+        if not self.__current_track and not self.__current_artist:
+            self.__render_waiting(frame)
+            return
+
         # Show track and artist nicely centered vertically
         # Track at y=8, artist at y=18 for better spacing
         if self.__current_track:
