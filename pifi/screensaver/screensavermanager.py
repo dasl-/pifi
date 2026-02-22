@@ -33,6 +33,7 @@ from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
 from pifi.screensaver.videoscreensaver import VideoScreensaver
 from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.screensaver.transition import TransitionPlayer
 from pifi.settingsdb import SettingsDb
 from pifi.logger import Logger
 
@@ -101,6 +102,8 @@ class ScreensaverManager:
                 raise
         self.__logger.info("All screensavers validated successfully")
 
+        self.__transition_player = TransitionPlayer(self.__led_frame_player)
+
     @staticmethod
     def get_all_screensavers():
         """Get metadata for all available screensavers."""
@@ -155,3 +158,9 @@ class ScreensaverManager:
             screensaver_cls = self.SCREENSAVER_CLASSES[screensaver_id]
             screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
             screensaver.play()
+
+            if Config.get('transitions.enabled', True):
+                try:
+                    self.__transition_player.play_transition()
+                except Exception as e:
+                    self.__logger.warning(f"Transition failed: {e}")
