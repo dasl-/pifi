@@ -26,6 +26,9 @@ class SettingsDb:
     # Global LED brightness (0-100 percentage)
     BRIGHTNESS = 'brightness'
 
+    # Global screensaver/transition settings (JSON object)
+    GLOBAL_SETTINGS = 'global_settings'
+
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
         self.__logger = Logger().set_namespace(self.__class__.__name__)

@@ -168,6 +168,8 @@ class StringArt(Screensaver):
         self.__init_pattern()
 
         for tick in range(self.__max_ticks):
+            if self._is_past_dwell_time():
+                break
             self.__update()
 
             # Convert to uint8 frame

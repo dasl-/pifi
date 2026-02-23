@@ -25,6 +25,40 @@
         </section>
 
         <section class="settings-section">
+            <h2>Rotation Settings</h2>
+            <p class="description">Configure how screensavers rotate and transition.</p>
+
+            <div class="config-field">
+                <label class="config-label" for="dwell-time">Dwell Time (seconds)</label>
+                <input type="number" class="config-input" id="dwell-time" min="0" step="1" placeholder="Per-screensaver default">
+                <span class="field-hint">How long each screensaver plays. Empty or 0 uses per-screensaver defaults.</span>
+            </div>
+
+            <div class="config-field">
+                <label class="config-label" for="transitions-enabled">
+                    <input type="checkbox" class="config-input" id="transitions-enabled" checked>
+                    Transitions Enabled
+                </label>
+            </div>
+
+            <div class="config-field">
+                <label class="config-label" for="transition-duration">Transition Duration (seconds)</label>
+                <input type="number" class="config-input" id="transition-duration" min="0.1" step="0.1">
+            </div>
+
+            <div class="config-field">
+                <label class="config-label" for="transition-steps">Transition Steps</label>
+                <input type="number" class="config-input" id="transition-steps" min="1" step="1">
+            </div>
+
+            <div class="actions">
+                <button id="save-rotation-btn" class="save-btn">Save Rotation Settings</button>
+            </div>
+
+            <div id="rotation-status-message" class="status-message"></div>
+        </section>
+
+        <section class="settings-section">
             <h2>Screensavers</h2>
             <p class="description">Select which screensavers to include in the rotation. Click "Settings" to configure options.</p>
 
@@ -86,6 +120,63 @@
             });
 
             loadBrightness();
+
+            // Rotation settings
+            function loadRotationSettings() {
+                $.get('/api/global_settings').done(function(data) {
+                    if (!data.success) return;
+                    var c = data.current;
+
+                    var dwellTime = c.screensavers.dwell_time;
+                    if (dwellTime !== null && dwellTime !== 0) {
+                        $('#dwell-time').val(dwellTime);
+                    } else {
+                        $('#dwell-time').val('');
+                    }
+
+                    $('#transitions-enabled').prop('checked', c.transitions.enabled);
+                    $('#transition-duration').val(c.transitions.duration);
+                    $('#transition-steps').val(c.transitions.num_steps);
+                });
+            }
+
+            $('#save-rotation-btn').on('click', function() {
+                var dwellVal = $('#dwell-time').val();
+                var dwellTime = (dwellVal === '' || parseFloat(dwellVal) === 0) ? null : parseFloat(dwellVal);
+
+                var durationVal = $('#transition-duration').val();
+                var duration = parseFloat(durationVal);
+
+                var stepsVal = $('#transition-steps').val();
+                var numSteps = parseInt(stepsVal, 10);
+
+                var payload = {
+                    screensavers: {
+                        dwell_time: dwellTime
+                    },
+                    transitions: {
+                        enabled: $('#transitions-enabled').is(':checked'),
+                        duration: duration,
+                        num_steps: numSteps
+                    }
+                };
+
+                $.post({
+                    url: '/api/global_settings',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json'
+                }).done(function(data) {
+                    if (data.success) {
+                        showStatus('Rotation settings saved! Screensaver restarting...', 'success', '#rotation-status-message');
+                    } else {
+                        showStatus('Error saving rotation settings', 'error', '#rotation-status-message');
+                    }
+                }).fail(function() {
+                    showStatus('Failed to save rotation settings', 'error', '#rotation-status-message');
+                });
+            });
+
+            loadRotationSettings();
 
             function loadScreensavers() {
                 // Load both screensavers and their configs in parallel
@@ -398,8 +489,8 @@
                 return true;
             }
 
-            function showStatus(message, type) {
-                var $status = $('#status-message');
+            function showStatus(message, type, selector) {
+                var $status = $(selector || '#status-message');
                 $status.text(message)
                     .removeClass('success error')
                     .addClass(type)
