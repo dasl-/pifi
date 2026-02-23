@@ -113,6 +113,11 @@
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "screensavers": {
 
+        // Optional, ?float, default: null. Central dwell time in seconds for all screensavers.
+        // When set, each screensaver will end after this many seconds regardless of its own
+        // max_ticks setting. When null (default), each screensaver uses its own max_ticks.
+        "dwell_time": null,
+
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
         "saved_videos": [],
