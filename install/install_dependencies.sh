@@ -41,9 +41,13 @@ updateAndInstallPackages(){
     # parallel: needed for update_yt-dlp.sh script
 
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev python3-numpy
+        libopenblas-dev python3-numpy python3-requests
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
+
+    # --ignore-installed: Ensure pip doesn’t try to uninstall the apt-owned one. Without this flag, you may get an error:
+    #    https://gist.github.com/dasl-/77d8575765c4dca37604f5145e0b0192#file-gistfile1-txt-L141
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade --ignore-installed typing-extensions
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
     # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
@@ -57,7 +61,7 @@ updateAndInstallPackages(){
     #   requests - HTTP requests (for NycSubway, WFMU)
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
         git+https://github.com/cexen/py-simple-audio.git uv \
-        soco syncedlyrics underground requests
+        soco syncedlyrics underground
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
