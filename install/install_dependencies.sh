@@ -47,6 +47,8 @@ updateAndInstallPackages(){
 
     # --ignore-installed: Ensure pip doesn’t try to uninstall the apt-owned one. Without this flag, you may get an error:
     #    https://gist.github.com/dasl-/77d8575765c4dca37604f5145e0b0192#file-gistfile1-txt-L141
+    #
+    # typing-extensions: used by syncedlyrics
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade --ignore-installed typing-extensions
 
     # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
