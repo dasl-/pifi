@@ -308,6 +308,9 @@ class PifiAPI():
         if not screensaver_id:
             return {'success': False, 'error': 'screensaver_id required'}
 
+        if not isinstance(config, dict):
+            return {'success': False, 'error': 'config must be an object'}
+
         # Get existing overrides
         overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
         all_overrides = {}

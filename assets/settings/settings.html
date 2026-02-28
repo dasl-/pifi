@@ -154,6 +154,7 @@
                         var displayValue = Array.isArray(value) ? value.join(', ') : value;
                         inputHtml = '<input type="text" class="config-input' + modifiedClass + '" ' +
                             'data-key="' + key + '" data-type="array" ' +
+                            "data-default='" + JSON.stringify(defaultValue) + "' " +
                             'value="' + displayValue + '">';
                     } else {
                         inputHtml = '<input type="text" class="config-input' + modifiedClass + '" ' +
