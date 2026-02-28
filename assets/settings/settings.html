@@ -120,6 +120,7 @@
             function getInputType(value) {
                 if (typeof value === 'boolean') return 'checkbox';
                 if (typeof value === 'number') return 'number';
+                if (Array.isArray(value)) return 'array';
                 return 'text';
             }
 
@@ -149,6 +150,11 @@
                         inputHtml = '<input type="number" class="config-input' + modifiedClass + '" ' +
                             'data-key="' + key + '" data-default="' + defaultValue + '" ' +
                             'value="' + value + '" step="' + step + '">';
+                    } else if (inputType === 'array') {
+                        var displayValue = Array.isArray(value) ? value.join(', ') : value;
+                        inputHtml = '<input type="text" class="config-input' + modifiedClass + '" ' +
+                            'data-key="' + key + '" data-type="array" ' +
+                            'value="' + displayValue + '">';
                     } else {
                         inputHtml = '<input type="text" class="config-input' + modifiedClass + '" ' +
                             'data-key="' + key + '" data-default="' + defaultValue + '" ' +
@@ -255,6 +261,8 @@
                     } else if (type === 'number') {
                         var val = $input.val();
                         values[key] = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                    } else if ($input.data('type') === 'array') {
+                        values[key] = $input.val().split(',').map(function(s) { return s.trim(); }).filter(Boolean);
                     } else {
                         values[key] = $input.val();
                     }
@@ -318,6 +326,8 @@
 
                             if (type === 'checkbox') {
                                 $input.prop('checked', defaultVal === true || defaultVal === 'true');
+                            } else if ($input.data('type') === 'array') {
+                                $input.val(Array.isArray(defaultVal) ? defaultVal.join(', ') : defaultVal);
                             } else {
                                 $input.val(defaultVal);
                             }
@@ -350,6 +360,8 @@
                     } else if (type === 'number') {
                         var val = $input.val();
                         currentVal = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                    } else if ($input.data('type') === 'array') {
+                        currentVal = $input.val().split(',').map(function(s) { return s.trim(); }).filter(Boolean);
                     } else {
                         currentVal = $input.val();
                     }
