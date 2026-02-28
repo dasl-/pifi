@@ -1,0 +1,186 @@
+"""
+AirPlay Karaoke Screensaver.
+
+Displays synced lyrics from currently playing AirPlay track via shairport-sync.
+Reads metadata from shairport-sync's metadata pipe.
+"""
+
+import base64
+import os
+import re
+import time
+
+from pifi.config import Config
+from pifi.screensaver.karaokebase import KaraokeBase
+from pifi.screensaver import textutils
+
+
+class AirPlayKaraoke(KaraokeBase):
+    """AirPlay karaoke lyrics display via shairport-sync metadata."""
+
+    def __init__(self, led_frame_player=None):
+        super().__init__(led_frame_player)
+
+        # AirPlay-specific configuration
+        self.__metadata_pipe = Config.get(
+            'airplaykaraoke.metadata_pipe', '/tmp/shairport-sync-metadata'
+        )
+        self._max_ticks = Config.get('airplaykaraoke.max_ticks', 6000)
+        self._tick_sleep = Config.get('airplaykaraoke.tick_sleep', 0.05)
+
+    def _connect(self) -> bool:
+        """Check if shairport-sync metadata pipe exists."""
+        if os.path.exists(self.__metadata_pipe):
+            self._logger.info(f"Metadata pipe found: {self.__metadata_pipe}")
+            return True
+        self._logger.warning(f"Metadata pipe not found: {self.__metadata_pipe}")
+        return False
+
+    def _polling_loop(self):
+        """Read shairport-sync metadata pipe continuously."""
+        while self._polling_active:
+            try:
+                # Open pipe - blocks until a writer opens the other end
+                with open(self.__metadata_pipe, 'r') as pipe:
+                    buffer = ''
+                    pending_metadata = {}
+
+                    while self._polling_active:
+                        line = pipe.readline()
+                        if not line:
+                            # Pipe closed (writer disconnected)
+                            self._logger.debug("Metadata pipe closed, will reopen")
+                            with self._poll_lock:
+                                self._is_playing = False
+                            break
+
+                        buffer += line
+
+                        # Process complete <item>...</item> blocks
+                        while '<item>' in buffer and '</item>' in buffer:
+                            start = buffer.index('<item>')
+                            end = buffer.index('</item>') + len('</item>')
+                            item_xml = buffer[start:end]
+                            buffer = buffer[end:]
+
+                            self.__process_item(item_xml, pending_metadata)
+
+            except FileNotFoundError:
+                self._logger.debug("Metadata pipe not found, waiting...")
+                # Sleep in small increments to allow quick shutdown
+                for _ in range(10):
+                    if not self._polling_active:
+                        return
+                    time.sleep(0.1)
+            except Exception as e:
+                self._logger.error(f"Error reading metadata pipe: {e}")
+                for _ in range(10):
+                    if not self._polling_active:
+                        return
+                    time.sleep(0.1)
+
+    def __process_item(self, item_xml, pending_metadata):
+        """Process a single metadata item from the pipe.
+
+        shairport-sync metadata format:
+        <item><type>hex</type><code>hex</code><length>N</length>
+              <data encoding="base64">...</data></item>
+
+        Type and code are 4-char ASCII strings encoded as 8 hex digits.
+        """
+        type_match = re.search(r'<type>([\da-fA-F]+)</type>', item_xml)
+        code_match = re.search(r'<code>([\da-fA-F]+)</code>', item_xml)
+
+        if not type_match or not code_match:
+            return
+
+        try:
+            item_type = bytes.fromhex(type_match.group(1)).decode('ascii', errors='ignore')
+            item_code = bytes.fromhex(code_match.group(1)).decode('ascii', errors='ignore')
+        except (ValueError, UnicodeDecodeError):
+            return
+
+        # Extract data if present
+        data_match = re.search(r'<data encoding="base64">\s*(.*?)\s*</data>', item_xml, re.DOTALL)
+        data = ''
+        if data_match:
+            try:
+                data = base64.b64decode(data_match.group(1)).decode('utf-8', errors='ignore')
+            except Exception:
+                data = ''
+
+        # Handle metadata batching (mdst/mden bracket a set of metadata items)
+        if item_type == 'ssnc':
+            if item_code == 'mdst':
+                pending_metadata.clear()
+                return
+            elif item_code == 'mden':
+                # Metadata batch complete - apply
+                with self._poll_lock:
+                    if 'title' in pending_metadata:
+                        self._current_track = pending_metadata['title']
+                    if 'artist' in pending_metadata:
+                        self._current_artist = pending_metadata['artist']
+                pending_metadata.clear()
+                return
+            elif item_code == 'prgr':
+                self.__parse_progress(data)
+                return
+            elif item_code == 'pbeg':
+                with self._poll_lock:
+                    self._is_playing = True
+                return
+            elif item_code == 'pend':
+                with self._poll_lock:
+                    self._is_playing = False
+                return
+
+        # Collect core metadata items
+        if item_type == 'core':
+            if item_code == 'minm':
+                pending_metadata['title'] = data
+            elif item_code == 'asar':
+                pending_metadata['artist'] = data
+            elif item_code == 'asal':
+                pending_metadata['album'] = data
+
+    def __parse_progress(self, data):
+        """Parse progress string: 'start/current/end' as RTP frame numbers at 44100 Hz."""
+        try:
+            parts = data.strip().split('/')
+            if len(parts) != 3:
+                return
+
+            start_rtp = int(parts[0])
+            current_rtp = int(parts[1])
+            end_rtp = int(parts[2])
+
+            position_seconds = (current_rtp - start_rtp) / 44100.0
+            duration_seconds = (end_rtp - start_rtp) / 44100.0
+
+            with self._poll_lock:
+                self._position_seconds = max(0, position_seconds)
+                self._song_duration = max(0, duration_seconds)
+                self._last_poll_time = time.time()
+                self._is_playing = True
+        except (ValueError, ZeroDivisionError):
+            pass
+
+    def _get_source_display_name(self) -> str:
+        return "AIRPLAY"
+
+    def _render_connection_error(self, frame):
+        textutils.draw_text(frame, "NO AIRPLAY", 4, 8, (255, 100, 100), self._width, self._height)
+        textutils.draw_text(frame, "FOUND", 16, 18, (255, 100, 100), self._width, self._height)
+
+    @classmethod
+    def get_id(cls) -> str:
+        return 'airplay_karaoke'
+
+    @classmethod
+    def get_name(cls) -> str:
+        return 'AirPlay Karaoke'
+
+    @classmethod
+    def get_description(cls) -> str:
+        return 'Synced lyrics display for AirPlay playback via shairport-sync'

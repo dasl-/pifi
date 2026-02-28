@@ -28,6 +28,7 @@ from pifi.screensaver.gradienttest import GradientTest
 from pifi.screensaver.nycsubway import NycSubway
 from pifi.screensaver.wfmu import Wfmu
 from pifi.screensaver.sonoskaraoke import SonosKaraoke
+from pifi.screensaver.airplaykaraoke import AirPlayKaraoke
 from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
 from pifi.screensaver.videoscreensaver import VideoScreensaver
@@ -68,6 +69,7 @@ class ScreensaverManager:
         NycSubway,
         Wfmu,
         SonosKaraoke,
+        AirPlayKaraoke,
         VideoScreensaver,
     ]
 
