@@ -31,10 +31,8 @@
         // Required, integer. The height of your LED matrix, in pixels.
         "display_height": 0,
 
-        // Optional, integer, default: 3. Global brightness of LEDs. Only applicable for apa102 or ws2812b driver.
-        // apa102 range: [0, 31]
-        // ws2812b range: [0, 255]
-        "brightness": 3,
+        // Optional, integer, default: 10. Global brightness of LEDs as a percentage [0, 100].
+        "brightness": 10,
 
         // Optional, boolean, default: false. Whether to swap left to right when outputting to the LED matrix.
         // Setting this might be necessary if you wired your LEDs differently.
@@ -43,6 +41,13 @@
         // Optional, boolean, default: false. Whether to swap top to bottom when outputting to the LED matrix.
         // Setting this might be necessary if you wired your LEDs differently.
         "flip_y": false,
+
+        // Optional, boolean. Whether to apply gamma correction and per-channel color balancing.
+        // Default: true for apa102/ws2812b (LED strips need gamma correction),
+        //          false for rgbmatrix (HUB75 panels have their own color handling).
+        // The gamma correction was calibrated for APA102 strips and includes aggressive
+        // per-channel scaling (green to 45%, blue to 37.5%) which is wrong for RGB matrices.
+        // "gamma_enabled": false,
     },
 
     // Configuration specific to displaying videos.
@@ -97,6 +102,27 @@
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.
         "saved_videos": [],
+    },
+
+    // Configuration specific to the RGB Matrix driver (HUB75 panels).
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "rgbmatrix": {
+
+        // Optional, integer, default: 4. GPIO slowdown for Pi 3/4. Try 2-5 if you see issues.
+        "gpio_slowdown": 4,
+
+        // Optional, integer, default: 11. PWM bits for color depth (1-11). Lower = faster refresh.
+        "pwm_bits": 11,
+
+        // Optional, integer, default: 130. PWM timing in nanoseconds. Try 100-300.
+        "pwm_lsb_nanoseconds": 130,
+
+        // Optional, integer, default: 0. Limit refresh rate in Hz (0 = unlimited).
+        "limit_refresh_rate_hz": 0,
+
+        // Optional, boolean, default: false. Use software PWM instead of hardware.
+        // Enable if you have audio conflicts.
+        "disable_hardware_pulsing": false,
     },
 
     // Configuration specific to the game of life.
@@ -202,7 +228,7 @@
 
     // Configuration specific to cosmic dream psychedelic screensaver.
     // Optional. This whole stanza is optional because none of the keys within it are required.
-    "cosmicdream": {
+    "cosmic_dream": {
 
         // Optional, integer, default: 20. Number of particles in the flow field.
         "num_particles": 20,
@@ -704,6 +730,21 @@
         "max_ticks": 10000,
     },
 
+    // Configuration specific to gradient test screensaver (for debugging flicker).
+    "gradient_test": {
+
+        // Optional, string, default: pastel_sky. Test pattern to display.
+        // Valid values: pastel_sky, white, half_white, dim_white, red, green, blue,
+        // horizontal_gradient, vertical_gradient, checkerboard, stripes, color_bars
+        "mode": "pastel_sky",
+
+        // Optional, float, default: 0.1. Tick sleep time (high = low CPU).
+        "tick_sleep": 0.1,
+
+        // Optional, integer, default: 3000. Maximum ticks.
+        "max_ticks": 3000,
+    },
+
     // Configuration specific to DVD bounce screensaver.
     "dvd_bounce": {
 
@@ -731,6 +772,76 @@
 
         // Optional, integer, default: 10000. Maximum ticks.
         "max_ticks": 10000,
+    },
+
+    // Configuration specific to NYC Subway arrival times screensaver.
+    // Requires nyct-gtfs library: pip install nyct-gtfs
+    "nyc_subway": {
+
+        // Optional, array of strings, default: ["127N", "127S"].
+        // Stop IDs to monitor. Format: stop_id + direction (N=uptown/north, S=downtown/south).
+        // Find stop IDs at: https://transitfeeds.com/p/mta/79/latest/stops
+        // Examples:
+        //   "127N"/"127S" = 34 St-Penn Station (1/2/3)
+        //   "A32N"/"A32S" = 34 St-Penn Station (A/C/E)
+        //   "R17N"/"R17S" = 34 St-Herald Sq (N/Q/R/W/B/D/F/M)
+        //   "L01N"/"L01S" = 8 Av (L)
+        //   "631N"/"631S" = Grand Central-42 St (4/5/6)
+        "stop_ids": ["D25N", "237N", "A44N"],
+
+        // Optional, array of strings, default: ["1", "2", "3"].
+        // Subway lines to display. Use line letters/numbers.
+        "lines": ["B", "Q", "2", "3", "4", "5", "A", "C"],
+
+        // Optional, integer, default: 30. How often to refresh data from MTA, in seconds.
+        "update_interval": 30,
+
+        // Optional, integer, default: 4. Maximum number of arrivals to show.
+        "max_arrivals": 4,
+
+        // Optional, float, default: 1.0. How long to sleep between display updates, in seconds.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to WFMU radio now-playing screensaver.
+    // Shows current track, artist, and show name from WFMU streams.
+    "wfmu": {
+
+        // Optional, string, default: "wfmu". Which WFMU stream to display.
+        // Valid values: "wfmu" (main 91.1), "gtd" (Give the Drummer Radio),
+        // "rock_n_soul" (Rock'n'Soul Radio).
+        "channel": "wfmu",
+
+        // Optional, integer, default: 15. How often to refresh data, in seconds.
+        "update_interval": 15,
+
+        // Optional, float, default: 0.05. How long to sleep between display updates.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
+        "max_ticks": 3000,
+    },
+
+    // Configuration specific to Sonos Karaoke screensaver.
+    // Displays synced lyrics for music playing on Sonos speakers.
+    "sonos_karaoke": {
+
+        // Optional, string, default: null. Name of Sonos speaker to use.
+        // If null, uses first discovered speaker.
+        // Example: "Living Room", "Kitchen"
+        "speaker_name": null,
+
+        // Optional, float, default: 0.5. How often to poll Sonos for position (seconds).
+        "update_interval": 0.5,
+
+        // Optional, float, default: 0.05. How long to sleep between display updates.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
+        "max_ticks": 6000,
     },
 
 }

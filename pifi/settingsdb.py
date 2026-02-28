@@ -18,7 +18,13 @@ class SettingsDb:
     # Flag to trigger screensaver restart (checked and cleared by queue)
     RESTART_SCREENSAVER = 'restart_screensaver'
 
+    # Screensaver config overrides (JSON object: {screensaver_id: {key: value, ...}, ...})
+    SCREENSAVER_CONFIGS = 'screensaver_configs'
+
     SETTING_YOUTUBE_API_KEY = 'youtube_api_key'
+
+    # Global LED brightness (0-100 percentage)
+    BRIGHTNESS = 'brightness'
 
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()

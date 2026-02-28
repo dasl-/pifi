@@ -32,7 +32,7 @@ class UnknownPleasures(Screensaver):
         self.__num_lines = Config.get('unknownpleasures.num_lines', 0)  # 0 = auto
         self.__wave_speed = Config.get('unknownpleasures.wave_speed', 0.05)
         self.__noise_scale = Config.get('unknownpleasures.noise_scale', 0.15)
-        self.__amplitude = Config.get('unknownpleasures.amplitude', 0.4)
+        self.__amplitude = Config.get('unknownpleasures.amplitude', 1.0)
         self.__line_brightness = Config.get('unknownpleasures.line_brightness', 1.0)
         self.__fill_below = Config.get('unknownpleasures.fill_below', True)
         self.__color_mode = Config.get('unknownpleasures.color_mode', 'white')

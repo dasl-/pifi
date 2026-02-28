@@ -29,7 +29,7 @@ def parseArgs():
     parser.add_argument('--game-color-mode', dest='game_color_mode', action='store',
         help=(GameColorHelper().get_help_string()))
     parser.add_argument('--brightness', dest='brightness', action='store', type=int,
-        metavar='N', help='Global brightness value. Max of 31.')
+        metavar='N', help='Global brightness percentage [0, 100].')
 
     args = parser.parse_args()
     return args

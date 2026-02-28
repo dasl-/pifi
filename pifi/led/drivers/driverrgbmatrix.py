@@ -1,3 +1,4 @@
+import gc
 from PIL import Image
 from rgbmatrix import RGBMatrix, RGBMatrixOptions
 
@@ -12,18 +13,53 @@ class DriverRgbMatrix(DriverBase):
         options.cols = Config.get_or_throw('leds.display_width')
         options.chain_length = 1
         options.parallel = 1
-        options.hardware_mapping = 'adafruit-hat'
+        options.hardware_mapping = 'adafruit-hat-pwm'
         options.drop_privileges = False
+
+        # Performance tuning - reduce flickering from timing issues
+        options.gpio_slowdown = Config.get('rgbmatrix.gpio_slowdown', 1)
+        options.pwm_bits = Config.get('rgbmatrix.pwm_bits', 11)
+        options.pwm_lsb_nanoseconds = Config.get('rgbmatrix.pwm_lsb_nanoseconds', 130)
+        options.limit_refresh_rate_hz = Config.get('rgbmatrix.limit_refresh_rate_hz', 0)
+        options.disable_hardware_pulsing = Config.get('rgbmatrix.disable_hardware_pulsing', False)
 
         self.__matrix = RGBMatrix(options = options)
         self.__pixels = self.__matrix.CreateFrameCanvas()
+
+        # Pre-allocate image buffer to avoid per-frame allocations that trigger GC
+        self.__width = options.cols
+        self.__height = options.rows
+        self.__img_buffer = Image.new('RGB', (self.__width, self.__height))
+
         if clear_screen:
             self.clear_screen()
 
     def display_frame(self, frame):
-        img = Image.fromarray(frame, mode='RGB')
-        self.__pixels.SetImage(img)
-        self.__pixels = self.__matrix.SwapOnVSync(self.__pixels)
+        # Disable GC during the critical display section to prevent timing jitter
+        gc_was_enabled = gc.isenabled()
+        gc.disable()
+
+        try:
+            # Reuse pre-allocated image buffer instead of creating new Image each frame
+            # frombuffer with 'raw' mode avoids a data copy
+            self.__img_buffer = Image.frombuffer(
+                'RGB',
+                (self.__width, self.__height),
+                frame.astype('uint8').tobytes(),
+                'raw',
+                'RGB',
+                0,
+                1
+            )
+            self.__pixels.SetImage(self.__img_buffer)
+            self.__pixels = self.__matrix.SwapOnVSync(self.__pixels)
+        finally:
+            if gc_was_enabled:
+                gc.enable()
+
+    def set_brightness(self, brightness):
+        clamped = max(1, min(100, brightness))
+        self.__matrix.brightness = clamped
 
     def clear_screen(self):
         self.__pixels.Clear()

@@ -1,9 +1,12 @@
+import time
+
 import numpy as np
 
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.led.gamma import Gamma
 from pifi.led.drivers.leddrivers import LedDrivers
+from pifi.settingsdb import SettingsDb
 from pifi.video.videocolormode import VideoColorMode
 
 class LedFramePlayer:
@@ -14,6 +17,17 @@ class LedFramePlayer:
     # video_color_mode: only applicable when playing videos
     def __init__(self, clear_screen = True, video_color_mode = VideoColorMode.COLOR_MODE_COLOR):
         self.__current_frame = None
+        self.__cached_brightness = max(0, min(100, Config.get('leds.brightness')))
+        self.__last_driver_brightness = None
+        self.__brightness_cache_time = 0
+
+        # Check if gamma correction should be applied
+        # RGB Matrix panels typically don't need the aggressive gamma/color correction
+        # that was calibrated for APA102 LED strips
+        led_driver = Config.get_or_throw('leds.driver')
+        default_gamma = led_driver != LedDrivers.DRIVER_RGBMATRIX
+        self.__gamma_enabled = Config.get('leds.gamma_enabled', default_gamma)
+
         self.__gamma_controller = Gamma(video_color_mode = video_color_mode)
 
         # static gamma curve
@@ -38,8 +52,6 @@ class LedFramePlayer:
             self.__scale_red_gamma_curves = self.__gamma_controller.scale_red_curves
             self.__scale_green_gamma_curves = self.__gamma_controller.scale_green_curves
             self.__scale_blue_gamma_curves = self.__gamma_controller.scale_blue_curves
-
-        led_driver = Config.get_or_throw('leds.driver')
         if led_driver == LedDrivers.DRIVER_APA102:
             from pifi.led.drivers.driverapa102 import DriverApa102
             self.__driver = DriverApa102(clear_screen)
@@ -51,6 +63,10 @@ class LedFramePlayer:
             self.__driver = DriverWs2812b(clear_screen)
         else:
             raise Exception(f'Unsupported driver: {led_driver}.')
+
+        initial_brightness = self.__get_brightness()
+        self.__driver.set_brightness(initial_brightness)
+        self.__last_driver_brightness = initial_brightness
 
         self.__video_color_mode = video_color_mode
 
@@ -97,42 +113,83 @@ class LedFramePlayer:
     def can_multiple_driver_instances_coexist(self):
         return self.__driver.can_multiple_driver_instances_coexist()
 
+    __BRIGHTNESS_CACHE_TTL = 1.5
+
+    def __get_brightness(self):
+        """Get brightness from settings DB as 0-100 int. Falls back to config's leds.brightness."""
+        now = time.time()
+        if now - self.__brightness_cache_time < self.__BRIGHTNESS_CACHE_TTL:
+            return self.__cached_brightness
+
+        try:
+            brightness_str = SettingsDb().get(SettingsDb.BRIGHTNESS)
+            if brightness_str is not None:
+                self.__cached_brightness = max(0, min(100, int(brightness_str)))
+            else:
+                self.__cached_brightness = max(0, min(100, Config.get('leds.brightness')))
+        except (ValueError, TypeError):
+            self.__cached_brightness = max(0, min(100, Config.get('leds.brightness')))
+        self.__brightness_cache_time = now
+        return self.__cached_brightness
+
     # This method transforms an input frame, which may be either a 2-dimensional
     # byte array if VideoColorMode.is_color_mode_rgb() is false, or 3d
     # otherwise, into an output frame by applying the user-provided transforms
     # such as color mode and flipping. The output is a 3d byte array suitable
     # for final display.
     def __transform_frame(self, frame):
-        if not (VideoColorMode.is_color_mode_rgb(self.__video_color_mode)):
-            gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(frame)
-
         shape = [Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3]
         transformed_frame = np.zeros(shape, np.uint8)
-        # calculate gamma corrected colors
-        if self.__video_color_mode == VideoColorMode.COLOR_MODE_COLOR:
-            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, frame[:, :, 0])
-            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, frame[:, :, 1])
-            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, frame[:, :, 2])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_R:
-            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_G:
-            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_B:
-            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_BW:
-            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
-            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
-            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_COLOR:
-            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - frame[:, :, 0])
-            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - frame[:, :, 1])
-            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - frame[:, :, 2])
-        elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_BW:
-            transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - frame[:, :])
-            transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - frame[:, :])
-            transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - frame[:, :])
+
+        if self.__gamma_enabled:
+            if not VideoColorMode.is_color_mode_rgb(self.__video_color_mode):
+                gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(frame)
+
+            if self.__video_color_mode == VideoColorMode.COLOR_MODE_COLOR:
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, frame[:, :, 0])
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, frame[:, :, 1])
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, frame[:, :, 2])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_R:
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_G:
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_B:
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_BW:
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_COLOR:
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - frame[:, :, 0])
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - frame[:, :, 1])
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - frame[:, :, 2])
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_BW:
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - frame[:, :])
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - frame[:, :])
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - frame[:, :])
+            else:
+                raise Exception(f'Unexpected color mode: {self.__video_color_mode}.')
         else:
-            raise Exception(f'Unexpected color mode: {self.__video_color_mode}.')
+            if self.__video_color_mode == VideoColorMode.COLOR_MODE_COLOR:
+                transformed_frame[:, :, :] = frame
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_R:
+                transformed_frame[:, :, 0] = frame[:, :]
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_G:
+                transformed_frame[:, :, 1] = frame[:, :]
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_B:
+                transformed_frame[:, :, 2] = frame[:, :]
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_BW:
+                transformed_frame[:, :, 0] = frame[:, :]
+                transformed_frame[:, :, 1] = frame[:, :]
+                transformed_frame[:, :, 2] = frame[:, :]
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_COLOR:
+                transformed_frame[:, :, :] = 255 - frame
+            elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_BW:
+                transformed_frame[:, :, 0] = 255 - frame[:, :]
+                transformed_frame[:, :, 1] = 255 - frame[:, :]
+                transformed_frame[:, :, 2] = 255 - frame[:, :]
+            else:
+                raise Exception(f'Unexpected color mode: {self.__video_color_mode}.')
 
         flips = ()
         if Config.get('leds.flip_y'):
@@ -141,6 +198,12 @@ class LedFramePlayer:
             flips += (1,)
         if flips:
             transformed_frame = np.flip(transformed_frame, flips)
+
+        # Apply brightness via native driver API
+        brightness = self.__get_brightness()
+        if brightness != self.__last_driver_brightness:
+            self.__driver.set_brightness(brightness)
+            self.__last_driver_brightness = brightness
 
         return transformed_frame
 

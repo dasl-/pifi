@@ -26,7 +26,7 @@ class DriverWs2812b(DriverBase):
         self.__pixels = rpi_ws281x.PixelStrip(
             num=self.__display_width * self.__display_height,
             pin=10, # SPI pin https://pinout.xyz/pinout/pin19_gpio10
-            brightness=Config.get('leds.brightness'), # 0 - 255
+            brightness=255, # will be set properly by set_brightness() called from LedFramePlayer
             strip_type=rpi_ws281x.WS2811_STRIP_GRB,
             gamma=None
         )
@@ -49,6 +49,10 @@ class DriverWs2812b(DriverBase):
 
         # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
+
+    def set_brightness(self, brightness):
+        mapped = brightness * 255 // 100
+        self.__pixels.setBrightness(mapped)
 
     def clear_screen(self):
         shape = [self.__display_height, self.__display_width, 3]

@@ -27,7 +27,7 @@ def parseArgs():
         metavar='N', required=True, help="The file descriptor number (integer) of the game's server unix socket.")
     parser.add_argument('--log-uuid', dest='log_uuid', action='store', help='Logger UUID')
     parser.add_argument('--brightness', dest='brightness', action='store', type=int,
-        metavar='N', help='Global brightness value. Max of 31.')
+        metavar='N', help='Global brightness percentage [0, 100].')
 
     args = parser.parse_args()
     return args
