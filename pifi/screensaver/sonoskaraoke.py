@@ -57,10 +57,10 @@ class SonosKaraoke(Screensaver):
         self.__height = Config.get('leds.display_height', 32)
 
         # Configuration
-        self.__speaker_name = Config.get('sonoskaraoke.speaker_name', None)
-        self.__update_interval = Config.get('sonoskaraoke.update_interval', 0.5)
-        self.__max_ticks = Config.get('sonoskaraoke.max_ticks', 6000)
-        self.__tick_sleep = Config.get('sonoskaraoke.tick_sleep', 0.05)
+        self.__speaker_name = Config.get('sonos_karaoke.speaker_name', None)
+        self.__update_interval = Config.get('sonos_karaoke.update_interval', 0.5)
+        self.__max_ticks = Config.get('sonos_karaoke.max_ticks', 6000)
+        self.__tick_sleep = Config.get('sonos_karaoke.tick_sleep', 0.05)
 
         # State
         self.__current_track = None

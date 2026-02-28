@@ -80,12 +80,12 @@ class NycSubway(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Configuration
-        self.__stop_ids = Config.get('nycsubway.stop_ids', ['127N', '127S'])
-        self.__lines = Config.get('nycsubway.lines', ['1', '2', '3'])
-        self.__update_interval = Config.get('nycsubway.update_interval', 30)
-        self.__max_arrivals = Config.get('nycsubway.max_arrivals', 4)
-        self.__max_ticks = Config.get('nycsubway.max_ticks', 3000)
-        self.__tick_sleep = Config.get('nycsubway.tick_sleep', 0.05)
+        self.__stop_ids = Config.get('nyc_subway.stop_ids', ['127N', '127S'])
+        self.__lines = Config.get('nyc_subway.lines', ['1', '2', '3'])
+        self.__update_interval = Config.get('nyc_subway.update_interval', 30)
+        self.__max_arrivals = Config.get('nyc_subway.max_arrivals', 4)
+        self.__max_ticks = Config.get('nyc_subway.max_ticks', 3000)
+        self.__tick_sleep = Config.get('nyc_subway.tick_sleep', 0.05)
 
         # State
         self.__arrivals = []

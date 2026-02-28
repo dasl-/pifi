@@ -56,7 +56,7 @@ class CosmicDream(Screensaver):
         self.__logger.info("Starting CosmicDream screensaver")
         self.__reset()
 
-        max_ticks = Config.get('cosmicdream.max_ticks', 3000)
+        max_ticks = Config.get('cosmic_dream.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks:
@@ -71,13 +71,13 @@ class CosmicDream(Screensaver):
         self.__frame_count = 0
 
         # Initialize particles for flow field
-        num_particles = Config.get('cosmicdream.num_particles', 20)
+        num_particles = Config.get('cosmic_dream.num_particles', 20)
         self.__particles = np.random.rand(num_particles, 2)
         self.__particles[:, 0] *= self.__width
         self.__particles[:, 1] *= self.__height
 
         # Trail buffer: stores previous positions for motion blur
-        trail_length = Config.get('cosmicdream.trail_length', 8)
+        trail_length = Config.get('cosmic_dream.trail_length', 8)
         self.__particle_trails = np.zeros((num_particles, trail_length, 2))
         for i in range(trail_length):
             self.__particle_trails[:, i, :] = self.__particles
@@ -201,7 +201,7 @@ class CosmicDream(Screensaver):
             angle = noise_val * math.pi * 2
 
             # Move particle
-            speed = Config.get('cosmicdream.particle_speed', 0.5)
+            speed = Config.get('cosmic_dream.particle_speed', 0.5)
             self.__particles[i, 0] += math.cos(angle) * speed
             self.__particles[i, 1] += math.sin(angle) * speed
 
@@ -358,7 +358,7 @@ class CosmicDream(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('cosmicdream.tick_sleep', 0.03)
+        return Config.get('cosmic_dream.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

@@ -1,3 +1,4 @@
+import copy
 import os
 import json
 import pyjson5
@@ -11,6 +12,8 @@ class Config:
 
     __is_loaded = False
     __config = {}
+    __base_config = {}
+    __previously_overridden = set()
     __logger = Logger().set_namespace('Config')
     __PATH_SEP = '.'
 
@@ -53,6 +56,7 @@ class Config:
 
             Config.__logger.debug(f"Using merged config: {Config.__config}")
 
+        Config.__base_config = copy.deepcopy(Config.__config)
         Config.__is_loaded = True
 
     @staticmethod
@@ -150,14 +154,21 @@ class Config:
         settings_db = SettingsDb()
         overrides_json = settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
 
-        if not overrides_json:
-            return
+        all_overrides = {}
+        if overrides_json:
+            try:
+                all_overrides = json.loads(overrides_json)
+            except (json.JSONDecodeError, TypeError):
+                Config.__logger.warning("Failed to parse screensaver config overrides")
 
-        try:
-            all_overrides = json.loads(overrides_json)
-        except (json.JSONDecodeError, TypeError):
-            Config.__logger.warning("Failed to parse screensaver config overrides")
-            return
+        # Restore previously overridden sections to their base values
+        for sid in Config.__previously_overridden:
+            if sid in Config.__base_config:
+                Config.__config[sid] = copy.deepcopy(Config.__base_config[sid])
+            elif sid in Config.__config:
+                del Config.__config[sid]
+
+        Config.__previously_overridden = set()
 
         # Apply each screensaver's overrides to the config
         for screensaver_id, overrides in all_overrides.items():
@@ -172,5 +183,6 @@ class Config:
 
             # Merge overrides into the screensaver config
             Config.__config[screensaver_id].update(overrides)
+            Config.__previously_overridden.add(screensaver_id)
 
         Config.__logger.debug(f"Applied screensaver config overrides: {all_overrides}")

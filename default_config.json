@@ -228,7 +228,7 @@
 
     // Configuration specific to cosmic dream psychedelic screensaver.
     // Optional. This whole stanza is optional because none of the keys within it are required.
-    "cosmicdream": {
+    "cosmic_dream": {
 
         // Optional, integer, default: 20. Number of particles in the flow field.
         "num_particles": 20,
@@ -731,7 +731,7 @@
     },
 
     // Configuration specific to gradient test screensaver (for debugging flicker).
-    "gradienttest": {
+    "gradient_test": {
 
         // Optional, string, default: pastel_sky. Test pattern to display.
         // Valid values: pastel_sky, white, half_white, dim_white, red, green, blue,
@@ -776,7 +776,7 @@
 
     // Configuration specific to NYC Subway arrival times screensaver.
     // Requires nyct-gtfs library: pip install nyct-gtfs
-    "nycsubway": {
+    "nyc_subway": {
 
         // Optional, array of strings, default: ["127N", "127S"].
         // Stop IDs to monitor. Format: stop_id + direction (N=uptown/north, S=downtown/south).
@@ -827,7 +827,7 @@
 
     // Configuration specific to Sonos Karaoke screensaver.
     // Displays synced lyrics for music playing on Sonos speakers.
-    "sonoskaraoke": {
+    "sonos_karaoke": {
 
         // Optional, string, default: null. Name of Sonos speaker to use.
         // If null, uses first discovered speaker.

@@ -200,11 +200,11 @@ class PifiAPI():
         }
 
     def get_brightness(self):
-        brightness = self.__settings_db.get(SettingsDb.BRIGHTNESS, '100')
+        default = Config.get('leds.brightness')
         try:
-            brightness = int(brightness)
+            brightness = int(self.__settings_db.get(SettingsDb.BRIGHTNESS, default))
         except (ValueError, TypeError):
-            brightness = 100
+            brightness = default
         return {
             'brightness': brightness,
             'success': True
