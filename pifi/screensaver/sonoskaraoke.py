@@ -140,7 +140,7 @@ class SonosKaraoke(Screensaver):
         while self.__polling_active:
             self.__poll_sonos()
             # Sleep in small increments to allow quick shutdown
-            for _ in range(int(self.__update_interval * 10)):
+            for _ in range(max(1, int(self.__update_interval * 10))):
                 if not self.__polling_active:
                     break
                 time.sleep(0.1)

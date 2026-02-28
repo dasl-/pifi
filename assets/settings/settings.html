@@ -261,7 +261,8 @@
                         values[key] = $input.is(':checked');
                     } else if (type === 'number') {
                         var val = $input.val();
-                        values[key] = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                        var num = val.indexOf('.') !== -1 ? parseFloat(val) : parseInt(val, 10);
+                        values[key] = isNaN(num) ? $input.data('default') : num;
                     } else if ($input.data('type') === 'array') {
                         values[key] = $input.val().split(',').map(function(s) { return s.trim(); }).filter(Boolean);
                     } else {
