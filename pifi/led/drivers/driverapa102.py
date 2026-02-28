@@ -18,8 +18,6 @@ class DriverApa102(DriverBase):
             order=self.__LED_ORDER
         )
 
-        brightness = Config.get('leds.brightness')
-        self.__pixels.set_global_brightness(brightness)
         if clear_screen:
             self.clear_screen()
 
@@ -27,9 +25,8 @@ class DriverApa102(DriverBase):
         # It's 1-indexed, so subtract by 1.
         self.__color_order = [x - 1 for x in apa102.RGB_MAP[self.__LED_ORDER]]
 
-        # Calculate the LED start "frame": 3 1 bits followed by 5 brightness bits. See
-        # set_pixel in the apa102 implementation for this calculation.
-        self.__ledstart = (brightness & 0b00011111) | self.__pixels.LED_START
+        # Initialize ledstart; will be set properly by set_brightness() called from LedFramePlayer.
+        self.__ledstart = self.__pixels.LED_START
 
     # CAUTION:
     # This method has been heavily optimized. The program spends the bulk of its execution time in this loop.
@@ -60,6 +57,11 @@ class DriverApa102(DriverBase):
 
         # We're done! Tell the underlying driver to send data to the LEDs.
         self.__pixels.show()
+
+    def set_brightness(self, brightness):
+        mapped = brightness * 31 // 100
+        self.__pixels.set_global_brightness(mapped)
+        self.__ledstart = (mapped & 0b00011111) | self.__pixels.LED_START
 
     def clear_screen(self):
         self.__pixels.clear_strip()

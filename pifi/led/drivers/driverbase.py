@@ -15,6 +15,11 @@ class DriverBase(ABC):
     def clear_screen(self):
         pass
 
+    @abstractmethod
+    def set_brightness(self, brightness):
+        """Set brightness using the driver's native API. brightness is 0-100."""
+        pass
+
     # For some drivers, only one instance of the driver can exist at a time because all of them
     # would send competing signals to the LEDs. The screensaver, video playback, etc processes
     # that the Queue launches might have their own instance of the driver as well as the

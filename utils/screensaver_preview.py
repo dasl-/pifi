@@ -193,7 +193,7 @@ def setup_mock_config(width, height, config_overrides=None):
     Config.set('leds.driver', 'terminal')
     Config.set('leds.display_width', width)
     Config.set('leds.display_height', height)
-    Config.set('leds.brightness', 31)
+    Config.set('leds.brightness', 100)
     Config.set('leds.flip_x', False)
     Config.set('leds.flip_y', False)
 

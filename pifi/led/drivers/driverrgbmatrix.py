@@ -57,6 +57,10 @@ class DriverRgbMatrix(DriverBase):
             if gc_was_enabled:
                 gc.enable()
 
+    def set_brightness(self, brightness):
+        clamped = max(1, min(100, brightness))
+        self.__matrix.brightness = clamped
+
     def clear_screen(self):
         self.__pixels.Clear()
         self.__matrix.Clear()
