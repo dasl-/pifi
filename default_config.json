@@ -825,6 +825,21 @@
         "max_ticks": 3000,
     },
 
+    // Configuration specific to AirPlay Karaoke screensaver.
+    // Displays synced lyrics for music playing via AirPlay (shairport-sync).
+    "airplaykaraoke": {
+
+        // Optional, string, default: "/tmp/shairport-sync-metadata".
+        // Path to the shairport-sync metadata pipe.
+        "metadata_pipe": "/tmp/shairport-sync-metadata",
+
+        // Optional, float, default: 0.05. How long to sleep between display updates.
+        "tick_sleep": 0.05,
+
+        // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
+        "max_ticks": 6000,
+    },
+
     // Configuration specific to Sonos Karaoke screensaver.
     // Displays synced lyrics for music playing on Sonos speakers.
     "sonos_karaoke": {
