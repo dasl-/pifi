@@ -169,9 +169,9 @@ class AirPlayKaraoke(KaraokeBase):
                     self._is_playing = True
                     AirPlayKaraoke._last_known_playing = True
                 return
-            elif item_code == 'pfls':
+            elif item_code in ('pfls', 'paus'):
                 # Pause — freeze lyrics at current position
-                self._logger.info("Received pfls (pause), setting _is_playing=False")
+                self._logger.info(f"Received {item_code} (pause), setting _is_playing=False")
                 with self._poll_lock:
                     self._is_playing = False
                     AirPlayKaraoke._last_known_playing = False
