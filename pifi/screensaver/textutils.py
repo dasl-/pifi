@@ -622,13 +622,11 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
                                           line_height=7, visible_lines=2,
                                           word_complete_delay=0.3, anticipation=0.3,
                                           font=None, word_start_times=None, current_time=None,
-                                          clip_bottom=None, line_progress=None):
-    """Draw wrapped text with word-by-word coloring that scrolls vertically.
+                                          clip_bottom=None):
+    """Draw wrapped text that scrolls vertically based on word completion.
 
     Splits long text into multiple lines and shows 2 at a time.
-    Scrolling mode depends on line_progress:
-    - None (default): scroll based on word completion timestamps
-    - float 0-1: smooth time-based scrolling with easing (same as draw_vertical_scroll_text)
+    Scrolls up when the last word on the top visible line is complete.
 
     Args:
         frame: numpy array of shape (height, width, 3)
@@ -646,8 +644,6 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
         word_start_times: Optional dict for tracking word start times (for smooth fades)
         current_time: Current wall-clock time
         clip_bottom: Y coordinate to stop drawing at (exclusive). If None, no clipping.
-        line_progress: If provided (0-1), use smooth time-based scrolling instead of
-            word-completion scrolling.
     """
     max_chars_per_line = max_width // 4
 
@@ -655,53 +651,31 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
     word_line_positions = get_word_line_positions(word_timings, max_chars_per_line)
     num_lines = max(pos[0] for pos in word_line_positions) + 1 if word_line_positions else 1
 
-    # Build lines with words
-    lines = []
-    for line_idx in range(num_lines):
-        lines.append([])
-    for word_idx, (line_idx, char_offset) in enumerate(word_line_positions):
-        lines[line_idx].append((word_idx, word_timings[word_idx]))
-
-    # Determine effective clip boundary
-    effective_clip = clip_bottom if clip_bottom is not None else height
-
     if num_lines <= visible_lines:
-        # All lines fit, no scrolling needed — draw at fixed positions
-        for line_idx in range(num_lines):
-            _draw_word_line(frame, lines[line_idx], word_timings, y + line_idx * line_height,
-                            max_width, current_position, colors, width, height,
-                            word_start_times, current_time, effective_clip, font)
-        return
-
-    if line_progress is not None:
-        # Smooth time-based scrolling (same easing as draw_vertical_scroll_text)
-        total_scroll_pixels = (num_lines - visible_lines) * line_height
-        eased_progress = ease_in_out(line_progress)
-        scroll_y = int(eased_progress * total_scroll_pixels)
-
-        for line_idx in range(num_lines):
-            line_y = y + (line_idx * line_height) - scroll_y
-            if line_y < y - line_height or line_y >= effective_clip:
-                continue
-            if line_y + 5 <= 0:
-                continue
-            _draw_word_line(frame, lines[line_idx], word_timings, line_y,
-                            max_width, current_position, colors, width, height,
-                            word_start_times, current_time, effective_clip, font)
+        # All lines fit, no scrolling needed
+        target_scroll_line = 0
     else:
-        # Word-completion-based scrolling
+        # Find the last word index on each line
         last_word_per_line = {}
         for word_idx, (line_idx, _) in enumerate(word_line_positions):
             last_word_per_line[line_idx] = word_idx
 
+        # Scroll based on word completion, not anticipation
+        # We scroll up when the last word on the top visible line is complete
         max_scroll = num_lines - visible_lines
+
+        # Start from scroll position 0, then check if we should scroll
         target_scroll_line = 0
 
         for scroll_pos in range(max_scroll + 1):
+            # Get the last word on the top visible line at this scroll position
             top_line_idx = scroll_pos
             if top_line_idx in last_word_per_line:
                 last_word_idx = last_word_per_line[top_line_idx]
                 last_word_ts = word_timings[last_word_idx][0]
+
+                # Scroll when the last word on top line is complete
+                # (past its timestamp by the completion delay)
                 if current_position >= last_word_ts + word_complete_delay:
                     target_scroll_line = min(scroll_pos + 1, max_scroll)
                 else:
@@ -709,42 +683,53 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
             else:
                 break
 
-        visible_start = target_scroll_line
-        visible_end = min(num_lines, target_scroll_line + visible_lines)
+    # Build lines with words
+    lines = []
+    for line_idx in range(num_lines):
+        lines.append([])
 
-        for line_idx in range(visible_start, visible_end):
-            line_y = y + (line_idx - target_scroll_line) * line_height
-            if line_y < -5 or line_y >= effective_clip:
-                continue
-            _draw_word_line(frame, lines[line_idx], word_timings, line_y,
-                            max_width, current_position, colors, width, height,
-                            word_start_times, current_time, effective_clip, font)
+    for word_idx, (line_idx, char_offset) in enumerate(word_line_positions):
+        lines[line_idx].append((word_idx, word_timings[word_idx]))
 
+    # Draw visible lines
+    visible_start = target_scroll_line
+    visible_end = min(num_lines, target_scroll_line + visible_lines)
 
-def _draw_word_line(frame, line_words, word_timings, line_y, max_width,
-                    current_position, colors, width, height,
-                    word_start_times, current_time, effective_clip, font):
-    """Draw a single line of words with per-word coloring."""
-    line_text = ' '.join(word for _, (_, word) in line_words)
-    line_pixel_width = len(line_text) * 4
-    line_x = max(0, (max_width - line_pixel_width) // 2)
+    # Determine effective clip boundary
+    effective_clip = clip_bottom if clip_bottom is not None else height
 
-    needs_clip = line_y + 5 > effective_clip
+    for line_idx in range(visible_start, visible_end):
+        line_y = y + (line_idx - target_scroll_line) * line_height
 
-    cursor = line_x
-    for word_idx, (_, word) in line_words:
-        color = get_word_color(word_idx, word_timings, current_position, colors,
-                               word_start_times=word_start_times, current_time=current_time)
-        for char in word:
-            if 0 <= cursor < width and 0 <= line_y < height - 5:
-                if needs_clip:
-                    draw_char_clipped_vertical(frame, char, cursor, line_y, color,
-                                               effective_clip, width, height, font)
-                else:
-                    draw_char(frame, char, cursor, line_y, color, width, height, font)
+        # Skip if off screen or below clip
+        if line_y < -5 or line_y >= effective_clip:
+            continue
+
+        # Calculate x position to center this line
+        line_text = ' '.join(word for _, (_, word) in lines[line_idx])
+        line_pixel_width = len(line_text) * 4
+        line_x = max(0, (max_width - line_pixel_width) // 2)
+
+        # Check if we need vertical clipping for this line
+        needs_clip = clip_bottom is not None and line_y + 5 > clip_bottom
+
+        # Draw each word with its color
+        cursor = line_x
+        for word_idx, (_, word) in lines[line_idx]:
+            color = get_word_color(word_idx, word_timings, current_position, colors,
+                                   word_start_times=word_start_times, current_time=current_time)
+
+            for char in word:
+                if 0 <= cursor < width and 0 <= line_y < height - 5:
+                    if needs_clip:
+                        draw_char_clipped_vertical(frame, char, cursor, line_y, color,
+                                                   clip_bottom, width, height, font)
+                    else:
+                        draw_char(frame, char, cursor, line_y, color, width, height, font)
+                cursor += 4
+
+            # Space after word
             cursor += 4
-        # Space after word
-        cursor += 4
 
 
 def draw_vertical_scroll_text(frame, text, x, y, max_width, color, line_progress,

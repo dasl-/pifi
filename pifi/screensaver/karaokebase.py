@@ -63,7 +63,6 @@ class KaraokeBase(Screensaver):
         self._tick_sleep = 0.05
         self._max_ticks = 6000
         self._pulse_lyrics = True
-        self._enhanced_lyric_smooth_scrolling = False
 
         # Protected state for subclasses to update (under _poll_lock)
         self._current_track = None
@@ -799,16 +798,13 @@ class KaraokeBase(Screensaver):
 
                 if len(line1) > chars_per_line or len(line2) > chars_per_line:
                     if word_timings:
-                        scroll_kw = {}
-                        if self._enhanced_lyric_smooth_scrolling:
-                            scroll_kw['line_progress'] = min(1.0, line_progress * 1.67)
                         textutils.draw_vertical_scroll_text_with_words(
                             frame, word_timings, 0, 2, self._width,
                             current_position, word_colors,
                             self._width, self._height,
                             line_height=7, visible_lines=2,
                             word_start_times=self.__word_start_times, current_time=current_time,
-                            clip_bottom=19, **scroll_kw
+                            clip_bottom=19
                         )
                     else:
                         scroll_progress = min(1.0, line_progress * 1.67)
@@ -850,16 +846,13 @@ class KaraokeBase(Screensaver):
                         textutils.draw_text(frame, line2, x2, 9, current_color, self._width, self._height)
             else:
                 if word_timings:
-                    scroll_kw = {}
-                    if self._enhanced_lyric_smooth_scrolling:
-                        scroll_kw['line_progress'] = min(1.0, line_progress * 1.67)
                     textutils.draw_vertical_scroll_text_with_words(
                         frame, word_timings, 0, 2, self._width,
                         current_position, word_colors,
                         self._width, self._height,
                         line_height=7, visible_lines=2,
                         word_start_times=self.__word_start_times, current_time=current_time,
-                        clip_bottom=19, **scroll_kw
+                        clip_bottom=19
                     )
                 else:
                     scroll_progress = min(1.0, line_progress * 1.67)
