@@ -838,6 +838,10 @@
 
         // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
         "max_ticks": 6000,
+
+        // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
+        // When false, lyrics display at a steady dimmer brightness.
+        "pulse_lyrics": true,
     },
 
     // Configuration specific to Sonos Karaoke screensaver.
@@ -857,6 +861,10 @@
 
         // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
         "max_ticks": 6000,
+
+        // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
+        // When false, lyrics display at a steady dimmer brightness.
+        "pulse_lyrics": true,
     },
 
 }

@@ -24,6 +24,7 @@ class SonosKaraoke(KaraokeBase):
         self.__update_interval = Config.get('sonos_karaoke.update_interval', 0.5)
         self._max_ticks = Config.get('sonos_karaoke.max_ticks', 6000)
         self._tick_sleep = Config.get('sonos_karaoke.tick_sleep', 0.05)
+        self._pulse_lyrics = Config.get('sonos_karaoke.pulse_lyrics', True)
 
         # Sonos speaker reference
         self.__speaker = None
