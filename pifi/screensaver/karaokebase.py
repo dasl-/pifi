@@ -230,28 +230,68 @@ class KaraokeBase(Screensaver):
             with self._poll_lock:
                 duration = int(self._song_duration) if self._song_duration > 0 else None
 
-            # Try providers in order of reliability. Use direct API calls
-            # with structured metadata (title, artist, duration) for better
-            # version matching instead of free-text search.
+            # Fetch from both Musixmatch and LRCLIB, then compare timing.
+            # Musixmatch has word-by-word highlighting but sometimes returns
+            # lyrics synced to a different recording. There are also reports
+            # (unverified) that Musixmatch has started using AI-generated
+            # timestamps which can be multiple seconds off. LRCLIB's
+            # structured API (title + artist + duration) tends to match the
+            # right version. If both agree on timing, prefer Musixmatch for
+            # richer data.
             lrc = None
             source_provider = None
 
-            fetchers = [
-                ('Musixmatch', lambda: self.__fetch_musixmatch(title, artist, duration)),
-                ('LRCLIB', lambda: self.__fetch_lrclib(title, artist, duration)),
-            ]
-            for provider, fetcher in fetchers:
-                try:
-                    result = fetcher()
-                    if result:
-                        lrc = result
-                        source_provider = provider
-                        self._logger.info(f"Found lyrics via {provider}")
-                        break
+            mm_lrc = None
+            ll_lrc = None
+
+            try:
+                mm_lrc = self.__fetch_musixmatch(title, artist, duration)
+                if mm_lrc:
+                    self._logger.debug("Musixmatch: found lyrics")
+            except Exception as e:
+                self._logger.debug(f"Musixmatch failed: {e}")
+
+            try:
+                ll_lrc = self.__fetch_lrclib(title, artist, duration)
+                if ll_lrc:
+                    self._logger.debug("LRCLIB: found lyrics")
+            except Exception as e:
+                self._logger.debug(f"LRCLIB failed: {e}")
+
+            if mm_lrc and ll_lrc:
+                mm_parsed = self.__parse_lrc(mm_lrc)
+                ll_parsed = self.__parse_lrc(ll_lrc)
+
+                if mm_parsed and ll_parsed:
+                    mm_first = mm_parsed[0][0]
+                    ll_first = ll_parsed[0][0]
+                    diff = abs(mm_first - ll_first)
+
+                    self._logger.info(
+                        f"Timing comparison: Musixmatch={mm_first:.1f}s, "
+                        f"LRCLIB={ll_first:.1f}s, diff={diff:.1f}s"
+                    )
+
+                    if diff <= 1.0:
+                        lrc = mm_lrc
+                        source_provider = 'Musixmatch'
+                        self._logger.info("Using Musixmatch (timings agree)")
                     else:
-                        self._logger.debug(f"{provider}: no results")
-                except Exception as e:
-                    self._logger.debug(f"{provider} failed: {e}")
+                        lrc = ll_lrc
+                        source_provider = 'LRCLIB'
+                        self._logger.info("Using LRCLIB (timing mismatch, LRCLIB more reliable)")
+                elif mm_parsed:
+                    lrc = mm_lrc
+                    source_provider = 'Musixmatch'
+                elif ll_parsed:
+                    lrc = ll_lrc
+                    source_provider = 'LRCLIB'
+            elif mm_lrc:
+                lrc = mm_lrc
+                source_provider = 'Musixmatch'
+            elif ll_lrc:
+                lrc = ll_lrc
+                source_provider = 'LRCLIB'
 
             # Fall back to syncedlyrics text search for remaining providers
             if not lrc:
