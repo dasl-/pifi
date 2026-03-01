@@ -77,7 +77,7 @@ class AirPlayKaraoke(KaraokeBase):
                         line = pipe.readline()
                         if not line:
                             # Pipe closed (writer disconnected)
-                            self._logger.debug("Metadata pipe closed, will reopen")
+                            self._logger.info("Metadata pipe closed, setting _is_playing=False, will reopen")
                             with self._poll_lock:
                                 self._is_playing = False
                             break
@@ -158,6 +158,7 @@ class AirPlayKaraoke(KaraokeBase):
                 self.__parse_progress(data)
                 return
             elif item_code == 'pbeg':
+                self._logger.info("Received pbeg, setting _is_playing=True")
                 with self._poll_lock:
                     self._is_playing = True
                 return
@@ -165,6 +166,7 @@ class AirPlayKaraoke(KaraokeBase):
                 # Playback genuinely ended — clear both instance and class-level
                 # state so the display shows "NO MUSIC" and a future instance
                 # won't restore stale track info.
+                self._logger.info("Received pend, setting _is_playing=False")
                 with self._poll_lock:
                     self._is_playing = False
                     self._current_track = None
