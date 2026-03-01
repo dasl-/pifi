@@ -8,6 +8,7 @@ Reads metadata from shairport-sync's metadata pipe.
 import base64
 import os
 import re
+import select
 import time
 
 from pifi.config import Config
@@ -45,12 +46,26 @@ class AirPlayKaraoke(KaraokeBase):
         """Read shairport-sync metadata pipe continuously."""
         while self._polling_active:
             try:
-                # Open pipe - blocks until a writer opens the other end
-                with open(self.__metadata_pipe, 'r') as pipe:
+                # Open pipe non-blocking so we don't get stuck waiting
+                # for a writer. O_NONBLOCK lets open() return immediately
+                # even when no writer is connected.
+                fd = os.open(self.__metadata_pipe, os.O_RDONLY | os.O_NONBLOCK)
+                try:
+                    pipe = os.fdopen(fd, 'r')
+                except Exception:
+                    os.close(fd)
+                    raise
+
+                try:
                     buffer = ''
                     pending_metadata = {}
 
                     while self._polling_active:
+                        # Wait up to 0.5s for data, then re-check _polling_active
+                        ready, _, _ = select.select([pipe], [], [], 0.5)
+                        if not ready:
+                            continue
+
                         line = pipe.readline()
                         if not line:
                             # Pipe closed (writer disconnected)
@@ -69,6 +84,8 @@ class AirPlayKaraoke(KaraokeBase):
                             buffer = buffer[end:]
 
                             self.__process_item(item_xml, pending_metadata)
+                finally:
+                    pipe.close()
 
             except FileNotFoundError:
                 self._logger.debug("Metadata pipe not found, waiting...")
