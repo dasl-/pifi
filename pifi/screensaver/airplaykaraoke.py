@@ -19,15 +19,15 @@ class AirPlayKaraoke(KaraokeBase):
     """AirPlay karaoke lyrics display via shairport-sync metadata."""
 
     # Persist track metadata across instances. shairport-sync only sends
-    # track info on changes, so when the screensaver restarts (max_ticks
-    # rotation), a new instance would otherwise have no track info until
-    # the next song starts. We don't persist _is_playing — that's
-    # determined by actual pipe events (prgr confirms playback).
+    # track info on changes and prgr events infrequently, so when the
+    # screensaver restarts (max_ticks rotation), a new instance would
+    # otherwise have no track info or playing state until the next event.
     _last_known_track = None
     _last_known_artist = None
     _last_known_position = 0
     _last_known_duration = 0
     _last_known_poll_time = 0
+    _last_known_playing = False
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
@@ -55,8 +55,10 @@ class AirPlayKaraoke(KaraokeBase):
                     self._position_seconds = AirPlayKaraoke._last_known_position
                     self._song_duration = AirPlayKaraoke._last_known_duration
                     self._last_poll_time = AirPlayKaraoke._last_known_poll_time
+                    self._is_playing = AirPlayKaraoke._last_known_playing
                 self._logger.info(
-                    f"Restored track: '{self._current_track}' by '{self._current_artist}'"
+                    f"Restored track: '{self._current_track}' by '{self._current_artist}' "
+                    f"playing={self._is_playing}"
                 )
 
             return True
@@ -79,6 +81,7 @@ class AirPlayKaraoke(KaraokeBase):
                             self._logger.info("Metadata pipe closed, setting _is_playing=False, will reopen")
                             with self._poll_lock:
                                 self._is_playing = False
+                                AirPlayKaraoke._last_known_playing = False
                             break
 
                         buffer += line
@@ -136,6 +139,10 @@ class AirPlayKaraoke(KaraokeBase):
             except Exception:
                 data = ''
 
+        if item_code != 'PICT':
+            log_data = data[:100] if data else ''
+            self._logger.debug(f"Pipe item: type={item_type} code={item_code} data={log_data!r}")
+
         # Handle metadata batching (mdst/mden bracket a set of metadata items)
         if item_type == 'ssnc':
             if item_code == 'mdst':
@@ -160,6 +167,24 @@ class AirPlayKaraoke(KaraokeBase):
                 self._logger.info("Received pbeg, setting _is_playing=True")
                 with self._poll_lock:
                     self._is_playing = True
+                    AirPlayKaraoke._last_known_playing = True
+                return
+            elif item_code == 'pfls':
+                # Pause — freeze lyrics at current position
+                self._logger.info("Received pfls (pause), setting _is_playing=False")
+                with self._poll_lock:
+                    self._is_playing = False
+                    AirPlayKaraoke._last_known_playing = False
+                return
+            elif item_code == 'prsm':
+                # Resume — update poll time so interpolation doesn't jump
+                # forward by the pause duration
+                self._logger.info("Received prsm (resume), setting _is_playing=True")
+                with self._poll_lock:
+                    self._is_playing = True
+                    self._last_poll_time = time.time()
+                    AirPlayKaraoke._last_known_playing = True
+                    AirPlayKaraoke._last_known_poll_time = self._last_poll_time
                 return
             elif item_code == 'pend':
                 # Playback genuinely ended — clear both instance and class-level
@@ -175,6 +200,7 @@ class AirPlayKaraoke(KaraokeBase):
                     AirPlayKaraoke._last_known_position = 0
                     AirPlayKaraoke._last_known_duration = 0
                     AirPlayKaraoke._last_known_poll_time = 0
+                    AirPlayKaraoke._last_known_playing = False
                 return
 
         # Collect core metadata items.
@@ -217,6 +243,7 @@ class AirPlayKaraoke(KaraokeBase):
                 AirPlayKaraoke._last_known_position = self._position_seconds
                 AirPlayKaraoke._last_known_duration = self._song_duration
                 AirPlayKaraoke._last_known_poll_time = self._last_poll_time
+                AirPlayKaraoke._last_known_playing = True
         except (ValueError, ZeroDivisionError):
             pass
 
