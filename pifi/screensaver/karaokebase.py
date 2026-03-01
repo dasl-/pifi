@@ -248,6 +248,10 @@ class KaraokeBase(Screensaver):
                                 lrc = result
                                 source_provider = provider
                                 self._logger.info(f"Found lyrics via {provider}")
+                                self._logger.debug(
+                                    f"{provider} response ({len(result)} bytes): "
+                                    f"{result[:500]}"
+                                )
                                 break
                             else:
                                 self._logger.debug(f"{provider}: no results")
@@ -346,6 +350,11 @@ class KaraokeBase(Screensaver):
                 't': str(int(time.time() * 1000)),
             })
             r = requests.get(self.__MM_URL + endpoint, params=req_params)
+            raw_text = r.text
+            self._logger.debug(
+                f"Musixmatch {endpoint} response ({len(raw_text)} bytes): "
+                f"{raw_text[:500]}"
+            )
             data = r.json()
             status = data['message']['header']['status_code']
 
@@ -481,6 +490,11 @@ class KaraokeBase(Screensaver):
             params['duration'] = duration
 
         r = requests.get('https://lrclib.net/api/get', params=params)
+        raw_text = r.text
+        self._logger.debug(
+            f"LRCLIB response (status={r.status_code}, {len(raw_text)} bytes): "
+            f"{raw_text[:500]}"
+        )
         if r.status_code != 200:
             return None
 
