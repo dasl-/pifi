@@ -585,6 +585,15 @@ class KaraokeBase(Screensaver):
                 self._logger.debug(f"Render: no lyrics (track='{self._current_track}')")
             self.__render_no_lyrics(frame)
         else:
+            if self.__tick_count % 200 == 0:
+                pos = self.__get_interpolated_position()
+                poll_age = time.time() - self._last_poll_time if self._last_poll_time else -1
+                self._logger.debug(
+                    f"Render: lyrics line={self.__current_line_index} "
+                    f"pos={pos:.1f}s playing={self._is_playing} "
+                    f"max_pos={self.__max_position:.1f}s "
+                    f"poll_age={poll_age:.1f}s"
+                )
             self.__render_lyrics(frame)
 
         self.__scroll_offset += 0.5
