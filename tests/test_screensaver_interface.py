@@ -135,7 +135,7 @@ class TestScreensaverInterface(unittest.TestCase):
         )
 
     def test_config_keys_match_screensaver_ids(self):
-        """Verify every screensaver config key in default_config.json matches a screensaver ID.
+        """Verify every screensaver has a matching config key in default_config.json.
 
         The settings API keys configs by screensaver ID, so if default_config.json
         uses 'airplaykaraoke' but get_id() returns 'airplay_karaoke', overrides
@@ -150,20 +150,27 @@ class TestScreensaverInterface(unittest.TestCase):
         with open(default_config_path) as f:
             default_config = pyjson5.decode(f.read())
 
-        screensaver_ids = set(ScreensaverManager.SCREENSAVER_CLASSES.keys())
-        non_screensaver_keys = {
-            'leds', 'log_level', 'pong', 'rgbmatrix',
-            'screensavers', 'server', 'snake', 'sound', 'video',
-        }
+        config_keys = set(default_config.keys())
+        # Screensavers that intentionally have no config section
+        no_config_screensavers = {'video_screensaver'}
 
-        for key in default_config:
-            if key in non_screensaver_keys:
+        for screensaver_id in ScreensaverManager.SCREENSAVER_CLASSES:
+            if screensaver_id in no_config_screensavers:
+                # If it now has a config key, remove it from the ignore list
+                with self.subTest(screensaver=screensaver_id):
+                    self.assertNotIn(
+                        screensaver_id, config_keys,
+                        f"Screensaver '{screensaver_id}' is in no_config_screensavers "
+                        f"but has a config key in default_config.json. "
+                        f"Remove it from no_config_screensavers."
+                    )
                 continue
-            with self.subTest(config_key=key):
+            with self.subTest(screensaver=screensaver_id):
                 self.assertIn(
-                    key, screensaver_ids,
-                    f"Config key '{key}' in default_config.json does not match "
-                    f"any screensaver get_id(). Typo or missing underscore?"
+                    screensaver_id, config_keys,
+                    f"Screensaver '{screensaver_id}' has no matching config key "
+                    f"in default_config.json. Typo or missing underscore? "
+                    f"If this screensaver has no config, add it to no_config_screensavers."
                 )
 
     def test_all_screensavers_call_super_init(self):
