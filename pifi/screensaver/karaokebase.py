@@ -346,21 +346,76 @@ class KaraokeBase(Screensaver):
 
     def __fetch_musixmatch(self, title, artist, duration):
         """Fetch lyrics from Musixmatch using matcher API for version-accurate results."""
-        # Find the track using structured metadata
+        # Try matcher endpoint first (single best match)
         params = {'q_track': title, 'q_artist': artist}
         if duration:
             params['f_subtitle_length'] = duration
         body = self.__mm_api('matcher.track.get', params)
-        if not body or 'track' not in body:
+
+        if body and 'track' in body:
+            track = body['track']
+            track_id = track['track_id']
+            matched_length = track.get('track_length', 0)
+            self._logger.debug(
+                f"Musixmatch matcher: '{track.get('track_name', '')}' "
+                f"(id={track_id}, length={matched_length}s)"
+            )
+
+            if not duration or not matched_length or abs(matched_length - duration) <= 10:
+                lrc = self.__mm_fetch_lyrics_by_track_id(track_id)
+                if lrc:
+                    return lrc
+
+            self._logger.debug(
+                f"Musixmatch matcher duration mismatch: {matched_length}s vs expected {duration}s, "
+                f"trying search"
+            )
+
+        # Fall back to track.search — returns multiple results we can filter by duration
+        if duration:
+            track_id = self.__mm_search_by_duration(title, artist, duration)
+            if track_id:
+                return self.__mm_fetch_lyrics_by_track_id(track_id)
+
+        return None
+
+    def __mm_search_by_duration(self, title, artist, duration):
+        """Search Musixmatch for a track matching our duration. Returns track_id or None."""
+        body = self.__mm_api('track.search', {
+            'q_track': title, 'q_artist': artist,
+            'page_size': '10', 'page': '1',
+        })
+        if not body or 'track_list' not in body:
             return None
 
-        track_id = body['track']['track_id']
-        matched_name = body['track'].get('track_name', '')
-        matched_length = body['track'].get('track_length', 0)
-        self._logger.debug(
-            f"Musixmatch matched: '{matched_name}' (id={track_id}, length={matched_length}s)"
-        )
+        best_id = None
+        best_diff = float('inf')
+        for item in body['track_list']:
+            track = item['track']
+            length = track.get('track_length', 0)
+            if not length:
+                continue
+            diff = abs(length - duration)
+            if diff < best_diff:
+                best_diff = diff
+                best_id = track['track_id']
+                best_name = track.get('track_name', '')
+                best_length = length
 
+        if best_id and best_diff <= 10:
+            self._logger.debug(
+                f"Musixmatch search: '{best_name}' (id={best_id}, length={best_length}s, "
+                f"diff={best_diff}s)"
+            )
+            return best_id
+
+        self._logger.debug(
+            f"Musixmatch search: no duration match within 10s (best diff={best_diff}s)"
+        )
+        return None
+
+    def __mm_fetch_lyrics_by_track_id(self, track_id):
+        """Fetch lyrics (richsync or LRC) for a Musixmatch track ID."""
         # Try word-by-word (richsync) first
         rich_body = self.__mm_api('track.richsync.get', {'track_id': track_id})
         if rich_body and 'richsync' in rich_body:
