@@ -293,6 +293,20 @@ class KaraokeBase(Screensaver):
         finally:
             self.__fetch_in_progress = False
 
+            # If the track changed while we were fetching (e.g. rapid skipping),
+            # __check_track_change already updated __last_track but couldn't start
+            # a new fetch because __fetch_in_progress was True. Re-trigger now.
+            with self._poll_lock:
+                current_track = self._current_track
+                current_artist = self._current_artist
+            if (current_track and current_artist and
+                    (current_track != title or current_artist != artist)):
+                self._logger.info(
+                    f"Track changed during fetch, re-fetching for: "
+                    f"'{current_track}' by '{current_artist}'"
+                )
+                self.__start_lyrics_fetch(current_track, current_artist)
+
     # --- Direct provider API calls ---
     # Using structured metadata (title, artist, duration) for better
     # version matching instead of syncedlyrics' free-text search.
@@ -361,15 +375,21 @@ class KaraokeBase(Screensaver):
                 f"(id={track_id}, length={matched_length}s)"
             )
 
-            if not duration or not matched_length or abs(matched_length - duration) <= 10:
+            duration_ok = not duration or not matched_length or abs(matched_length - duration) <= 10
+            if duration_ok:
                 lrc = self.__mm_fetch_lyrics_by_track_id(track_id)
                 if lrc:
                     return lrc
 
-            self._logger.debug(
-                f"Musixmatch matcher duration mismatch: {matched_length}s vs expected {duration}s, "
-                f"trying search"
-            )
+            if not duration_ok:
+                self._logger.debug(
+                    f"Musixmatch matcher duration mismatch: {matched_length}s vs expected {duration}s, "
+                    f"trying search"
+                )
+            else:
+                self._logger.debug(
+                    f"Musixmatch matcher: no lyrics for track_id={track_id}, trying search"
+                )
 
         # Fall back to track.search — returns multiple results we can filter by duration
         if duration:
