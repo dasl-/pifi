@@ -965,8 +965,14 @@ class KaraokeBase(Screensaver):
 
     def __apply_album_art_background(self, frame):
         """Copy album art into the frame buffer as a dimmed background."""
-        if self._album_art_frame is not None:
-            np.copyto(frame, self._album_art_frame)
+        art = self._album_art_frame
+        if art is not None:
+            if self.__tick_count % 200 == 0:
+                self._logger.debug(f"Applying album art background (max={art.max()})")
+            np.copyto(frame, art)
+        else:
+            if self.__tick_count % 200 == 0:
+                self._logger.debug("No album art to apply")
 
     def __render_break_indicator(self, frame, progress, next_line, scroll_progress=None):
         """Render progress dots during instrumental break."""
