@@ -8,6 +8,10 @@ Uses SoCo for Sonos integration and syncedlyrics for lyrics fetching.
 import numpy as np
 import time
 
+import requests
+from io import BytesIO
+from PIL import Image
+
 from pifi.config import Config
 from pifi.screensaver.karaokebase import KaraokeBase
 from pifi.screensaver import textutils
@@ -28,6 +32,9 @@ class SonosKaraoke(KaraokeBase):
 
         # Sonos speaker reference
         self.__speaker = None
+
+        # Track the last album art URL to avoid re-downloading
+        self.__last_album_art_uri = None
 
     def _connect(self) -> bool:
         """Connect to a Sonos speaker.
@@ -144,12 +151,21 @@ class SonosKaraoke(KaraokeBase):
             artist = track_info.get('artist', '')
             position = track_info.get('position', '0:00:00')
             duration = track_info.get('duration', '0:00:00')
+            album_art_uri = track_info.get('album_art', '')
             state = transport_info.get('current_transport_state', '')
 
             position_seconds = self.__parse_time(position)
             song_duration = self.__parse_time(duration)
             poll_time = time.time()
             is_playing = state == 'PLAYING'
+
+            # Fetch album art if URI changed
+            if album_art_uri and album_art_uri != self.__last_album_art_uri:
+                self.__last_album_art_uri = album_art_uri
+                self.__fetch_album_art(album_art_uri)
+            elif not album_art_uri and self.__last_album_art_uri:
+                self.__last_album_art_uri = None
+                KaraokeBase._album_art_frame = None
 
             with self._poll_lock:
                 KaraokeBase._position_seconds = position_seconds
@@ -183,6 +199,30 @@ class SonosKaraoke(KaraokeBase):
                 return int(parts[0])
         except (ValueError, IndexError):
             return 0
+
+    def __fetch_album_art(self, uri):
+        """Download album art from Sonos and store as a dimmed background frame."""
+        try:
+            # Sonos album_art URIs may be relative paths — build full URL
+            if uri.startswith('/'):
+                base_url = f"http://{self.__speaker.ip_address}:1400"
+                uri = base_url + uri
+
+            resp = requests.get(uri, timeout=5)
+            resp.raise_for_status()
+
+            img = Image.open(BytesIO(resp.content))
+            img = img.resize((self._width, self._height), Image.LANCZOS)
+            img = img.convert('RGB')
+            art_frame = np.array(img, dtype=np.float64)
+            art_frame = (art_frame * 0.5).astype(np.uint8)
+            KaraokeBase._album_art_frame = art_frame
+            self._logger.info(
+                f"Album art loaded ({len(resp.content)} bytes) "
+                f"shape={art_frame.shape} max={art_frame.max()}"
+            )
+        except Exception as e:
+            self._logger.debug(f"Failed to fetch album art: {e}")
 
     def _get_source_display_name(self) -> str:
         if self.__speaker:
