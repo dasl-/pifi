@@ -202,12 +202,11 @@ class AirPlayKaraoke(KaraokeBase):
             img = img.resize((self._width, self._height), Image.LANCZOS)
             img = img.convert('RGB')
             art_frame = np.array(img, dtype=np.float64)
-            art_frame = (art_frame * 0.15).astype(np.uint8)
+            art_frame = (art_frame * 0.5).astype(np.uint8)
             KaraokeBase._album_art_frame = art_frame
             self._logger.info(
                 f"Album art loaded ({len(raw_bytes)} bytes) "
-                f"shape={art_frame.shape} max={art_frame.max()} "
-                f"class_var_is_set={KaraokeBase._album_art_frame is not None}"
+                f"shape={art_frame.shape} max={art_frame.max()}"
             )
         except Exception as e:
             self._logger.debug(f"Failed to process album art: {e}")

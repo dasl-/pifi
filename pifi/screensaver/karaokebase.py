@@ -781,11 +781,6 @@ class KaraokeBase(Screensaver):
                 self.__max_intro_progress = max(self.__max_intro_progress, raw_progress)
                 intro_progress = self.__max_intro_progress
 
-                if self.__tick_count % 200 == 0:
-                    self._logger.debug(
-                        f"Render path: INTRO countdown pos={position:.1f}s "
-                        f"first_lyric={first_lyric_time:.1f}s"
-                    )
                 first_line = self.__lyrics[0][1]
                 self.__render_break_indicator(frame, intro_progress, first_line)
                 self.__render_progress_bar(frame)
@@ -800,11 +795,6 @@ class KaraokeBase(Screensaver):
             time_since_last = position - last_lyric_time
 
             if time_since_last >= self.OUTRO_THRESHOLD:
-                if self.__tick_count % 200 == 0:
-                    self._logger.debug(
-                        f"Render path: OUTRO time_since_last={time_since_last:.1f}s "
-                        f"last_lyric={last_lyric_time:.1f}s art={self._album_art_frame is not None}"
-                    )
                 self.__render_outro(frame)
                 self.__render_progress_bar(frame)
                 return
@@ -812,12 +802,7 @@ class KaraokeBase(Screensaver):
         elapsed = time.time() - self.__line_start_time
         line_progress = min(1.0, elapsed / self.__line_duration) if self.__line_duration > 0 else 0
 
-        # Check if we're in a long break (debug: log even when NOT in break, periodically)
-        if self.__tick_count % 200 == 0 and self.__line_duration < self.BREAK_THRESHOLD:
-            self._logger.debug(
-                f"Render path: NORMAL lyrics line_duration={self.__line_duration:.1f}s "
-                f"(break threshold={self.BREAK_THRESHOLD}s)"
-            )
+        # Check if we're in a long break
         if self.__line_duration >= self.BREAK_THRESHOLD and elapsed >= self.LYRICS_DISPLAY_TIME:
             break_duration = self.__line_duration - self.LYRICS_DISPLAY_TIME
             break_elapsed = elapsed - self.LYRICS_DISPLAY_TIME
@@ -980,15 +965,8 @@ class KaraokeBase(Screensaver):
 
     def __apply_album_art_background(self, frame):
         """Copy album art into the frame buffer as a dimmed background."""
-        art = self._album_art_frame
-        if art is not None:
-            self._logger.debug(
-                f"Applying album art background: shape={art.shape} max={art.max()} "
-                f"frame_shape={frame.shape}"
-            )
-            np.copyto(frame, art)
-        else:
-            self._logger.debug("No album art to apply (_album_art_frame is None)")
+        if self._album_art_frame is not None:
+            np.copyto(frame, self._album_art_frame)
 
     def __render_break_indicator(self, frame, progress, next_line, scroll_progress=None):
         """Render progress dots during instrumental break."""
