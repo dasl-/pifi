@@ -220,6 +220,10 @@ class AirPlayKaraoke(KaraokeBase):
             art_frame = np.array(img, dtype=np.float64)
             art_frame = (art_frame * 0.5).astype(np.uint8)
             self.__pending_album_art = art_frame
+            # Also apply directly — PICT can arrive after the title-change
+            # mden (e.g. consecutive songs on the same album), so the
+            # pending mechanism alone won't cover that case.
+            KaraokeBase._album_art_frame = art_frame
             self._logger.info(
                 f"Album art loaded ({len(raw_bytes)} bytes) "
                 f"shape={art_frame.shape} max={art_frame.max()}"
