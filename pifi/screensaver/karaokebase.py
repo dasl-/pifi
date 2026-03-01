@@ -21,6 +21,16 @@ from pifi.screensaver import textutils
 class KaraokeBase(Screensaver):
     """Base class for karaoke lyrics display screensavers."""
 
+    # Persisted state — class-level so it survives max_ticks instance restarts.
+    # Use KaraokeBase._field = value for writes (self._field = creates instance vars).
+    _current_track = None
+    _current_artist = None
+    _position_seconds = 0
+    _song_duration = 0
+    _last_poll_time = 0
+    _is_playing = False
+    _album_art_frame = None
+
     # Colors
     COLORS = {
         'current_line': (255, 255, 255),      # White - current lyric
@@ -64,13 +74,6 @@ class KaraokeBase(Screensaver):
         self._max_ticks = 6000
         self._pulse_lyrics = True
 
-        # Protected state for subclasses to update (under _poll_lock)
-        self._current_track = None
-        self._current_artist = None
-        self._position_seconds = 0
-        self._song_duration = 0
-        self._last_poll_time = 0
-        self._is_playing = False
         self._poll_lock = threading.Lock()
         self._polling_active = False
 
@@ -201,6 +204,7 @@ class KaraokeBase(Screensaver):
             self.__max_intro_progress = 0
             self.__word_start_times = {}
             self.__preview_line = None
+            KaraokeBase._album_art_frame = None
 
             self.__start_lyrics_fetch(track, artist)
 
@@ -712,6 +716,8 @@ class KaraokeBase(Screensaver):
             self.__render_waiting(frame)
             return
 
+        self.__apply_album_art_background(frame)
+
         if self._current_track:
             track_upper = self._current_track.upper()
             textutils.draw_scrolling_text(
@@ -958,8 +964,14 @@ class KaraokeBase(Screensaver):
         # Progress bar at bottom
         self.__render_progress_bar(frame)
 
+    def __apply_album_art_background(self, frame):
+        """Copy album art into the frame buffer as a dimmed background."""
+        if self._album_art_frame is not None:
+            np.copyto(frame, self._album_art_frame)
+
     def __render_break_indicator(self, frame, progress, next_line, scroll_progress=None):
         """Render progress dots during instrumental break."""
+        self.__apply_album_art_background(frame)
         if scroll_progress is None:
             scroll_progress = progress
 
@@ -1016,6 +1028,7 @@ class KaraokeBase(Screensaver):
 
     def __render_outro(self, frame):
         """Render song info during the outro (after last lyric)."""
+        self.__apply_album_art_background(frame)
         if self._current_track:
             track_upper = self._current_track.upper()
             textutils.draw_scrolling_text(
