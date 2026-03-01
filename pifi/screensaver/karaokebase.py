@@ -62,6 +62,7 @@ class KaraokeBase(Screensaver):
         # Subclasses should override these in their __init__
         self._tick_sleep = 0.05
         self._max_ticks = 6000
+        self._pulse_lyrics = True
 
         # Protected state for subclasses to update (under _poll_lock)
         self._current_track = None
@@ -296,48 +297,52 @@ class KaraokeBase(Screensaver):
     # Using structured metadata (title, artist, duration) for better
     # version matching instead of syncedlyrics' free-text search.
 
-    # Musixmatch API state (shared across instances for token reuse)
     __mm_token = None
-    __mm_token_expires = 0
-    __mm_token_lock = threading.Lock()
     __MM_URL = 'https://apic-desktop.musixmatch.com/ws/1.1/'
 
-    @classmethod
-    def __mm_get_token(cls):
-        """Get or refresh Musixmatch API token."""
-        with cls.__mm_token_lock:
-            if cls.__mm_token and time.time() < cls.__mm_token_expires:
-                return cls.__mm_token
-
-            import requests
-            r = requests.get(cls.__MM_URL + 'token.get', params={
-                'app_id': 'web-desktop-app-v1.0',
-                'user_language': 'en',
-                't': str(int(time.time() * 1000)),
-            })
-            data = r.json()
-            if data['message']['header']['status_code'] == 401:
-                time.sleep(10)
-                return cls.__mm_get_token()
-
-            cls.__mm_token = data['message']['body']['user_token']
-            cls.__mm_token_expires = time.time() + 600  # 10 min
-            return cls.__mm_token
-
-    def __mm_api(self, endpoint, params):
-        """Make a Musixmatch API request."""
+    @staticmethod
+    def __mm_get_token():
+        """Fetch a fresh Musixmatch API token."""
         import requests
-        token = self.__mm_get_token()
-        params.update({
+        r = requests.get(KaraokeBase.__MM_URL + 'token.get', params={
             'app_id': 'web-desktop-app-v1.0',
-            'usertoken': token,
+            'user_language': 'en',
             't': str(int(time.time() * 1000)),
         })
-        r = requests.get(self.__MM_URL + endpoint, params=params)
         data = r.json()
-        if data['message']['header']['status_code'] != 200:
-            return None
-        return data['message'].get('body')
+        if data['message']['header']['status_code'] == 401:
+            time.sleep(10)
+            return KaraokeBase.__mm_get_token()
+
+        KaraokeBase.__mm_token = data['message']['body']['user_token']
+        return KaraokeBase.__mm_token
+
+    def __mm_api(self, endpoint, params):
+        """Make a Musixmatch API request. Retries with a fresh token on 401."""
+        import requests
+
+        if not KaraokeBase.__mm_token:
+            self.__mm_get_token()
+
+        for attempt in range(2):
+            req_params = dict(params)
+            req_params.update({
+                'app_id': 'web-desktop-app-v1.0',
+                'usertoken': KaraokeBase.__mm_token,
+                't': str(int(time.time() * 1000)),
+            })
+            r = requests.get(self.__MM_URL + endpoint, params=req_params)
+            data = r.json()
+            status = data['message']['header']['status_code']
+
+            if status == 401 and attempt == 0:
+                self._logger.debug("Musixmatch token expired, refreshing")
+                self.__mm_get_token()
+                continue
+
+            if status != 200:
+                return None
+            return data['message'].get('body')
 
     def __fetch_musixmatch(self, title, artist, duration):
         """Fetch lyrics from Musixmatch using matcher API for version-accurate results."""
@@ -688,7 +693,10 @@ class KaraokeBase(Screensaver):
             current_position = self.__get_interpolated_position()
             current_time = time.time()
 
-            pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
+            if self._pulse_lyrics:
+                pulse = 0.85 + 0.15 * np.sin(self.__tick_count * 0.2)
+            else:
+                pulse = 0.75
             current_color = tuple(int(c * pulse) for c in self.COLORS['current_line'])
 
             line_width = len(current_line) * 4
