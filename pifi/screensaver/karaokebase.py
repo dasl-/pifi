@@ -640,6 +640,7 @@ class KaraokeBase(Screensaver):
         # Make position monotonic - allow backward jumps of >2s (indicates a seek)
         if raw_position < self.__max_position - 2.0:
             self.__max_position = raw_position
+            self.__max_intro_progress = 0
         else:
             self.__max_position = max(self.__max_position, raw_position)
 
