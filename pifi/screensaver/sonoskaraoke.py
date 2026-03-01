@@ -212,10 +212,18 @@ class SonosKaraoke(KaraokeBase):
             resp.raise_for_status()
 
             img = Image.open(BytesIO(resp.content))
-            img = img.resize((self._width, self._height), Image.LANCZOS)
             img = img.convert('RGB')
-            art_frame = np.array(img, dtype=np.float64)
-            art_frame = (art_frame * 0.5).astype(np.uint8)
+
+            # Keep album art square and center it on the display
+            size = min(self._width, self._height)
+            img = img.resize((size, size), Image.LANCZOS)
+            square = np.array(img, dtype=np.float64)
+            square = (square * 0.5).astype(np.uint8)
+
+            art_frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
+            x_offset = (self._width - size) // 2
+            y_offset = (self._height - size) // 2
+            art_frame[y_offset:y_offset + size, x_offset:x_offset + size] = square
             KaraokeBase._album_art_frame = art_frame
             self._logger.info(
                 f"Album art loaded ({len(resp.content)} bytes) "
