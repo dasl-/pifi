@@ -325,7 +325,7 @@ class KaraokeBase(Screensaver):
             'app_id': 'web-desktop-app-v1.0',
             'user_language': 'en',
             't': str(int(time.time() * 1000)),
-        })
+        }, timeout=(3, 5))
         raw_text = r.text
         self._logger.debug(
             f"Musixmatch token.get response ({len(raw_text)} bytes): "
@@ -355,7 +355,7 @@ class KaraokeBase(Screensaver):
                 'usertoken': KaraokeBase.__mm_token,
                 't': str(int(time.time() * 1000)),
             })
-            r = requests.get(self.__MM_URL + endpoint, params=req_params)
+            r = requests.get(self.__MM_URL + endpoint, params=req_params, timeout=(3, 5))
             raw_text = r.text
             self._logger.debug(
                 f"Musixmatch {endpoint} response ({len(raw_text)} bytes): "
@@ -497,7 +497,7 @@ class KaraokeBase(Screensaver):
         if duration:
             params['duration'] = duration
 
-        r = requests.get('https://lrclib.net/api/get', params=params)
+        r = requests.get('https://lrclib.net/api/get', params=params, timeout=(3, 5))
         raw_text = r.text
         self._logger.debug(
             f"LRCLIB response (status={r.status_code}, {len(raw_text)} bytes): "
