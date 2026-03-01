@@ -18,17 +18,6 @@ from pifi.screensaver import textutils
 class AirPlayKaraoke(KaraokeBase):
     """AirPlay karaoke lyrics display via shairport-sync metadata."""
 
-    # Persist track metadata across instances. shairport-sync only sends
-    # track info on changes and prgr events infrequently, so when the
-    # screensaver restarts (max_ticks rotation), a new instance would
-    # otherwise have no track info or playing state until the next event.
-    _last_known_track = None
-    _last_known_artist = None
-    _last_known_position = 0
-    _last_known_duration = 0
-    _last_known_poll_time = 0
-    _last_known_playing = False
-
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
@@ -44,23 +33,6 @@ class AirPlayKaraoke(KaraokeBase):
         """Check if shairport-sync metadata pipe exists."""
         if os.path.exists(self.__metadata_pipe):
             self._logger.info(f"Metadata pipe found: {self.__metadata_pipe}")
-
-            # Restore last known state from previous instance (see class-level
-            # comment). Position and poll_time let the base class extrapolate
-            # the current lyrics position instead of jumping to 0:00.
-            if AirPlayKaraoke._last_known_track:
-                with self._poll_lock:
-                    self._current_track = AirPlayKaraoke._last_known_track
-                    self._current_artist = AirPlayKaraoke._last_known_artist
-                    self._position_seconds = AirPlayKaraoke._last_known_position
-                    self._song_duration = AirPlayKaraoke._last_known_duration
-                    self._last_poll_time = AirPlayKaraoke._last_known_poll_time
-                    self._is_playing = AirPlayKaraoke._last_known_playing
-                self._logger.info(
-                    f"Restored track: '{self._current_track}' by '{self._current_artist}' "
-                    f"playing={self._is_playing}"
-                )
-
             return True
         self._logger.warning(f"Metadata pipe not found: {self.__metadata_pipe}")
         return False
@@ -80,8 +52,7 @@ class AirPlayKaraoke(KaraokeBase):
                             # Pipe closed (writer disconnected)
                             self._logger.info("Metadata pipe closed, setting _is_playing=False, will reopen")
                             with self._poll_lock:
-                                self._is_playing = False
-                                AirPlayKaraoke._last_known_playing = False
+                                KaraokeBase._is_playing = False
                             break
 
                         buffer += line
@@ -132,6 +103,17 @@ class AirPlayKaraoke(KaraokeBase):
 
         # Extract data if present
         data_match = re.search(r'<data encoding="base64">\s*(.*?)\s*</data>', item_xml, re.DOTALL)
+
+        # PICT items contain binary image data — decode as raw bytes
+        # before the UTF-8 decode that would destroy them.
+        if item_code == 'PICT' and data_match:
+            try:
+                raw_bytes = base64.b64decode(data_match.group(1))
+                self.__process_album_art(raw_bytes)
+            except Exception as e:
+                self._logger.debug(f"Failed to decode PICT data: {e}")
+            return
+
         data = ''
         if data_match:
             try:
@@ -139,9 +121,8 @@ class AirPlayKaraoke(KaraokeBase):
             except Exception:
                 data = ''
 
-        if item_code != 'PICT':
-            log_data = data[:100] if data else ''
-            self._logger.debug(f"Pipe item: type={item_type} code={item_code} data={log_data!r}")
+        log_data = data[:100] if data else ''
+        self._logger.debug(f"Pipe item: type={item_type} code={item_code} data={log_data!r}")
 
         # Handle metadata batching (mdst/mden bracket a set of metadata items)
         if item_type == 'ssnc':
@@ -149,15 +130,13 @@ class AirPlayKaraoke(KaraokeBase):
                 pending_metadata.clear()
                 return
             elif item_code == 'mden':
-                # Metadata batch complete — apply to instance and persist to
-                # class state for survival across max_ticks restarts.
+                # Metadata batch complete — write to class-level state so it
+                # survives max_ticks instance restarts.
                 with self._poll_lock:
                     if 'title' in pending_metadata:
-                        self._current_track = pending_metadata['title']
-                        AirPlayKaraoke._last_known_track = self._current_track
+                        KaraokeBase._current_track = pending_metadata['title']
                     if 'artist' in pending_metadata:
-                        self._current_artist = pending_metadata['artist']
-                        AirPlayKaraoke._last_known_artist = self._current_artist
+                        KaraokeBase._current_artist = pending_metadata['artist']
                 pending_metadata.clear()
                 return
             elif item_code == 'prgr':
@@ -166,41 +145,35 @@ class AirPlayKaraoke(KaraokeBase):
             elif item_code == 'pbeg':
                 self._logger.info("Received pbeg, setting _is_playing=True")
                 with self._poll_lock:
-                    self._is_playing = True
-                    AirPlayKaraoke._last_known_playing = True
+                    KaraokeBase._is_playing = True
                 return
             elif item_code in ('pfls', 'paus'):
                 # Pause — freeze lyrics at current position
                 self._logger.info(f"Received {item_code} (pause), setting _is_playing=False")
                 with self._poll_lock:
-                    self._is_playing = False
-                    AirPlayKaraoke._last_known_playing = False
+                    KaraokeBase._is_playing = False
                 return
             elif item_code == 'prsm':
                 # Resume — update poll time so interpolation doesn't jump
                 # forward by the pause duration
                 self._logger.info("Received prsm (resume), setting _is_playing=True")
                 with self._poll_lock:
-                    self._is_playing = True
-                    self._last_poll_time = time.time()
-                    AirPlayKaraoke._last_known_playing = True
-                    AirPlayKaraoke._last_known_poll_time = self._last_poll_time
+                    KaraokeBase._is_playing = True
+                    KaraokeBase._last_poll_time = time.time()
                 return
             elif item_code == 'pend':
-                # Playback genuinely ended — clear both instance and class-level
-                # state so the display shows "NO MUSIC" and a future instance
-                # won't restore stale track info.
+                # Playback genuinely ended — clear state so the display
+                # shows "NO MUSIC" and a future instance won't restore
+                # stale track info.
                 self._logger.info("Received pend, setting _is_playing=False")
                 with self._poll_lock:
-                    self._is_playing = False
-                    self._current_track = None
-                    self._current_artist = None
-                    AirPlayKaraoke._last_known_track = None
-                    AirPlayKaraoke._last_known_artist = None
-                    AirPlayKaraoke._last_known_position = 0
-                    AirPlayKaraoke._last_known_duration = 0
-                    AirPlayKaraoke._last_known_poll_time = 0
-                    AirPlayKaraoke._last_known_playing = False
+                    KaraokeBase._is_playing = False
+                    KaraokeBase._current_track = None
+                    KaraokeBase._current_artist = None
+                    KaraokeBase._position_seconds = 0
+                    KaraokeBase._song_duration = 0
+                    KaraokeBase._last_poll_time = 0
+                    KaraokeBase._album_art_frame = None
                 return
 
         # Collect core metadata items.
@@ -218,6 +191,23 @@ class AirPlayKaraoke(KaraokeBase):
             elif item_code == 'asal' and data:
                 pending_metadata['album'] = data
 
+    def __process_album_art(self, raw_bytes):
+        """Decode album art image and store as a dimmed background frame."""
+        try:
+            from io import BytesIO
+            from PIL import Image
+            import numpy as np
+
+            img = Image.open(BytesIO(raw_bytes))
+            img = img.resize((self._width, self._height), Image.LANCZOS)
+            img = img.convert('RGB')
+            art_frame = np.array(img, dtype=np.float64)
+            art_frame = (art_frame * 0.15).astype(np.uint8)
+            KaraokeBase._album_art_frame = art_frame
+            self._logger.info(f"Album art loaded ({len(raw_bytes)} bytes)")
+        except Exception as e:
+            self._logger.debug(f"Failed to process album art: {e}")
+
     def __parse_progress(self, data):
         """Parse progress string: 'start/current/end' as RTP frame numbers at 44100 Hz."""
         try:
@@ -233,17 +223,10 @@ class AirPlayKaraoke(KaraokeBase):
             duration_seconds = (end_rtp - start_rtp) / 44100.0
 
             with self._poll_lock:
-                self._position_seconds = max(0, position_seconds)
-                self._song_duration = max(0, duration_seconds)
-                self._last_poll_time = time.time()
-                self._is_playing = True
-
-                # Persist to class state so a new instance after max_ticks
-                # rotation can resume lyrics from the right position.
-                AirPlayKaraoke._last_known_position = self._position_seconds
-                AirPlayKaraoke._last_known_duration = self._song_duration
-                AirPlayKaraoke._last_known_poll_time = self._last_poll_time
-                AirPlayKaraoke._last_known_playing = True
+                KaraokeBase._position_seconds = max(0, position_seconds)
+                KaraokeBase._song_duration = max(0, duration_seconds)
+                KaraokeBase._last_poll_time = time.time()
+                KaraokeBase._is_playing = True
         except (ValueError, ZeroDivisionError):
             pass
 

@@ -152,12 +152,12 @@ class SonosKaraoke(KaraokeBase):
             is_playing = state == 'PLAYING'
 
             with self._poll_lock:
-                self._position_seconds = position_seconds
-                self._song_duration = song_duration
-                self._last_poll_time = poll_time
-                self._is_playing = is_playing
-                self._current_track = title
-                self._current_artist = artist
+                KaraokeBase._position_seconds = position_seconds
+                KaraokeBase._song_duration = song_duration
+                KaraokeBase._last_poll_time = poll_time
+                KaraokeBase._is_playing = is_playing
+                KaraokeBase._current_track = title
+                KaraokeBase._current_artist = artist
 
                 self._logger.debug(
                     f"Poll: state={state}, title='{title}', artist='{artist}', pos={position}"
