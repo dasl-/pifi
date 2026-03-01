@@ -827,7 +827,7 @@
 
     // Configuration specific to AirPlay Karaoke screensaver.
     // Displays synced lyrics for music playing via AirPlay (shairport-sync).
-    "airplaykaraoke": {
+    "airplay_karaoke": {
 
         // Optional, string, default: "/tmp/shairport-sync-metadata".
         // Path to the shairport-sync metadata pipe.

@@ -23,10 +23,10 @@ class AirPlayKaraoke(KaraokeBase):
 
         # AirPlay-specific configuration
         self.__metadata_pipe = Config.get(
-            'airplaykaraoke.metadata_pipe', '/tmp/shairport-sync-metadata'
+            'airplay_karaoke.metadata_pipe', '/tmp/shairport-sync-metadata'
         )
-        self._max_ticks = Config.get('airplaykaraoke.max_ticks', 6000)
-        self._tick_sleep = Config.get('airplaykaraoke.tick_sleep', 0.05)
+        self._max_ticks = Config.get('airplay_karaoke.max_ticks', 6000)
+        self._tick_sleep = Config.get('airplay_karaoke.tick_sleep', 0.05)
 
     def _connect(self) -> bool:
         """Check if shairport-sync metadata pipe exists."""
@@ -131,17 +131,27 @@ class AirPlayKaraoke(KaraokeBase):
                     self._is_playing = True
                 return
             elif item_code == 'pend':
+                # Clear track info so the display transitions to "NO MUSIC"
+                # when playback genuinely ends.
                 with self._poll_lock:
                     self._is_playing = False
+                    self._current_track = None
+                    self._current_artist = None
                 return
 
-        # Collect core metadata items
+        # Collect core metadata items.
+        # Only store non-empty values: we suspect shairport-sync may send
+        # metadata batches with empty fields mid-song (e.g. during AirPlay
+        # session renegotiation). Without this guard, _current_track would
+        # become '' (falsy), __check_track_change would clear the lyrics,
+        # and the display would briefly flash "NO MUSIC ON AIRPLAY" until
+        # the next metadata batch arrives with the real track info.
         if item_type == 'core':
-            if item_code == 'minm':
+            if item_code == 'minm' and data:
                 pending_metadata['title'] = data
-            elif item_code == 'asar':
+            elif item_code == 'asar' and data:
                 pending_metadata['artist'] = data
-            elif item_code == 'asal':
+            elif item_code == 'asal' and data:
                 pending_metadata['album'] = data
 
     def __parse_progress(self, data):

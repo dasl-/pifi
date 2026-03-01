@@ -134,6 +134,38 @@ class TestScreensaverInterface(unittest.TestCase):
             f"Duplicate IDs found: {[id for id in ids if ids.count(id) > 1]}"
         )
 
+    def test_config_keys_match_screensaver_ids(self):
+        """Verify every screensaver config key in default_config.json matches a screensaver ID.
+
+        The settings API keys configs by screensaver ID, so if default_config.json
+        uses 'airplaykaraoke' but get_id() returns 'airplay_karaoke', overrides
+        saved via the UI will be silently ignored.
+        """
+        import pyjson5
+
+        default_config_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'default_config.json'
+        )
+        with open(default_config_path) as f:
+            default_config = pyjson5.decode(f.read())
+
+        screensaver_ids = set(ScreensaverManager.SCREENSAVER_CLASSES.keys())
+        non_screensaver_keys = {
+            'leds', 'log_level', 'pong', 'rgbmatrix',
+            'screensavers', 'server', 'snake', 'sound', 'video',
+        }
+
+        for key in default_config:
+            if key in non_screensaver_keys:
+                continue
+            with self.subTest(config_key=key):
+                self.assertIn(
+                    key, screensaver_ids,
+                    f"Config key '{key}' in default_config.json does not match "
+                    f"any screensaver get_id(). Typo or missing underscore?"
+                )
+
     def test_all_screensavers_call_super_init(self):
         """Verify all screensaver subclasses call super().__init__() in their __init__ method."""
         for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
