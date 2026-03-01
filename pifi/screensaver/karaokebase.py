@@ -78,6 +78,8 @@ class KaraokeBase(Screensaver):
         self.__lyrics = []  # List of (timestamp_seconds, line_text, word_timings)
         self.__lyrics_available = False
         self.__lyrics_quality = None  # 'synced', 'enhanced', or None
+        self.__lyrics_track = None   # Track name lyrics were fetched for
+        self.__lyrics_artist = None  # Artist name lyrics were fetched for
         self.__fetch_in_progress = False
         self.__fetch_lock = threading.Lock()
 
@@ -175,9 +177,21 @@ class KaraokeBase(Screensaver):
         if track != self.__last_track or artist != self.__last_artist:
             self.__last_track = track
             self.__last_artist = artist
+
+            # If we already have lyrics for this exact track+artist (e.g.
+            # resuming after pause/pend), keep them instead of re-fetching.
+            if (track and artist and
+                    track == self.__lyrics_track and artist == self.__lyrics_artist):
+                self._logger.info(
+                    f"Reusing cached lyrics for: '{track}' by '{artist}'"
+                )
+                return
+
             self.__lyrics = []
             self.__lyrics_available = False
             self.__lyrics_quality = None
+            self.__lyrics_track = None
+            self.__lyrics_artist = None
             self.__current_line_index = -1
             self.__max_position = 0
             self.__max_intro_progress = 0
@@ -279,6 +293,8 @@ class KaraokeBase(Screensaver):
                         self.__lyrics = lyrics
                         self.__lyrics_available = len(lyrics) > 0
                         self.__lyrics_quality = quality if lyrics else None
+                        self.__lyrics_track = title
+                        self.__lyrics_artist = artist
                         if lyrics:
                             self._logger.info(f"Found {len(lyrics)} lyric lines (quality={quality})")
                             self._logger.debug(f"First line: [{lyrics[0][0]:.1f}s] {lyrics[0][1]}")
