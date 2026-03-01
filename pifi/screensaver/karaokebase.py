@@ -204,7 +204,6 @@ class KaraokeBase(Screensaver):
             self.__max_intro_progress = 0
             self.__word_start_times = {}
             self.__preview_line = None
-            KaraokeBase._album_art_frame = None
 
             self.__start_lyrics_fetch(track, artist)
 
