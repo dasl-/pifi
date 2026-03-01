@@ -29,6 +29,10 @@ class AirPlayKaraoke(KaraokeBase):
         self._tick_sleep = Config.get('airplay_karaoke.tick_sleep', 0.05)
         self._pulse_lyrics = Config.get('airplay_karaoke.pulse_lyrics', True)
 
+        # Pending album art — PICT arrives before mden, so we stage it
+        # here and apply (or clear) in the mden handler on title change.
+        self.__pending_album_art = None
+
     def _connect(self) -> bool:
         """Check if shairport-sync metadata pipe exists."""
         if os.path.exists(self.__metadata_pipe):
@@ -134,7 +138,13 @@ class AirPlayKaraoke(KaraokeBase):
                 # survives max_ticks instance restarts.
                 with self._poll_lock:
                     if 'title' in pending_metadata:
-                        KaraokeBase._current_track = pending_metadata['title']
+                        new_title = pending_metadata['title']
+                        if new_title != KaraokeBase._current_track:
+                            # New song — apply pending album art (clears if
+                            # no PICT arrived for this song).
+                            KaraokeBase._album_art_frame = self.__pending_album_art
+                            self.__pending_album_art = None
+                        KaraokeBase._current_track = new_title
                     if 'artist' in pending_metadata:
                         KaraokeBase._current_artist = pending_metadata['artist']
                 pending_metadata.clear()
@@ -174,6 +184,7 @@ class AirPlayKaraoke(KaraokeBase):
                     KaraokeBase._song_duration = 0
                     KaraokeBase._last_poll_time = 0
                     KaraokeBase._album_art_frame = None
+                    self.__pending_album_art = None
                 return
 
         # Collect core metadata items.
@@ -203,7 +214,7 @@ class AirPlayKaraoke(KaraokeBase):
             img = img.convert('RGB')
             art_frame = np.array(img, dtype=np.float64)
             art_frame = (art_frame * 0.5).astype(np.uint8)
-            KaraokeBase._album_art_frame = art_frame
+            self.__pending_album_art = art_frame
             self._logger.info(
                 f"Album art loaded ({len(raw_bytes)} bytes) "
                 f"shape={art_frame.shape} max={art_frame.max()}"
