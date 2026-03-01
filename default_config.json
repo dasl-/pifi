@@ -842,6 +842,11 @@
         // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
         // When false, lyrics display at a steady dimmer brightness.
         "pulse_lyrics": true,
+
+        // Optional, boolean, default: false. When true, enhanced lyrics use smooth
+        // time-based scrolling instead of word-completion scrolling.
+        // Word-by-word coloring is still applied either way.
+        "enhanced_lyric_smooth_scrolling": false,
     },
 
     // Configuration specific to Sonos Karaoke screensaver.
@@ -865,6 +870,11 @@
         // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
         // When false, lyrics display at a steady dimmer brightness.
         "pulse_lyrics": true,
+
+        // Optional, boolean, default: false. When true, enhanced lyrics use smooth
+        // time-based scrolling instead of word-completion scrolling.
+        // Word-by-word coloring is still applied either way.
+        "enhanced_lyric_smooth_scrolling": false,
     },
 
 }

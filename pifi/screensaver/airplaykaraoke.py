@@ -39,6 +39,7 @@ class AirPlayKaraoke(KaraokeBase):
         self._max_ticks = Config.get('airplay_karaoke.max_ticks', 6000)
         self._tick_sleep = Config.get('airplay_karaoke.tick_sleep', 0.05)
         self._pulse_lyrics = Config.get('airplay_karaoke.pulse_lyrics', True)
+        self._enhanced_lyric_smooth_scrolling = Config.get('airplay_karaoke.enhanced_lyric_smooth_scrolling', False)
 
     def _connect(self) -> bool:
         """Check if shairport-sync metadata pipe exists."""
