@@ -318,19 +318,23 @@ class KaraokeBase(Screensaver):
     __mm_token = None
     __MM_URL = 'https://apic-desktop.musixmatch.com/ws/1.1/'
 
-    @staticmethod
-    def __mm_get_token():
-        """Fetch a fresh Musixmatch API token."""
+    def __mm_get_token(self):
+        """Fetch a fresh Musixmatch API token. Returns token or None."""
         import requests
         r = requests.get(KaraokeBase.__MM_URL + 'token.get', params={
             'app_id': 'web-desktop-app-v1.0',
             'user_language': 'en',
             't': str(int(time.time() * 1000)),
         })
+        raw_text = r.text
+        self._logger.debug(
+            f"Musixmatch token.get response ({len(raw_text)} bytes): "
+            f"{raw_text[:500]}"
+        )
         data = r.json()
         if data['message']['header']['status_code'] == 401:
-            time.sleep(10)
-            return KaraokeBase.__mm_get_token()
+            KaraokeBase.__mm_token = None
+            return None
 
         KaraokeBase.__mm_token = data['message']['body']['user_token']
         return KaraokeBase.__mm_token
@@ -340,7 +344,9 @@ class KaraokeBase(Screensaver):
         import requests
 
         if not KaraokeBase.__mm_token:
-            self.__mm_get_token()
+            if not self.__mm_get_token():
+                self._logger.debug("Musixmatch: could not get token")
+                return None
 
         for attempt in range(2):
             req_params = dict(params)
@@ -360,7 +366,9 @@ class KaraokeBase(Screensaver):
 
             if status == 401 and attempt == 0:
                 self._logger.debug("Musixmatch token expired, refreshing")
-                self.__mm_get_token()
+                if not self.__mm_get_token():
+                    self._logger.debug("Musixmatch: could not refresh token")
+                    return None
                 continue
 
             if status != 200:
