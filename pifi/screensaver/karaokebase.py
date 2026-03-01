@@ -204,28 +204,24 @@ class KaraokeBase(Screensaver):
     def __fetch_lyrics_background(self, title, artist):
         """Fetch lyrics in background thread."""
         try:
-            search_query = f"{title} {artist}"
-            self._logger.info(f"Fetching lyrics for: '{search_query}'")
+            self._logger.info(f"Fetching lyrics for: '{title}' by '{artist}'")
 
-            import syncedlyrics
+            with self._poll_lock:
+                duration = int(self._song_duration) if self._song_duration > 0 else None
 
-            # Try providers in order of reliability: Musixmatch (powers
-            # Spotify/Apple Music lyrics, supports word-by-word timing),
-            # then LRCLIB, NetEase, Megalobiz as fallbacks.
+            # Try providers in order of reliability. Use direct API calls
+            # with structured metadata (title, artist, duration) for better
+            # version matching instead of free-text search.
             lrc = None
             source_provider = None
 
-            for provider, kwargs in [
-                ('Musixmatch', {'enhanced': True}),
-                ('Lrclib', {}),
-                ('NetEase', {}),
-                ('Megalobiz', {}),
-            ]:
+            fetchers = [
+                ('Musixmatch', lambda: self.__fetch_musixmatch(title, artist, duration)),
+                ('LRCLIB', lambda: self.__fetch_lrclib(title, artist, duration)),
+            ]
+            for provider, fetcher in fetchers:
                 try:
-                    result = syncedlyrics.search(
-                        search_query, synced_only=True,
-                        providers=[provider], **kwargs
-                    )
+                    result = fetcher()
                     if result:
                         lrc = result
                         source_provider = provider
@@ -235,6 +231,29 @@ class KaraokeBase(Screensaver):
                         self._logger.debug(f"{provider}: no results")
                 except Exception as e:
                     self._logger.debug(f"{provider} failed: {e}")
+
+            # Fall back to syncedlyrics text search for remaining providers
+            if not lrc:
+                try:
+                    import syncedlyrics
+                    search_query = f"{title} {artist}"
+                    for provider in ['NetEase', 'Megalobiz']:
+                        try:
+                            result = syncedlyrics.search(
+                                search_query, synced_only=True,
+                                providers=[provider]
+                            )
+                            if result:
+                                lrc = result
+                                source_provider = provider
+                                self._logger.info(f"Found lyrics via {provider}")
+                                break
+                            else:
+                                self._logger.debug(f"{provider}: no results")
+                        except Exception as e:
+                            self._logger.debug(f"{provider} failed: {e}")
+                except ImportError:
+                    self._logger.debug("syncedlyrics not installed, skipping fallback providers")
 
             if lrc:
                 is_enhanced = '<' in lrc and '>' in lrc
@@ -259,22 +278,134 @@ class KaraokeBase(Screensaver):
                             self._logger.info(f"Found {len(lyrics)} lyric lines (quality={quality})")
                             self._logger.debug(f"First line: [{lyrics[0][0]:.1f}s] {lyrics[0][1]}")
                         else:
-                            self._logger.info(f"No usable timed lyrics for: '{search_query}'")
+                            self._logger.info(f"No usable timed lyrics for: '{title}' by '{artist}'")
             else:
-                self._logger.info(f"No synced lyrics found for: '{search_query}'")
+                self._logger.info(f"No synced lyrics found for: '{title}' by '{artist}'")
                 with self.__fetch_lock:
                     self.__lyrics = []
                     self.__lyrics_available = False
                     self.__lyrics_quality = None
-
-        except ImportError:
-            self._logger.error("syncedlyrics not installed. Run: pip install syncedlyrics")
         except Exception as e:
             self._logger.error(f"Error fetching lyrics: {e}")
             import traceback
             self._logger.debug(traceback.format_exc())
         finally:
             self.__fetch_in_progress = False
+
+    # --- Direct provider API calls ---
+    # Using structured metadata (title, artist, duration) for better
+    # version matching instead of syncedlyrics' free-text search.
+
+    # Musixmatch API state (shared across instances for token reuse)
+    __mm_token = None
+    __mm_token_expires = 0
+    __mm_token_lock = threading.Lock()
+    __MM_URL = 'https://apic-desktop.musixmatch.com/ws/1.1/'
+
+    @classmethod
+    def __mm_get_token(cls):
+        """Get or refresh Musixmatch API token."""
+        with cls.__mm_token_lock:
+            if cls.__mm_token and time.time() < cls.__mm_token_expires:
+                return cls.__mm_token
+
+            import requests
+            r = requests.get(cls.__MM_URL + 'token.get', params={
+                'app_id': 'web-desktop-app-v1.0',
+                'user_language': 'en',
+                't': str(int(time.time() * 1000)),
+            })
+            data = r.json()
+            if data['message']['header']['status_code'] == 401:
+                time.sleep(10)
+                return cls.__mm_get_token()
+
+            cls.__mm_token = data['message']['body']['user_token']
+            cls.__mm_token_expires = time.time() + 600  # 10 min
+            return cls.__mm_token
+
+    def __mm_api(self, endpoint, params):
+        """Make a Musixmatch API request."""
+        import requests
+        token = self.__mm_get_token()
+        params.update({
+            'app_id': 'web-desktop-app-v1.0',
+            'usertoken': token,
+            't': str(int(time.time() * 1000)),
+        })
+        r = requests.get(self.__MM_URL + endpoint, params=params)
+        data = r.json()
+        if data['message']['header']['status_code'] != 200:
+            return None
+        return data['message'].get('body')
+
+    def __fetch_musixmatch(self, title, artist, duration):
+        """Fetch lyrics from Musixmatch using matcher API for version-accurate results."""
+        # Find the track using structured metadata
+        params = {'q_track': title, 'q_artist': artist}
+        if duration:
+            params['f_subtitle_length'] = duration
+        body = self.__mm_api('matcher.track.get', params)
+        if not body or 'track' not in body:
+            return None
+
+        track_id = body['track']['track_id']
+        matched_name = body['track'].get('track_name', '')
+        matched_length = body['track'].get('track_length', 0)
+        self._logger.debug(
+            f"Musixmatch matched: '{matched_name}' (id={track_id}, length={matched_length}s)"
+        )
+
+        # Try word-by-word (richsync) first
+        rich_body = self.__mm_api('track.richsync.get', {'track_id': track_id})
+        if rich_body and 'richsync' in rich_body:
+            try:
+                import json as json_mod
+                richsync = json_mod.loads(rich_body['richsync']['richsync_body'])
+                lrc_lines = []
+                for line in richsync:
+                    ts = line['ts']
+                    mm = int(ts) // 60
+                    ss = int(ts) % 60
+                    cs = int((ts % 1) * 100)
+                    line_tag = f'[{mm:02d}:{ss:02d}.{cs:02d}]'
+
+                    words = []
+                    for w in line['l']:
+                        wt = float(ts) + float(w['o'])
+                        wm = int(wt) // 60
+                        ws = int(wt) % 60
+                        wc = int((wt % 1) * 100)
+                        words.append(f'<{wm:02d}:{ws:02d}.{wc:02d}>{w["c"]}')
+
+                    lrc_lines.append(f'{line_tag} {"".join(words)}')
+
+                return '\n'.join(lrc_lines)
+            except Exception as e:
+                self._logger.debug(f"Musixmatch richsync parse failed: {e}")
+
+        # Fall back to line-level sync
+        sub_body = self.__mm_api('track.subtitle.get', {
+            'track_id': track_id, 'subtitle_format': 'lrc',
+        })
+        if sub_body and 'subtitle' in sub_body:
+            return sub_body['subtitle']['subtitle_body']
+
+        return None
+
+    def __fetch_lrclib(self, title, artist, duration):
+        """Fetch lyrics from LRCLIB using structured metadata for version-accurate results."""
+        import requests
+        params = {'track_name': title, 'artist_name': artist}
+        if duration:
+            params['duration'] = duration
+
+        r = requests.get('https://lrclib.net/api/get', params=params)
+        if r.status_code != 200:
+            return None
+
+        data = r.json()
+        return data.get('syncedLyrics')
 
     def __parse_lrc(self, lrc_text):
         """Parse LRC format lyrics into list of (timestamp_seconds, line, word_timings).
