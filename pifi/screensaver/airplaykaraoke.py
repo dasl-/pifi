@@ -143,8 +143,13 @@ class AirPlayKaraoke(KaraokeBase):
                             # New song — apply pending album art (clears if
                             # no PICT arrived for this song).
                             KaraokeBase._album_art_frame = self.__pending_album_art
-                            self.__pending_album_art = None
                         KaraokeBase._current_track = new_title
+                    # Always clear pending art. During pause/resume, PICT
+                    # events set __pending for the SAME song; without this
+                    # clear, the stale art would be applied on the next
+                    # title change (making the old song's art appear for
+                    # the new song).
+                    self.__pending_album_art = None
                     if 'artist' in pending_metadata:
                         KaraokeBase._current_artist = pending_metadata['artist']
                 pending_metadata.clear()
