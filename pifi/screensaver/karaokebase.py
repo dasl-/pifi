@@ -167,8 +167,9 @@ class KaraokeBase(Screensaver):
 
     def __check_track_change(self):
         """Detect track changes and trigger lyrics fetch."""
-        track = self._current_track
-        artist = self._current_artist
+        with self._poll_lock:
+            track = self._current_track
+            artist = self._current_artist
 
         if track != self.__last_track or artist != self.__last_artist:
             self.__last_track = track
@@ -339,24 +340,30 @@ class KaraokeBase(Screensaver):
         line_pattern = r'\[(\d+):(\d+)(?:\.(\d+))?\](.*)'
         enhanced_pattern = r'<(\d+):(\d+)\.(\d+)>([^<]*)'
 
+        def parse_frac(s):
+            """Parse fractional seconds, handling both centiseconds and milliseconds."""
+            if not s:
+                return 0.0
+            return int(s) / (10 ** len(s))
+
         for line in lrc_text.split('\n'):
             match = re.match(line_pattern, line)
             if match:
                 minutes = int(match.group(1))
                 seconds = int(match.group(2))
-                centiseconds = int(match.group(3)) if match.group(3) else 0
+                frac = parse_frac(match.group(3))
                 text = match.group(4).strip()
 
                 if text:
-                    timestamp = minutes * 60 + seconds + centiseconds / 100.0
+                    timestamp = minutes * 60 + seconds + frac
 
                     if '<' in text and '>' in text:
                         raw_pairs = []
                         for m in re.finditer(enhanced_pattern, text):
                             w_min = int(m.group(1))
                             w_sec = int(m.group(2))
-                            w_cs = int(m.group(3))
-                            w_ts = w_min * 60 + w_sec + w_cs / 100.0
+                            w_frac = parse_frac(m.group(3))
+                            w_ts = w_min * 60 + w_sec + w_frac
                             content = m.group(4).strip()
                             raw_pairs.append((w_ts, content))
 
