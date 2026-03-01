@@ -209,81 +209,32 @@ class KaraokeBase(Screensaver):
 
             import syncedlyrics
 
-            # Fetch from both Musixmatch (word-by-word) and LRCLIB (usually more accurate)
-            mm_lrc = None
-            ll_lrc = None
-
-            try:
-                mm_lrc = syncedlyrics.search(
-                    search_query, synced_only=True, enhanced=True,
-                    providers=['Musixmatch']
-                )
-                if mm_lrc:
-                    self._logger.debug("Musixmatch: found lyrics")
-            except Exception as e:
-                self._logger.debug(f"Musixmatch failed: {e}")
-
-            try:
-                ll_lrc = syncedlyrics.search(
-                    search_query, synced_only=True,
-                    providers=['Lrclib']
-                )
-                if ll_lrc:
-                    self._logger.debug("LRCLIB: found lyrics")
-            except Exception as e:
-                self._logger.debug(f"LRCLIB failed: {e}")
-
-            # Decide which to use based on timing comparison
+            # Try providers in order of reliability: Musixmatch (powers
+            # Spotify/Apple Music lyrics, supports word-by-word timing),
+            # then LRCLIB, NetEase, Megalobiz as fallbacks.
             lrc = None
             source_provider = None
 
-            if mm_lrc and ll_lrc:
-                mm_parsed = self.__parse_lrc(mm_lrc)
-                ll_parsed = self.__parse_lrc(ll_lrc)
-
-                if mm_parsed and ll_parsed:
-                    mm_first = mm_parsed[0][0]
-                    ll_first = ll_parsed[0][0]
-                    diff = abs(mm_first - ll_first)
-
-                    self._logger.info(
-                        f"Timing comparison: Musixmatch={mm_first:.2f}s, LRCLIB={ll_first:.2f}s, diff={diff:.2f}s"
+            for provider, kwargs in [
+                ('Musixmatch', {'enhanced': True}),
+                ('Lrclib', {}),
+                ('NetEase', {}),
+                ('Megalobiz', {}),
+            ]:
+                try:
+                    result = syncedlyrics.search(
+                        search_query, synced_only=True,
+                        providers=[provider], **kwargs
                     )
-
-                    if diff <= 1.0:
-                        lrc = mm_lrc
-                        source_provider = 'Musixmatch'
-                        self._logger.info("Using Musixmatch (timings match, word-by-word available)")
+                    if result:
+                        lrc = result
+                        source_provider = provider
+                        self._logger.info(f"Found lyrics via {provider}")
+                        break
                     else:
-                        lrc = ll_lrc
-                        source_provider = 'LRCLIB'
-                        self._logger.info("Using LRCLIB (timing mismatch, LRCLIB more accurate)")
-                elif ll_parsed:
-                    lrc = ll_lrc
-                    source_provider = 'LRCLIB'
-                elif mm_parsed:
-                    lrc = mm_lrc
-                    source_provider = 'Musixmatch'
-            elif ll_lrc:
-                lrc = ll_lrc
-                source_provider = 'LRCLIB'
-            elif mm_lrc:
-                lrc = mm_lrc
-                source_provider = 'Musixmatch'
-            else:
-                # Try fallback providers
-                for provider in ['NetEase', 'Megalobiz']:
-                    try:
-                        result = syncedlyrics.search(
-                            search_query, synced_only=True, providers=[provider]
-                        )
-                        if result:
-                            lrc = result
-                            source_provider = provider
-                            self._logger.info(f"Fallback: found lyrics via {provider}")
-                            break
-                    except Exception as e:
-                        self._logger.debug(f"{provider} failed: {e}")
+                        self._logger.debug(f"{provider}: no results")
+                except Exception as e:
+                    self._logger.debug(f"{provider} failed: {e}")
 
             if lrc:
                 is_enhanced = '<' in lrc and '>' in lrc
