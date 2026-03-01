@@ -178,9 +178,15 @@ class KaraokeBase(Screensaver):
             self.__last_track = track
             self.__last_artist = artist
 
-            # If we already have lyrics for this exact track+artist (e.g.
-            # resuming after pause/pend), keep them instead of re-fetching.
-            if (track and artist and
+            # Track went to None (e.g. pend during pause). Don't clear
+            # lyrics — the render loop already shows "waiting" when there's
+            # no track, and preserving lyrics lets us reuse them if the
+            # same song resumes.
+            if not track:
+                return
+
+            # Same song resumed — reuse cached lyrics instead of re-fetching.
+            if (artist and
                     track == self.__lyrics_track and artist == self.__lyrics_artist):
                 self._logger.info(
                     f"Reusing cached lyrics for: '{track}' by '{artist}'"
@@ -196,8 +202,7 @@ class KaraokeBase(Screensaver):
             self.__word_start_times = {}
             self.__preview_line = None
 
-            if track and artist:
-                self.__start_lyrics_fetch(track, artist)
+            self.__start_lyrics_fetch(track, artist)
 
     # --- Lyrics fetching ---
 
