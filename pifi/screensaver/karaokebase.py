@@ -190,8 +190,6 @@ class KaraokeBase(Screensaver):
             self.__lyrics = []
             self.__lyrics_available = False
             self.__lyrics_quality = None
-            self.__lyrics_track = None
-            self.__lyrics_artist = None
             self.__current_line_index = -1
             self.__max_position = 0
             self.__max_intro_progress = 0
