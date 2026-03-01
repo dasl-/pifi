@@ -39,9 +39,9 @@ updateAndInstallPackages(){
     # libsdl2-dev: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # parallel: needed for update_yt-dlp.sh script
-
+    # python3-pil: needed for rgb-matrix LED driver. Also needed for processing album art in karaoke screensavers.
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev python3-numpy python3-requests
+        libopenblas-dev python3-numpy python3-requests python3-pil
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
 
@@ -149,9 +149,6 @@ installLedDriverRgbMatrix(){
         git clone https://github.com/hzeller/rpi-rgb-led-matrix "$clone_dir"
         pushd "$clone_dir"
     fi
-
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade Pillow
-    sudo apt -y install python3-pillow
 
     make build-python PYTHON="$(command -v python3)"
     sudo make install-python PYTHON="$(command -v python3)"
