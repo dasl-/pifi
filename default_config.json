@@ -95,9 +95,28 @@
         "limited_max_vol_val": null,
     },
 
+    // Configuration for transitions between screensavers.
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "transitions": {
+
+        // Optional, boolean, default: true. Whether to play animated transitions between screensavers.
+        "enabled": true,
+
+        // Optional, float, default: 1.0. Duration of the transition in seconds.
+        "duration": 1.0,
+
+        // Optional, integer, default: 30. Number of interpolation steps (~frames) per transition.
+        "num_steps": 30,
+    },
+
     // Configuration specific to the screensavers that play while nothing is in the playlist queue.
     // Optional. This whole stanza is optional because none of the keys within it are required.
     "screensavers": {
+
+        // Optional, ?float, default: null. Central dwell time in seconds for all screensavers.
+        // When set, each screensaver will end after this many seconds regardless of its own
+        // max_ticks setting. When null (default), each screensaver uses its own max_ticks.
+        "dwell_time": null,
 
         // Optional, array, default: []. Videos that may be cycled through as screensavers.
         // Add videos to the data/screensavers directory and update this value with those names.

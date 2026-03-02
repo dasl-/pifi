@@ -224,6 +224,8 @@ class PerlinWorms(Screensaver):
         self.__init_worms()
 
         for tick in range(self.__max_ticks):
+            if self._is_past_dwell_time():
+                break
             # Update time
             self.__time += self.__time_speed
 

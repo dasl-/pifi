@@ -176,6 +176,8 @@ class GradientTest(Screensaver):
         # Display the pre-generated static frame
         # This loop does almost NO CPU work - just sleep and display
         for tick in range(self.__max_ticks):
+            if self._is_past_dwell_time():
+                break
             self.__led_frame_player.play_frame(self.__frame)
             time.sleep(self.__tick_sleep)
 

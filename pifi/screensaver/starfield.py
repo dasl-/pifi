@@ -40,7 +40,7 @@ class Starfield(Screensaver):
         max_ticks = Config.get('starfield.max_ticks', 3000)
         tick = 0
 
-        while tick < max_ticks:
+        while tick < max_ticks and not self._is_past_dwell_time():
             self.__tick()
             time.sleep(self.__get_tick_sleep())
             tick += 1

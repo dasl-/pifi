@@ -79,6 +79,10 @@ class CellularAutomaton(Screensaver, ABC):
         return hashlib.md5(self._board).hexdigest()
 
     def __is_game_over(self):
+        if self._is_past_dwell_time():
+            self._logger.info("Game over due to dwell time exceeded.")
+            return True
+
         if self._get_max_game_length_seconds() > 0 and (time.time() - self.__start_time) > self._get_max_game_length_seconds():
             self._logger.info("Game over due to timeout expiration.")
             return True

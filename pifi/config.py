@@ -152,6 +152,8 @@ class Config:
         from pifi.settingsdb import SettingsDb
 
         settings_db = SettingsDb()
+
+        # Apply per-screensaver config overrides
         overrides_json = settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
 
         all_overrides = {}
@@ -175,14 +177,34 @@ class Config:
             if not isinstance(overrides, dict):
                 continue
 
-            # Get the existing screensaver config section
             if screensaver_id not in Config.__config:
                 Config.__config[screensaver_id] = {}
             elif not isinstance(Config.__config[screensaver_id], dict):
                 Config.__config[screensaver_id] = {}
 
-            # Merge overrides into the screensaver config
             Config.__config[screensaver_id].update(overrides)
             Config.__previously_overridden.add(screensaver_id)
 
         Config.__logger.debug(f"Applied screensaver config overrides: {all_overrides}")
+
+        # Apply global settings overrides (screensavers.dwell_time, transitions.*)
+        global_json = settings_db.get(SettingsDb.GLOBAL_SETTINGS)
+        if global_json:
+            try:
+                global_overrides = json.loads(global_json)
+            except (json.JSONDecodeError, TypeError):
+                Config.__logger.warning("Failed to parse global settings overrides")
+                global_overrides = {}
+
+            for key, value in global_overrides.items():
+                if not isinstance(value, dict):
+                    continue
+
+                if key not in Config.__config:
+                    Config.__config[key] = {}
+                elif not isinstance(Config.__config[key], dict):
+                    Config.__config[key] = {}
+
+                Config.__config[key].update(value)
+
+            Config.__logger.debug(f"Applied global settings overrides: {global_overrides}")

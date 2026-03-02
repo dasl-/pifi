@@ -131,6 +131,8 @@ class KaraokeBase(Screensaver):
 
         try:
             for tick in range(self._max_ticks):
+                if self._is_past_dwell_time():
+                    break
                 self.__render()
                 self.__tick_count += 1
                 time.sleep(self._tick_sleep)

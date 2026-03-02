@@ -74,7 +74,13 @@ class LedFramePlayer:
         self.__driver.clear_screen()
 
     def play_frame(self, frame):
+        self.__current_frame = frame
         self.__set_frame_pixels(frame)
+
+    def get_current_frame(self):
+        if self.__current_frame is None:
+            return None
+        return self.__current_frame.copy()
 
     def fade_to_frame(self, frame):
         if (self.__current_frame is None):

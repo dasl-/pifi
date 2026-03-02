@@ -1,4 +1,8 @@
+import time
 from abc import ABC, abstractmethod
+
+from pifi.config import Config
+
 
 class Screensaver(ABC):
     """Abstract base class for all screensavers."""
@@ -16,6 +20,19 @@ class Screensaver(ABC):
         """
         # Flag to verify subclasses call super().__init__()
         self._screensaver_base_init_called = True
+        self._start_time = time.time()
+
+    def _is_past_dwell_time(self):
+        """Check if the central dwell time has been exceeded.
+
+        Returns True if screensavers.dwell_time is set (> 0) and the elapsed
+        time since play started exceeds it. Returns False if dwell_time is
+        not set (None/0), deferring to per-screensaver max_ticks.
+        """
+        dwell_time = Config.get('screensavers.dwell_time', None)
+        if not dwell_time:
+            return False
+        return (time.time() - self._start_time) > dwell_time
 
     @abstractmethod
     def play(self) -> None:
