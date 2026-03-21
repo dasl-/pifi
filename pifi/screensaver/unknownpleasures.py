@@ -190,7 +190,7 @@ class UnknownPleasures(Screensaver):
         self.__time = 0.0
 
         for tick in range(self.__max_ticks):
-            if self._is_past_dwell_time():
+            if self._is_past_screensaver_timeout():
                 break
             self.__time += self.__wave_speed
             self.__render()

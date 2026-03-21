@@ -232,18 +232,27 @@ class PifiAPI():
         # Get enabled screensavers from settings
         enabled = ScreensaverManager.get_enabled_screensavers()
 
+        # Get global screensaver settings (timeout, transitions)
+        global_settings = self.__get_global_screensaver_settings()
+
         return {
             'success': True,
             'screensavers': all_screensavers,
             'enabled': enabled,
+            'global_settings': global_settings,
         }
 
     def set_screensavers(self, post_data):
-        enabled = post_data.get('enabled', [])
-        self.__settings_db.set(SettingsDb.ENABLED_SCREENSAVERS, json.dumps(enabled))
+        if 'enabled' in post_data:
+            enabled = post_data['enabled']
+            self.__settings_db.set(SettingsDb.ENABLED_SCREENSAVERS, json.dumps(enabled))
+
+        if 'global_settings' in post_data:
+            self.__save_global_screensaver_settings(post_data['global_settings'])
+
         # Signal queue to restart screensaver so changes take effect immediately
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
-        return {'success': True, 'enabled': enabled}
+        return {'success': True}
 
     def get_screensaver_config(self, screensaver_id):
         """Get config for a specific screensaver, merging defaults with overrides."""
@@ -328,13 +337,12 @@ class PifiAPI():
 
         return {'success': True, 'screensaver_id': screensaver_id, 'config': config}
 
-    def get_global_settings(self):
-        """Get global screensaver rotation and transition settings."""
+    def __get_global_screensaver_settings(self):
+        """Get global screensaver transition and timeout settings."""
         from pifi.config import Config
 
-        # The settings we expose
         keys = {
-            'screensavers': ['dwell_time'],
+            'screensavers': ['screensaver_timeout'],
             'transitions': ['enabled', 'duration', 'num_steps'],
         }
 
@@ -347,9 +355,6 @@ class PifiAPI():
                 current[section][field] = Config.get(f'{section}.{field}')
                 defaults[section][field] = current[section][field]
 
-        # Read base defaults from the config before any DB overrides were applied.
-        # We already have the merged values in Config, but we can get the "true" defaults
-        # by checking what's NOT overridden. Instead, just re-read default_config.json.
         import pyjson5
         try:
             with open(Config._Config__DEFAULT_CONFIG_PATH) as f:
@@ -363,31 +368,25 @@ class PifiAPI():
             pass  # Fall back to current values as defaults
 
         return {
-            'success': True,
             'current': current,
             'defaults': defaults,
         }
 
-    def set_global_settings(self, post_data):
-        """Save global screensaver rotation and transition settings."""
-        # Build the overrides object with only the sections we allow
+    def __save_global_screensaver_settings(self, settings):
+        """Save global screensaver transition and timeout settings."""
         overrides = {}
-        if 'screensavers' in post_data and isinstance(post_data['screensavers'], dict):
+        if 'screensavers' in settings and isinstance(settings['screensavers'], dict):
             overrides['screensavers'] = {}
-            if 'dwell_time' in post_data['screensavers']:
-                val = post_data['screensavers']['dwell_time']
-                overrides['screensavers']['dwell_time'] = val
+            if 'screensaver_timeout' in settings['screensavers']:
+                overrides['screensavers']['screensaver_timeout'] = settings['screensavers']['screensaver_timeout']
 
-        if 'transitions' in post_data and isinstance(post_data['transitions'], dict):
+        if 'transitions' in settings and isinstance(settings['transitions'], dict):
             overrides['transitions'] = {}
             for key in ('enabled', 'duration', 'num_steps'):
-                if key in post_data['transitions']:
-                    overrides['transitions'][key] = post_data['transitions'][key]
+                if key in settings['transitions']:
+                    overrides['transitions'][key] = settings['transitions'][key]
 
-        self.__settings_db.set(SettingsDb.GLOBAL_SETTINGS, json.dumps(overrides))
-        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
-
-        return {'success': True}
+        self.__settings_db.set(SettingsDb.GLOBAL_SCREENSAVER_SETTINGS, json.dumps(overrides))
 
     def reset_screensaver_config(self, post_data):
         """Reset a screensaver's config to defaults."""
@@ -473,8 +472,6 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.get_screensavers()
         elif parsed_path.path == 'screensaver_configs':
             response = self.__api.get_all_screensaver_configs()
-        elif parsed_path.path == 'global_settings':
-            response = self.__api.get_global_settings()
         elif parsed_path.path.startswith('screensaver_config/'):
             screensaver_id = parsed_path.path.split('/')[1]
             response = self.__api.get_screensaver_config(screensaver_id)
@@ -520,8 +517,6 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.submit_game_score_initials(post_data)
         elif path == 'screensavers':
             response = self.__api.set_screensavers(post_data)
-        elif path == 'global_settings':
-            response = self.__api.set_global_settings(post_data)
         elif path == 'screensaver_config':
             response = self.__api.set_screensaver_config(post_data)
         elif path == 'screensaver_config_reset':

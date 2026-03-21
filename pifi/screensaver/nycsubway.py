@@ -319,7 +319,7 @@ class NycSubway(Screensaver):
         self.__start_background_fetch()
 
         for tick in range(self.__max_ticks):
-            if self._is_past_dwell_time():
+            if self._is_past_screensaver_timeout():
                 break
             # Start background fetch if needed (non-blocking)
             current_time = time.time()

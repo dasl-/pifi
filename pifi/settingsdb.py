@@ -27,7 +27,7 @@ class SettingsDb:
     BRIGHTNESS = 'brightness'
 
     # Global screensaver/transition settings (JSON object)
-    GLOBAL_SETTINGS = 'global_settings'
+    GLOBAL_SCREENSAVER_SETTINGS = 'global_screensaver_settings'
 
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()
