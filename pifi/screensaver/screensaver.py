@@ -2,6 +2,7 @@ import time
 from abc import ABC, abstractmethod
 
 from pifi.config import Config
+from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 
 
@@ -24,8 +25,8 @@ class Screensaver(ABC):
         Standard constructor signature for all screensavers.
 
         Args:
-            led_frame_player: Optional LedFramePlayer instance. If None, subclasses
-                            typically create their own instance.
+            led_frame_player: Optional LedFramePlayer instance. If None, a new
+                            instance is created. Stored as self._led_frame_player.
 
         Note: Subclasses must call super().__init__(led_frame_player) as the first
               line of their __init__ method.
@@ -33,19 +34,29 @@ class Screensaver(ABC):
         # Flag to verify subclasses call super().__init__()
         self._screensaver_base_init_called = True
 
-        # Per-screensaver config overrides global defaults. To revert a
-        # per-screensaver override, remove the key (set to null via the API)
-        # so it falls back to the global value.
+        if led_frame_player is None:
+            led_frame_player = LedFramePlayer()
+        self._led_frame_player = led_frame_player
+
+        # Per-screensaver config overrides global defaults. A per-screensaver
+        # value of None (null in JSON) falls back to the global value — this is
+        # how the API reverts per-screensaver overrides.
         # e.g. screensavers.configs.boids.tick_sleep overrides screensavers.tick_sleep
         sid = self.get_id()
-        self._tick_sleep = Config.get(
-            f'screensavers.configs.{sid}.tick_sleep',
-            Config.get('screensavers.tick_sleep', 0.05)
-        )
-        self._timeout = Config.get(
-            f'screensavers.configs.{sid}.timeout',
-            Config.get('screensavers.timeout', 120)
-        )
+
+        self._tick_sleep = Config.get(f'screensavers.configs.{sid}.tick_sleep')
+        if self._tick_sleep is None:
+            self._tick_sleep = Config.get('screensavers.tick_sleep')
+        if self._tick_sleep is None:
+            self._tick_sleep = 0
+
+        # For timeout, null means unlimited at the global level (0 also means
+        # unlimited). At the per-screensaver level, null falls back to global.
+        self._timeout = Config.get(f'screensavers.configs.{sid}.timeout')
+        if self._timeout is None:
+            self._timeout = Config.get('screensavers.timeout')
+        if self._timeout is None:
+            self._timeout = 0
 
     def _is_past_timeout(self):
         """Check if the screensaver timeout has been exceeded.
