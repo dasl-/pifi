@@ -22,42 +22,15 @@ class CellularAutomaton(Screensaver, ABC):
         else:
             self.__led_frame_player = led_frame_player
 
-    def play(self, should_loop = False):
-        if should_loop:
-            while True:
-                self.tick(should_loop = should_loop)
-        else:
-            self.__reset()
-            while True:
-                if not self.tick():
-                    break
-
-    # return False when the game is over, True otherwise.
-    def tick(self, should_loop = False, force_reset = False):
-        is_game_in_progress = True
-        if self._board is None or force_reset:
-            # start the game
-            self.__reset()
-        else:
-            self.__tick_internal()
-
-        self.__do_tick_bookkeeping()
-
-        if self.__is_game_over():
-            if should_loop:
-                self.__reset()
-                self.__do_tick_bookkeeping()
-                is_game_in_progress = True
-            else:
-                is_game_in_progress = False
-
-        time.sleep(self._get_tick_sleep_seconds())
-
-        return is_game_in_progress
-
-    def __tick_internal(self):
-        self._update_board()
-        self.__show_board()
+    def play(self):
+        self.__reset()
+        while True:
+            self._update_board()
+            self.__show_board()
+            self.__do_tick_bookkeeping()
+            if self.__is_game_over():
+                break
+            time.sleep(self._get_tick_sleep_seconds())
 
     def __do_tick_bookkeeping(self):
         self._num_ticks += 1
