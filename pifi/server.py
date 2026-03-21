@@ -26,7 +26,6 @@ class PifiAPI():
         self.__vol_controller = VolumeController()
         self.__settings_db = SettingsDb()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
     # get all the data that we poll for every second in the pifi
     def get_queue(self):
@@ -228,7 +227,7 @@ class PifiAPI():
 
     def get_screensavers(self):
         all_screensavers = ScreensaverManager.get_all_screensavers()
-        enabled = ScreensaverManager.get_enabled_screensavers()
+        enabled = Config.get('screensavers.enabled')
 
         configs = {}
         for s in all_screensavers:
@@ -256,13 +255,23 @@ class PifiAPI():
         }
 
     def set_screensavers(self, post_data):
-        overrides = self.__get_screensaver_overrides()
+        # Read existing overrides from DB. The DB stores {"screensavers": {...}},
+        # wrapping is needed for reload_overrides compatibility with the config structure.
+        raw_json = self.__settings_db.get(SettingsDb.SCREENSAVER_SETTINGS)
+        overrides = json.loads(raw_json).get('screensavers', {}) if raw_json else {}
 
         if 'enabled' in post_data:
+            if not isinstance(post_data['enabled'], list):
+                return {'success': False, 'error': 'enabled must be an array'}
+            if not all(isinstance(s, str) for s in post_data['enabled']):
+                return {'success': False, 'error': 'enabled must be an array of strings'}
             overrides['enabled'] = post_data['enabled']
 
         if 'timeout' in post_data:
-            overrides['timeout'] = post_data['timeout']
+            timeout = post_data['timeout']
+            if timeout is not None and not isinstance(timeout, (int, float)):
+                return {'success': False, 'error': 'timeout must be a number or null'}
+            overrides['timeout'] = timeout
 
         if 'transitions' in post_data and isinstance(post_data['transitions'], dict):
             transitions = overrides.setdefault('transitions', {})
@@ -278,30 +287,12 @@ class PifiAPI():
                 elif isinstance(config, dict):
                     existing_configs[screensaver_id] = config
 
-        self.__save_screensaver_overrides(overrides)
+        self.__settings_db.set(SettingsDb.SCREENSAVER_SETTINGS, json.dumps({'screensavers': overrides}))
         Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
         # Signal queue to restart screensaver so changes take effect immediately
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
         return {'success': True}
-
-    def __get_screensaver_overrides(self):
-        """Read screensaver overrides from DB.
-
-        Returns the screensavers dict (enabled, timeout, transitions, configs).
-        DB stores: {"screensavers": {...}}
-        """
-        raw_json = self.__settings_db.get(SettingsDb.SCREENSAVER_SETTINGS)
-        if not raw_json:
-            return {}
-        return json.loads(raw_json).get('screensavers', {})
-
-    def __save_screensaver_overrides(self, overrides):
-        """Write screensaver overrides to DB.
-
-        Takes a flat screensavers dict and wraps it for reload_overrides compatibility.
-        """
-        self.__settings_db.set(SettingsDb.SCREENSAVER_SETTINGS, json.dumps({'screensavers': overrides}))
 
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
@@ -477,6 +468,7 @@ class PifiThreadingHTTPServer(ThreadingHTTPServer):
 class Server:
 
     def __init__(self):
+        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
         self.__secure = Config.get('server.use_ssl')
 
         if not self.__secure:
