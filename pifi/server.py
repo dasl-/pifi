@@ -278,6 +278,8 @@ class PifiAPI():
 
         if 'transitions' in post_data and isinstance(post_data['transitions'], dict):
             t = post_data['transitions']
+            if 'enabled' in t and not isinstance(t['enabled'], bool):
+                return {'success': False, 'error': 'transitions.enabled must be a boolean'}
             if 'duration' in t and (not isinstance(t['duration'], (int, float)) or t['duration'] <= 0):
                 return {'success': False, 'error': 'transitions.duration must be a positive number'}
             if 'num_steps' in t and (not isinstance(t['num_steps'], int) or t['num_steps'] <= 0):
