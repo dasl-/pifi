@@ -9,7 +9,6 @@ import math
 import numpy as np
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -18,10 +17,6 @@ class PerlinWorms(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-
-        if led_frame_player is None:
-            led_frame_player = LedFramePlayer()
-        self.__led_frame_player = led_frame_player
 
         self.__width = Config.get('leds.display_width')
         self.__height = Config.get('leds.display_height')
@@ -224,7 +219,7 @@ class PerlinWorms(Screensaver):
         self.__draw_worms()
 
         frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
-        self.__led_frame_player.play_frame(frame)
+        self._led_frame_player.play_frame(frame)
 
     @classmethod
     def get_id(cls) -> str:

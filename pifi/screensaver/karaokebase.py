@@ -12,7 +12,6 @@ import time
 from abc import abstractmethod
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver import textutils
@@ -61,10 +60,6 @@ class KaraokeBase(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
         self._logger = Logger().set_namespace(self.__class__.__name__)
-
-        if led_frame_player is None:
-            led_frame_player = LedFramePlayer()
-        self._led_frame_player = led_frame_player
 
         self._width = Config.get('leds.display_width', 64)
         self._height = Config.get('leds.display_height', 32)

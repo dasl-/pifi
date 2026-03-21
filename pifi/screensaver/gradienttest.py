@@ -8,7 +8,6 @@ Tests whether flicker is caused by colors/PWM rather than CPU load.
 import numpy as np
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -17,10 +16,6 @@ class GradientTest(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-
-        if led_frame_player is None:
-            led_frame_player = LedFramePlayer()
-        self.__led_frame_player = led_frame_player
 
         self.__width = Config.get('leds.display_width')
         self.__height = Config.get('leds.display_height')
@@ -166,7 +161,7 @@ class GradientTest(Screensaver):
 
     def _tick(self, tick):
         """Display the pre-generated static frame."""
-        self.__led_frame_player.play_frame(self.__frame)
+        self._led_frame_player.play_frame(self.__frame)
 
     @classmethod
     def get_id(cls) -> str:

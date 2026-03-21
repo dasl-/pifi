@@ -3,7 +3,6 @@ import random
 
 from pifi.config import Config
 from pifi.logger import Logger
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -19,11 +18,6 @@ class DvdBounce(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        if led_frame_player is None:
-            self.__led_frame_player = LedFramePlayer()
-        else:
-            self.__led_frame_player = led_frame_player
 
         self.__width = Config.get_or_throw('leds.display_width')
         self.__height = Config.get_or_throw('leds.display_height')
@@ -184,7 +178,7 @@ class DvdBounce(Screensaver):
         if show_text and self.__logo_width >= 12 and self.__logo_height >= 3:
             self.__draw_dvd_text(frame, x_start, y_start)
 
-        self.__led_frame_player.play_frame(frame)
+        self._led_frame_player.play_frame(frame)
 
     def __draw_dvd_text(self, frame, x_offset, y_offset):
         """Draw simple 'DVD' text pattern in the logo."""

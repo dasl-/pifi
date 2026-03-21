@@ -3,7 +3,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -21,11 +20,6 @@ class Aurora(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-
-        if led_frame_player is None:
-            self.__led_frame_player = LedFramePlayer()
-        else:
-            self.__led_frame_player = led_frame_player
 
         self.__width = Config.get_or_throw('leds.display_width')
         self.__height = Config.get_or_throw('leds.display_height')
@@ -154,7 +148,7 @@ class Aurora(Screensaver):
 
         # Convert to uint8
         frame = np.clip(frame, 0, 255).astype(np.uint8)
-        self.__led_frame_player.play_frame(frame)
+        self._led_frame_player.play_frame(frame)
 
     def __draw_curtain(self, frame, curtain):
         """Draw a single aurora curtain onto the frame."""
