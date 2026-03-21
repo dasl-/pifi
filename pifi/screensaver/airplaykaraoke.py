@@ -24,7 +24,7 @@ class AirPlayKaraoke(KaraokeBase):
 
         # AirPlay-specific configuration
         self.__metadata_pipe = Config.get(
-            'airplay_karaoke.metadata_pipe', '/tmp/shairport-sync-metadata'
+            'screensavers.configs.airplay_karaoke.metadata_pipe', '/tmp/shairport-sync-metadata'
         )
         self._max_ticks = Config.get('screensavers.configs.airplay_karaoke.max_ticks', 6000)
         self._tick_sleep = Config.get('screensavers.configs.airplay_karaoke.tick_sleep', 0.05)
