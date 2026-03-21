@@ -274,10 +274,15 @@ class PifiAPI():
             overrides['timeout'] = timeout
 
         if 'transitions' in post_data and isinstance(post_data['transitions'], dict):
+            t = post_data['transitions']
+            if 'duration' in t and (not isinstance(t['duration'], (int, float)) or t['duration'] <= 0):
+                return {'success': False, 'error': 'transitions.duration must be a positive number'}
+            if 'num_steps' in t and (not isinstance(t['num_steps'], int) or t['num_steps'] <= 0):
+                return {'success': False, 'error': 'transitions.num_steps must be a positive integer'}
             transitions = overrides.setdefault('transitions', {})
             for key in ('enabled', 'duration', 'num_steps'):
-                if key in post_data['transitions']:
-                    transitions[key] = post_data['transitions'][key]
+                if key in t:
+                    transitions[key] = t[key]
 
         if 'configs' in post_data and isinstance(post_data['configs'], dict):
             existing_configs = overrides.setdefault('configs', {})
