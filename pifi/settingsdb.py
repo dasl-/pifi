@@ -10,24 +10,19 @@ only read at program startup.
 class SettingsDb:
 
     # game of life screensaver
-    SCREENSAVER_SETTING = 'is_screensaver_enabled'
-
-    # Which screensavers are enabled (JSON array)
-    ENABLED_SCREENSAVERS = 'enabled_screensavers'
+    IS_SCREENSAVER_ENABLED = 'is_screensaver_enabled'
 
     # Flag to trigger screensaver restart (checked and cleared by queue)
     RESTART_SCREENSAVER = 'restart_screensaver'
 
-    # Screensaver config overrides (JSON object: {screensaver_id: {key: value, ...}, ...})
-    SCREENSAVER_CONFIGS = 'screensaver_configs'
+    # All screensaver settings: enabled list, timeout, transitions, per-screensaver configs.
+    # JSON object merged into Config under "screensavers".
+    SCREENSAVER_SETTINGS = 'screensaver_settings'
 
     SETTING_YOUTUBE_API_KEY = 'youtube_api_key'
 
     # Global LED brightness (0-100 percentage)
     BRIGHTNESS = 'brightness'
-
-    # Global screensaver/transition settings (JSON object)
-    GLOBAL_SCREENSAVER_SETTINGS = 'global_screensaver_settings'
 
     def __init__(self):
         self.__cursor = pifi.database.Database().get_cursor()

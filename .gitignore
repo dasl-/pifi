@@ -19,5 +19,6 @@ app/src/css/custom-theme.css
 app/src/css/themes/*.css
 app/src/css/**/*.css.map
 
-# Claude instructions file
+# Claude Code
 CLAUDE.local.md
+pifi/settings.json

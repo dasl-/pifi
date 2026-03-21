@@ -230,7 +230,7 @@ class Queue:
 
     def __maybe_respond_to_settings_changes(self):
         old_is_enabled = self.__is_screensaver_enabled
-        setting = self.__settings_db.get_row(SettingsDb.SCREENSAVER_SETTING)
+        setting = self.__settings_db.get_row(SettingsDb.IS_SCREENSAVER_ENABLED)
         if (setting is None or setting['value'] == '1'):
             self.__is_screensaver_enabled = True
         else:

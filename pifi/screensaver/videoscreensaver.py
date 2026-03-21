@@ -12,7 +12,7 @@ class VideoScreensaver(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
         # Get video list from config instead of constructor parameter
-        self.video_list = Config.get("screensavers.saved_videos", [])
+        self.video_list = Config.get("screensavers.configs.video_screensaver.saved_videos", [])
 
     def __getScreensaverPath(self):
         save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
