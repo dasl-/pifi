@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
@@ -35,43 +34,10 @@ class Spirograph(Screensaver):
         self.__trail = []  # List of (x, y, hue) points
         self.__params = {}
 
-    def play(self):
-        self.__logger.info("Starting Spirograph screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.spirograph.max_ticks', 2000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Spirograph screensaver ended")
-
-    def __reset(self):
-        self.__time = 0.0
-        self.__trail = []
-
-        # Randomize spirograph parameters for variety
-        # R = radius of fixed circle, r = radius of rolling circle, d = drawing point offset
-        self.__params = {
-            'R': random.uniform(0.3, 0.5),  # Outer radius (fraction of display)
-            'r': random.uniform(0.08, 0.25),  # Inner radius
-            'd': random.uniform(0.05, 0.2),   # Pen offset
-            'speed1': random.uniform(0.02, 0.05),  # Primary rotation speed
-            'speed2': random.uniform(0.03, 0.08),  # Secondary rotation speed
-            'hue_speed': random.uniform(0.001, 0.003),  # Color cycling speed
-        }
-
-        # Ensure interesting ratio (non-repeating patterns)
-        ratio = self.__params['R'] / self.__params['r']
-        if abs(ratio - round(ratio)) < 0.1:
-            self.__params['r'] *= 1.1
-
-        self.__logger.info(f"Spirograph params: R={self.__params['R']:.3f}, r={self.__params['r']:.3f}")
-
-    def __tick(self):
+    def _tick(self, tick):
         time_speed = Config.get('screensavers.configs.spirograph.time_speed', 1.0)
         self.__time += time_speed
 
@@ -112,6 +78,28 @@ class Spirograph(Screensaver):
             self.__trail.pop(0)
 
         self.__render()
+
+    def __reset(self):
+        self.__time = 0.0
+        self.__trail = []
+
+        # Randomize spirograph parameters for variety
+        # R = radius of fixed circle, r = radius of rolling circle, d = drawing point offset
+        self.__params = {
+            'R': random.uniform(0.3, 0.5),  # Outer radius (fraction of display)
+            'r': random.uniform(0.08, 0.25),  # Inner radius
+            'd': random.uniform(0.05, 0.2),   # Pen offset
+            'speed1': random.uniform(0.02, 0.05),  # Primary rotation speed
+            'speed2': random.uniform(0.03, 0.08),  # Secondary rotation speed
+            'hue_speed': random.uniform(0.001, 0.003),  # Color cycling speed
+        }
+
+        # Ensure interesting ratio (non-repeating patterns)
+        ratio = self.__params['R'] / self.__params['r']
+        if abs(ratio - round(ratio)) < 0.1:
+            self.__params['r'] *= 1.1
+
+        self.__logger.info(f"Spirograph params: R={self.__params['R']:.3f}, r={self.__params['r']:.3f}")
 
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
@@ -161,9 +149,6 @@ class Spirograph(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.spirograph.tick_sleep', 0.02)
 
     @classmethod
     def get_id(cls) -> str:

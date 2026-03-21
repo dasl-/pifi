@@ -6,11 +6,9 @@ Tests whether flicker is caused by colors/PWM rather than CPU load.
 """
 
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -19,7 +17,6 @@ class GradientTest(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -30,8 +27,6 @@ class GradientTest(Screensaver):
 
         # Config
         self.__mode = Config.get('screensavers.configs.gradient_test.mode', 'pastel_sky')
-        self.__tick_sleep = Config.get('screensavers.configs.gradient_test.tick_sleep', 0.1)
-        self.__max_ticks = Config.get('screensavers.configs.gradient_test.max_ticks', 3000)
 
         # Pre-generate the static frame ONCE
         self.__frame = self.__generate_frame()
@@ -169,19 +164,9 @@ class GradientTest(Screensaver):
         self.__mode = old_mode
         return frame
 
-    def play(self):
-        """Run the screensaver - just display the same frame repeatedly."""
-        self.__logger.info(f"Starting GradientTest screensaver (mode={self.__mode})")
-
-        # Display the pre-generated static frame
-        # This loop does almost NO CPU work - just sleep and display
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            self.__led_frame_player.play_frame(self.__frame)
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("GradientTest screensaver ended")
+    def _tick(self, tick):
+        """Display the pre-generated static frame."""
+        self.__led_frame_player.play_frame(self.__frame)
 
     @classmethod
     def get_id(cls) -> str:

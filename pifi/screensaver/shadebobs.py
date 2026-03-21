@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
@@ -36,19 +35,34 @@ class Shadebobs(Screensaver):
         self.__bobs = []
         self.__time = 0
 
-    def play(self):
-        self.__logger.info("Starting Shadebobs screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.shadebobs.max_ticks', 2000)
-        tick = 0
+    def _tick(self, tick):
+        # Fade the buffer
+        fade = Config.get('screensavers.configs.shadebobs.fade', 0.92)
+        self.__buffer *= fade
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Update and draw each bob
+        for bob in self.__bobs:
+            # Update hue
+            bob['hue'] = (bob['hue'] + bob['hue_speed']) % 1.0
 
-        self.__logger.info("Shadebobs screensaver ended")
+            # Calculate position using Lissajous curves
+            t = self.__time * bob['speed'] * 0.05
+            x = math.sin(bob['freq_x'] * t + bob['phase_x'])
+            y = math.sin(bob['freq_y'] * t + bob['phase_y'])
+
+            # Map from [-1, 1] to screen coordinates
+            screen_x = (x + 1) / 2 * (self.__width - 1)
+            screen_y = (y + 1) / 2 * (self.__height - 1)
+
+            # Draw the bob with additive blending
+            self.__draw_bob(screen_x, screen_y, bob)
+
+        # Render to display
+        self.__render()
+        self.__time += 1
 
     def __reset(self):
         # Float buffer for smooth color accumulation
@@ -79,32 +93,6 @@ class Shadebobs(Screensaver):
             self.__bobs.append(bob)
 
         self.__logger.info(f"Created {num_bobs} shadebobs")
-
-    def __tick(self):
-        # Fade the buffer
-        fade = Config.get('screensavers.configs.shadebobs.fade', 0.92)
-        self.__buffer *= fade
-
-        # Update and draw each bob
-        for bob in self.__bobs:
-            # Update hue
-            bob['hue'] = (bob['hue'] + bob['hue_speed']) % 1.0
-
-            # Calculate position using Lissajous curves
-            t = self.__time * bob['speed'] * 0.05
-            x = math.sin(bob['freq_x'] * t + bob['phase_x'])
-            y = math.sin(bob['freq_y'] * t + bob['phase_y'])
-
-            # Map from [-1, 1] to screen coordinates
-            screen_x = (x + 1) / 2 * (self.__width - 1)
-            screen_y = (y + 1) / 2 * (self.__height - 1)
-
-            # Draw the bob with additive blending
-            self.__draw_bob(screen_x, screen_y, bob)
-
-        # Render to display
-        self.__render()
-        self.__time += 1
 
     def __draw_bob(self, cx, cy, bob):
         """Draw a glowing bob at the given position with additive blending."""
@@ -169,9 +157,6 @@ class Shadebobs(Screensaver):
             r, g, b = v, p, q
 
         return [r * 255, g * 255, b * 255]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.shadebobs.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

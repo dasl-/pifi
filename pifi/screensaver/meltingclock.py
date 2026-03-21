@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import random
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -141,27 +140,10 @@ class MeltingClock(Screensaver):
         # Color hue (slowly cycles)
         self.__hue = 0.0
 
-    def play(self):
-        self.__logger.info("Starting Melting Clock screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.melting_clock.max_ticks', 5000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Melting Clock screensaver ended")
-
-    def __reset(self):
-        self.__current_time = ""
-        self.__char_states = []
-        self.__buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
-        self.__hue = random.random()
-
-    def __tick(self):
+    def _tick(self, tick):
         # Get current time in configured timezone
         if self.__timezone:
             current_datetime = datetime.now(self.__timezone)
@@ -187,6 +169,12 @@ class MeltingClock(Screensaver):
         self.__hue = (self.__hue + hue_speed) % 1.0
 
         self.__render()
+
+    def __reset(self):
+        self.__current_time = ""
+        self.__char_states = []
+        self.__buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__hue = random.random()
 
     def __handle_time_change(self, new_time):
         """Handle transition from old time to new time."""
@@ -388,9 +376,6 @@ class MeltingClock(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.melting_clock.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

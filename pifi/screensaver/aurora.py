@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -23,7 +21,6 @@ class Aurora(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -46,19 +43,31 @@ class Aurora(Screensaver):
         self.__activity = 1.0
         self.__target_activity = 1.0
 
-    def play(self):
-        self.__logger.info("Starting Aurora screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.aurora.max_ticks', 3000)
-        tick = 0
+    def _tick(self, tick):
+        time_speed = Config.get('screensavers.configs.aurora.time_speed', 1.0)
+        self.__time += 0.05 * time_speed
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Occasionally change activity level (bursts)
+        if random.random() < 0.005:
+            self.__target_activity = random.uniform(0.5, 2.0)
 
-        self.__logger.info("Aurora screensaver ended")
+        # Smooth activity transitions
+        self.__activity += (self.__target_activity - self.__activity) * 0.02
+
+        # Update curtain drift
+        for curtain in self.__curtains:
+            curtain['base_x'] += curtain['drift_speed']
+
+            # Wrap around or bounce
+            if curtain['base_x'] < -0.2:
+                curtain['base_x'] = 1.2
+            elif curtain['base_x'] > 1.2:
+                curtain['base_x'] = -0.2
+
+        self.__render()
 
     def __reset(self):
         self.__time = 0.0
@@ -119,29 +128,6 @@ class Aurora(Screensaver):
             # Shimmer properties
             'shimmer_speed': random.uniform(2.0, 5.0),
         }
-
-    def __tick(self):
-        time_speed = Config.get('screensavers.configs.aurora.time_speed', 1.0)
-        self.__time += 0.05 * time_speed
-
-        # Occasionally change activity level (bursts)
-        if random.random() < 0.005:
-            self.__target_activity = random.uniform(0.5, 2.0)
-
-        # Smooth activity transitions
-        self.__activity += (self.__target_activity - self.__activity) * 0.02
-
-        # Update curtain drift
-        for curtain in self.__curtains:
-            curtain['base_x'] += curtain['drift_speed']
-
-            # Wrap around or bounce
-            if curtain['base_x'] < -0.2:
-                curtain['base_x'] = 1.2
-            elif curtain['base_x'] > 1.2:
-                curtain['base_x'] = -0.2
-
-        self.__render()
 
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], dtype=np.float32)
@@ -245,9 +231,6 @@ class Aurora(Screensaver):
                         frame[y, x, 0] = min(255, frame[y, x, 0] + r * brightness * 255)
                         frame[y, x, 1] = min(255, frame[y, x, 1] + g * brightness * 255)
                         frame[y, x, 2] = min(255, frame[y, x, 2] + b * brightness * 255)
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.aurora.tick_sleep', 0.04)
 
     @classmethod
     def get_id(cls) -> str:

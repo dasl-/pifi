@@ -21,7 +21,7 @@ from pifi.screensaver import textutils
 class KaraokeBase(Screensaver):
     """Base class for karaoke lyrics display screensavers."""
 
-    # Persisted state — class-level so it survives max_ticks instance restarts.
+    # Persisted state — class-level so it survives instance restarts.
     # Use KaraokeBase._field = value for writes (self._field = creates instance vars).
     _current_track = None
     _current_artist = None
@@ -69,13 +69,12 @@ class KaraokeBase(Screensaver):
         self._width = Config.get('leds.display_width', 64)
         self._height = Config.get('leds.display_height', 32)
 
-        # Subclasses should override these in their __init__
-        self._tick_sleep = 0.05
-        self._max_ticks = 6000
         self._pulse_lyrics = True
 
         self._poll_lock = threading.Lock()
         self._polling_active = False
+        self.__poll_thread = None
+        self.__connection_failed = False
 
         # Private state - lyrics
         self.__lyrics = []  # List of (timestamp_seconds, line_text, word_timings)
@@ -108,10 +107,7 @@ class KaraokeBase(Screensaver):
         # Pre-allocated frame buffer
         self.__frame_buffer = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
-    def play(self):
-        """Run the screensaver."""
-        self._logger.info(f"Starting {self.get_name()} screensaver")
-
+    def _setup(self):
         if not self._connect():
             self._logger.error(f"Could not connect to {self._get_source_display_name()}")
             frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
@@ -120,27 +116,26 @@ class KaraokeBase(Screensaver):
                 self._render_connection_error(frame)
                 self._led_frame_player.play_frame(frame)
                 time.sleep(0.1)
+            self.__connection_failed = True
             return
 
         self._logger.info(f"Connected to {self._get_source_display_name()}")
 
         # Start background polling thread
         self._polling_active = True
-        poll_thread = threading.Thread(target=self._polling_loop, daemon=True)
-        poll_thread.start()
+        self.__poll_thread = threading.Thread(target=self._polling_loop, daemon=True)
+        self.__poll_thread.start()
 
-        try:
-            for tick in range(self._max_ticks):
-                if self._is_past_screensaver_timeout():
-                    break
-                self.__render()
-                self.__tick_count += 1
-                time.sleep(self._tick_sleep)
-        finally:
+    def _tick(self, tick):
+        if self.__connection_failed:
+            return False
+        self.__render()
+        self.__tick_count += 1
+
+    def _teardown(self):
+        if self.__poll_thread is not None:
             self._polling_active = False
-            poll_thread.join(timeout=1.0)
-
-        self._logger.info(f"{self.get_name()} screensaver ended")
+            self.__poll_thread.join(timeout=1.0)
 
     # --- Abstract methods for subclasses ---
 

@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
@@ -35,19 +34,22 @@ class ReactionDiffusion(Screensaver):
 
         self.__time = 0
 
-    def play(self):
-        self.__logger.info("Starting Reaction Diffusion screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.reactiondiffusion.max_ticks', 2000)
-        tick = 0
+    def _tick(self, tick):
+        # Run multiple simulation steps per frame for faster evolution
+        steps_per_frame = Config.get('screensavers.configs.reactiondiffusion.steps_per_frame', 10)
+        for _ in range(steps_per_frame):
+            self.__simulate_step()
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Periodically inject new seeds to keep evolution going
+        inject_interval = Config.get('screensavers.configs.reactiondiffusion.inject_interval', 100)
+        if self.__time > 0 and self.__time % inject_interval == 0:
+            self.__inject_seed()
 
-        self.__logger.info("Reaction Diffusion screensaver ended")
+        self.__render()
+        self.__time += 1
 
     def __reset(self):
         self.__time = 0
@@ -86,20 +88,6 @@ class ReactionDiffusion(Screensaver):
         self.__hue = random.random()
 
         self.__logger.info(f"Reaction Diffusion params: f={self.__params['f']}, k={self.__params['k']}")
-
-    def __tick(self):
-        # Run multiple simulation steps per frame for faster evolution
-        steps_per_frame = Config.get('screensavers.configs.reactiondiffusion.steps_per_frame', 10)
-        for _ in range(steps_per_frame):
-            self.__simulate_step()
-
-        # Periodically inject new seeds to keep evolution going
-        inject_interval = Config.get('screensavers.configs.reactiondiffusion.inject_interval', 100)
-        if self.__time > 0 and self.__time % inject_interval == 0:
-            self.__inject_seed()
-
-        self.__render()
-        self.__time += 1
 
     def __inject_seed(self):
         """Inject a new seed to keep the pattern evolving."""
@@ -198,9 +186,6 @@ class ReactionDiffusion(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.reactiondiffusion.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

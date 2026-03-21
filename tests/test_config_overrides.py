@@ -23,11 +23,11 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
     BASE_CONFIG = {
         'leds': {'driver': 'apa102', 'display_width': 32, 'display_height': 16},
         'screensavers': {
-            'timeout': None,
+            'timeout': 120,
             'transitions': {'enabled': True, 'duration': 1.0, 'num_steps': 30},
             'configs': {
-                'boids': {'num_boids': 15, 'tick_sleep': 0.05, 'max_ticks': 3000},
-                'aurora': {'tick_sleep': 0.04, 'max_ticks': 3000},
+                'boids': {'num_boids': 15, 'tick_sleep': 0.05},
+                'aurora': {'tick_sleep': 0.04},
             },
         },
     }
@@ -73,19 +73,17 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
 
         # Override multiple keys
         mock_db.get.return_value = json.dumps({
-            'screensavers': {'configs': {'boids': {'num_boids': 50, 'tick_sleep': 0.01, 'max_ticks': 100}}}
+            'screensavers': {'configs': {'boids': {'num_boids': 50, 'tick_sleep': 0.01}}}
         })
         Config.reload_overrides(['screensaver_settings'])
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
         self.assertEqual(Config.get('screensavers.configs.boids.tick_sleep'), 0.01)
-        self.assertEqual(Config.get('screensavers.configs.boids.max_ticks'), 100)
 
         # Reset
         mock_db.get.return_value = None
         Config.reload_overrides(['screensaver_settings'])
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
         self.assertEqual(Config.get('screensavers.configs.boids.tick_sleep'), 0.05)
-        self.assertEqual(Config.get('screensavers.configs.boids.max_ticks'), 3000)
 
     @patch('pifi.settingsdb.SettingsDb')
     def test_independent_screensavers(self, MockSettingsDb):

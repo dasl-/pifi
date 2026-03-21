@@ -26,8 +26,6 @@ class AirPlayKaraoke(KaraokeBase):
         self.__metadata_pipe = Config.get(
             'screensavers.configs.airplay_karaoke.metadata_pipe', '/tmp/shairport-sync-metadata'
         )
-        self._max_ticks = Config.get('screensavers.configs.airplay_karaoke.max_ticks', 6000)
-        self._tick_sleep = Config.get('screensavers.configs.airplay_karaoke.tick_sleep', 0.05)
         self._pulse_lyrics = Config.get('screensavers.configs.airplay_karaoke.pulse_lyrics', True)
 
         # Pending album art — PICT arrives before mden, so we stage it
@@ -152,7 +150,7 @@ class AirPlayKaraoke(KaraokeBase):
                 return
             elif item_code == 'mden':
                 # Metadata batch complete — write to class-level state so it
-                # survives max_ticks instance restarts.
+                # survives instance restarts.
                 with self._poll_lock:
                     if 'title' in pending_metadata:
                         new_title = pending_metadata['title']

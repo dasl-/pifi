@@ -20,9 +20,6 @@ class GameOfLife(CellularAutomaton):
         super().__init__(**kwargs)
         self.__game_color_helper = GameColorHelper()
 
-    def _get_tick_sleep_seconds(self):
-        return Config.get('screensavers.configs.game_of_life.tick_sleep')
-
     def _get_game_over_detection_lookback_amount(self):
         return Config.get('screensavers.configs.game_of_life.game_over_detection_lookback')
 

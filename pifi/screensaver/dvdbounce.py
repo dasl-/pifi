@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
@@ -56,43 +55,10 @@ class DvdBounce(Screensaver):
         # Corner hit counter (for fun!)
         self.__corner_hits = 0
 
-    def play(self):
-        self.__logger.info("Starting DVD Bounce screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.dvd_bounce.max_ticks', 10000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info(f"DVD Bounce ended. Corner hits: {self.__corner_hits}")
-
-    def __reset(self):
-        """Initialize the bouncing logo."""
-        # Start at a random position
-        self.__x = random.uniform(0, self.__width - self.__logo_width)
-        self.__y = random.uniform(0, self.__height - self.__logo_height)
-
-        # Random initial velocity
-        speed = Config.get('screensavers.configs.dvd_bounce.speed', 0.5)
-        angle = random.uniform(0, 2 * np.pi)
-        self.__vx = speed * np.cos(angle)
-        self.__vy = speed * np.sin(angle)
-
-        # Ensure we're actually moving
-        if abs(self.__vx) < 0.1:
-            self.__vx = 0.3 if self.__vx >= 0 else -0.3
-        if abs(self.__vy) < 0.1:
-            self.__vy = 0.3 if self.__vy >= 0 else -0.3
-
-        # Random initial color
-        self.__color = self.__random_color()
-        self.__corner_hits = 0
-
-    def __tick(self):
+    def _tick(self, tick):
         """Update position and check for bounces."""
         # Update position
         self.__x += self.__vx
@@ -129,9 +95,31 @@ class DvdBounce(Screensaver):
             # Check for corner hit!
             if bounced_x and bounced_y:
                 self.__corner_hits += 1
-                self.__logger.info(f"🎯 CORNER HIT! Total: {self.__corner_hits}")
+                self.__logger.info(f"CORNER HIT! Total: {self.__corner_hits}")
 
         self.__render()
+
+    def __reset(self):
+        """Initialize the bouncing logo."""
+        # Start at a random position
+        self.__x = random.uniform(0, self.__width - self.__logo_width)
+        self.__y = random.uniform(0, self.__height - self.__logo_height)
+
+        # Random initial velocity
+        speed = Config.get('screensavers.configs.dvd_bounce.speed', 0.5)
+        angle = random.uniform(0, 2 * np.pi)
+        self.__vx = speed * np.cos(angle)
+        self.__vy = speed * np.sin(angle)
+
+        # Ensure we're actually moving
+        if abs(self.__vx) < 0.1:
+            self.__vx = 0.3 if self.__vx >= 0 else -0.3
+        if abs(self.__vy) < 0.1:
+            self.__vy = 0.3 if self.__vy >= 0 else -0.3
+
+        # Random initial color
+        self.__color = self.__random_color()
+        self.__corner_hits = 0
 
     def __random_color(self):
         """Generate a random bright color."""
@@ -275,9 +263,6 @@ class DvdBounce(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.dvd_bounce.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

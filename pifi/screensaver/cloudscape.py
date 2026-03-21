@@ -8,11 +8,9 @@ Optimized for low-power devices with buffer reuse and caching.
 """
 
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -21,7 +19,6 @@ class Cloudscape(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -37,8 +34,6 @@ class Cloudscape(Screensaver):
         self.__cloud_density = Config.get('screensavers.configs.cloudscape.cloud_density', 0.7)
         self.__cloud_scale = Config.get('screensavers.configs.cloudscape.cloud_scale', 0.04)
         self.__sky_shift_speed = Config.get('screensavers.configs.cloudscape.sky_shift_speed', 0.001)
-        self.__tick_sleep = Config.get('screensavers.configs.cloudscape.tick_sleep', 0.05)
-        self.__max_ticks = Config.get('screensavers.configs.cloudscape.max_ticks', 10000)
 
         # Pre-compute coordinate grids (reused every frame)
         self.__x_grid, self.__y_grid = np.meshgrid(
@@ -246,23 +241,16 @@ class Cloudscape(Screensaver):
         np.copyto(self.__output_frame, self.__frame.astype(np.uint8))
         self.__led_frame_player.play_frame(self.__output_frame)
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting Cloudscape screensaver")
-
-        # Initialize
+    def _setup(self):
+        """Initialize noise and reset state."""
         self.__perm = self.__generate_permutation()
         self.__time = 0.0
         self.__sky_cache_tick = -1
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            self.__time += 1
-            self.__render(tick)
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("Cloudscape screensaver ended")
+    def _tick(self, tick):
+        """Advance time and render one frame."""
+        self.__time += 1
+        self.__render(tick)
 
     @classmethod
     def get_id(cls) -> str:

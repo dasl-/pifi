@@ -38,8 +38,8 @@ def setUpModule():
             'saved_videos': [],
         },
         # Add minimal config for each screensaver
-        'boids': {'tick_sleep': 0.05, 'max_ticks': 100},
-        'aurora': {'tick_sleep': 0.04, 'max_ticks': 100},
+        'boids': {'tick_sleep': 0.05},
+        'aurora': {'tick_sleep': 0.04},
         'game_of_life': {
             'tick_sleep': 0.1,
             'game_over_detection_lookback': 100,

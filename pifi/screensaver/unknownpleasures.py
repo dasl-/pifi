@@ -6,11 +6,9 @@ waveforms that pulse and evolve, evoking pulsar radio signals.
 """
 
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -19,7 +17,6 @@ class UnknownPleasures(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -36,8 +33,6 @@ class UnknownPleasures(Screensaver):
         self.__line_brightness = Config.get('screensavers.configs.unknownpleasures.line_brightness', 1.0)
         self.__fill_below = Config.get('screensavers.configs.unknownpleasures.fill_below', True)
         self.__color_mode = Config.get('screensavers.configs.unknownpleasures.color_mode', 'white')
-        self.__tick_sleep = Config.get('screensavers.configs.unknownpleasures.tick_sleep', 0.05)
-        self.__max_ticks = Config.get('screensavers.configs.unknownpleasures.max_ticks', 10000)
 
         # Auto-calculate line count
         if self.__num_lines <= 0:
@@ -180,23 +175,16 @@ class UnknownPleasures(Screensaver):
 
         self.__led_frame_player.play_frame(frame)
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting Unknown Pleasures screensaver")
-
-        # Initialize
+    def _setup(self):
+        """Initialize noise and colors."""
         self.__perm = self.__generate_permutation()
         self.__init_colors()
         self.__time = 0.0
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            self.__time += self.__wave_speed
-            self.__render()
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("Unknown Pleasures screensaver ended")
+    def _tick(self, tick):
+        """Advance time and render one frame."""
+        self.__time += self.__wave_speed
+        self.__render()
 
     @classmethod
     def get_id(cls) -> str:

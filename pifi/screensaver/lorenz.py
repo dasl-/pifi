@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -20,7 +18,6 @@ class Lorenz(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -41,30 +38,10 @@ class Lorenz(Screensaver):
         # Rotation angle for 3D projection
         self.__rotation = 0.0
 
-    def play(self):
-        self.__logger.info("Starting Lorenz attractor screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.lorenz.max_ticks', 3000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Lorenz attractor screensaver ended")
-
-    def __reset(self):
-        # Start near the attractor with small random offset
-        self.__x = 1.0 + random.uniform(-0.1, 0.1)
-        self.__y = 1.0 + random.uniform(-0.1, 0.1)
-        self.__z = 1.0 + random.uniform(-0.1, 0.1)
-
-        self.__trail = []
-        self.__rotation = random.uniform(0, 2 * math.pi)
-
-    def __tick(self):
+    def _tick(self, tick):
         # Lorenz system parameters (classic values)
         sigma = Config.get('screensavers.configs.lorenz.sigma', 10.0)
         rho = Config.get('screensavers.configs.lorenz.rho', 28.0)
@@ -99,6 +76,15 @@ class Lorenz(Screensaver):
         self.__rotation += rotation_speed
 
         self.__render()
+
+    def __reset(self):
+        # Start near the attractor with small random offset
+        self.__x = 1.0 + random.uniform(-0.1, 0.1)
+        self.__y = 1.0 + random.uniform(-0.1, 0.1)
+        self.__z = 1.0 + random.uniform(-0.1, 0.1)
+
+        self.__trail = []
+        self.__rotation = random.uniform(0, 2 * math.pi)
 
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
@@ -183,9 +169,6 @@ class Lorenz(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.lorenz.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

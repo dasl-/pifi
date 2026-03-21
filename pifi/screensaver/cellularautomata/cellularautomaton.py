@@ -22,15 +22,15 @@ class CellularAutomaton(Screensaver, ABC):
         else:
             self.__led_frame_player = led_frame_player
 
-    def play(self):
+    def _setup(self):
         self.__reset()
-        while True:
-            self._update_board()
-            self.__show_board()
-            self.__do_tick_bookkeeping()
-            if self.__is_game_over():
-                break
-            time.sleep(self._get_tick_sleep_seconds())
+
+    def _tick(self, tick):
+        self._update_board()
+        self.__show_board()
+        self.__do_tick_bookkeeping()
+        if self.__should_reset_game():
+            self.__reset()
 
     def __do_tick_bookkeeping(self):
         self._num_ticks += 1
@@ -51,24 +51,20 @@ class CellularAutomaton(Screensaver, ABC):
     def __get_board_hash(self):
         return hashlib.md5(self._board).hexdigest()
 
-    def __is_game_over(self):
-        if self._is_past_screensaver_timeout():
-            self._logger.info("Game over due to screensaver timeout exceeded.")
-            return True
-
-        if self._get_max_game_length_seconds() > 0 and (time.time() - self.__start_time) > self._get_max_game_length_seconds():
-            self._logger.info("Game over due to timeout expiration.")
+    def __should_reset_game(self):
+        if self._get_max_game_length_seconds() > 0 and (time.time() - self.__game_start_time) > self._get_max_game_length_seconds():
+            self._logger.info("Resetting game due to per-game time limit.")
             return True
 
         if self.__prev_board_state_counts[self.__get_board_hash()] > self._get_max_state_repetitions_for_game_over():
-            self._logger.info("Game over detected. Current board state has repeated at least " +
+            self._logger.info("Resetting game. Current board state has repeated at least " +
                 f"{self._get_max_state_repetitions_for_game_over()} times.")
             return True
         return False
 
     def __reset(self):
         self._logger.info("Starting new game.")
-        self.__start_time = time.time()
+        self.__game_start_time = time.time()
         self._num_ticks = 0
         self.__prev_board_state_counts = LimitedSizeDict(capacity = self._get_game_over_detection_lookback_amount())
 
@@ -94,10 +90,6 @@ class CellularAutomaton(Screensaver, ABC):
 
     @abstractmethod
     def _update_board(self):
-        pass
-
-    @abstractmethod
-    def _get_tick_sleep_seconds(self):
         pass
 
     @abstractmethod
