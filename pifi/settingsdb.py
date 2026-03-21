@@ -9,7 +9,7 @@ only read at program startup.
 """
 class SettingsDb:
 
-    # game of life screensaver
+    # Whether the screensaver is enabled (on/off toggle)
     IS_SCREENSAVER_ENABLED = 'is_screensaver_enabled'
 
     # Flag to trigger screensaver restart (checked and cleared by queue)
