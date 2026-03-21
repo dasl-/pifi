@@ -135,7 +135,7 @@ class TestScreensaverInterface(unittest.TestCase):
         )
 
     def test_config_keys_match_screensaver_ids(self):
-        """Verify every screensaver has a matching config key in default_config.json.
+        """Verify screensavers.configs keys in default_config.json match screensaver IDs.
 
         The settings API keys configs by screensaver ID, so if default_config.json
         uses 'airplaykaraoke' but get_id() returns 'airplay_karaoke', overrides
@@ -151,26 +151,22 @@ class TestScreensaverInterface(unittest.TestCase):
             default_config = pyjson5.decode(f.read())
 
         config_keys = set(default_config.get('screensavers', {}).get('configs', {}).keys())
-        # Screensavers that intentionally have no config section
-        no_config_screensavers = {'video_screensaver'}
+        screensaver_ids = set(ScreensaverManager.SCREENSAVER_CLASSES.keys())
 
-        for screensaver_id in ScreensaverManager.SCREENSAVER_CLASSES:
-            if screensaver_id in no_config_screensavers:
-                # If it now has a config key, remove it from the ignore list
-                with self.subTest(screensaver=screensaver_id):
-                    self.assertNotIn(
-                        screensaver_id, config_keys,
-                        f"Screensaver '{screensaver_id}' is in no_config_screensavers "
-                        f"but has a config key in default_config.json. "
-                        f"Remove it from no_config_screensavers."
-                    )
-                continue
+        # Every config key should correspond to a real screensaver class
+        for key in config_keys:
+            with self.subTest(config_key=key):
+                self.assertIn(
+                    key, screensaver_ids,
+                    f"Config key '{key}' in screensavers.configs has no matching screensaver class."
+                )
+
+        # Every screensaver class should have a config key
+        for screensaver_id in screensaver_ids:
             with self.subTest(screensaver=screensaver_id):
                 self.assertIn(
                     screensaver_id, config_keys,
-                    f"Screensaver '{screensaver_id}' has no matching config key "
-                    f"in default_config.json. Typo or missing underscore? "
-                    f"If this screensaver has no config, add it to no_config_screensavers."
+                    f"Screensaver '{screensaver_id}' has no matching key in screensavers.configs."
                 )
 
     def test_all_screensavers_call_super_init(self):

@@ -1,4 +1,3 @@
-import json
 import random
 
 from pifi.config import Config
@@ -122,25 +121,17 @@ class ScreensaverManager:
 
     @staticmethod
     def get_enabled_screensavers():
-        """Get list of enabled screensaver IDs from database."""
-        settings_db = SettingsDb()
-        enabled_json = settings_db.get(SettingsDb.ENABLED_SCREENSAVERS)
-        if enabled_json:
-            return json.loads(enabled_json)
-        return ['game_of_life', 'cyclic_automaton']
-
-    def __get_enabled_screensavers(self):
-        """Get list of enabled screensaver IDs from SettingsDb."""
-        return ScreensaverManager.get_enabled_screensavers()
+        """Get list of enabled screensaver IDs."""
+        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
+        return Config.get('screensavers.enabled', ['game_of_life', 'cyclic_automaton'])
 
     def run(self):
         while True:
-            # Re-read enabled screensavers each iteration so changes take effect
-            enabled = self.__get_enabled_screensavers()
-
             # Reload config overrides from database before playing
             # This picks up any changes made via the settings UI
-            Config.reload_overrides([SettingsDb.SCREENSAVER_CONFIGS, SettingsDb.GLOBAL_SCREENSAVER_SETTINGS])
+            Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
+
+            enabled = Config.get('screensavers.enabled', ['game_of_life', 'cyclic_automaton'])
 
             # Build list of available screensaver IDs
             available_ids = []
