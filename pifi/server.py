@@ -258,7 +258,10 @@ class PifiAPI():
         # Read existing overrides from DB. The DB stores {"screensavers": {...}},
         # wrapping is needed for reload_overrides compatibility with the config structure.
         raw_json = self.__settings_db.get(SettingsDb.SCREENSAVER_SETTINGS)
-        overrides = json.loads(raw_json).get('screensavers', {}) if raw_json else {}
+        try:
+            overrides = json.loads(raw_json).get('screensavers', {}) if raw_json else {}
+        except (json.JSONDecodeError, TypeError):
+            overrides = {}
 
         if 'enabled' in post_data:
             if not isinstance(post_data['enabled'], list):
@@ -269,8 +272,8 @@ class PifiAPI():
 
         if 'timeout' in post_data:
             timeout = post_data['timeout']
-            if timeout is not None and not isinstance(timeout, (int, float)):
-                return {'success': False, 'error': 'timeout must be a number or null'}
+            if timeout is not None and (not isinstance(timeout, (int, float)) or timeout < 0):
+                return {'success': False, 'error': 'timeout must be a non-negative number or null'}
             overrides['timeout'] = timeout
 
         if 'transitions' in post_data and isinstance(post_data['transitions'], dict):

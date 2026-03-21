@@ -105,7 +105,7 @@
 
         // Optional, ?float, default: null. Screensaver timeout in seconds.
         // When set, each screensaver will end after this many seconds regardless of its own
-        // max_ticks setting. When null (default), each screensaver uses its own max_ticks.
+        // max_ticks setting. Set to null or 0 to disable (each screensaver uses its own max_ticks).
         "timeout": null,
 
         // Configuration for transitions between screensavers.
