@@ -7,7 +7,8 @@ Verifies the config resolution chain:
 
 And the timeout semantics:
   positive number = timeout after N seconds
-  0 or None       = unlimited (no timeout)
+  0 or None      = unlimited (no timeout)
+  Per-screensaver None = fall back to global
 """
 
 import copy
@@ -59,9 +60,14 @@ class TestTimeoutResolution(unittest.TestCase):
         return _StubScreensaver(led_frame_player=None)
 
     def test_default_timeout_is_120(self):
-        """When no timeout is configured anywhere, default is 120."""
-        ss = self._make({'screensavers': {}})
+        """When timeout is set to 120 in config (as in default_config.json), it's used."""
+        ss = self._make({'screensavers': {'timeout': 120}})
         self.assertEqual(ss._timeout, 120)
+
+    def test_timeout_absent_means_unlimited(self):
+        """When timeout key is absent from config entirely, it's unlimited."""
+        ss = self._make({'screensavers': {}})
+        self.assertEqual(ss._timeout, 0)
 
     def test_global_timeout_overrides_default(self):
         """Global screensavers.timeout overrides the hardcoded default."""
@@ -95,10 +101,32 @@ class TestTimeoutResolution(unittest.TestCase):
         ss._start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
-    def test_timeout_none_means_unlimited(self):
-        """Timeout of None means unlimited — _is_past_timeout always returns False."""
+    def test_global_timeout_none_means_unlimited(self):
+        """Global timeout of None means unlimited (same as 0)."""
         ss = self._make({'screensavers': {'timeout': None}})
-        self.assertIsNone(ss._timeout)
+        self.assertEqual(ss._timeout, 0)
+        ss._start_time = time.time() - 99999
+        self.assertFalse(ss._is_past_timeout())
+
+    def test_per_screensaver_timeout_null_falls_back_to_global(self):
+        """Per-screensaver timeout of null falls back to global timeout."""
+        ss = self._make({
+            'screensavers': {
+                'timeout': 60,
+                'configs': {'stub': {'timeout': None}},
+            }
+        })
+        self.assertEqual(ss._timeout, 60)
+
+    def test_per_screensaver_timeout_zero_means_unlimited(self):
+        """Per-screensaver timeout of 0 means unlimited, not fallback."""
+        ss = self._make({
+            'screensavers': {
+                'timeout': 60,
+                'configs': {'stub': {'timeout': 0}},
+            }
+        })
+        self.assertEqual(ss._timeout, 0)
         ss._start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
@@ -126,9 +154,14 @@ class TestTickSleepResolution(unittest.TestCase):
         return _StubScreensaver(led_frame_player=None)
 
     def test_default_tick_sleep(self):
-        """When no tick_sleep is configured, default is 0.05."""
-        ss = self._make({'screensavers': {}})
+        """When tick_sleep is set to 0.05 in config (as in default_config.json), it's used."""
+        ss = self._make({'screensavers': {'tick_sleep': 0.05}})
         self.assertEqual(ss._tick_sleep, 0.05)
+
+    def test_tick_sleep_absent_means_zero(self):
+        """When tick_sleep key is absent from config entirely, it's 0."""
+        ss = self._make({'screensavers': {}})
+        self.assertEqual(ss._tick_sleep, 0)
 
     def test_global_tick_sleep_overrides_default(self):
         """Global screensavers.tick_sleep overrides the hardcoded default."""
@@ -154,6 +187,21 @@ class TestTickSleepResolution(unittest.TestCase):
             }
         })
         self.assertEqual(ss._tick_sleep, 0.08)
+
+    def test_per_screensaver_tick_sleep_null_falls_back_to_global(self):
+        """Per-screensaver tick_sleep of null falls back to global tick_sleep."""
+        ss = self._make({
+            'screensavers': {
+                'tick_sleep': 0.08,
+                'configs': {'stub': {'tick_sleep': None}},
+            }
+        })
+        self.assertEqual(ss._tick_sleep, 0.08)
+
+    def test_global_tick_sleep_none_means_zero(self):
+        """Global tick_sleep of None means 0 (no sleep between ticks)."""
+        ss = self._make({'screensavers': {'tick_sleep': None}})
+        self.assertEqual(ss._tick_sleep, 0)
 
 
 if __name__ == '__main__':

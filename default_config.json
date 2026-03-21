@@ -107,6 +107,7 @@
         // Each screensaver will end after this many seconds and rotate to the next one.
         // Set to null or 0 to disable (screensavers run indefinitely).
         // Can be overridden per-screensaver via screensavers.configs.<id>.timeout.
+        // A per-screensaver timeout of null falls back to this global value.
         "timeout": 120,
 
         // Configuration for transitions between screensavers.
