@@ -8,9 +8,6 @@ from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomato
 # https://en.wikipedia.org/wiki/Cyclic_cellular_automaton
 class CyclicAutomaton(CellularAutomaton):
 
-    def _get_tick_sleep_seconds(self):
-        return Config.get('screensavers.configs.cyclic_automaton.tick_sleep')
-
     def _get_game_over_detection_lookback_amount(self):
         return Config.get('screensavers.configs.cyclic_automaton.game_over_detection_lookback')
 

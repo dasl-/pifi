@@ -7,11 +7,9 @@ leaving glowing trails that fade over time.
 
 import math
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -20,7 +18,6 @@ class PerlinWorms(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -37,8 +34,6 @@ class PerlinWorms(Screensaver):
         self.__time_speed = Config.get('screensavers.configs.perlinworms.time_speed', 0.02)
         self.__fade = Config.get('screensavers.configs.perlinworms.fade', 0.92)
         self.__glow_size = Config.get('screensavers.configs.perlinworms.glow_size', 1.5)
-        self.__tick_sleep = Config.get('screensavers.configs.perlinworms.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('screensavers.configs.perlinworms.max_ticks', 10000)
 
         # Initialize Perlin noise
         self.__perm = self.__generate_permutation()
@@ -218,30 +213,18 @@ class PerlinWorms(Screensaver):
                     self.__canvas[py, px, 1] = min(1.0, self.__canvas[py, px, 1] + g * intensity * 0.3)
                     self.__canvas[py, px, 2] = min(1.0, self.__canvas[py, px, 2] + b * intensity * 0.3)
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting Perlin Worms screensaver")
+    def _setup(self):
+        """Initialize worms."""
         self.__init_worms()
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            # Update time
-            self.__time += self.__time_speed
+    def _tick(self, tick):
+        """Update worms and render one frame."""
+        self.__time += self.__time_speed
+        self.__update_worms()
+        self.__draw_worms()
 
-            # Update worm positions
-            self.__update_worms()
-
-            # Draw worms
-            self.__draw_worms()
-
-            # Convert to uint8 frame
-            frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
-
-            self.__led_frame_player.play_frame(frame)
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("Perlin Worms screensaver ended")
+        frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
+        self.__led_frame_player.play_frame(frame)
 
     @classmethod
     def get_id(cls) -> str:

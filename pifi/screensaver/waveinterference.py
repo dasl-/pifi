@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,7 +17,6 @@ class WaveInterference(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -41,19 +38,15 @@ class WaveInterference(Screensaver):
         # Color palette
         self.__hue_offset = 0.0
 
-    def play(self):
-        self.__logger.info("Starting Wave Interference screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.wave_interference.max_ticks', 2000)
-        tick = 0
+    def _tick(self, tick):
+        self.__update_sources()
+        self.__render()
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Wave Interference screensaver ended")
+        time_speed = Config.get('screensavers.configs.wave_interference.time_speed', 0.15)
+        self.__time += time_speed
 
     def __reset(self):
         num_sources = Config.get('screensavers.configs.wave_interference.num_sources', 4)
@@ -78,13 +71,6 @@ class WaveInterference(Screensaver):
         vy = math.sin(angle) * drift_speed
 
         self.__sources.append([x, y, phase_offset, vx, vy])
-
-    def __tick(self):
-        self.__update_sources()
-        self.__render()
-
-        time_speed = Config.get('screensavers.configs.wave_interference.time_speed', 0.15)
-        self.__time += time_speed
 
     def __update_sources(self):
         """Update source positions (drifting)."""
@@ -194,9 +180,6 @@ class WaveInterference(Screensaver):
         frame[:, :, 2] = (b * 255).astype(np.uint8)
 
         return frame
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.wave_interference.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

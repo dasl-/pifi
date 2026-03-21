@@ -7,11 +7,9 @@ mesmerizing wave patterns as they go in and out of sync.
 
 import math
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -20,7 +18,6 @@ class PendulumWaves(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -36,8 +33,6 @@ class PendulumWaves(Screensaver):
         self.__bob_size = Config.get('screensavers.configs.pendulumwaves.bob_size', 1.5)
         self.__trail_fade = Config.get('screensavers.configs.pendulumwaves.trail_fade', 0.85)
         self.__color_mode = Config.get('screensavers.configs.pendulumwaves.color_mode', 'rainbow')  # rainbow, gradient, white
-        self.__tick_sleep = Config.get('screensavers.configs.pendulumwaves.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('screensavers.configs.pendulumwaves.max_ticks', 10000)
 
         # Auto-calculate pendulum count if not specified
         if self.__num_pendulums <= 0:
@@ -163,23 +158,16 @@ class PendulumWaves(Screensaver):
 
         self.__tick += 1
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting Pendulum Waves screensaver")
+    def _setup(self):
+        """Initialize pendulums."""
         self.__init_pendulums()
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            self.__update()
+    def _tick(self, tick):
+        """Update pendulums and render one frame."""
+        self.__update()
 
-            # Convert to uint8 frame
-            frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
-
-            self.__led_frame_player.play_frame(frame)
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("Pendulum Waves screensaver ended")
+        frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
+        self.__led_frame_player.play_frame(frame)
 
     @classmethod
     def get_id(cls) -> str:

@@ -1,9 +1,7 @@
 import math
 import numpy as np
-import time
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -20,7 +18,6 @@ class Boids(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -33,19 +30,13 @@ class Boids(Screensaver):
         self.__positions = None
         self.__velocities = None
 
-    def play(self):
-        self.__logger.info("Starting Boids screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.boids.max_ticks', 2000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Boids screensaver ended")
+    def _tick(self, tick):
+        self.__update_velocities()
+        self.__update_positions()
+        self.__render()
 
     def __reset(self):
         num_boids = Config.get('screensavers.configs.boids.num_boids', 15)
@@ -63,11 +54,6 @@ class Boids(Screensaver):
             np.cos(angles) * speeds,
             np.sin(angles) * speeds
         ])
-
-    def __tick(self):
-        self.__update_velocities()
-        self.__update_positions()
-        self.__render()
 
     def __update_velocities(self):
         separation = self.__calculate_separation()
@@ -204,9 +190,6 @@ class Boids(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.boids.tick_sleep', 0.05)
 
     def __get_max_speed(self):
         return Config.get('screensavers.configs.boids.max_speed', 1.5)

@@ -3,7 +3,6 @@ import numpy as np
 import time
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -23,7 +22,6 @@ class CosmicDream(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -52,19 +50,22 @@ class CosmicDream(Screensaver):
         self.__start_time = None
         self.__frame_count = 0
 
-    def play(self):
-        self.__logger.info("Starting CosmicDream screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.cosmic_dream.max_ticks', 3000)
-        tick = 0
+    def _tick(self, tick):
+        t = time.time() - self.__start_time
+        self.__frame_count += 1
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Create the layered frame
+        frame = self.__render_plasma_layer(t)
+        frame = self.__blend_geometry_layer(frame, t)
+        frame = self.__blend_particle_layer(frame, t)
 
-        self.__logger.info("CosmicDream screensaver ended")
+        # Apply global color cycling / hue shift
+        frame = self.__apply_color_cycle(frame, t)
+
+        self.__led_frame_player.play_frame(frame)
 
     def __reset(self):
         self.__start_time = time.time()
@@ -84,20 +85,6 @@ class CosmicDream(Screensaver):
 
         # Random offsets for multi-octave noise
         self.__noise_offsets = np.random.rand(6) * 1000
-
-    def __tick(self):
-        t = time.time() - self.__start_time
-        self.__frame_count += 1
-
-        # Create the layered frame
-        frame = self.__render_plasma_layer(t)
-        frame = self.__blend_geometry_layer(frame, t)
-        frame = self.__blend_particle_layer(frame, t)
-
-        # Apply global color cycling / hue shift
-        frame = self.__apply_color_cycle(frame, t)
-
-        self.__led_frame_player.play_frame(frame)
 
     def __render_plasma_layer(self, t):
         """
@@ -356,9 +343,6 @@ class CosmicDream(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.cosmic_dream.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

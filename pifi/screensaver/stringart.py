@@ -7,11 +7,9 @@ curved envelope patterns through straight lines alone.
 
 import math
 import numpy as np
-import time
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -20,7 +18,6 @@ class StringArt(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -36,8 +33,6 @@ class StringArt(Screensaver):
         self.__rotation_speed = Config.get('screensavers.configs.stringart.rotation_speed', 0.01)
         self.__fade = Config.get('screensavers.configs.stringart.fade', 0.15)
         self.__line_brightness = Config.get('screensavers.configs.stringart.line_brightness', 0.4)
-        self.__tick_sleep = Config.get('screensavers.configs.stringart.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('screensavers.configs.stringart.max_ticks', 10000)
 
         # Canvas buffer
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
@@ -162,23 +157,16 @@ class StringArt(Screensaver):
         self.__hue = (self.__hue + 0.001) % 1.0
         self.__tick += 1
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting String Art screensaver")
+    def _setup(self):
+        """Initialize the pattern."""
         self.__init_pattern()
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            self.__update()
+    def _tick(self, tick):
+        """Update pattern and render one frame."""
+        self.__update()
 
-            # Convert to uint8 frame
-            frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
-
-            self.__led_frame_player.play_frame(frame)
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("String Art screensaver ended")
+        frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
+        self.__led_frame_player.play_frame(frame)
 
     @classmethod
     def get_id(cls) -> str:

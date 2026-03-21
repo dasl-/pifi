@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -20,7 +18,6 @@ class Starfield(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -33,19 +30,31 @@ class Starfield(Screensaver):
         # Stars: each is [x, y, z] where z is depth (0 = closest, 1 = farthest)
         self.__stars = []
 
-    def play(self):
-        self.__logger.info("Starting Starfield screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.starfield.max_ticks', 3000)
-        tick = 0
+    def _tick(self, tick):
+        speed = Config.get('screensavers.configs.starfield.speed', 0.02)
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Move stars toward viewer (decrease z)
+        new_stars = []
+        for star in self.__stars:
+            star[2] -= speed
 
-        self.__logger.info("Starfield screensaver ended")
+            # If star passed the viewer, respawn it far away
+            if star[2] <= 0.01:
+                self.__add_star(random_z=False)
+            else:
+                new_stars.append(star)
+
+        self.__stars = new_stars
+
+        # Maintain star count
+        num_stars = Config.get('screensavers.configs.starfield.num_stars', 80)
+        while len(self.__stars) < num_stars:
+            self.__add_star(random_z=False)
+
+        self.__render()
 
     def __reset(self):
         num_stars = Config.get('screensavers.configs.starfield.num_stars', 80)
@@ -71,29 +80,6 @@ class Starfield(Screensaver):
             z = 1.0
 
         self.__stars.append([x, y, z])
-
-    def __tick(self):
-        speed = Config.get('screensavers.configs.starfield.speed', 0.02)
-
-        # Move stars toward viewer (decrease z)
-        new_stars = []
-        for star in self.__stars:
-            star[2] -= speed
-
-            # If star passed the viewer, respawn it far away
-            if star[2] <= 0.01:
-                self.__add_star(random_z=False)
-            else:
-                new_stars.append(star)
-
-        self.__stars = new_stars
-
-        # Maintain star count
-        num_stars = Config.get('screensavers.configs.starfield.num_stars', 80)
-        while len(self.__stars) < num_stars:
-            self.__add_star(random_z=False)
-
-        self.__render()
 
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
@@ -157,9 +143,6 @@ class Starfield(Screensaver):
                             frame[tiy, tix] = np.maximum(frame[tiy, tix], trail_color)
 
         self.__led_frame_player.play_frame(frame)
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.starfield.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

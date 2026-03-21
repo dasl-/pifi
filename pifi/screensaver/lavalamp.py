@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,7 +17,6 @@ class LavaLamp(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -32,19 +29,13 @@ class LavaLamp(Screensaver):
         self.__blobs = []
         self.__time = 0
 
-    def play(self):
-        self.__logger.info("Starting Lava Lamp screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.lavalamp.max_ticks', 3000)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Lava Lamp screensaver ended")
+    def _tick(self, tick):
+        self.__update_blobs()
+        self.__render()
+        self.__time += 1
 
     def __reset(self):
         self.__time = 0
@@ -73,11 +64,6 @@ class LavaLamp(Screensaver):
 
         # Color palette - warm colors like real lava lamp
         self.__base_hue = random.choice([0.0, 0.05, 0.08, 0.55, 0.75])  # Red, orange, yellow, blue, purple
-
-    def __tick(self):
-        self.__update_blobs()
-        self.__render()
-        self.__time += 1
 
     def __update_blobs(self):
         heat_rate = Config.get('screensavers.configs.lavalamp.heat_rate', 0.03)
@@ -205,9 +191,6 @@ class LavaLamp(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.lavalamp.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

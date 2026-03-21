@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
@@ -64,19 +63,29 @@ class Mandelbrot(Screensaver):
         # Track consecutive black frames for reset detection
         self.__black_frame_count = 0
 
-    def play(self):
-        self.__logger.info("Starting Mandelbrot screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.mandelbrot.max_ticks', 1500)
-        tick = 0
+    def _tick(self, tick):
+        # Smoothly move center towards target
+        lerp_factor = Config.get('screensavers.configs.mandelbrot.lerp_factor', 0.02)
+        self.__center_x += (self.__target_x - self.__center_x) * lerp_factor
+        self.__center_y += (self.__target_y - self.__center_y) * lerp_factor
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Exponential zoom
+        zoom_speed = Config.get('screensavers.configs.mandelbrot.zoom_speed', 1.02)
+        self.__zoom *= zoom_speed
 
-        self.__logger.info("Mandelbrot screensaver ended")
+        black_ratio = self.__render()
+
+        # If frame is all black, we've zoomed into the set interior
+        if black_ratio == 1.0:
+            self.__black_frame_count += 1
+            if self.__black_frame_count >= 5:
+                self.__logger.info("Zoomed into black region, picking new target")
+                self.__reset()
+        else:
+            self.__black_frame_count = 0
 
     def __reset(self):
         # Start with full view of the set
@@ -115,27 +124,6 @@ class Mandelbrot(Screensaver):
             palette[i] = self.__hsv_to_rgb(hue, sat, val)
 
         return palette
-
-    def __tick(self):
-        # Smoothly move center towards target
-        lerp_factor = Config.get('screensavers.configs.mandelbrot.lerp_factor', 0.02)
-        self.__center_x += (self.__target_x - self.__center_x) * lerp_factor
-        self.__center_y += (self.__target_y - self.__center_y) * lerp_factor
-
-        # Exponential zoom
-        zoom_speed = Config.get('screensavers.configs.mandelbrot.zoom_speed', 1.02)
-        self.__zoom *= zoom_speed
-
-        black_ratio = self.__render()
-
-        # If frame is all black, we've zoomed into the set interior
-        if black_ratio == 1.0:
-            self.__black_frame_count += 1
-            if self.__black_frame_count >= 5:
-                self.__logger.info("Zoomed into black region, picking new target")
-                self.__reset()
-        else:
-            self.__black_frame_count = 0
 
     def __render(self):
         max_iter = Config.get('screensavers.configs.mandelbrot.max_iterations', 50)
@@ -217,9 +205,6 @@ class Mandelbrot(Screensaver):
             r, g, b = v, p, q
 
         return [int(r * 255), int(g * 255), int(b * 255)]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.mandelbrot.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

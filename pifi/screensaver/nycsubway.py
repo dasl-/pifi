@@ -84,8 +84,6 @@ class NycSubway(Screensaver):
         self.__lines = Config.get('screensavers.configs.nyc_subway.lines', ['1', '2', '3'])
         self.__update_interval = Config.get('screensavers.configs.nyc_subway.update_interval', 30)
         self.__max_arrivals = Config.get('screensavers.configs.nyc_subway.max_arrivals', 4)
-        self.__max_ticks = Config.get('screensavers.configs.nyc_subway.max_ticks', 3000)
-        self.__tick_sleep = Config.get('screensavers.configs.nyc_subway.tick_sleep', 0.05)
 
         # State
         self.__arrivals = []
@@ -311,26 +309,18 @@ class NycSubway(Screensaver):
         with self.__fetch_lock:
             self.__grouped_arrivals = grouped[:self.__max_arrivals]
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting NYC Subway screensaver")
-
-        # Start initial fetch in background
+    def _setup(self):
+        """Start initial data fetch."""
         self.__start_background_fetch()
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            # Start background fetch if needed (non-blocking)
-            current_time = time.time()
-            if current_time - self.__last_update > self.__update_interval:
-                self.__start_background_fetch()
-                self.__last_update = current_time
+    def _tick(self, tick):
+        """Fetch new data if needed and render one frame."""
+        current_time = time.time()
+        if current_time - self.__last_update > self.__update_interval:
+            self.__start_background_fetch()
+            self.__last_update = current_time
 
-            self.__render()
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("NYC Subway screensaver ended")
+        self.__render()
 
     def __start_background_fetch(self):
         """Start a background thread to fetch arrivals."""

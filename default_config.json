@@ -103,10 +103,11 @@
         // Which screensavers are included in the rotation. Use screensaver IDs.
         "enabled": ["game_of_life", "cyclic_automaton"],
 
-        // Optional, ?float, default: null. Screensaver timeout in seconds.
-        // When set, each screensaver will end after this many seconds regardless of its own
-        // max_ticks setting. Set to null or 0 to disable (each screensaver uses its own max_ticks).
-        "timeout": null,
+        // Optional, ?float, default: 120. Screensaver timeout in seconds.
+        // Each screensaver will end after this many seconds and rotate to the next one.
+        // Set to null or 0 to disable (screensavers run indefinitely).
+        // Can be overridden per-screensaver via screensavers.configs.<id>.timeout.
+        "timeout": 120,
 
         // Configuration for transitions between screensavers.
         // Optional. This whole stanza is optional because none of the keys within it are required.
@@ -121,6 +122,10 @@
             // Optional, integer, default: 30. Number of interpolation steps (~frames) per transition.
             "num_steps": 30,
         },
+
+        // Optional, float, default: 0.05. Seconds to sleep between ticks (frame rate).
+        // Can be overridden per-screensaver via screensavers.configs.<id>.tick_sleep.
+        "tick_sleep": 0.05,
 
         // Per-screensaver configuration.
         // Each screensaver has its own stanza with configurable options.
@@ -181,9 +186,6 @@
                 // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.05,
     
-                // Optional, integer, default: 2000. Maximum number of ticks before ending.
-                "max_ticks": 2000,
-    
                 // Optional, float, default: 1.5. Maximum speed of boids.
                 "max_speed": 1.5,
     
@@ -218,9 +220,6 @@
     
                 // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 3000. Maximum number of ticks before ending.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to mandelbrot zoom screensaver.
@@ -241,9 +240,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 1500. Maximum number of ticks before ending.
-                "max_ticks": 1500,
             },
     
             // Configuration specific to wave interference screensaver.
@@ -268,9 +264,6 @@
     
                 // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 2000. Maximum number of ticks before ending.
-                "max_ticks": 2000,
             },
     
             // Configuration specific to spirograph screensaver.
@@ -288,9 +281,6 @@
     
                 // Optional, float, default: 0.02. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.02,
-    
-                // Optional, integer, default: 2000. Maximum number of ticks before ending.
-                "max_ticks": 2000,
             },
     
             // Configuration specific to lorenz attractor screensaver.
@@ -320,9 +310,6 @@
     
                 // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 3000. Maximum number of ticks before ending.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to metaballs screensaver.
@@ -343,9 +330,6 @@
     
                 // Optional, float, default: 0.04. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.04,
-    
-                // Optional, integer, default: 2000. Maximum number of ticks before ending.
-                "max_ticks": 2000,
             },
     
             // Configuration specific to starfield screensaver.
@@ -366,9 +350,6 @@
     
                 // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 3000. Maximum number of ticks before ending.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to matrix rain screensaver.
@@ -399,9 +380,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 3000. Maximum number of ticks before ending.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to melting clock screensaver.
@@ -434,9 +412,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 5000. Maximum number of ticks before ending.
-                "max_ticks": 5000,
             },
     
             // Configuration specific to aurora borealis screensaver.
@@ -457,9 +432,6 @@
     
                 // Optional, float, default: 0.04. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.04,
-    
-                // Optional, integer, default: 3000. Maximum number of ticks before ending.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to shadebobs screensaver.
@@ -474,9 +446,6 @@
     
                 // Optional, float, default: 0.03. How long to sleep between ticks, in seconds.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 2000. Maximum number of ticks before ending.
-                "max_ticks": 2000,
             },
     
             // Configuration specific to flow field screensaver.
@@ -493,9 +462,6 @@
     
                 // Optional, float, default: 0.03. Tick sleep time.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 2500. Maximum ticks.
-                "max_ticks": 2500,
             },
     
             // Configuration specific to lava lamp screensaver.
@@ -515,9 +481,6 @@
     
                 // Optional, float, default: 0.05. Tick sleep time.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 3000. Maximum ticks.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to reaction diffusion screensaver.
@@ -534,9 +497,6 @@
     
                 // Optional, float, default: 0.05. Tick sleep time.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 2000. Maximum ticks.
-                "max_ticks": 2000,
             },
     
             // Configuration specific to ink in water screensaver.
@@ -556,9 +516,6 @@
     
                 // Optional, float, default: 0.04. Tick sleep time.
                 "tick_sleep": 0.04,
-    
-                // Optional, integer, default: 2500. Maximum ticks.
-                "max_ticks": 2500,
             },
     
             // Configuration specific to perlin worms screensaver.
@@ -587,9 +544,6 @@
     
                 // Optional, float, default: 0.03. Tick sleep time.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to pendulum waves screensaver.
@@ -615,9 +569,6 @@
     
                 // Optional, float, default: 0.03. Tick sleep time.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to string art screensaver.
@@ -643,9 +594,6 @@
     
                 // Optional, float, default: 0.03. Tick sleep time.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to unknown pleasures screensaver.
@@ -674,9 +622,6 @@
     
                 // Optional, float, default: 0.05. Tick sleep time.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to cloudscape screensaver.
@@ -702,9 +647,6 @@
     
                 // Optional, float, default: 0.05. Tick sleep time.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to gradient test screensaver (for debugging flicker).
@@ -717,9 +659,6 @@
     
                 // Optional, float, default: 0.1. Tick sleep time (high = low CPU).
                 "tick_sleep": 0.1,
-    
-                // Optional, integer, default: 3000. Maximum ticks.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to DVD bounce screensaver.
@@ -746,9 +685,6 @@
     
                 // Optional, float, default: 0.03. Tick sleep time.
                 "tick_sleep": 0.03,
-    
-                // Optional, integer, default: 10000. Maximum ticks.
-                "max_ticks": 10000,
             },
     
             // Configuration specific to NYC Subway arrival times screensaver.
@@ -778,9 +714,6 @@
     
                 // Optional, float, default: 1.0. How long to sleep between display updates, in seconds.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to WFMU radio now-playing screensaver.
@@ -797,9 +730,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between display updates.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 3000. Maximum ticks before ending screensaver.
-                "max_ticks": 3000,
             },
     
             // Configuration specific to AirPlay Karaoke screensaver.
@@ -812,9 +742,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between display updates.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
-                "max_ticks": 6000,
     
                 // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
                 // When false, lyrics display at a steady dimmer brightness.
@@ -835,9 +762,6 @@
     
                 // Optional, float, default: 0.05. How long to sleep between display updates.
                 "tick_sleep": 0.05,
-    
-                // Optional, integer, default: 6000. Maximum ticks before ending screensaver.
-                "max_ticks": 6000,
     
                 // Optional, boolean, default: true. Whether current lyrics pulse in brightness.
                 // When false, lyrics display at a steady dimmer brightness.

@@ -51,8 +51,6 @@ class Wfmu(Screensaver):
         channel_name = Config.get('screensavers.configs.wfmu.channel', 'wfmu')
         self.__channel = self.CHANNELS.get(channel_name, 0)
         self.__update_interval = Config.get('screensavers.configs.wfmu.update_interval', 15)
-        self.__max_ticks = Config.get('screensavers.configs.wfmu.max_ticks', 3000)
-        self.__tick_sleep = Config.get('screensavers.configs.wfmu.tick_sleep', 0.05)
 
         # State
         self.__show_name = ""
@@ -143,26 +141,18 @@ class Wfmu(Screensaver):
         finally:
             self.__fetch_in_progress = False
 
-    def play(self):
-        """Run the screensaver."""
-        self.__logger.info("Starting WFMU screensaver")
-
-        # Start initial fetch
+    def _setup(self):
+        """Start initial data fetch."""
         self.__start_background_fetch()
 
-        for tick in range(self.__max_ticks):
-            if self._is_past_screensaver_timeout():
-                break
-            # Periodic refresh
-            current_time = time.time()
-            if current_time - self.__last_update > self.__update_interval:
-                self.__start_background_fetch()
-                self.__last_update = current_time
+    def _tick(self, tick):
+        """Fetch new data if needed and render one frame."""
+        current_time = time.time()
+        if current_time - self.__last_update > self.__update_interval:
+            self.__start_background_fetch()
+            self.__last_update = current_time
 
-            self.__render()
-            time.sleep(self.__tick_sleep)
-
-        self.__logger.info("WFMU screensaver ended")
+        self.__render()
 
     def __render(self):
         """Render the current track info."""

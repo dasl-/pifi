@@ -1,10 +1,8 @@
 import numpy as np
-import time
 import random
 import math
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,7 +17,6 @@ class InkInWater(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -33,19 +30,27 @@ class InkInWater(Screensaver):
         self.__buffer = None
         self.__time = 0
 
-    def play(self):
-        self.__logger.info("Starting Ink in Water screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.inkinwater.max_ticks', 2500)
-        tick = 0
+    def _tick(self, tick):
+        # Add new drops more frequently for more activity
+        drop_chance = Config.get('screensavers.configs.inkinwater.drop_chance', 0.06)
+        if random.random() < drop_chance:
+            self.__add_drop()
 
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
+        # Add subtle flow/movement to make it more dynamic
+        self.__apply_flow()
 
-        self.__logger.info("Ink in Water screensaver ended")
+        # Diffuse the ink
+        self.__diffuse()
+
+        # Very slow fade to prevent eternal buildup
+        fade = Config.get('screensavers.configs.inkinwater.fade', 0.997)
+        self.__buffer *= fade
+
+        self.__render()
+        self.__time += 1
 
     def __reset(self):
         self.__time = 0
@@ -79,25 +84,6 @@ class InkInWater(Screensaver):
                         self.__buffer[ny, nx, 0] += color[0] * falloff * intensity / 255
                         self.__buffer[ny, nx, 1] += color[1] * falloff * intensity / 255
                         self.__buffer[ny, nx, 2] += color[2] * falloff * intensity / 255
-
-    def __tick(self):
-        # Add new drops more frequently for more activity
-        drop_chance = Config.get('screensavers.configs.inkinwater.drop_chance', 0.06)
-        if random.random() < drop_chance:
-            self.__add_drop()
-
-        # Add subtle flow/movement to make it more dynamic
-        self.__apply_flow()
-
-        # Diffuse the ink
-        self.__diffuse()
-
-        # Very slow fade to prevent eternal buildup
-        fade = Config.get('screensavers.configs.inkinwater.fade', 0.997)
-        self.__buffer *= fade
-
-        self.__render()
-        self.__time += 1
 
     def __apply_flow(self):
         """Apply subtle upward flow like ink rising in water."""
@@ -158,9 +144,6 @@ class InkInWater(Screensaver):
             r, g, b = v, p, q
 
         return [r, g, b]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.inkinwater.tick_sleep', 0.04)
 
     @classmethod
     def get_id(cls) -> str:

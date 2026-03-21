@@ -1,10 +1,8 @@
 import math
 import numpy as np
-import time
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,7 +17,6 @@ class FlowField(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
 
         if led_frame_player is None:
             self.__led_frame_player = LedFramePlayer()
@@ -43,43 +40,10 @@ class FlowField(Screensaver):
         random.shuffle(self.__perm)
         self.__perm += self.__perm  # Double it for overflow
 
-    def play(self):
-        self.__logger.info("Starting Flow Field screensaver")
+    def _setup(self):
         self.__reset()
 
-        max_ticks = Config.get('screensavers.configs.flowfield.max_ticks', 2500)
-        tick = 0
-
-        while tick < max_ticks and not self._is_past_screensaver_timeout():
-            self.__tick()
-            time.sleep(self.__get_tick_sleep())
-            tick += 1
-
-        self.__logger.info("Flow Field screensaver ended")
-
-    def __reset(self):
-        self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
-        self.__time = 0
-        self.__noise_z = random.random() * 100
-
-        # Create particles
-        num_particles = Config.get('screensavers.configs.flowfield.num_particles', 50)
-        self.__particles = []
-        for _ in range(num_particles):
-            self.__particles.append(self.__create_particle())
-
-        # Random color palette for this session
-        self.__hue_base = random.random()
-        self.__hue_range = random.uniform(0.1, 0.3)
-
-    def __create_particle(self):
-        return {
-            'x': random.random() * self.__width,
-            'y': random.random() * self.__height,
-            'hue': random.random(),
-        }
-
-    def __tick(self):
+    def _tick(self, tick):
         # Fade buffer
         fade = Config.get('screensavers.configs.flowfield.fade', 0.95)
         self.__buffer *= fade
@@ -126,6 +90,28 @@ class FlowField(Screensaver):
 
         self.__render()
         self.__time += 1
+
+    def __reset(self):
+        self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__time = 0
+        self.__noise_z = random.random() * 100
+
+        # Create particles
+        num_particles = Config.get('screensavers.configs.flowfield.num_particles', 50)
+        self.__particles = []
+        for _ in range(num_particles):
+            self.__particles.append(self.__create_particle())
+
+        # Random color palette for this session
+        self.__hue_base = random.random()
+        self.__hue_range = random.uniform(0.1, 0.3)
+
+    def __create_particle(self):
+        return {
+            'x': random.random() * self.__width,
+            'y': random.random() * self.__height,
+            'hue': random.random(),
+        }
 
     def __render(self):
         frame = np.clip(self.__buffer, 0, 255).astype(np.uint8)
@@ -208,9 +194,6 @@ class FlowField(Screensaver):
             r, g, b = v, p, q
 
         return [r * 255, g * 255, b * 255]
-
-    def __get_tick_sleep(self):
-        return Config.get('screensavers.configs.flowfield.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:
