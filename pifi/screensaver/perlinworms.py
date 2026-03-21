@@ -30,15 +30,15 @@ class PerlinWorms(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__num_worms = Config.get('perlinworms.num_worms', 8)
-        self.__worm_length = Config.get('perlinworms.worm_length', 12)
-        self.__speed = Config.get('perlinworms.speed', 0.8)
-        self.__noise_scale = Config.get('perlinworms.noise_scale', 0.1)
-        self.__time_speed = Config.get('perlinworms.time_speed', 0.02)
-        self.__fade = Config.get('perlinworms.fade', 0.92)
-        self.__glow_size = Config.get('perlinworms.glow_size', 1.5)
-        self.__tick_sleep = Config.get('perlinworms.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('perlinworms.max_ticks', 10000)
+        self.__num_worms = Config.get('screensavers.configs.perlinworms.num_worms', 8)
+        self.__worm_length = Config.get('screensavers.configs.perlinworms.worm_length', 12)
+        self.__speed = Config.get('screensavers.configs.perlinworms.speed', 0.8)
+        self.__noise_scale = Config.get('screensavers.configs.perlinworms.noise_scale', 0.1)
+        self.__time_speed = Config.get('screensavers.configs.perlinworms.time_speed', 0.02)
+        self.__fade = Config.get('screensavers.configs.perlinworms.fade', 0.92)
+        self.__glow_size = Config.get('screensavers.configs.perlinworms.glow_size', 1.5)
+        self.__tick_sleep = Config.get('screensavers.configs.perlinworms.tick_sleep', 0.03)
+        self.__max_ticks = Config.get('screensavers.configs.perlinworms.max_ticks', 10000)
 
         # Initialize Perlin noise
         self.__perm = self.__generate_permutation()

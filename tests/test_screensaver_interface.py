@@ -150,7 +150,7 @@ class TestScreensaverInterface(unittest.TestCase):
         with open(default_config_path) as f:
             default_config = pyjson5.decode(f.read())
 
-        config_keys = set(default_config.keys())
+        config_keys = set(default_config.get('screensavers', {}).get('configs', {}).keys())
         # Screensavers that intentionally have no config section
         no_config_screensavers = {'video_screensaver'}
 

@@ -68,7 +68,7 @@ class Mandelbrot(Screensaver):
         self.__logger.info("Starting Mandelbrot screensaver")
         self.__reset()
 
-        max_ticks = Config.get('mandelbrot.max_ticks', 1500)
+        max_ticks = Config.get('screensavers.configs.mandelbrot.max_ticks', 1500)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -118,12 +118,12 @@ class Mandelbrot(Screensaver):
 
     def __tick(self):
         # Smoothly move center towards target
-        lerp_factor = Config.get('mandelbrot.lerp_factor', 0.02)
+        lerp_factor = Config.get('screensavers.configs.mandelbrot.lerp_factor', 0.02)
         self.__center_x += (self.__target_x - self.__center_x) * lerp_factor
         self.__center_y += (self.__target_y - self.__center_y) * lerp_factor
 
         # Exponential zoom
-        zoom_speed = Config.get('mandelbrot.zoom_speed', 1.02)
+        zoom_speed = Config.get('screensavers.configs.mandelbrot.zoom_speed', 1.02)
         self.__zoom *= zoom_speed
 
         black_ratio = self.__render()
@@ -138,7 +138,7 @@ class Mandelbrot(Screensaver):
             self.__black_frame_count = 0
 
     def __render(self):
-        max_iter = Config.get('mandelbrot.max_iterations', 50)
+        max_iter = Config.get('screensavers.configs.mandelbrot.max_iterations', 50)
 
         # Calculate view bounds
         aspect = self.__width / self.__height
@@ -219,7 +219,7 @@ class Mandelbrot(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('mandelbrot.tick_sleep', 0.05)
+        return Config.get('screensavers.configs.mandelbrot.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

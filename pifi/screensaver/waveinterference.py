@@ -45,7 +45,7 @@ class WaveInterference(Screensaver):
         self.__logger.info("Starting Wave Interference screensaver")
         self.__reset()
 
-        max_ticks = Config.get('wave_interference.max_ticks', 2000)
+        max_ticks = Config.get('screensavers.configs.wave_interference.max_ticks', 2000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -56,7 +56,7 @@ class WaveInterference(Screensaver):
         self.__logger.info("Wave Interference screensaver ended")
 
     def __reset(self):
-        num_sources = Config.get('wave_interference.num_sources', 4)
+        num_sources = Config.get('screensavers.configs.wave_interference.num_sources', 4)
 
         self.__sources = []
         for _ in range(num_sources):
@@ -72,7 +72,7 @@ class WaveInterference(Screensaver):
         phase_offset = random.uniform(0, 2 * math.pi)
 
         # Slow drift velocity
-        drift_speed = Config.get('wave_interference.drift_speed', 0.3)
+        drift_speed = Config.get('screensavers.configs.wave_interference.drift_speed', 0.3)
         angle = random.uniform(0, 2 * math.pi)
         vx = math.cos(angle) * drift_speed
         vy = math.sin(angle) * drift_speed
@@ -83,7 +83,7 @@ class WaveInterference(Screensaver):
         self.__update_sources()
         self.__render()
 
-        time_speed = Config.get('wave_interference.time_speed', 0.15)
+        time_speed = Config.get('screensavers.configs.wave_interference.time_speed', 0.15)
         self.__time += time_speed
 
     def __update_sources(self):
@@ -102,8 +102,8 @@ class WaveInterference(Screensaver):
                 source[1] = max(0, min(self.__height - 1, source[1]))
 
     def __render(self):
-        wave_frequency = Config.get('wave_interference.wave_frequency', 0.5)
-        color_mode = Config.get('wave_interference.color_mode', 'rainbow')
+        wave_frequency = Config.get('screensavers.configs.wave_interference.wave_frequency', 0.5)
+        color_mode = Config.get('screensavers.configs.wave_interference.color_mode', 'rainbow')
 
         # Calculate combined wave amplitude at each pixel
         amplitude = np.zeros((self.__height, self.__width), dtype=np.float64)
@@ -196,7 +196,7 @@ class WaveInterference(Screensaver):
         return frame
 
     def __get_tick_sleep(self):
-        return Config.get('wave_interference.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.wave_interference.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

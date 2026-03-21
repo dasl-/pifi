@@ -26,9 +26,9 @@ class AirPlayKaraoke(KaraokeBase):
         self.__metadata_pipe = Config.get(
             'airplay_karaoke.metadata_pipe', '/tmp/shairport-sync-metadata'
         )
-        self._max_ticks = Config.get('airplay_karaoke.max_ticks', 6000)
-        self._tick_sleep = Config.get('airplay_karaoke.tick_sleep', 0.05)
-        self._pulse_lyrics = Config.get('airplay_karaoke.pulse_lyrics', True)
+        self._max_ticks = Config.get('screensavers.configs.airplay_karaoke.max_ticks', 6000)
+        self._tick_sleep = Config.get('screensavers.configs.airplay_karaoke.tick_sleep', 0.05)
+        self._pulse_lyrics = Config.get('screensavers.configs.airplay_karaoke.pulse_lyrics', True)
 
         # Pending album art — PICT arrives before mden, so we stage it
         # here and apply (or clear) in the mden handler on title change.

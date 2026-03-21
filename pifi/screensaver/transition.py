@@ -151,8 +151,8 @@ class TransitionPlayer:
     def play_transition(self, from_frame=None, to_frame=None):
         width = Config.get_or_throw('leds.display_width')
         height = Config.get_or_throw('leds.display_height')
-        duration = Config.get('transitions.duration', 1.0)
-        num_steps = Config.get('transitions.num_steps', 30)
+        duration = Config.get('screensavers.transitions.duration', 1.0)
+        num_steps = Config.get('screensavers.transitions.num_steps', 30)
 
         if from_frame is None:
             from_frame = self.__led_frame_player.get_current_frame()

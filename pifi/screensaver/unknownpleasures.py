@@ -29,15 +29,15 @@ class UnknownPleasures(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__num_lines = Config.get('unknownpleasures.num_lines', 0)  # 0 = auto
-        self.__wave_speed = Config.get('unknownpleasures.wave_speed', 0.05)
-        self.__noise_scale = Config.get('unknownpleasures.noise_scale', 0.15)
-        self.__amplitude = Config.get('unknownpleasures.amplitude', 1.0)
-        self.__line_brightness = Config.get('unknownpleasures.line_brightness', 1.0)
-        self.__fill_below = Config.get('unknownpleasures.fill_below', True)
-        self.__color_mode = Config.get('unknownpleasures.color_mode', 'white')
-        self.__tick_sleep = Config.get('unknownpleasures.tick_sleep', 0.05)
-        self.__max_ticks = Config.get('unknownpleasures.max_ticks', 10000)
+        self.__num_lines = Config.get('screensavers.configs.unknownpleasures.num_lines', 0)  # 0 = auto
+        self.__wave_speed = Config.get('screensavers.configs.unknownpleasures.wave_speed', 0.05)
+        self.__noise_scale = Config.get('screensavers.configs.unknownpleasures.noise_scale', 0.15)
+        self.__amplitude = Config.get('screensavers.configs.unknownpleasures.amplitude', 1.0)
+        self.__line_brightness = Config.get('screensavers.configs.unknownpleasures.line_brightness', 1.0)
+        self.__fill_below = Config.get('screensavers.configs.unknownpleasures.fill_below', True)
+        self.__color_mode = Config.get('screensavers.configs.unknownpleasures.color_mode', 'white')
+        self.__tick_sleep = Config.get('screensavers.configs.unknownpleasures.tick_sleep', 0.05)
+        self.__max_ticks = Config.get('screensavers.configs.unknownpleasures.max_ticks', 10000)
 
         # Auto-calculate line count
         if self.__num_lines <= 0:

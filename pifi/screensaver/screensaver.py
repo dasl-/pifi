@@ -25,11 +25,11 @@ class Screensaver(ABC):
     def _is_past_screensaver_timeout(self):
         """Check if the screensaver timeout has been exceeded.
 
-        Returns True if screensavers.screensaver_timeout is set (> 0) and the elapsed
-        time since play started exceeds it. Returns False if screensaver_timeout is
+        Returns True if screensavers.timeout is set (> 0) and the elapsed
+        time since play started exceeds it. Returns False if timeout is
         not set (None/0), deferring to per-screensaver max_ticks.
         """
-        screensaver_timeout = Config.get('screensavers.screensaver_timeout', None)
+        screensaver_timeout = Config.get('screensavers.timeout', None)
         if not screensaver_timeout:
             return False
         return (time.time() - self._start_time) > screensaver_timeout

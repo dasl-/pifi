@@ -29,9 +29,9 @@ class GradientTest(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__mode = Config.get('gradient_test.mode', 'pastel_sky')
-        self.__tick_sleep = Config.get('gradient_test.tick_sleep', 0.1)
-        self.__max_ticks = Config.get('gradient_test.max_ticks', 3000)
+        self.__mode = Config.get('screensavers.configs.gradient_test.mode', 'pastel_sky')
+        self.__tick_sleep = Config.get('screensavers.configs.gradient_test.tick_sleep', 0.1)
+        self.__max_ticks = Config.get('screensavers.configs.gradient_test.max_ticks', 3000)
 
         # Pre-generate the static frame ONCE
         self.__frame = self.__generate_frame()

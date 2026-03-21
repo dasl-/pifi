@@ -45,7 +45,7 @@ class Lorenz(Screensaver):
         self.__logger.info("Starting Lorenz attractor screensaver")
         self.__reset()
 
-        max_ticks = Config.get('lorenz.max_ticks', 3000)
+        max_ticks = Config.get('screensavers.configs.lorenz.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -66,15 +66,15 @@ class Lorenz(Screensaver):
 
     def __tick(self):
         # Lorenz system parameters (classic values)
-        sigma = Config.get('lorenz.sigma', 10.0)
-        rho = Config.get('lorenz.rho', 28.0)
-        beta = Config.get('lorenz.beta', 8.0 / 3.0)
+        sigma = Config.get('screensavers.configs.lorenz.sigma', 10.0)
+        rho = Config.get('screensavers.configs.lorenz.rho', 28.0)
+        beta = Config.get('screensavers.configs.lorenz.beta', 8.0 / 3.0)
 
         # Time step for integration
-        dt = Config.get('lorenz.dt', 0.01)
+        dt = Config.get('screensavers.configs.lorenz.dt', 0.01)
 
         # Number of integration steps per frame
-        steps_per_frame = Config.get('lorenz.steps_per_frame', 5)
+        steps_per_frame = Config.get('screensavers.configs.lorenz.steps_per_frame', 5)
 
         for _ in range(steps_per_frame):
             # Lorenz equations (Euler integration)
@@ -90,12 +90,12 @@ class Lorenz(Screensaver):
             self.__trail.append((self.__x, self.__y, self.__z))
 
         # Limit trail length
-        max_trail = Config.get('lorenz.trail_length', 800)
+        max_trail = Config.get('screensavers.configs.lorenz.trail_length', 800)
         if len(self.__trail) > max_trail:
             self.__trail = self.__trail[-max_trail:]
 
         # Slowly rotate view
-        rotation_speed = Config.get('lorenz.rotation_speed', 0.005)
+        rotation_speed = Config.get('screensavers.configs.lorenz.rotation_speed', 0.005)
         self.__rotation += rotation_speed
 
         self.__render()
@@ -185,7 +185,7 @@ class Lorenz(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('lorenz.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.lorenz.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

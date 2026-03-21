@@ -30,8 +30,8 @@ class DvdBounce(Screensaver):
         self.__height = Config.get_or_throw('leds.display_height')
 
         # Logo dimensions (clamp to display size)
-        requested_width = Config.get('dvd_bounce.logo_width', 8)
-        requested_height = Config.get('dvd_bounce.logo_height', 4)
+        requested_width = Config.get('screensavers.configs.dvd_bounce.logo_width', 8)
+        requested_height = Config.get('screensavers.configs.dvd_bounce.logo_height', 4)
 
         self.__logo_width = min(requested_width, self.__width - 1)
         self.__logo_height = min(requested_height, self.__height - 1)
@@ -60,7 +60,7 @@ class DvdBounce(Screensaver):
         self.__logger.info("Starting DVD Bounce screensaver")
         self.__reset()
 
-        max_ticks = Config.get('dvd_bounce.max_ticks', 10000)
+        max_ticks = Config.get('screensavers.configs.dvd_bounce.max_ticks', 10000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -77,7 +77,7 @@ class DvdBounce(Screensaver):
         self.__y = random.uniform(0, self.__height - self.__logo_height)
 
         # Random initial velocity
-        speed = Config.get('dvd_bounce.speed', 0.5)
+        speed = Config.get('screensavers.configs.dvd_bounce.speed', 0.5)
         angle = random.uniform(0, 2 * np.pi)
         self.__vx = speed * np.cos(angle)
         self.__vy = speed * np.sin(angle)
@@ -135,7 +135,7 @@ class DvdBounce(Screensaver):
 
     def __random_color(self):
         """Generate a random bright color."""
-        color_mode = Config.get('dvd_bounce.color_mode', 'random')
+        color_mode = Config.get('screensavers.configs.dvd_bounce.color_mode', 'random')
 
         if color_mode == 'random':
             # Random bright color
@@ -174,7 +174,7 @@ class DvdBounce(Screensaver):
         y_end = min(y_start + self.__logo_height, self.__height)
 
         # Fill the rectangle
-        show_border = Config.get('dvd_bounce.show_border', True)
+        show_border = Config.get('screensavers.configs.dvd_bounce.show_border', True)
 
         if show_border:
             # Draw filled logo with border
@@ -192,7 +192,7 @@ class DvdBounce(Screensaver):
             frame[y_start:y_end, x_start:x_end] = self.__color
 
         # Optional: Draw "DVD" text if logo is big enough
-        show_text = Config.get('dvd_bounce.show_text', False)
+        show_text = Config.get('screensavers.configs.dvd_bounce.show_text', False)
         if show_text and self.__logo_width >= 12 and self.__logo_height >= 3:
             self.__draw_dvd_text(frame, x_start, y_start)
 
@@ -277,7 +277,7 @@ class DvdBounce(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('dvd_bounce.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.dvd_bounce.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

@@ -259,16 +259,12 @@ class PifiAPI():
         from pifi.config import Config
 
         # Get default config from Config (reads from default_config.json)
-        default_config = Config.get(screensaver_id, {})
+        default_config = Config.get(f'screensavers.configs.{screensaver_id}', {})
         if not isinstance(default_config, dict):
             default_config = {}
 
         # Get user overrides from SettingsDb
-        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
-        overrides = {}
-        if overrides_json:
-            all_overrides = json.loads(overrides_json)
-            overrides = all_overrides.get(screensaver_id, {})
+        overrides = self.__get_screensaver_config_overrides(screensaver_id)
 
         # Merge defaults with overrides
         config = {**default_config, **overrides}
@@ -287,15 +283,12 @@ class PifiAPI():
         all_screensavers = ScreensaverManager.get_all_screensavers()
 
         # Get all user overrides
-        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
-        all_overrides = {}
-        if overrides_json:
-            all_overrides = json.loads(overrides_json)
+        all_overrides = self.__get_all_screensaver_config_overrides()
 
         configs = {}
         for s in all_screensavers:
             sid = s['id']
-            default_config = Config.get(sid, {})
+            default_config = Config.get(f'screensavers.configs.{sid}', {})
             if not isinstance(default_config, dict):
                 default_config = {}
             overrides = all_overrides.get(sid, {})
@@ -321,16 +314,13 @@ class PifiAPI():
             return {'success': False, 'error': 'config must be an object'}
 
         # Get existing overrides
-        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
-        all_overrides = {}
-        if overrides_json:
-            all_overrides = json.loads(overrides_json)
+        all_overrides = self.__get_all_screensaver_config_overrides()
 
         # Update overrides for this screensaver
         all_overrides[screensaver_id] = config
 
         # Save back to database
-        self.__settings_db.set(SettingsDb.SCREENSAVER_CONFIGS, json.dumps(all_overrides))
+        self.__save_all_screensaver_config_overrides(all_overrides)
 
         # Signal restart
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
@@ -341,52 +331,63 @@ class PifiAPI():
         """Get global screensaver transition and timeout settings."""
         from pifi.config import Config
 
-        keys = {
-            'screensavers': ['screensaver_timeout'],
-            'transitions': ['enabled', 'duration', 'num_steps'],
-        }
-
-        current = {}
-        defaults = {}
-        for section, fields in keys.items():
-            current[section] = {}
-            defaults[section] = {}
-            for field in fields:
-                current[section][field] = Config.get(f'{section}.{field}')
-                defaults[section][field] = current[section][field]
-
-        import pyjson5
-        try:
-            with open(Config._Config__DEFAULT_CONFIG_PATH) as f:
-                base_config = pyjson5.decode(f.read())
-            for section, fields in keys.items():
-                if section in base_config:
-                    for field in fields:
-                        if field in base_config[section]:
-                            defaults[section][field] = base_config[section][field]
-        except Exception:
-            pass  # Fall back to current values as defaults
+        def get_values(getter):
+            return {
+                'screensavers': {
+                    'timeout': getter('screensavers.timeout'),
+                },
+                'transitions': {
+                    'enabled': getter('screensavers.transitions.enabled'),
+                    'duration': getter('screensavers.transitions.duration'),
+                    'num_steps': getter('screensavers.transitions.num_steps'),
+                },
+            }
 
         return {
-            'current': current,
-            'defaults': defaults,
+            'current': get_values(Config.get),
+            'defaults': get_values(Config.get_default),
         }
 
     def __save_global_screensaver_settings(self, settings):
         """Save global screensaver transition and timeout settings."""
-        overrides = {}
+        screensavers_overrides = {}
         if 'screensavers' in settings and isinstance(settings['screensavers'], dict):
-            overrides['screensavers'] = {}
-            if 'screensaver_timeout' in settings['screensavers']:
-                overrides['screensavers']['screensaver_timeout'] = settings['screensavers']['screensaver_timeout']
+            if 'timeout' in settings['screensavers']:
+                screensavers_overrides['timeout'] = settings['screensavers']['timeout']
 
         if 'transitions' in settings and isinstance(settings['transitions'], dict):
-            overrides['transitions'] = {}
+            transitions = {}
             for key in ('enabled', 'duration', 'num_steps'):
                 if key in settings['transitions']:
-                    overrides['transitions'][key] = settings['transitions'][key]
+                    transitions[key] = settings['transitions'][key]
+            if transitions:
+                screensavers_overrides['transitions'] = transitions
 
+        overrides = {}
+        if screensavers_overrides:
+            overrides['screensavers'] = screensavers_overrides
         self.__settings_db.set(SettingsDb.GLOBAL_SCREENSAVER_SETTINGS, json.dumps(overrides))
+
+    def __get_all_screensaver_config_overrides(self):
+        """Get flat {screensaver_id: {key: value}} overrides from DB.
+
+        DB stores nested format for reload_overrides compatibility:
+        {"screensavers": {"configs": {screensaver_id: {key: value}}}}
+        """
+        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
+        if not overrides_json:
+            return {}
+        raw = json.loads(overrides_json)
+        return raw.get('screensavers', {}).get('configs', {})
+
+    def __get_screensaver_config_overrides(self, screensaver_id):
+        """Get overrides for a single screensaver."""
+        return self.__get_all_screensaver_config_overrides().get(screensaver_id, {})
+
+    def __save_all_screensaver_config_overrides(self, all_overrides):
+        """Save flat {screensaver_id: {key: value}} overrides to DB in nested format."""
+        nested = {'screensavers': {'configs': all_overrides}}
+        self.__settings_db.set(SettingsDb.SCREENSAVER_CONFIGS, json.dumps(nested))
 
     def reset_screensaver_config(self, post_data):
         """Reset a screensaver's config to defaults."""
@@ -396,17 +397,14 @@ class PifiAPI():
             return {'success': False, 'error': 'screensaver_id required'}
 
         # Get existing overrides
-        overrides_json = self.__settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
-        all_overrides = {}
-        if overrides_json:
-            all_overrides = json.loads(overrides_json)
+        all_overrides = self.__get_all_screensaver_config_overrides()
 
         # Remove overrides for this screensaver
         if screensaver_id in all_overrides:
             del all_overrides[screensaver_id]
 
         # Save back to database
-        self.__settings_db.set(SettingsDb.SCREENSAVER_CONFIGS, json.dumps(all_overrides))
+        self.__save_all_screensaver_config_overrides(all_overrides)
 
         # Signal restart
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')

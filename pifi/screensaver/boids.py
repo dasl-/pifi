@@ -37,7 +37,7 @@ class Boids(Screensaver):
         self.__logger.info("Starting Boids screensaver")
         self.__reset()
 
-        max_ticks = Config.get('boids.max_ticks', 2000)
+        max_ticks = Config.get('screensavers.configs.boids.max_ticks', 2000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -48,7 +48,7 @@ class Boids(Screensaver):
         self.__logger.info("Boids screensaver ended")
 
     def __reset(self):
-        num_boids = Config.get('boids.num_boids', 15)
+        num_boids = Config.get('screensavers.configs.boids.num_boids', 15)
 
         # Initialize random positions across the display
         self.__positions = np.random.rand(num_boids, 2)
@@ -74,9 +74,9 @@ class Boids(Screensaver):
         alignment = self.__calculate_alignment()
         cohesion = self.__calculate_cohesion()
 
-        sep_weight = Config.get('boids.separation_weight', 1.5)
-        align_weight = Config.get('boids.alignment_weight', 1.0)
-        coh_weight = Config.get('boids.cohesion_weight', 1.0)
+        sep_weight = Config.get('screensavers.configs.boids.separation_weight', 1.5)
+        align_weight = Config.get('screensavers.configs.boids.alignment_weight', 1.0)
+        coh_weight = Config.get('screensavers.configs.boids.cohesion_weight', 1.0)
 
         self.__velocities += (
             separation * sep_weight +
@@ -96,7 +96,7 @@ class Boids(Screensaver):
         num_boids = len(self.__positions)
         separation = np.zeros_like(self.__velocities)
 
-        min_distance = Config.get('boids.min_distance', 2.0)
+        min_distance = Config.get('screensavers.configs.boids.min_distance', 2.0)
 
         for i in range(num_boids):
             diff = self.__positions[i] - self.__positions
@@ -206,13 +206,13 @@ class Boids(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('boids.tick_sleep', 0.05)
+        return Config.get('screensavers.configs.boids.tick_sleep', 0.05)
 
     def __get_max_speed(self):
-        return Config.get('boids.max_speed', 1.5)
+        return Config.get('screensavers.configs.boids.max_speed', 1.5)
 
     def __get_perception_radius(self):
-        return Config.get('boids.perception_radius', 8.0)
+        return Config.get('screensavers.configs.boids.perception_radius', 8.0)
 
     @classmethod
     def get_id(cls) -> str:

@@ -48,11 +48,11 @@ class Wfmu(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Configuration
-        channel_name = Config.get('wfmu.channel', 'wfmu')
+        channel_name = Config.get('screensavers.configs.wfmu.channel', 'wfmu')
         self.__channel = self.CHANNELS.get(channel_name, 0)
-        self.__update_interval = Config.get('wfmu.update_interval', 15)
-        self.__max_ticks = Config.get('wfmu.max_ticks', 3000)
-        self.__tick_sleep = Config.get('wfmu.tick_sleep', 0.05)
+        self.__update_interval = Config.get('screensavers.configs.wfmu.update_interval', 15)
+        self.__max_ticks = Config.get('screensavers.configs.wfmu.max_ticks', 3000)
+        self.__tick_sleep = Config.get('screensavers.configs.wfmu.tick_sleep', 0.05)
 
         # State
         self.__show_name = ""

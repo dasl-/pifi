@@ -24,11 +24,11 @@ class SonosKaraoke(KaraokeBase):
         super().__init__(led_frame_player)
 
         # Sonos-specific configuration
-        self.__speaker_name = Config.get('sonos_karaoke.speaker_name', None)
-        self.__update_interval = Config.get('sonos_karaoke.update_interval', 0.5)
-        self._max_ticks = Config.get('sonos_karaoke.max_ticks', 6000)
-        self._tick_sleep = Config.get('sonos_karaoke.tick_sleep', 0.05)
-        self._pulse_lyrics = Config.get('sonos_karaoke.pulse_lyrics', True)
+        self.__speaker_name = Config.get('screensavers.configs.sonos_karaoke.speaker_name', None)
+        self.__update_interval = Config.get('screensavers.configs.sonos_karaoke.update_interval', 0.5)
+        self._max_ticks = Config.get('screensavers.configs.sonos_karaoke.max_ticks', 6000)
+        self._tick_sleep = Config.get('screensavers.configs.sonos_karaoke.tick_sleep', 0.05)
+        self._pulse_lyrics = Config.get('screensavers.configs.sonos_karaoke.pulse_lyrics', True)
 
         # Sonos speaker reference
         self.__speaker = None

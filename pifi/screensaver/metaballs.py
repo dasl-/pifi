@@ -43,7 +43,7 @@ class Metaballs(Screensaver):
         self.__logger.info("Starting Metaballs screensaver")
         self.__reset()
 
-        max_ticks = Config.get('metaballs.max_ticks', 2000)
+        max_ticks = Config.get('screensavers.configs.metaballs.max_ticks', 2000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -54,7 +54,7 @@ class Metaballs(Screensaver):
         self.__logger.info("Metaballs screensaver ended")
 
     def __reset(self):
-        num_balls = Config.get('metaballs.num_balls', 5)
+        num_balls = Config.get('screensavers.configs.metaballs.num_balls', 5)
         self.__balls = []
 
         for i in range(num_balls):
@@ -73,7 +73,7 @@ class Metaballs(Screensaver):
         radius = random.uniform(min_radius, max_radius)
 
         # Random velocity
-        speed = Config.get('metaballs.speed', 0.5)
+        speed = Config.get('screensavers.configs.metaballs.speed', 0.5)
         angle = random.uniform(0, 2 * math.pi)
         vx = math.cos(angle) * speed
         vy = math.sin(angle) * speed
@@ -136,7 +136,7 @@ class Metaballs(Screensaver):
                 color_field[:, :, c] += contribution * rgb[c]
 
         # Threshold the field to create blob shapes
-        threshold = Config.get('metaballs.threshold', 1.0)
+        threshold = Config.get('screensavers.configs.metaballs.threshold', 1.0)
 
         # Normalize colors by field strength
         field_safe = np.maximum(field, 0.001)
@@ -154,7 +154,7 @@ class Metaballs(Screensaver):
             frame[:, :, c] = (color_field[:, :, c] * intensity * 255).astype(np.uint8)
 
         # Add glow effect at the edges
-        glow = Config.get('metaballs.glow', True)
+        glow = Config.get('screensavers.configs.metaballs.glow', True)
         if glow:
             edge_intensity = np.clip((field - threshold * 0.3) / (threshold * 0.3), 0, 1)
             edge_intensity = edge_intensity * (1 - intensity) * 0.5
@@ -192,7 +192,7 @@ class Metaballs(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('metaballs.tick_sleep', 0.04)
+        return Config.get('screensavers.configs.metaballs.tick_sleep', 0.04)
 
     @classmethod
     def get_id(cls) -> str:

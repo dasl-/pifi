@@ -47,7 +47,7 @@ class FlowField(Screensaver):
         self.__logger.info("Starting Flow Field screensaver")
         self.__reset()
 
-        max_ticks = Config.get('flowfield.max_ticks', 2500)
+        max_ticks = Config.get('screensavers.configs.flowfield.max_ticks', 2500)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -63,7 +63,7 @@ class FlowField(Screensaver):
         self.__noise_z = random.random() * 100
 
         # Create particles
-        num_particles = Config.get('flowfield.num_particles', 50)
+        num_particles = Config.get('screensavers.configs.flowfield.num_particles', 50)
         self.__particles = []
         for _ in range(num_particles):
             self.__particles.append(self.__create_particle())
@@ -81,7 +81,7 @@ class FlowField(Screensaver):
 
     def __tick(self):
         # Fade buffer
-        fade = Config.get('flowfield.fade', 0.95)
+        fade = Config.get('screensavers.configs.flowfield.fade', 0.95)
         self.__buffer *= fade
 
         # Slowly evolve the flow field
@@ -97,7 +97,7 @@ class FlowField(Screensaver):
             ) * math.pi * 4  # Map to full rotation
 
             # Move particle
-            speed = Config.get('flowfield.speed', 0.5)
+            speed = Config.get('screensavers.configs.flowfield.speed', 0.5)
             particle['x'] += math.cos(angle) * speed
             particle['y'] += math.sin(angle) * speed
 
@@ -210,7 +210,7 @@ class FlowField(Screensaver):
         return [r * 255, g * 255, b * 255]
 
     def __get_tick_sleep(self):
-        return Config.get('flowfield.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.flowfield.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

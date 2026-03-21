@@ -50,7 +50,7 @@ class Aurora(Screensaver):
         self.__logger.info("Starting Aurora screensaver")
         self.__reset()
 
-        max_ticks = Config.get('aurora.max_ticks', 3000)
+        max_ticks = Config.get('screensavers.configs.aurora.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -66,15 +66,15 @@ class Aurora(Screensaver):
         self.__target_activity = 1.0
 
         # Create curtains
-        num_curtains = Config.get('aurora.num_curtains', 4)
+        num_curtains = Config.get('screensavers.configs.aurora.num_curtains', 4)
         self.__curtains = []
 
         for i in range(num_curtains):
             self.__curtains.append(self.__create_curtain(i, num_curtains))
 
         # Create background stars
-        if Config.get('aurora.show_stars', True):
-            num_stars = Config.get('aurora.num_stars', 15)
+        if Config.get('screensavers.configs.aurora.show_stars', True):
+            num_stars = Config.get('screensavers.configs.aurora.num_stars', 15)
             self.__stars = []
             for _ in range(num_stars):
                 self.__stars.append({
@@ -121,7 +121,7 @@ class Aurora(Screensaver):
         }
 
     def __tick(self):
-        time_speed = Config.get('aurora.time_speed', 1.0)
+        time_speed = Config.get('screensavers.configs.aurora.time_speed', 1.0)
         self.__time += 0.05 * time_speed
 
         # Occasionally change activity level (bursts)
@@ -147,7 +147,7 @@ class Aurora(Screensaver):
         frame = np.zeros([self.__height, self.__width, 3], dtype=np.float32)
 
         # Draw background stars first
-        if Config.get('aurora.show_stars', True):
+        if Config.get('screensavers.configs.aurora.show_stars', True):
             for star in self.__stars:
                 # Twinkle
                 twinkle = 0.5 + 0.5 * math.sin(self.__time * star['twinkle_speed'] * 10 + star['twinkle_phase'])
@@ -247,7 +247,7 @@ class Aurora(Screensaver):
                         frame[y, x, 2] = min(255, frame[y, x, 2] + b * brightness * 255)
 
     def __get_tick_sleep(self):
-        return Config.get('aurora.tick_sleep', 0.04)
+        return Config.get('screensavers.configs.aurora.tick_sleep', 0.04)
 
     @classmethod
     def get_id(cls) -> str:

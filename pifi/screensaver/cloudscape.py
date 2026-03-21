@@ -31,14 +31,14 @@ class Cloudscape(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__num_layers = Config.get('cloudscape.num_layers', 3)
-        self.__drift_speed = Config.get('cloudscape.drift_speed', 0.2)
-        self.__sky_mode = Config.get('cloudscape.sky_mode', 'pastel')
-        self.__cloud_density = Config.get('cloudscape.cloud_density', 0.7)
-        self.__cloud_scale = Config.get('cloudscape.cloud_scale', 0.04)
-        self.__sky_shift_speed = Config.get('cloudscape.sky_shift_speed', 0.001)
-        self.__tick_sleep = Config.get('cloudscape.tick_sleep', 0.05)
-        self.__max_ticks = Config.get('cloudscape.max_ticks', 10000)
+        self.__num_layers = Config.get('screensavers.configs.cloudscape.num_layers', 3)
+        self.__drift_speed = Config.get('screensavers.configs.cloudscape.drift_speed', 0.2)
+        self.__sky_mode = Config.get('screensavers.configs.cloudscape.sky_mode', 'pastel')
+        self.__cloud_density = Config.get('screensavers.configs.cloudscape.cloud_density', 0.7)
+        self.__cloud_scale = Config.get('screensavers.configs.cloudscape.cloud_scale', 0.04)
+        self.__sky_shift_speed = Config.get('screensavers.configs.cloudscape.sky_shift_speed', 0.001)
+        self.__tick_sleep = Config.get('screensavers.configs.cloudscape.tick_sleep', 0.05)
+        self.__max_ticks = Config.get('screensavers.configs.cloudscape.max_ticks', 10000)
 
         # Pre-compute coordinate grids (reused every frame)
         self.__x_grid, self.__y_grid = np.meshgrid(

@@ -42,7 +42,7 @@ class MatrixRain(Screensaver):
         self.__logger.info("Starting Matrix Rain screensaver")
         self.__reset()
 
-        max_ticks = Config.get('matrix_rain.max_ticks', 3000)
+        max_ticks = Config.get('screensavers.configs.matrix_rain.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -63,10 +63,10 @@ class MatrixRain(Screensaver):
 
     def __add_drop(self, x, from_top=True):
         """Add a new raindrop in column x."""
-        min_speed = Config.get('matrix_rain.min_speed', 0.2)
-        max_speed = Config.get('matrix_rain.max_speed', 0.8)
-        min_length = Config.get('matrix_rain.min_length', 4)
-        max_length = Config.get('matrix_rain.max_length', 12)
+        min_speed = Config.get('screensavers.configs.matrix_rain.min_speed', 0.2)
+        max_speed = Config.get('screensavers.configs.matrix_rain.max_speed', 0.8)
+        min_length = Config.get('screensavers.configs.matrix_rain.min_length', 4)
+        max_length = Config.get('screensavers.configs.matrix_rain.max_length', 12)
 
         speed = random.uniform(min_speed, max_speed)
         length = random.randint(min_length, min(max_length, self.__height))
@@ -85,8 +85,8 @@ class MatrixRain(Screensaver):
         })
 
     def __tick(self):
-        fade_rate = Config.get('matrix_rain.fade_rate', 0.85)
-        spawn_rate = Config.get('matrix_rain.spawn_rate', 0.08)
+        fade_rate = Config.get('screensavers.configs.matrix_rain.fade_rate', 0.85)
+        spawn_rate = Config.get('screensavers.configs.matrix_rain.spawn_rate', 0.08)
 
         # Fade existing trails
         self.__trail_buffer *= fade_rate
@@ -134,7 +134,7 @@ class MatrixRain(Screensaver):
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
 
-        color_mode = Config.get('matrix_rain.color_mode', 'green')
+        color_mode = Config.get('screensavers.configs.matrix_rain.color_mode', 'green')
 
         if color_mode == 'green':
             # Classic green matrix
@@ -221,7 +221,7 @@ class MatrixRain(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('matrix_rain.tick_sleep', 0.05)
+        return Config.get('screensavers.configs.matrix_rain.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

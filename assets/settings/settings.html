@@ -127,7 +127,7 @@
                     if (!data.success) return;
                     var c = data.global_settings.current;
 
-                    var timeout = c.screensavers.screensaver_timeout;
+                    var timeout = c.screensavers.timeout;
                     if (timeout !== null && timeout !== 0) {
                         $('#screensaver-timeout').val(timeout);
                     } else {
@@ -153,7 +153,7 @@
                 var payload = {
                     global_settings: {
                         screensavers: {
-                            screensaver_timeout: screensaverTimeout
+                            timeout: screensaverTimeout
                         },
                         transitions: {
                             enabled: $('#transitions-enabled').is(':checked'),

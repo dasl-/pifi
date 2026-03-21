@@ -36,7 +36,7 @@ class LavaLamp(Screensaver):
         self.__logger.info("Starting Lava Lamp screensaver")
         self.__reset()
 
-        max_ticks = Config.get('lavalamp.max_ticks', 3000)
+        max_ticks = Config.get('screensavers.configs.lavalamp.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -50,7 +50,7 @@ class LavaLamp(Screensaver):
         self.__time = 0
 
         # Create blobs - more blobs for more activity
-        num_blobs = Config.get('lavalamp.num_blobs', 10)
+        num_blobs = Config.get('screensavers.configs.lavalamp.num_blobs', 10)
         self.__blobs = []
 
         for i in range(num_blobs):
@@ -80,9 +80,9 @@ class LavaLamp(Screensaver):
         self.__time += 1
 
     def __update_blobs(self):
-        heat_rate = Config.get('lavalamp.heat_rate', 0.03)
-        cool_rate = Config.get('lavalamp.cool_rate', 0.02)
-        buoyancy = Config.get('lavalamp.buoyancy', 0.08)
+        heat_rate = Config.get('screensavers.configs.lavalamp.heat_rate', 0.03)
+        cool_rate = Config.get('screensavers.configs.lavalamp.cool_rate', 0.02)
+        buoyancy = Config.get('screensavers.configs.lavalamp.buoyancy', 0.08)
         damping = 0.96
 
         for blob in self.__blobs:
@@ -207,7 +207,7 @@ class LavaLamp(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('lavalamp.tick_sleep', 0.05)
+        return Config.get('screensavers.configs.lavalamp.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:

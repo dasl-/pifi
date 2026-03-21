@@ -40,7 +40,7 @@ class Shadebobs(Screensaver):
         self.__logger.info("Starting Shadebobs screensaver")
         self.__reset()
 
-        max_ticks = Config.get('shadebobs.max_ticks', 2000)
+        max_ticks = Config.get('screensavers.configs.shadebobs.max_ticks', 2000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -56,7 +56,7 @@ class Shadebobs(Screensaver):
         self.__time = 0
 
         # Create bobs with different Lissajous parameters
-        num_bobs = Config.get('shadebobs.num_bobs', 5)
+        num_bobs = Config.get('screensavers.configs.shadebobs.num_bobs', 5)
         self.__bobs = []
 
         for i in range(num_bobs):
@@ -82,7 +82,7 @@ class Shadebobs(Screensaver):
 
     def __tick(self):
         # Fade the buffer
-        fade = Config.get('shadebobs.fade', 0.92)
+        fade = Config.get('screensavers.configs.shadebobs.fade', 0.92)
         self.__buffer *= fade
 
         # Update and draw each bob
@@ -171,7 +171,7 @@ class Shadebobs(Screensaver):
         return [r * 255, g * 255, b * 255]
 
     def __get_tick_sleep(self):
-        return Config.get('shadebobs.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.shadebobs.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

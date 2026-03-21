@@ -117,7 +117,7 @@ class MeltingClock(Screensaver):
         self.__height = Config.get_or_throw('leds.display_height')
 
         # Get timezone configuration
-        timezone_str = Config.get('melting_clock.timezone', None)
+        timezone_str = Config.get('screensavers.configs.melting_clock.timezone', None)
         if timezone_str:
             try:
                 self.__timezone = ZoneInfo(timezone_str)
@@ -145,7 +145,7 @@ class MeltingClock(Screensaver):
         self.__logger.info("Starting Melting Clock screensaver")
         self.__reset()
 
-        max_ticks = Config.get('melting_clock.max_ticks', 5000)
+        max_ticks = Config.get('screensavers.configs.melting_clock.max_ticks', 5000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -168,7 +168,7 @@ class MeltingClock(Screensaver):
         else:
             current_datetime = datetime.now()
 
-        show_seconds = Config.get('melting_clock.show_seconds', False)
+        show_seconds = Config.get('screensavers.configs.melting_clock.show_seconds', False)
         if show_seconds:
             new_time = current_datetime.strftime("%H:%M:%S")
         else:
@@ -183,7 +183,7 @@ class MeltingClock(Screensaver):
         self.__update_animations()
 
         # Slowly cycle hue
-        hue_speed = Config.get('melting_clock.hue_speed', 0.001)
+        hue_speed = Config.get('screensavers.configs.melting_clock.hue_speed', 0.001)
         self.__hue = (self.__hue + hue_speed) % 1.0
 
         self.__render()
@@ -251,8 +251,8 @@ class MeltingClock(Screensaver):
 
     def __update_animations(self):
         """Update all melting and forming animations."""
-        melt_speed = Config.get('melting_clock.melt_speed', 0.15)
-        form_speed = Config.get('melting_clock.form_speed', 0.05)
+        melt_speed = Config.get('screensavers.configs.melting_clock.melt_speed', 0.15)
+        form_speed = Config.get('screensavers.configs.melting_clock.form_speed', 0.05)
 
         for state in self.__char_states:
             # Update drops (melting)
@@ -279,7 +279,7 @@ class MeltingClock(Screensaver):
     def __get_char_x(self, char_index):
         """Get x position for a character."""
         # Calculate total width of time string
-        show_seconds = Config.get('melting_clock.show_seconds', False)
+        show_seconds = Config.get('screensavers.configs.melting_clock.show_seconds', False)
         if show_seconds:
             # HH:MM:SS = 8 chars, but colons are narrower
             total_width = 6 * self.DIGIT_WIDTH + 2 * 3 + 7  # 6 digits + 2 colons + spacing
@@ -302,7 +302,7 @@ class MeltingClock(Screensaver):
 
     def __render(self):
         # Fade existing buffer (creates trails)
-        fade = Config.get('melting_clock.trail_fade', 0.85)
+        fade = Config.get('screensavers.configs.melting_clock.trail_fade', 0.85)
         self.__buffer *= fade
 
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
@@ -341,7 +341,7 @@ class MeltingClock(Screensaver):
                     self.__buffer[trail_y, px] = max(self.__buffer[trail_y, px], drop['brightness'] * 0.5)
 
         # Convert buffer to colored frame
-        color_mode = Config.get('melting_clock.color_mode', 'rainbow')
+        color_mode = Config.get('screensavers.configs.melting_clock.color_mode', 'rainbow')
 
         for y in range(self.__height):
             for x in range(self.__width):
@@ -390,7 +390,7 @@ class MeltingClock(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('melting_clock.tick_sleep', 0.05)
+        return Config.get('screensavers.configs.melting_clock.tick_sleep', 0.05)
 
     @classmethod
     def get_id(cls) -> str:
