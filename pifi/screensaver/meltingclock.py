@@ -148,7 +148,7 @@ class MeltingClock(Screensaver):
         max_ticks = Config.get('melting_clock.max_ticks', 5000)
         tick = 0
 
-        while tick < max_ticks and not self._is_past_dwell_time():
+        while tick < max_ticks and not self._is_past_screensaver_timeout():
             self.__tick()
             time.sleep(self.__get_tick_sleep())
             tick += 1

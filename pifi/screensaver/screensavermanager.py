@@ -140,7 +140,7 @@ class ScreensaverManager:
 
             # Reload config overrides from database before playing
             # This picks up any changes made via the settings UI
-            Config.reload_screensaver_overrides()
+            Config.reload_overrides([SettingsDb.SCREENSAVER_CONFIGS, SettingsDb.GLOBAL_SCREENSAVER_SETTINGS])
 
             # Build list of available screensaver IDs
             available_ids = []
@@ -160,7 +160,4 @@ class ScreensaverManager:
             screensaver.play()
 
             if Config.get('transitions.enabled', True):
-                try:
-                    self.__transition_player.play_transition()
-                except Exception as e:
-                    self.__logger.warning(f"Transition failed: {e}")
+                self.__transition_player.play_transition()

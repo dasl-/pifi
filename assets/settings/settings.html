@@ -25,12 +25,12 @@
         </section>
 
         <section class="settings-section">
-            <h2>Rotation Settings</h2>
+            <h2>Transition Settings</h2>
             <p class="description">Configure how screensavers rotate and transition.</p>
 
             <div class="config-field">
-                <label class="config-label" for="dwell-time">Dwell Time (seconds)</label>
-                <input type="number" class="config-input" id="dwell-time" min="0" step="1" placeholder="Per-screensaver default">
+                <label class="config-label" for="screensaver-timeout">Screensaver Timeout (seconds)</label>
+                <input type="number" class="config-input" id="screensaver-timeout" min="0" step="1" placeholder="Per-screensaver default">
                 <span class="field-hint">How long each screensaver plays. Empty or 0 uses per-screensaver defaults.</span>
             </div>
 
@@ -52,10 +52,10 @@
             </div>
 
             <div class="actions">
-                <button id="save-rotation-btn" class="save-btn">Save Rotation Settings</button>
+                <button id="save-transition-btn" class="save-btn">Save Transition Settings</button>
             </div>
 
-            <div id="rotation-status-message" class="status-message"></div>
+            <div id="transition-status-message" class="status-message"></div>
         </section>
 
         <section class="settings-section">
@@ -121,17 +121,17 @@
 
             loadBrightness();
 
-            // Rotation settings
-            function loadRotationSettings() {
-                $.get('/api/global_settings').done(function(data) {
+            // Transition settings
+            function loadTransitionSettings() {
+                $.get('/api/screensavers').done(function(data) {
                     if (!data.success) return;
-                    var c = data.current;
+                    var c = data.global_settings.current;
 
-                    var dwellTime = c.screensavers.dwell_time;
-                    if (dwellTime !== null && dwellTime !== 0) {
-                        $('#dwell-time').val(dwellTime);
+                    var timeout = c.screensavers.screensaver_timeout;
+                    if (timeout !== null && timeout !== 0) {
+                        $('#screensaver-timeout').val(timeout);
                     } else {
-                        $('#dwell-time').val('');
+                        $('#screensaver-timeout').val('');
                     }
 
                     $('#transitions-enabled').prop('checked', c.transitions.enabled);
@@ -140,9 +140,9 @@
                 });
             }
 
-            $('#save-rotation-btn').on('click', function() {
-                var dwellVal = $('#dwell-time').val();
-                var dwellTime = (dwellVal === '' || parseFloat(dwellVal) === 0) ? null : parseFloat(dwellVal);
+            $('#save-transition-btn').on('click', function() {
+                var timeoutVal = $('#screensaver-timeout').val();
+                var screensaverTimeout = (timeoutVal === '' || parseFloat(timeoutVal) === 0) ? null : parseFloat(timeoutVal);
 
                 var durationVal = $('#transition-duration').val();
                 var duration = parseFloat(durationVal);
@@ -151,32 +151,34 @@
                 var numSteps = parseInt(stepsVal, 10);
 
                 var payload = {
-                    screensavers: {
-                        dwell_time: dwellTime
-                    },
-                    transitions: {
-                        enabled: $('#transitions-enabled').is(':checked'),
-                        duration: duration,
-                        num_steps: numSteps
+                    global_settings: {
+                        screensavers: {
+                            screensaver_timeout: screensaverTimeout
+                        },
+                        transitions: {
+                            enabled: $('#transitions-enabled').is(':checked'),
+                            duration: duration,
+                            num_steps: numSteps
+                        }
                     }
                 };
 
                 $.post({
-                    url: '/api/global_settings',
+                    url: '/api/screensavers',
                     data: JSON.stringify(payload),
                     contentType: 'application/json'
                 }).done(function(data) {
                     if (data.success) {
-                        showStatus('Rotation settings saved! Screensaver restarting...', 'success', '#rotation-status-message');
+                        showStatus('Transition settings saved! Screensaver restarting...', 'success', '#transition-status-message');
                     } else {
-                        showStatus('Error saving rotation settings', 'error', '#rotation-status-message');
+                        showStatus('Error saving transition settings', 'error', '#transition-status-message');
                     }
                 }).fail(function() {
-                    showStatus('Failed to save rotation settings', 'error', '#rotation-status-message');
+                    showStatus('Failed to save transition settings', 'error', '#transition-status-message');
                 });
             });
 
-            loadRotationSettings();
+            loadTransitionSettings();
 
             function loadScreensavers() {
                 // Load both screensavers and their configs in parallel

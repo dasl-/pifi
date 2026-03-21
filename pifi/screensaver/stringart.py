@@ -168,7 +168,7 @@ class StringArt(Screensaver):
         self.__init_pattern()
 
         for tick in range(self.__max_ticks):
-            if self._is_past_dwell_time():
+            if self._is_past_screensaver_timeout():
                 break
             self.__update()
 

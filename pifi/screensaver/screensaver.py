@@ -22,17 +22,17 @@ class Screensaver(ABC):
         self._screensaver_base_init_called = True
         self._start_time = time.time()
 
-    def _is_past_dwell_time(self):
-        """Check if the central dwell time has been exceeded.
+    def _is_past_screensaver_timeout(self):
+        """Check if the screensaver timeout has been exceeded.
 
-        Returns True if screensavers.dwell_time is set (> 0) and the elapsed
-        time since play started exceeds it. Returns False if dwell_time is
+        Returns True if screensavers.screensaver_timeout is set (> 0) and the elapsed
+        time since play started exceeds it. Returns False if screensaver_timeout is
         not set (None/0), deferring to per-screensaver max_ticks.
         """
-        dwell_time = Config.get('screensavers.dwell_time', None)
-        if not dwell_time:
+        screensaver_timeout = Config.get('screensavers.screensaver_timeout', None)
+        if not screensaver_timeout:
             return False
-        return (time.time() - self._start_time) > dwell_time
+        return (time.time() - self._start_time) > screensaver_timeout
 
     @abstractmethod
     def play(self) -> None:

@@ -133,18 +133,16 @@ class Config:
                 d1[k] = d2[k]
 
     @staticmethod
-    def reload_screensaver_overrides():
+    def reload_overrides(db_keys):
         """
-        Reload screensaver config overrides from the database.
+        Reload config overrides from the database.
 
-        This should be called before playing a screensaver to pick up
-        any changes made via the settings UI.
+        Reads JSON from the given SettingsDb keys and merges them into the
+        config tree. Previously applied overrides are restored to base
+        values before new ones are applied.
 
-        The database stores overrides in the format:
-        {screensaver_id: {key: value, ...}, ...}
-
-        These are merged into the config, so boids.num_boids in the
-        database override would be applied to Config['boids']['num_boids'].
+        Args:
+            db_keys: list of SettingsDb key constants to read overrides from.
         """
         Config.load_config_if_not_loaded()
 
@@ -153,58 +151,24 @@ class Config:
 
         settings_db = SettingsDb()
 
-        # Apply per-screensaver config overrides
-        overrides_json = settings_db.get(SettingsDb.SCREENSAVER_CONFIGS)
-
-        all_overrides = {}
-        if overrides_json:
-            try:
-                all_overrides = json.loads(overrides_json)
-            except (json.JSONDecodeError, TypeError):
-                Config.__logger.warning("Failed to parse screensaver config overrides")
-
         # Restore previously overridden sections to their base values
-        for sid in Config.__previously_overridden:
-            if sid in Config.__base_config:
-                Config.__config[sid] = copy.deepcopy(Config.__base_config[sid])
-            elif sid in Config.__config:
-                del Config.__config[sid]
+        for key in Config.__previously_overridden:
+            if key in Config.__base_config:
+                Config.__config[key] = copy.deepcopy(Config.__base_config[key])
+            elif key in Config.__config:
+                del Config.__config[key]
 
-        Config.__previously_overridden = set()
+        # Collect overrides from all sources
+        all_overrides = {}
+        for db_key in db_keys:
+            raw = settings_db.get(db_key)
+            if raw:
+                try:
+                    all_overrides.update(json.loads(raw))
+                except (json.JSONDecodeError, TypeError):
+                    Config.__logger.warning(f"Failed to parse {db_key} overrides")
 
-        # Apply each screensaver's overrides to the config
-        for screensaver_id, overrides in all_overrides.items():
-            if not isinstance(overrides, dict):
-                continue
-
-            if screensaver_id not in Config.__config:
-                Config.__config[screensaver_id] = {}
-            elif not isinstance(Config.__config[screensaver_id], dict):
-                Config.__config[screensaver_id] = {}
-
-            Config.__config[screensaver_id].update(overrides)
-            Config.__previously_overridden.add(screensaver_id)
-
-        Config.__logger.debug(f"Applied screensaver config overrides: {all_overrides}")
-
-        # Apply global settings overrides (screensavers.dwell_time, transitions.*)
-        global_json = settings_db.get(SettingsDb.GLOBAL_SETTINGS)
-        if global_json:
-            try:
-                global_overrides = json.loads(global_json)
-            except (json.JSONDecodeError, TypeError):
-                Config.__logger.warning("Failed to parse global settings overrides")
-                global_overrides = {}
-
-            for key, value in global_overrides.items():
-                if not isinstance(value, dict):
-                    continue
-
-                if key not in Config.__config:
-                    Config.__config[key] = {}
-                elif not isinstance(Config.__config[key], dict):
-                    Config.__config[key] = {}
-
-                Config.__config[key].update(value)
-
-            Config.__logger.debug(f"Applied global settings overrides: {global_overrides}")
+        # Apply and track
+        Config.__merge_dicts(Config.__config, all_overrides)
+        Config.__previously_overridden = set(all_overrides.keys())
+        Config.__logger.debug(f"Applied config overrides: {all_overrides}")
