@@ -120,9 +120,9 @@ class KaraokeBase(Screensaver):
 
     def _tick(self, tick):
         if self.__connection_failed:
-            frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
-            self._render_connection_error(frame)
-            self._led_frame_player.play_frame(frame)
+            self.__frame_buffer.fill(0)
+            self._render_connection_error(self.__frame_buffer)
+            self._led_frame_player.play_frame(self.__frame_buffer)
             return
         self.__render()
         self.__tick_count += 1
