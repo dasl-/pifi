@@ -31,7 +31,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config._Config__is_loaded = True
         Config._Config__config = copy.deepcopy(self.BASE_CONFIG)
         Config._Config__base_config = copy.deepcopy(self.BASE_CONFIG)
-        Config._Config__previously_overridden = set()
+        Config._Config__applied_overrides = {}
 
     @patch('pifi.settingsdb.SettingsDb')
     def test_applies_overrides(self, MockSettingsDb):
@@ -172,6 +172,93 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config.reload_overrides(['screensaver_configs'])
 
         self.assertEqual(Config.get('boids'), 'a string')
+
+
+    @patch('pifi.settingsdb.SettingsDb')
+    def test_multiple_db_keys(self, MockSettingsDb):
+        """Overrides from multiple DB keys are all applied."""
+        mock_db = MockSettingsDb.return_value
+
+        def get_by_key(key):
+            if key == 'key1':
+                return json.dumps({'boids': {'num_boids': 50}})
+            elif key == 'key2':
+                return json.dumps({'aurora': {'tick_sleep': 0.1}})
+            return None
+
+        mock_db.get.side_effect = get_by_key
+        Config.reload_overrides(['key1', 'key2'])
+
+        self.assertEqual(Config.get('boids.num_boids'), 50)
+        self.assertEqual(Config.get('aurora.tick_sleep'), 0.1)
+
+    @patch('pifi.settingsdb.SettingsDb')
+    def test_partial_reload_preserves_other_keys(self, MockSettingsDb):
+        """Reloading one DB key doesn't clobber overrides from another."""
+        mock_db = MockSettingsDb.return_value
+
+        # Load overrides from key1
+        mock_db.get.return_value = json.dumps({'boids': {'num_boids': 50}})
+        Config.reload_overrides(['key1'])
+        self.assertEqual(Config.get('boids.num_boids'), 50)
+
+        # Load overrides from key2 — key1 overrides should persist
+        mock_db.get.return_value = json.dumps({'aurora': {'tick_sleep': 0.1}})
+        Config.reload_overrides(['key2'])
+        self.assertEqual(Config.get('boids.num_boids'), 50)
+        self.assertEqual(Config.get('aurora.tick_sleep'), 0.1)
+
+    @patch('pifi.settingsdb.SettingsDb')
+    def test_partial_reload_reset_preserves_other_keys(self, MockSettingsDb):
+        """Removing overrides from one DB key doesn't affect another's overrides."""
+        mock_db = MockSettingsDb.return_value
+
+        # Load overrides from both keys
+        mock_db.get.return_value = json.dumps({'boids': {'num_boids': 50}})
+        Config.reload_overrides(['key1'])
+        mock_db.get.return_value = json.dumps({'aurora': {'tick_sleep': 0.1}})
+        Config.reload_overrides(['key2'])
+
+        # Remove key1 overrides
+        mock_db.get.return_value = None
+        Config.reload_overrides(['key1'])
+
+        # key1 overrides gone, key2 overrides preserved
+        self.assertEqual(Config.get('boids.num_boids'), 15)
+        self.assertEqual(Config.get('aurora.tick_sleep'), 0.1)
+
+    @patch('pifi.settingsdb.SettingsDb')
+    def test_skips_rebuild_when_unchanged(self, MockSettingsDb):
+        """Config is not rebuilt when DB values haven't changed."""
+        mock_db = MockSettingsDb.return_value
+
+        mock_db.get.return_value = json.dumps({'boids': {'num_boids': 50}})
+        Config.reload_overrides(['screensaver_configs'])
+        self.assertEqual(Config.get('boids.num_boids'), 50)
+
+        # Mutate config directly to detect if rebuild happens
+        Config._Config__config['boids']['num_boids'] = 999
+
+        # Same DB value — should skip rebuild, keeping the mutation
+        Config.reload_overrides(['screensaver_configs'])
+        self.assertEqual(Config.get('boids.num_boids'), 999)
+
+    @patch('pifi.settingsdb.SettingsDb')
+    def test_rebuilds_when_changed(self, MockSettingsDb):
+        """Config is rebuilt when DB values change."""
+        mock_db = MockSettingsDb.return_value
+
+        mock_db.get.return_value = json.dumps({'boids': {'num_boids': 50}})
+        Config.reload_overrides(['screensaver_configs'])
+        self.assertEqual(Config.get('boids.num_boids'), 50)
+
+        # Mutate config directly
+        Config._Config__config['boids']['num_boids'] = 999
+
+        # Different DB value — should rebuild, overwriting the mutation
+        mock_db.get.return_value = json.dumps({'boids': {'num_boids': 75}})
+        Config.reload_overrides(['screensaver_configs'])
+        self.assertEqual(Config.get('boids.num_boids'), 75)
 
 
 if __name__ == '__main__':

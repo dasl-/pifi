@@ -13,7 +13,7 @@ class Config:
     __is_loaded = False
     __config = {}
     __base_config = {}
-    __previously_overridden = set()
+    __applied_overrides = {}  # {db_key: raw_json_string}
     __logger = Logger().set_namespace('Config')
     __PATH_SEP = '.'
 
@@ -137,9 +137,10 @@ class Config:
         """
         Reload config overrides from the database.
 
-        Reads JSON from the given SettingsDb keys and merges them into the
-        config tree. Previously applied overrides are restored to base
-        values before new ones are applied.
+        Reads JSON from the given SettingsDb keys and updates the stored
+        overrides for those keys. Then resets config to base values and
+        re-applies all known overrides. This supports partial reloads —
+        reloading one set of DB keys won't affect overrides from other keys.
 
         Args:
             db_keys: list of SettingsDb key constants to read overrides from.
@@ -151,24 +152,24 @@ class Config:
 
         settings_db = SettingsDb()
 
-        # Restore previously overridden sections to their base values
-        for key in Config.__previously_overridden:
-            if key in Config.__base_config:
-                Config.__config[key] = copy.deepcopy(Config.__base_config[key])
-            elif key in Config.__config:
-                del Config.__config[key]
-
-        # Collect overrides from all sources
-        all_overrides = {}
+        # Check if any DB values changed since last reload
+        changed = False
         for db_key in db_keys:
             raw = settings_db.get(db_key)
-            if raw:
-                try:
-                    all_overrides.update(json.loads(raw))
-                except (json.JSONDecodeError, TypeError):
-                    Config.__logger.warning(f"Failed to parse {db_key} overrides")
+            if raw != Config.__applied_overrides.get(db_key):
+                changed = True
+                if raw:
+                    Config.__applied_overrides[db_key] = raw
+                else:
+                    Config.__applied_overrides.pop(db_key, None)
 
-        # Apply and track
-        Config.__merge_dicts(Config.__config, all_overrides)
-        Config.__previously_overridden = set(all_overrides.keys())
-        Config.__logger.debug(f"Applied config overrides: {all_overrides}")
+        if not changed:
+            return
+
+        # Reset to base and re-apply all known overrides
+        Config.__config = copy.deepcopy(Config.__base_config)
+        for raw in Config.__applied_overrides.values():
+            try:
+                Config.__merge_dicts(Config.__config, json.loads(raw))
+            except (json.JSONDecodeError, TypeError):
+                Config.__logger.warning(f"Failed to parse overrides: {raw[:100]}")
