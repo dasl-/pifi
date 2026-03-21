@@ -357,13 +357,12 @@
 
             function saveScreensaverConfig(screensaverId) {
                 var config = getConfigValues(screensaverId);
+                var configs = {};
+                configs[screensaverId] = config;
 
                 $.post({
-                    url: '/api/screensaver_config',
-                    data: JSON.stringify({
-                        screensaver_id: screensaverId,
-                        config: config
-                    }),
+                    url: '/api/screensavers',
+                    data: JSON.stringify({ configs: configs }),
                     contentType: 'application/json'
                 }).done(function(data) {
                     if (data.success) {
@@ -389,11 +388,12 @@
                     return;
                 }
 
+                var configs = {};
+                configs[screensaverId] = null;
+
                 $.post({
-                    url: '/api/screensaver_config_reset',
-                    data: JSON.stringify({
-                        screensaver_id: screensaverId
-                    }),
+                    url: '/api/screensavers',
+                    data: JSON.stringify({ configs: configs }),
                     contentType: 'application/json'
                 }).done(function(data) {
                     if (data.success) {
