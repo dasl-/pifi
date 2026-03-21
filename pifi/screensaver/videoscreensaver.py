@@ -23,6 +23,9 @@ class VideoScreensaver(Screensaver):
         if not self.video_list:
             return False
 
+        # Note: process_and_play() is a blocking call that plays the entire video.
+        # The base class timeout check only runs between ticks, so timeout is
+        # effectively governed by video length, not the configured timeout.
         url = self.__getScreensaverPath() + '/' + random.choice(self.video_list)
         VideoProcessor(
             url = url,

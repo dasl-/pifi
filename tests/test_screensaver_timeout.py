@@ -11,6 +11,7 @@ And the timeout semantics:
 """
 
 import copy
+import time
 import unittest
 import sys
 import os
@@ -91,24 +92,26 @@ class TestTimeoutResolution(unittest.TestCase):
         """Timeout of 0 means unlimited — _is_past_timeout always returns False."""
         ss = self._make({'screensavers': {'timeout': 0}})
         self.assertEqual(ss._timeout, 0)
+        ss._start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
     def test_timeout_none_means_unlimited(self):
         """Timeout of None means unlimited — _is_past_timeout always returns False."""
         ss = self._make({'screensavers': {'timeout': None}})
         self.assertIsNone(ss._timeout)
+        ss._start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
     def test_positive_timeout_expires(self):
         """A positive timeout causes _is_past_timeout to return True after elapsed time."""
         ss = self._make({'screensavers': {'timeout': 10}})
-        # Simulate time passing
-        ss._start_time -= 11
+        ss._start_time = time.time() - 11
         self.assertTrue(ss._is_past_timeout())
 
     def test_positive_timeout_not_expired(self):
         """A positive timeout returns False before the time elapses."""
         ss = self._make({'screensavers': {'timeout': 10}})
+        ss._start_time = time.time()
         self.assertFalse(ss._is_past_timeout())
 
 
