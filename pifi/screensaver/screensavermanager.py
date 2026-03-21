@@ -123,7 +123,7 @@ class ScreensaverManager:
     def get_enabled_screensavers():
         """Get list of enabled screensaver IDs."""
         Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
-        return Config.get('screensavers.enabled', ['game_of_life', 'cyclic_automaton'])
+        return Config.get('screensavers.enabled')
 
     def run(self):
         while True:
@@ -131,7 +131,7 @@ class ScreensaverManager:
             # This picks up any changes made via the settings UI
             Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
-            enabled = Config.get('screensavers.enabled', ['game_of_life', 'cyclic_automaton'])
+            enabled = Config.get('screensavers.enabled')
 
             # Build list of available screensaver IDs
             available_ids = []
