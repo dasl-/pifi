@@ -266,46 +266,33 @@ class PifiAPI():
         return {'success': True}
 
     def get_screensaver_config(self, screensaver_id):
-        """Get config for a specific screensaver, merging defaults with overrides."""
-        from pifi.config import Config
+        """Get config for a specific screensaver."""
+        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
-        # Get default config from Config (reads from default_config.json)
-        default_config = Config.get(f'screensavers.configs.{screensaver_id}', {})
-        if not isinstance(default_config, dict):
-            default_config = {}
-
-        # Get user overrides from SettingsDb
-        overrides = self.__get_screensaver_overrides().get('configs', {}).get(screensaver_id, {})
-
-        # Merge defaults with overrides
-        config = {**default_config, **overrides}
+        config = Config.get(f'screensavers.configs.{screensaver_id}', {})
+        defaults = Config.get_default(f'screensavers.configs.{screensaver_id}', {})
 
         return {
             'success': True,
             'screensaver_id': screensaver_id,
-            'config': config,
-            'defaults': default_config,
+            'config': config if isinstance(config, dict) else {},
+            'defaults': defaults if isinstance(defaults, dict) else {},
         }
 
     def get_all_screensaver_configs(self):
         """Get configs for all screensavers."""
-        from pifi.config import Config
+        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
         all_screensavers = ScreensaverManager.get_all_screensavers()
-
-        # Get all user overrides
-        all_config_overrides = self.__get_screensaver_overrides().get('configs', {})
 
         configs = {}
         for s in all_screensavers:
             sid = s['id']
-            default_config = Config.get(f'screensavers.configs.{sid}', {})
-            if not isinstance(default_config, dict):
-                default_config = {}
-            overrides = all_config_overrides.get(sid, {})
+            config = Config.get(f'screensavers.configs.{sid}', {})
+            defaults = Config.get_default(f'screensavers.configs.{sid}', {})
             configs[sid] = {
-                'config': {**default_config, **overrides},
-                'defaults': default_config,
+                'config': config if isinstance(config, dict) else {},
+                'defaults': defaults if isinstance(defaults, dict) else {},
             }
 
         return {
@@ -335,8 +322,6 @@ class PifiAPI():
 
     def __get_global_screensaver_settings(self):
         """Get global screensaver transition and timeout settings."""
-        from pifi.config import Config
-
         def get_values(getter):
             return {
                 'screensavers': {
