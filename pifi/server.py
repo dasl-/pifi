@@ -276,7 +276,10 @@ class PifiAPI():
                 return {'success': False, 'error': 'timeout must be a non-negative number or null'}
             overrides['timeout'] = timeout
 
-        if 'transitions' in post_data and isinstance(post_data['transitions'], dict):
+        if 'transitions' in post_data:
+            if not isinstance(post_data['transitions'], dict):
+                return {'success': False, 'error': 'transitions must be an object'}
+
             t = post_data['transitions']
             if 'enabled' in t and not isinstance(t['enabled'], bool):
                 return {'success': False, 'error': 'transitions.enabled must be a boolean'}
@@ -289,7 +292,10 @@ class PifiAPI():
                 if key in t:
                     transitions[key] = t[key]
 
-        if 'configs' in post_data and isinstance(post_data['configs'], dict):
+        if 'configs' in post_data:
+            if not isinstance(post_data['configs'], dict):
+                return {'success': False, 'error': 'configs must be an object'}
+
             existing_configs = overrides.setdefault('configs', {})
             for screensaver_id, config in post_data['configs'].items():
                 if config is None:
