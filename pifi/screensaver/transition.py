@@ -158,9 +158,15 @@ class TransitionPlayer:
             from_frame = self.__led_frame_player.get_current_frame()
         if from_frame is None:
             from_frame = np.zeros([height, width, 3], np.uint8)
+        # Monochrome video modes produce (H, W) frames. Expand to (H, W, 3)
+        # so blending math works with consistent shapes.
+        if from_frame.ndim == 2:
+            from_frame = np.stack([from_frame] * 3, axis=-1)
 
         if to_frame is None:
             to_frame = np.zeros([height, width, 3], np.uint8)
+        if to_frame.ndim == 2:
+            to_frame = np.stack([to_frame] * 3, axis=-1)
 
         # Convert to float32 for blending math
         from_float = from_frame.astype(np.float32)
