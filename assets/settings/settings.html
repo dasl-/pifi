@@ -125,18 +125,18 @@
             function loadTransitionSettings() {
                 $.get('/api/screensavers').done(function(data) {
                     if (!data.success) return;
-                    var c = data.global_settings.current;
 
-                    var timeout = c.screensavers.timeout;
+                    var timeout = data.timeout.current;
                     if (timeout !== null && timeout !== 0) {
                         $('#screensaver-timeout').val(timeout);
                     } else {
                         $('#screensaver-timeout').val('');
                     }
 
-                    $('#transitions-enabled').prop('checked', c.transitions.enabled);
-                    $('#transition-duration').val(c.transitions.duration);
-                    $('#transition-steps').val(c.transitions.num_steps);
+                    var transitions = data.transitions.current;
+                    $('#transitions-enabled').prop('checked', transitions.enabled);
+                    $('#transition-duration').val(transitions.duration);
+                    $('#transition-steps').val(transitions.num_steps);
                 });
             }
 
@@ -151,15 +151,11 @@
                 var numSteps = parseInt(stepsVal, 10);
 
                 var payload = {
-                    global_settings: {
-                        screensavers: {
-                            timeout: screensaverTimeout
-                        },
-                        transitions: {
-                            enabled: $('#transitions-enabled').is(':checked'),
-                            duration: duration,
-                            num_steps: numSteps
-                        }
+                    timeout: screensaverTimeout,
+                    transitions: {
+                        enabled: $('#transitions-enabled').is(':checked'),
+                        duration: duration,
+                        num_steps: numSteps
                     }
                 };
 
@@ -181,22 +177,15 @@
             loadTransitionSettings();
 
             function loadScreensavers() {
-                // Load both screensavers and their configs in parallel
-                $.when(
-                    $.get('/api/screensavers'),
-                    $.get('/api/screensaver_configs')
-                ).done(function(screensaversResp, configsResp) {
-                    var screensaversData = screensaversResp[0];
-                    var configsData = configsResp[0];
-
-                    if (!screensaversData.success) {
+                $.get('/api/screensavers').done(function(data) {
+                    if (!data.success) {
                         showStatus('Error loading screensavers', 'error');
                         return;
                     }
 
-                    screensaverConfigs = configsData.configs || {};
-                    originalEnabled = screensaversData.enabled.slice();
-                    renderScreensavers(screensaversData.screensavers, screensaversData.enabled);
+                    screensaverConfigs = data.configs || {};
+                    originalEnabled = data.enabled.slice();
+                    renderScreensavers(data.screensavers, data.enabled);
                     $('#save-btn').prop('disabled', true);
                 }).fail(function() {
                     showStatus('Failed to load screensavers', 'error');
