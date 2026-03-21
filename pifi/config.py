@@ -149,10 +149,22 @@ class Config:
         """
         Reload config overrides from the database.
 
-        Reads JSON from the given SettingsDb keys and updates the stored
-        overrides for those keys. Then resets config to base values and
-        re-applies all known overrides. This supports partial reloads —
-        reloading one set of DB keys won't affect overrides from other keys.
+        Reads JSON from the given SettingsDb keys and deep-merges them into
+        the base config. Supports partial reloads — reloading one set of DB
+        keys won't affect overrides from other keys. Skips the rebuild if the
+        raw DB values haven't changed since the last call (string comparison).
+
+        Multi-process architecture:
+            The Server, Queue, and WebSocket Server run as separate processes
+            sharing a SQLite database as the source of truth for config overrides.
+
+            - Server process: Only the Server writes config overrides to the DB.
+              It calls reload_overrides() once at startup (to load overrides from
+              a previous session) and after each write, so reads always use a
+              fresh cache without needing reload_overrides() before every read.
+
+            - Queue process: Reads config that the Server may have changed. Must
+              call reload_overrides() before reads to pick up changes from the DB.
 
         Args:
             db_keys: list of SettingsDb key constants to read overrides from.

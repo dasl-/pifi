@@ -271,8 +271,8 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 75)
 
     @patch('pifi.settingsdb.SettingsDb')
-    def test_global_settings_override_transitions(self, MockSettingsDb):
-        """Global settings DB key can override transition settings."""
+    def test_override_timeout_and_transitions(self, MockSettingsDb):
+        """DB overrides can set timeout and transition settings."""
         mock_db = MockSettingsDb.return_value
 
         mock_db.get.return_value = json.dumps({
