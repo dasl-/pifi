@@ -79,7 +79,6 @@ class KaraokeBase(Screensaver):
         # Private state - lyrics
         self.__lyrics = []  # List of (timestamp_seconds, line_text, word_timings)
         self.__lyrics_available = False
-        self.__lyrics_quality = None  # 'synced', 'enhanced', or None
         self.__lyrics_track = None   # Track name lyrics were fetched for
         self.__lyrics_artist = None  # Artist name lyrics were fetched for
         self.__fetch_in_progress = False
@@ -89,7 +88,6 @@ class KaraokeBase(Screensaver):
         self.__tick_count = 0
         self.__scroll_offset = 0
         self.__current_line_index = -1
-        self.__line_scroll_offset = 0
         self.__line_start_time = 0
         self.__line_duration = 5.0
         self.__line_transition_progress = 1.0
@@ -110,12 +108,6 @@ class KaraokeBase(Screensaver):
     def _setup(self):
         if not self._connect():
             self._logger.error(f"Could not connect to {self._get_source_display_name()}")
-            frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
-            for _ in range(100):
-                frame.fill(0)
-                self._render_connection_error(frame)
-                self._led_frame_player.play_frame(frame)
-                time.sleep(0.1)
             self.__connection_failed = True
             return
 
@@ -128,7 +120,10 @@ class KaraokeBase(Screensaver):
 
     def _tick(self, tick):
         if self.__connection_failed:
-            return False
+            frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
+            self._render_connection_error(frame)
+            self._led_frame_player.play_frame(frame)
+            return
         self.__render()
         self.__tick_count += 1
 
@@ -195,7 +190,6 @@ class KaraokeBase(Screensaver):
 
             self.__lyrics = []
             self.__lyrics_available = False
-            self.__lyrics_quality = None
             self.__current_line_index = -1
             self.__max_position = 0
             self.__max_intro_progress = 0
@@ -295,7 +289,6 @@ class KaraokeBase(Screensaver):
                     if self._current_track == title and self._current_artist == artist:
                         self.__lyrics = lyrics
                         self.__lyrics_available = len(lyrics) > 0
-                        self.__lyrics_quality = quality if lyrics else None
                         self.__lyrics_track = title
                         self.__lyrics_artist = artist
                         if lyrics:
@@ -308,7 +301,6 @@ class KaraokeBase(Screensaver):
                 with self.__fetch_lock:
                     self.__lyrics = []
                     self.__lyrics_available = False
-                    self.__lyrics_quality = None
         except Exception as e:
             self._logger.error(f"Error fetching lyrics: {e}")
             import traceback
@@ -743,7 +735,6 @@ class KaraokeBase(Screensaver):
         if current_idx != self.__current_line_index:
             self.__current_line_index = current_idx
             self.__line_transition_progress = 0.0
-            self.__line_scroll_offset = 0
             self.__line_start_time = time.time()
             self.__word_start_times = {}
 

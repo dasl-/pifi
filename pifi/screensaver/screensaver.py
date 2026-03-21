@@ -32,7 +32,6 @@ class Screensaver(ABC):
         """
         # Flag to verify subclasses call super().__init__()
         self._screensaver_base_init_called = True
-        self._start_time = time.time()
 
         # Per-screensaver config overrides global defaults. To revert a
         # per-screensaver override, remove the key (set to null via the API)
@@ -65,6 +64,7 @@ class Screensaver(ABC):
         to ensure cleanup.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
+        self._start_time = time.time()
         self._setup()
         try:
             tick = 0
