@@ -119,12 +119,6 @@ class ScreensaverManager:
 
         return ScreensaverManager._all_screensavers_cache
 
-    @staticmethod
-    def get_enabled_screensavers():
-        """Get list of enabled screensaver IDs."""
-        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
-        return Config.get('screensavers.enabled')
-
     def run(self):
         while True:
             # Reload config overrides from database before playing
