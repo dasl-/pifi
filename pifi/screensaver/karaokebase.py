@@ -69,7 +69,7 @@ class KaraokeBase(Screensaver):
         self._poll_lock = threading.Lock()
         self._polling_active = False
         self.__poll_thread = None
-        self.__connection_failed = False
+        self.__connection_failed_time = None
 
         # Private state - lyrics
         self.__lyrics = []  # List of (timestamp_seconds, line_text, word_timings)
@@ -103,7 +103,7 @@ class KaraokeBase(Screensaver):
     def _setup(self):
         if not self._connect():
             self._logger.error(f"Could not connect to {self._get_source_display_name()}")
-            self.__connection_failed = True
+            self.__connection_failed_time = time.time()
             return
 
         self._logger.info(f"Connected to {self._get_source_display_name()}")
@@ -114,7 +114,9 @@ class KaraokeBase(Screensaver):
         self.__poll_thread.start()
 
     def _tick(self, tick):
-        if self.__connection_failed:
+        if self.__connection_failed_time is not None:
+            if (time.time() - self.__connection_failed_time) > 10:
+                return False
             self.__frame_buffer.fill(0)
             self._render_connection_error(self.__frame_buffer)
             self._led_frame_player.play_frame(self.__frame_buffer)
