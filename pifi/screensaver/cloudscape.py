@@ -10,7 +10,6 @@ Optimized for low-power devices with buffer reuse and caching.
 import numpy as np
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -19,10 +18,6 @@ class Cloudscape(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-
-        if led_frame_player is None:
-            led_frame_player = LedFramePlayer()
-        self.__led_frame_player = led_frame_player
 
         self.__width = Config.get('leds.display_width')
         self.__height = Config.get('leds.display_height')
@@ -239,7 +234,7 @@ class Cloudscape(Screensaver):
         # Convert to uint8 output
         np.clip(self.__frame, 0, 255, out=self.__frame)
         np.copyto(self.__output_frame, self.__frame.astype(np.uint8))
-        self.__led_frame_player.play_frame(self.__output_frame)
+        self._led_frame_player.play_frame(self.__output_frame)
 
     def _setup(self):
         """Initialize noise and reset state."""

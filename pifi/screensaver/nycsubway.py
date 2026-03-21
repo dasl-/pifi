@@ -17,7 +17,6 @@ import threading
 from datetime import datetime, timezone
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver import textutils
@@ -71,10 +70,6 @@ class NycSubway(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
         self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        if led_frame_player is None:
-            led_frame_player = LedFramePlayer()
-        self.__led_frame_player = led_frame_player
 
         self.__width = Config.get('leds.display_width')
         self.__height = Config.get('leds.display_height')
@@ -364,7 +359,7 @@ class NycSubway(Screensaver):
         # Advance animation tick
         self.__tick_count += 1
 
-        self.__led_frame_player.play_frame(frame)
+        self._led_frame_player.play_frame(frame)
 
     def __update_display_rows(self, new_arrivals):
         """Update display rows, triggering animations for changes."""

@@ -3,7 +3,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -18,11 +17,6 @@ class Lorenz(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-
-        if led_frame_player is None:
-            self.__led_frame_player = LedFramePlayer()
-        else:
-            self.__led_frame_player = led_frame_player
 
         self.__width = Config.get_or_throw('leds.display_width')
         self.__height = Config.get_or_throw('leds.display_height')
@@ -90,7 +84,7 @@ class Lorenz(Screensaver):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
 
         if not self.__trail:
-            self.__led_frame_player.play_frame(frame)
+            self._led_frame_player.play_frame(frame)
             return
 
         # Find bounds for scaling
@@ -140,7 +134,7 @@ class Lorenz(Screensaver):
                 new_color = np.minimum(255, current + np.array(rgb, dtype=np.int16))
                 frame[screen_y, screen_x] = new_color.astype(np.uint8)
 
-        self.__led_frame_player.play_frame(frame)
+        self._led_frame_player.play_frame(frame)
 
     def __hsv_to_rgb(self, h, s, v):
         """Convert HSV color to RGB."""

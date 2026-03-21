@@ -3,7 +3,6 @@ import hashlib
 import time
 
 from pifi.logger import Logger
-from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.screensaver.screensaver import Screensaver
 
@@ -17,10 +16,6 @@ class CellularAutomaton(Screensaver, ABC):
         super().__init__(led_frame_player)
         self._logger = Logger().set_namespace(self.__class__.__name__)
         self._board = None
-        if led_frame_player is None:
-            self.__led_frame_player = LedFramePlayer()
-        else:
-            self.__led_frame_player = led_frame_player
 
     def _setup(self):
         self.__reset()
@@ -44,9 +39,9 @@ class CellularAutomaton(Screensaver, ABC):
         frame = self._board_to_frame()
 
         if self._should_fade_to_frame():
-            self.__led_frame_player.fade_to_frame(frame)
+            self._led_frame_player.fade_to_frame(frame)
         else:
-            self.__led_frame_player.play_frame(frame)
+            self._led_frame_player.play_frame(frame)
 
     def __get_board_hash(self):
         return hashlib.md5(self._board).hexdigest()
