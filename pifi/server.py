@@ -270,33 +270,20 @@ class PifiAPI():
                 if key in post_data['transitions']:
                     transitions[key] = post_data['transitions'][key]
 
+        if 'configs' in post_data and isinstance(post_data['configs'], dict):
+            existing_configs = overrides.setdefault('configs', {})
+            for screensaver_id, config in post_data['configs'].items():
+                if config is None:
+                    existing_configs.pop(screensaver_id, None)
+                elif isinstance(config, dict):
+                    existing_configs[screensaver_id] = config
+
         self.__save_screensaver_overrides(overrides)
         Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
 
         # Signal queue to restart screensaver so changes take effect immediately
         self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
         return {'success': True}
-
-    def set_screensaver_config(self, post_data):
-        """Set config overrides for a screensaver."""
-        screensaver_id = post_data.get('screensaver_id')
-        config = post_data.get('config', {})
-
-        if not screensaver_id:
-            return {'success': False, 'error': 'screensaver_id required'}
-
-        if not isinstance(config, dict):
-            return {'success': False, 'error': 'config must be an object'}
-
-        overrides = self.__get_screensaver_overrides()
-        overrides.setdefault('configs', {})[screensaver_id] = config
-        self.__save_screensaver_overrides(overrides)
-        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
-
-        # Signal restart
-        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
-
-        return {'success': True, 'screensaver_id': screensaver_id, 'config': config}
 
     def __get_screensaver_overrides(self):
         """Read screensaver overrides from DB.
@@ -316,24 +303,6 @@ class PifiAPI():
         """
         self.__settings_db.set(SettingsDb.SCREENSAVER_SETTINGS, json.dumps({'screensavers': overrides}))
 
-    def reset_screensaver_config(self, post_data):
-        """Reset a screensaver's config to defaults."""
-        screensaver_id = post_data.get('screensaver_id')
-
-        if not screensaver_id:
-            return {'success': False, 'error': 'screensaver_id required'}
-
-        overrides = self.__get_screensaver_overrides()
-        configs = overrides.get('configs', {})
-        if screensaver_id in configs:
-            del configs[screensaver_id]
-        self.__save_screensaver_overrides(overrides)
-        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
-
-        # Signal restart
-        self.__settings_db.set(SettingsDb.RESTART_SCREENSAVER, '1')
-
-        return {'success': True, 'screensaver_id': screensaver_id}
 
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
@@ -434,10 +403,6 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             response = self.__api.submit_game_score_initials(post_data)
         elif path == 'screensavers':
             response = self.__api.set_screensavers(post_data)
-        elif path == 'screensaver_config':
-            response = self.__api.set_screensaver_config(post_data)
-        elif path == 'screensaver_config_reset':
-            response = self.__api.reset_screensaver_config(post_data)
         else:
             self.__do_404()
             return
