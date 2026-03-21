@@ -30,14 +30,14 @@ class StringArt(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__num_points = Config.get('stringart.num_points', 64)
-        self.__num_strings = Config.get('stringart.num_strings', 32)
-        self.__multiplier_speed = Config.get('stringart.multiplier_speed', 0.02)
-        self.__rotation_speed = Config.get('stringart.rotation_speed', 0.01)
-        self.__fade = Config.get('stringart.fade', 0.15)
-        self.__line_brightness = Config.get('stringart.line_brightness', 0.4)
-        self.__tick_sleep = Config.get('stringart.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('stringart.max_ticks', 10000)
+        self.__num_points = Config.get('screensavers.configs.stringart.num_points', 64)
+        self.__num_strings = Config.get('screensavers.configs.stringart.num_strings', 32)
+        self.__multiplier_speed = Config.get('screensavers.configs.stringart.multiplier_speed', 0.02)
+        self.__rotation_speed = Config.get('screensavers.configs.stringart.rotation_speed', 0.01)
+        self.__fade = Config.get('screensavers.configs.stringart.fade', 0.15)
+        self.__line_brightness = Config.get('screensavers.configs.stringart.line_brightness', 0.4)
+        self.__tick_sleep = Config.get('screensavers.configs.stringart.tick_sleep', 0.03)
+        self.__max_ticks = Config.get('screensavers.configs.stringart.max_ticks', 10000)
 
         # Canvas buffer
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)

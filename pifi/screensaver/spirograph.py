@@ -39,7 +39,7 @@ class Spirograph(Screensaver):
         self.__logger.info("Starting Spirograph screensaver")
         self.__reset()
 
-        max_ticks = Config.get('spirograph.max_ticks', 2000)
+        max_ticks = Config.get('screensavers.configs.spirograph.max_ticks', 2000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -72,7 +72,7 @@ class Spirograph(Screensaver):
         self.__logger.info(f"Spirograph params: R={self.__params['R']:.3f}, r={self.__params['r']:.3f}")
 
     def __tick(self):
-        time_speed = Config.get('spirograph.time_speed', 1.0)
+        time_speed = Config.get('screensavers.configs.spirograph.time_speed', 1.0)
         self.__time += time_speed
 
         # Calculate current point using epitrochoid formula
@@ -106,7 +106,7 @@ class Spirograph(Screensaver):
         hue = (self.__time * self.__params['hue_speed']) % 1.0
 
         # Add to trail
-        max_trail = Config.get('spirograph.trail_length', 500)
+        max_trail = Config.get('screensavers.configs.spirograph.trail_length', 500)
         self.__trail.append((screen_x, screen_y, hue))
         if len(self.__trail) > max_trail:
             self.__trail.pop(0)
@@ -115,7 +115,7 @@ class Spirograph(Screensaver):
 
     def __render(self):
         frame = np.zeros([self.__height, self.__width, 3], np.uint8)
-        fade_trail = Config.get('spirograph.fade_trail', True)
+        fade_trail = Config.get('screensavers.configs.spirograph.fade_trail', True)
 
         for i, (x, y, hue) in enumerate(self.__trail):
             ix = int(x) % self.__width
@@ -163,7 +163,7 @@ class Spirograph(Screensaver):
         return [int(r * 255), int(g * 255), int(b * 255)]
 
     def __get_tick_sleep(self):
-        return Config.get('spirograph.tick_sleep', 0.02)
+        return Config.get('screensavers.configs.spirograph.tick_sleep', 0.02)
 
     @classmethod
     def get_id(cls) -> str:

@@ -37,7 +37,7 @@ class Starfield(Screensaver):
         self.__logger.info("Starting Starfield screensaver")
         self.__reset()
 
-        max_ticks = Config.get('starfield.max_ticks', 3000)
+        max_ticks = Config.get('screensavers.configs.starfield.max_ticks', 3000)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -48,7 +48,7 @@ class Starfield(Screensaver):
         self.__logger.info("Starfield screensaver ended")
 
     def __reset(self):
-        num_stars = Config.get('starfield.num_stars', 80)
+        num_stars = Config.get('screensavers.configs.starfield.num_stars', 80)
         self.__stars = []
 
         for _ in range(num_stars):
@@ -73,7 +73,7 @@ class Starfield(Screensaver):
         self.__stars.append([x, y, z])
 
     def __tick(self):
-        speed = Config.get('starfield.speed', 0.02)
+        speed = Config.get('screensavers.configs.starfield.speed', 0.02)
 
         # Move stars toward viewer (decrease z)
         new_stars = []
@@ -89,7 +89,7 @@ class Starfield(Screensaver):
         self.__stars = new_stars
 
         # Maintain star count
-        num_stars = Config.get('starfield.num_stars', 80)
+        num_stars = Config.get('screensavers.configs.starfield.num_stars', 80)
         while len(self.__stars) < num_stars:
             self.__add_star(random_z=False)
 
@@ -101,8 +101,8 @@ class Starfield(Screensaver):
         cx = self.__width / 2
         cy = self.__height / 2
 
-        show_trails = Config.get('starfield.show_trails', True)
-        trail_length = Config.get('starfield.trail_length', 3)
+        show_trails = Config.get('screensavers.configs.starfield.show_trails', True)
+        trail_length = Config.get('screensavers.configs.starfield.trail_length', 3)
 
         for star in self.__stars:
             x, y, z = star
@@ -159,7 +159,7 @@ class Starfield(Screensaver):
         self.__led_frame_player.play_frame(frame)
 
     def __get_tick_sleep(self):
-        return Config.get('starfield.tick_sleep', 0.03)
+        return Config.get('screensavers.configs.starfield.tick_sleep', 0.03)
 
     @classmethod
     def get_id(cls) -> str:

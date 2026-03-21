@@ -37,7 +37,7 @@ class InkInWater(Screensaver):
         self.__logger.info("Starting Ink in Water screensaver")
         self.__reset()
 
-        max_ticks = Config.get('inkinwater.max_ticks', 2500)
+        max_ticks = Config.get('screensavers.configs.inkinwater.max_ticks', 2500)
         tick = 0
 
         while tick < max_ticks and not self._is_past_screensaver_timeout():
@@ -82,7 +82,7 @@ class InkInWater(Screensaver):
 
     def __tick(self):
         # Add new drops more frequently for more activity
-        drop_chance = Config.get('inkinwater.drop_chance', 0.06)
+        drop_chance = Config.get('screensavers.configs.inkinwater.drop_chance', 0.06)
         if random.random() < drop_chance:
             self.__add_drop()
 
@@ -93,7 +93,7 @@ class InkInWater(Screensaver):
         self.__diffuse()
 
         # Very slow fade to prevent eternal buildup
-        fade = Config.get('inkinwater.fade', 0.997)
+        fade = Config.get('screensavers.configs.inkinwater.fade', 0.997)
         self.__buffer *= fade
 
         self.__render()
@@ -101,7 +101,7 @@ class InkInWater(Screensaver):
 
     def __apply_flow(self):
         """Apply subtle upward flow like ink rising in water."""
-        flow_strength = Config.get('inkinwater.flow_strength', 0.03)
+        flow_strength = Config.get('screensavers.configs.inkinwater.flow_strength', 0.03)
         if flow_strength <= 0:
             return
 
@@ -112,7 +112,7 @@ class InkInWater(Screensaver):
 
     def __diffuse(self):
         """Simple diffusion - each pixel shares with neighbors."""
-        diffusion_rate = Config.get('inkinwater.diffusion_rate', 0.15)
+        diffusion_rate = Config.get('screensavers.configs.inkinwater.diffusion_rate', 0.15)
 
         # Pad for edge handling
         padded = np.pad(self.__buffer, ((1, 1), (1, 1), (0, 0)), mode='edge')
@@ -160,7 +160,7 @@ class InkInWater(Screensaver):
         return [r, g, b]
 
     def __get_tick_sleep(self):
-        return Config.get('inkinwater.tick_sleep', 0.04)
+        return Config.get('screensavers.configs.inkinwater.tick_sleep', 0.04)
 
     @classmethod
     def get_id(cls) -> str:

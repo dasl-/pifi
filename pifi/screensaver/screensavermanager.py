@@ -159,5 +159,5 @@ class ScreensaverManager:
             screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
             screensaver.play()
 
-            if Config.get('transitions.enabled', True):
+            if Config.get('screensavers.transitions.enabled', True):
                 self.__transition_player.play_transition()

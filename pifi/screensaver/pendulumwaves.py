@@ -30,14 +30,14 @@ class PendulumWaves(Screensaver):
         self.__height = Config.get('leds.display_height')
 
         # Config
-        self.__num_pendulums = Config.get('pendulumwaves.num_pendulums', 0)  # 0 = auto
-        self.__base_period = Config.get('pendulumwaves.base_period', 60.0)  # frames for longest pendulum
-        self.__cycle_time = Config.get('pendulumwaves.cycle_time', 600)  # frames for full pattern cycle
-        self.__bob_size = Config.get('pendulumwaves.bob_size', 1.5)
-        self.__trail_fade = Config.get('pendulumwaves.trail_fade', 0.85)
-        self.__color_mode = Config.get('pendulumwaves.color_mode', 'rainbow')  # rainbow, gradient, white
-        self.__tick_sleep = Config.get('pendulumwaves.tick_sleep', 0.03)
-        self.__max_ticks = Config.get('pendulumwaves.max_ticks', 10000)
+        self.__num_pendulums = Config.get('screensavers.configs.pendulumwaves.num_pendulums', 0)  # 0 = auto
+        self.__base_period = Config.get('screensavers.configs.pendulumwaves.base_period', 60.0)  # frames for longest pendulum
+        self.__cycle_time = Config.get('screensavers.configs.pendulumwaves.cycle_time', 600)  # frames for full pattern cycle
+        self.__bob_size = Config.get('screensavers.configs.pendulumwaves.bob_size', 1.5)
+        self.__trail_fade = Config.get('screensavers.configs.pendulumwaves.trail_fade', 0.85)
+        self.__color_mode = Config.get('screensavers.configs.pendulumwaves.color_mode', 'rainbow')  # rainbow, gradient, white
+        self.__tick_sleep = Config.get('screensavers.configs.pendulumwaves.tick_sleep', 0.03)
+        self.__max_ticks = Config.get('screensavers.configs.pendulumwaves.max_ticks', 10000)
 
         # Auto-calculate pendulum count if not specified
         if self.__num_pendulums <= 0:

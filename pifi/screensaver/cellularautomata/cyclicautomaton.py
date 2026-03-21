@@ -9,13 +9,13 @@ from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomato
 class CyclicAutomaton(CellularAutomaton):
 
     def _get_tick_sleep_seconds(self):
-        return Config.get('cyclic_automaton.tick_sleep')
+        return Config.get('screensavers.configs.cyclic_automaton.tick_sleep')
 
     def _get_game_over_detection_lookback_amount(self):
-        return Config.get('cyclic_automaton.game_over_detection_lookback')
+        return Config.get('screensavers.configs.cyclic_automaton.game_over_detection_lookback')
 
     def _should_fade_to_frame(self):
-        return Config.get('cyclic_automaton.fade')
+        return Config.get('screensavers.configs.cyclic_automaton.fade')
 
     def _get_max_game_length_seconds(self):
         return 60
