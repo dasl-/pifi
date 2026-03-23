@@ -120,8 +120,8 @@
             // Optional, float, default: 1.0. Duration of the transition in seconds.
             "duration": 1.0,
 
-            // Optional, integer, default: 30. Number of interpolation steps (~frames) per transition.
-            "num_steps": 30,
+            // Optional, float, default: 0.03. Seconds to sleep between transition frames.
+            "tick_sleep": 0.03,
         },
 
         // Optional, float, default: 0.05. Seconds to sleep between ticks (frame rate).
@@ -788,6 +788,27 @@
         // Optional, string, default: "random". The color mode for the game.
         // Valid values: "random", "red", "green", "blue", "bw", "rainbow".
         "game_color_mode": "random",
+    },
+
+    // Configuration specific to the RGB Matrix driver (HUB75 panels).
+    // Optional. This whole stanza is optional because none of the keys within it are required.
+    "rgbmatrix": {
+
+        // Optional, integer, default: 4. GPIO slowdown for Pi 3/4. Try 2-5 if you see issues.
+        "gpio_slowdown": 4,
+
+        // Optional, integer, default: 11. PWM bits for color depth (1-11). Lower = faster refresh.
+        "pwm_bits": 11,
+
+        // Optional, integer, default: 130. PWM timing in nanoseconds. Try 100-300.
+        "pwm_lsb_nanoseconds": 130,
+
+        // Optional, integer, default: 0. Limit refresh rate in Hz (0 = unlimited).
+        "limit_refresh_rate_hz": 0,
+
+        // Optional, boolean, default: false. Use software PWM instead of hardware.
+        // Enable if you have audio conflicts.
+        "disable_hardware_pulsing": false,
     },
 
     // Configuration specific to playing pong.
