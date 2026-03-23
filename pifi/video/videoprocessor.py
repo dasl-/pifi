@@ -55,7 +55,6 @@ class VideoProcessor:
             self.__led_frame_player = led_frame_player
         else:
             self.__led_frame_player = LedFramePlayer(clear_screen = clear_screen)
-        self.__led_frame_player.set_video_color_mode(Config.get('video.color_mode'))
         self.__process_and_play_vid_proc_pgid = None
         self.__init_time = time.time()
 
@@ -68,6 +67,7 @@ class VideoProcessor:
         self.__register_signal_handlers()
 
     def process_and_play(self):
+        self.__led_frame_player.set_video_color_mode(Config.get('video.color_mode'))
         self.__logger.info(f"Starting process_and_play for url: {self.__url}")
         self.__show_loading_screen()
         video_save_path = self.__get_video_save_path()
@@ -102,10 +102,6 @@ class VideoProcessor:
                 self.__do_housekeeping(clear_screen = clear_screen)
             attempt += 1
 
-        # Restore default color mode if using an external player so subsequent
-        # screensavers (which pass 3D RGB frames) render correctly.
-        if self.__external_led_frame_player:
-            self.__led_frame_player.set_video_color_mode(VideoColorMode.COLOR_MODE_COLOR)
         self.__logger.info("Finished process_and_play")
 
     def download_video(self, save_path):
@@ -493,6 +489,10 @@ class VideoProcessor:
         self.__logger.info("Update yt-dlp output: {}".format(update_yt_dlp_output))
 
     def __do_housekeeping(self, clear_screen = True):
+        # Restore default color mode if using an external player so subsequent
+        # screensavers (which pass 3D RGB frames) render correctly.
+        if self.__external_led_frame_player:
+            self.__led_frame_player.set_video_color_mode(VideoColorMode.COLOR_MODE_COLOR)
         if clear_screen:
             self.__led_frame_player.clear_screen()
         if self.__process_and_play_vid_proc_pgid:
