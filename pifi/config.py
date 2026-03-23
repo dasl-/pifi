@@ -62,20 +62,13 @@ class Config:
     @staticmethod
     def get_default(key, default = None):
         """Get a key's value from the base config (before any runtime overrides)."""
-        Config.load_config_if_not_loaded()
-        config = Config.__base_config
-        for part in key.split(Config.__PATH_SEP):
-            if isinstance(config, dict) and part in config:
-                config = config[part]
-            else:
-                return default
-        return config
+        return Config.__get(key, default=default, config_dict=Config.__base_config)
 
     @staticmethod
-    def __get(key, should_throw = False, default = None):
+    def __get(key, should_throw = False, default = None, config_dict = None):
         Config.load_config_if_not_loaded()
 
-        config = Config.__config
+        config = config_dict if config_dict is not None else Config.__config
         for key in key.split(Config.__PATH_SEP):
             if key in config:
                 config = config[key]
