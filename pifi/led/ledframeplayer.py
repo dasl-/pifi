@@ -14,8 +14,7 @@ class LedFramePlayer:
     __FADE_STEPS = 5
 
     # clear_screen: whether to clear the screen when initializing
-    # video_color_mode: only applicable when playing videos
-    def __init__(self, clear_screen = True, video_color_mode = VideoColorMode.COLOR_MODE_COLOR):
+    def __init__(self, clear_screen = True):
         self.__current_frame = None
         self.__cached_brightness = max(0, min(100, Config.get('leds.brightness')))
         self.__last_driver_brightness = None
@@ -28,7 +27,26 @@ class LedFramePlayer:
         default_gamma = led_driver != LedDrivers.DRIVER_RGBMATRIX
         self.__gamma_enabled = Config.get('leds.gamma_enabled', default_gamma)
 
-        self.__gamma_controller = Gamma(video_color_mode = video_color_mode)
+        self.set_video_color_mode(VideoColorMode.COLOR_MODE_COLOR)
+        if led_driver == LedDrivers.DRIVER_APA102:
+            from pifi.led.drivers.driverapa102 import DriverApa102
+            self.__driver = DriverApa102(clear_screen)
+        elif led_driver == LedDrivers.DRIVER_RGBMATRIX:
+            from pifi.led.drivers.driverrgbmatrix import DriverRgbMatrix
+            self.__driver = DriverRgbMatrix(clear_screen)
+        elif led_driver == LedDrivers.DRIVER_WS2812B:
+            from pifi.led.drivers.driverws2812b import DriverWs2812b
+            self.__driver = DriverWs2812b(clear_screen)
+        else:
+            raise Exception(f'Unsupported driver: {led_driver}.')
+
+        initial_brightness = self.__get_brightness()
+        self.__driver.set_brightness(initial_brightness)
+        self.__last_driver_brightness = initial_brightness
+
+    def set_video_color_mode(self, video_color_mode):
+        self.__gamma_controller = Gamma(video_color_mode=video_color_mode)
+        self.__video_color_mode = video_color_mode
 
         # static gamma curve
         self.__scale_red_gamma_curve = None
@@ -52,23 +70,6 @@ class LedFramePlayer:
             self.__scale_red_gamma_curves = self.__gamma_controller.scale_red_curves
             self.__scale_green_gamma_curves = self.__gamma_controller.scale_green_curves
             self.__scale_blue_gamma_curves = self.__gamma_controller.scale_blue_curves
-        if led_driver == LedDrivers.DRIVER_APA102:
-            from pifi.led.drivers.driverapa102 import DriverApa102
-            self.__driver = DriverApa102(clear_screen)
-        elif led_driver == LedDrivers.DRIVER_RGBMATRIX:
-            from pifi.led.drivers.driverrgbmatrix import DriverRgbMatrix
-            self.__driver = DriverRgbMatrix(clear_screen)
-        elif led_driver == LedDrivers.DRIVER_WS2812B:
-            from pifi.led.drivers.driverws2812b import DriverWs2812b
-            self.__driver = DriverWs2812b(clear_screen)
-        else:
-            raise Exception(f'Unsupported driver: {led_driver}.')
-
-        initial_brightness = self.__get_brightness()
-        self.__driver.set_brightness(initial_brightness)
-        self.__last_driver_brightness = initial_brightness
-
-        self.__video_color_mode = video_color_mode
 
     def clear_screen(self):
         self.__driver.clear_screen()
