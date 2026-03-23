@@ -152,7 +152,8 @@ class TransitionPlayer:
         width = Config.get_or_throw('leds.display_width')
         height = Config.get_or_throw('leds.display_height')
         duration = Config.get('screensavers.transitions.duration', 1.0)
-        num_steps = Config.get('screensavers.transitions.num_steps', 30)
+        tick_sleep = Config.get('screensavers.transitions.tick_sleep', 0.03)
+        num_steps = max(1, int(duration / tick_sleep)) if tick_sleep > 0 else 1
 
         if from_frame is None:
             from_frame = self.__led_frame_player.get_current_frame()
@@ -177,12 +178,11 @@ class TransitionPlayer:
 
         self.__logger.info(f"Playing transition: {effect.__name__}")
 
-        sleep_time = duration / num_steps
         for step in range(1, num_steps + 1):
             progress = step / num_steps
             blended = effect(from_float, to_float, progress, width, height)
             self.__led_frame_player.play_frame(blended.astype(np.uint8))
-            time.sleep(sleep_time)
+            time.sleep(tick_sleep)
 
     def __pick_effect(self, width, height):
         # Build the full list including factory effects

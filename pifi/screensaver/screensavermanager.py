@@ -32,7 +32,7 @@ from pifi.screensaver.cellularautomata.cyclicautomaton import CyclicAutomaton
 from pifi.screensaver.cellularautomata.gameoflife import GameOfLife
 from pifi.screensaver.videoscreensaver import VideoScreensaver
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.screensaver.transition import TransitionPlayer
+from pifi.screensaver.transitionplayer import TransitionPlayer
 from pifi.settingsdb import SettingsDb
 from pifi.logger import Logger
 
