@@ -46,13 +46,17 @@ class VideoProcessor:
     #   Refer to yt-dlp documentation for the '--use-extractors' flag for more details.
     #
     # show_loading_screen: boolean. Whether or not we display the loading screen at all.
-    def __init__(self, url, clear_screen, yt_dlp_extractors = None, show_loading_screen = True):
+    def __init__(self, url, clear_screen, yt_dlp_extractors = None, show_loading_screen = True,
+                 led_frame_player = None):
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         self.__url = url
-        self.__led_frame_player = LedFramePlayer(
-            clear_screen = clear_screen,
-            video_color_mode = Config.get('video.color_mode')
-        )
+        if led_frame_player is not None:
+            self.__led_frame_player = led_frame_player
+        else:
+            self.__led_frame_player = LedFramePlayer(
+                clear_screen = clear_screen,
+                video_color_mode = Config.get('video.color_mode')
+            )
         self.__process_and_play_vid_proc_pgid = None
         self.__init_time = time.time()
 

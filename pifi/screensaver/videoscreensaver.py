@@ -30,7 +30,8 @@ class VideoScreensaver(Screensaver):
         VideoProcessor(
             url = url,
             clear_screen = True,
-            show_loading_screen = False
+            show_loading_screen = False,
+            led_frame_player = self._led_frame_player
         ).process_and_play()
 
     @classmethod
