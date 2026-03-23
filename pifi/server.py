@@ -285,10 +285,10 @@ class PifiAPI():
                 return {'success': False, 'error': 'transitions.enabled must be a boolean'}
             if 'duration' in t and (not isinstance(t['duration'], (int, float)) or t['duration'] <= 0):
                 return {'success': False, 'error': 'transitions.duration must be a positive number'}
-            if 'num_steps' in t and (not isinstance(t['num_steps'], int) or t['num_steps'] <= 0):
-                return {'success': False, 'error': 'transitions.num_steps must be a positive integer'}
+            if 'tick_sleep' in t and (not isinstance(t['tick_sleep'], (int, float)) or t['tick_sleep'] < 0):
+                return {'success': False, 'error': 'transitions.tick_sleep must be a non-negative number'}
             transitions = overrides.setdefault('transitions', {})
-            for key in ('enabled', 'duration', 'num_steps'):
+            for key in ('enabled', 'duration', 'tick_sleep'):
                 if key in t:
                     transitions[key] = t[key]
 

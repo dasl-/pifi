@@ -47,8 +47,8 @@
             </div>
 
             <div class="config-field">
-                <label class="config-label" for="transition-steps">Transition Steps</label>
-                <input type="number" class="config-input" id="transition-steps" min="1" step="1">
+                <label class="config-label" for="transition-tick-sleep">Transition Tick Sleep (seconds)</label>
+                <input type="number" class="config-input" id="transition-tick-sleep" min="0" step="0.01">
             </div>
 
             <div class="actions">
@@ -121,11 +121,14 @@
 
             loadBrightness();
 
-            // Transition settings
-            function loadTransitionSettings() {
+            function loadSettings() {
                 $.get('/api/screensavers').done(function(data) {
-                    if (!data.success) return;
+                    if (!data.success) {
+                        showStatus('Error loading screensavers', 'error');
+                        return;
+                    }
 
+                    // Transition settings
                     var timeout = data.timeout.current;
                     if (timeout !== null && timeout !== 0) {
                         $('#screensaver-timeout').val(timeout);
@@ -136,7 +139,15 @@
                     var transitions = data.transitions.current;
                     $('#transitions-enabled').prop('checked', transitions.enabled);
                     $('#transition-duration').val(transitions.duration);
-                    $('#transition-steps').val(transitions.num_steps);
+                    $('#transition-tick-sleep').val(transitions.tick_sleep);
+
+                    // Screensaver list
+                    screensaverConfigs = data.configs || {};
+                    originalEnabled = data.enabled.slice();
+                    renderScreensavers(data.screensavers, data.enabled);
+                    $('#save-btn').prop('disabled', true);
+                }).fail(function() {
+                    showStatus('Failed to load screensavers', 'error');
                 });
             }
 
@@ -147,15 +158,15 @@
                 var durationVal = $('#transition-duration').val();
                 var duration = parseFloat(durationVal);
 
-                var stepsVal = $('#transition-steps').val();
-                var numSteps = parseInt(stepsVal, 10);
+                var tickSleepVal = $('#transition-tick-sleep').val();
+                var tickSleep = parseFloat(tickSleepVal);
 
                 var payload = {
                     timeout: screensaverTimeout,
                     transitions: {
                         enabled: $('#transitions-enabled').is(':checked'),
                         duration: duration,
-                        num_steps: numSteps
+                        tick_sleep: tickSleep
                     }
                 };
 
@@ -174,23 +185,7 @@
                 });
             });
 
-            loadTransitionSettings();
-
-            function loadScreensavers() {
-                $.get('/api/screensavers').done(function(data) {
-                    if (!data.success) {
-                        showStatus('Error loading screensavers', 'error');
-                        return;
-                    }
-
-                    screensaverConfigs = data.configs || {};
-                    originalEnabled = data.enabled.slice();
-                    renderScreensavers(data.screensavers, data.enabled);
-                    $('#save-btn').prop('disabled', true);
-                }).fail(function() {
-                    showStatus('Failed to load screensavers', 'error');
-                });
-            }
+            loadSettings();
 
             function formatConfigKey(key) {
                 // Convert snake_case to Title Case
@@ -527,7 +522,6 @@
                 $('#screensaver-list input[type="checkbox"][value]').prop('checked', false).trigger('change');
             });
 
-            loadScreensavers();
         });
     </script>
 </body>

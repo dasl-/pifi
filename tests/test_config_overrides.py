@@ -24,7 +24,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         'leds': {'driver': 'apa102', 'display_width': 32, 'display_height': 16},
         'screensavers': {
             'timeout': 120,
-            'transitions': {'enabled': True, 'duration': 1.0, 'num_steps': 30},
+            'transitions': {'enabled': True, 'duration': 1.0, 'tick_sleep': 0.03},
             'configs': {
                 'boids': {'num_boids': 15, 'tick_sleep': 0.05},
                 'aurora': {'tick_sleep': 0.04},
