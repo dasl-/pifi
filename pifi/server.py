@@ -272,7 +272,7 @@ class PifiAPI():
 
         if 'timeout' in post_data:
             timeout = post_data['timeout']
-            if timeout is not None and (not isinstance(timeout, (int, float)) or timeout < 0):
+            if timeout is not None and (isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout < 0):
                 return {'success': False, 'error': 'timeout must be a non-negative number or null'}
             overrides['timeout'] = timeout
 
@@ -283,9 +283,9 @@ class PifiAPI():
             t = post_data['transitions']
             if 'enabled' in t and not isinstance(t['enabled'], bool):
                 return {'success': False, 'error': 'transitions.enabled must be a boolean'}
-            if 'duration' in t and (not isinstance(t['duration'], (int, float)) or t['duration'] <= 0):
+            if 'duration' in t and (isinstance(t['duration'], bool) or not isinstance(t['duration'], (int, float)) or t['duration'] <= 0):
                 return {'success': False, 'error': 'transitions.duration must be a positive number'}
-            if 'tick_sleep' in t and (not isinstance(t['tick_sleep'], (int, float)) or t['tick_sleep'] < 0):
+            if 'tick_sleep' in t and (isinstance(t['tick_sleep'], bool) or not isinstance(t['tick_sleep'], (int, float)) or t['tick_sleep'] < 0):
                 return {'success': False, 'error': 'transitions.tick_sleep must be a non-negative number'}
             transitions = overrides.setdefault('transitions', {})
             for key in ('enabled', 'duration', 'tick_sleep'):
@@ -302,6 +302,8 @@ class PifiAPI():
                     existing_configs.pop(screensaver_id, None)
                 elif isinstance(config, dict):
                     existing_configs[screensaver_id] = config
+                else:
+                    return {'success': False, 'error': f'configs.{screensaver_id} must be an object or null'}
 
         self.__settings_db.set(SettingsDb.SCREENSAVER_SETTINGS, json.dumps({'screensavers': overrides}))
         Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
