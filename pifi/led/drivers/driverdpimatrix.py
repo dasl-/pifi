@@ -78,13 +78,12 @@ class DpiMatrix:
     def __init__(self, width=64, height=32, pwm_bits=2, brightness=100):
         self.panel_width = width
         self.panel_height = height
-        self.pwm_bits = min(pwm_bits, 2)
+        self.pwm_bits = pwm_bits
         self._brightness = max(1, min(100, brightness))
         self.scan_rows = height // 2  # 16
 
-        # DPI framebuffer: 128 wide, 64 tall
+        # DPI framebuffer: 128 wide, scan_rows * pwm_bits * 2 tall
         # 2 DPI rows per bitplane: data (128px) + control (128px)
-        # Total: 16 scans * 2 bits * 2 rows = 64
         self.dpi_width = 128
         self.dpi_height = self.scan_rows * self.pwm_bits * 2  # 64
 
