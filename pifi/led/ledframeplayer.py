@@ -37,6 +37,9 @@ class LedFramePlayer:
         elif led_driver == LedDrivers.DRIVER_WS2812B:
             from pifi.led.drivers.driverws2812b import DriverWs2812b
             self.__driver = DriverWs2812b(clear_screen)
+        elif led_driver == LedDrivers.DRIVER_DPIMATRIX:
+            from pifi.led.drivers.driverdpimatrix import DriverDpiMatrix
+            self.__driver = DriverDpiMatrix(clear_screen)
         else:
             raise Exception(f'Unsupported driver: {led_driver}.')
 
