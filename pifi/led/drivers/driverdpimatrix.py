@@ -105,6 +105,24 @@ class DpiMatrix:
         # Bitmasks for each bitplane (MSB first)
         self._bitmasks = [1 << (7 - bit) for bit in range(self.pwm_bits)]
 
+        # Pre-compute column index arrays for vectorized encoding
+        self._even_cols = np.arange(0, self.dpi_width, 2)
+        self._odd_cols = np.arange(1, self.dpi_width, 2)
+
+        # Pre-compute row indices and OE column ranges per bitplane
+        scans = np.arange(self.scan_rows)
+        self._data_rows_per_bit = []
+        self._ctrl_rows_per_bit = []
+        self._oe_cols_per_bit = []
+        for bit in range(self.pwm_bits):
+            data_rows = scans * self.pwm_bits * 2 + bit * 2
+            self._data_rows_per_bit.append(data_rows)
+            self._ctrl_rows_per_bit.append(data_rows + 1)
+            oe_len = self._oe_per_bit[bit]
+            self._oe_cols_per_bit.append(
+                np.arange(self._latch_pixels, self._latch_pixels + oe_len)
+            )
+
         # Init DRM
         self._init_drm()
         self._set_gpio_alt2()
@@ -200,61 +218,54 @@ class DpiMatrix:
 
     def _encode_image(self, img):
         buf = self._frame_buf
+        addr = self._addr_red          # (scan_rows,)
+        top = img[:self.scan_rows]     # (16, 64, 3)
+        bot = img[self.scan_rows:]     # (16, 64, 3)
+        even = self._even_cols         # (64,)
+        odd = self._odd_cols           # (64,)
 
-        # Reset: OE disabled everywhere
-        buf[:, :, 0] = self._OE_BLUE
-        buf[:, :, 1] = 0
-        buf[:, :, 2] = 0
-        buf[:, :, 3] = 0
+        for bit in range(self.pwm_bits):
+            bitmask = self._bitmasks[bit]
+            dr = self._data_rows_per_bit[bit]   # (16,) data row indices
+            cr = self._ctrl_rows_per_bit[bit]   # (16,) control row indices
+            oe_cols = self._oe_cols_per_bit[bit]
 
-        for scan in range(self.scan_rows):
-            ar = self._addr_red[scan]
-            top = img[scan]
-            bot = img[scan + self.scan_rows]
+            # Test which pixels have this bit set -> uint8 0/1, shape (16, 64)
+            top_r = ((top[:, :, 0] & bitmask) != 0).astype(np.uint8)
+            top_g = ((top[:, :, 1] & bitmask) != 0).astype(np.uint8)
+            top_b = ((top[:, :, 2] & bitmask) != 0).astype(np.uint8)
+            bot_r = ((bot[:, :, 0] & bitmask) != 0).astype(np.uint8)
+            bot_g = ((bot[:, :, 1] & bitmask) != 0).astype(np.uint8)
+            bot_b = ((bot[:, :, 2] & bitmask) != 0).astype(np.uint8)
 
-            for bit in range(self.pwm_bits):
-                bitmask = self._bitmasks[bit]
-                oe_len = self._oe_per_bit[bit]
+            # Map to GPIO bit positions in each DPI byte — (16, 64) uint8
+            blue_d = top_r * self._R1_BLUE | top_b * self._B1_BLUE
+            green_d = top_g * self._G1_GREEN | bot_r * self._R2_GREEN | bot_g * self._G2_GREEN
+            red_d = bot_b * self._B2_RED
 
-                data_row = (scan * self.pwm_bits + bit) * 2
-                ctrl_row = data_row + 1
+            # === DATA ROWS: even pixels (CLK high), odd pixels (CLK low) ===
+            ar = addr[:, None]  # (16, 1) for broadcasting
 
-                # === DATA ROW: clock 64 pixels (128 DPI pixels) ===
-                for px in range(self.panel_width):
-                    blue_d = 0; green_d = 0; red_d = 0
+            buf[dr[:, None], even, 0] = self._OE_BLUE | blue_d
+            buf[dr[:, None], even, 1] = self._CLK_GREEN | green_d
+            buf[dr[:, None], even, 2] = ar | red_d
 
-                    if top[px, 0] & bitmask: blue_d  |= self._R1_BLUE
-                    if top[px, 1] & bitmask: green_d |= self._G1_GREEN
-                    if top[px, 2] & bitmask: blue_d  |= self._B1_BLUE
-                    if bot[px, 0] & bitmask: green_d |= self._R2_GREEN
-                    if bot[px, 1] & bitmask: green_d |= self._G2_GREEN
-                    if bot[px, 2] & bitmask: red_d   |= self._B2_RED
+            buf[dr[:, None], odd, 0] = self._OE_BLUE | blue_d
+            buf[dr[:, None], odd, 1] = green_d
+            buf[dr[:, None], odd, 2] = ar | red_d
 
-                    x = px * 2
-                    buf[data_row, x, 0] = self._OE_BLUE | blue_d
-                    buf[data_row, x, 1] = self._CLK_GREEN | green_d
-                    buf[data_row, x, 2] = ar | red_d
+            # === CONTROL ROWS: latch + OE ===
+            buf[cr, :, 0] = self._OE_BLUE
+            buf[cr, :, 1] = 0
+            buf[cr, :, 2] = ar
+            buf[cr, :, 3] = 0
 
-                    buf[data_row, x+1, 0] = self._OE_BLUE | blue_d
-                    buf[data_row, x+1, 1] = green_d
-                    buf[data_row, x+1, 2] = ar | red_d
+            buf[cr, 0, 2] = addr | self._LAT_RED
+            buf[cr, 1, 2] = addr
 
-                # === CONTROL ROW: latch + OE ===
-                # Default: OE disabled, address set
-                buf[ctrl_row, :, 0] = self._OE_BLUE
-                buf[ctrl_row, :, 1] = 0
-                buf[ctrl_row, :, 2] = ar
+            buf[cr[:, None], oe_cols, 0] = 0  # OE active
 
-                # Latch pulse
-                buf[ctrl_row, 0, 2] = ar | self._LAT_RED  # LAT high
-                buf[ctrl_row, 1, 2] = ar                    # LAT low
-
-                # OE enabled for weighted duration
-                for i in range(oe_len):
-                    buf[ctrl_row, self._latch_pixels + i, 0] = 0  # OE active
-
-                # Last pixel: ensure OE disabled (held during hblank)
-                buf[ctrl_row, self.dpi_width - 1, 0] = self._OE_BLUE
+            buf[cr, self.dpi_width - 1, 0] = self._OE_BLUE
 
     def _flush_frame(self):
         flat = self._frame_buf.tobytes()
