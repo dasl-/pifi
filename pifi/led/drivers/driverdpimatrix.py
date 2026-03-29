@@ -332,7 +332,7 @@ class DriverDpiMatrix:
         self.__matrix.clear_screen()
 
     def can_multiple_driver_instances_coexist(self):
-        return True
+        return False
 
 
 # =============================================================================

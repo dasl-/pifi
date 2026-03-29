@@ -25,7 +25,7 @@ class LedFramePlayer:
         # RGB Matrix panels typically don't need the aggressive gamma/color correction
         # that was calibrated for APA102 LED strips
         led_driver = Config.get_or_throw('leds.driver')
-        default_gamma = led_driver != LedDrivers.DRIVER_RGBMATRIX
+        default_gamma = led_driver not in (LedDrivers.DRIVER_RGBMATRIX, LedDrivers.DRIVER_DPIMATRIX)
         self.__gamma_enabled = Config.get('leds.gamma_enabled', default_gamma)
 
         self.__gamma_controller = Gamma(video_color_mode = video_color_mode)
