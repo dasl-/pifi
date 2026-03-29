@@ -82,10 +82,11 @@ class DpiMatrix:
         self._brightness = max(1, min(100, brightness))
         self.scan_rows = height // 2  # 16
 
-        # DPI framebuffer: 128 wide, scan_rows * pwm_bits * 2 tall
-        # 2 DPI rows per bitplane: data (128px) + control (128px)
+        # DPI framebuffer dimensions
+        # Minimum rows needed: scan_rows * pwm_bits * 2 (data + control per bitplane)
+        # Plus 2 blanking rows to prevent ghost on address 0 during vblank
         self.dpi_width = 128
-        self.dpi_height = self.scan_rows * self.pwm_bits * 2  # 64
+        self._scan_rows_needed = self.scan_rows * self.pwm_bits * 2 + 2
 
         # Control row layout: latch (2px) + OE + padding
         self._latch_pixels = 2
@@ -123,6 +124,10 @@ class DpiMatrix:
                 np.arange(self._latch_pixels, self._latch_pixels + oe_len)
             )
 
+        # Blanking rows: clock zeros into address 0 shift registers before vblank
+        self._blank_data_row = self.scan_rows * self.pwm_bits * 2
+        self._blank_ctrl_row = self._blank_data_row + 1
+
         # Init DRM
         self._init_drm()
         self._set_gpio_alt2()
@@ -150,6 +155,34 @@ class DpiMatrix:
             weights[0] += 1
         return weights
 
+    def _init_blanking_rows(self):
+        """Clock zeros into address 0's shift registers before vblank.
+
+        During vblank all GPIOs go to 0, which enables OE on address 0.
+        By blanking the shift registers, there's nothing to display.
+        """
+        buf = self._frame_buf
+        even = self._even_cols
+        odd = self._odd_cols
+        bdr = self._blank_data_row
+        bcr = self._blank_ctrl_row
+
+        # Data row: clock 64 zeros at address 0 (OE disabled)
+        buf[bdr, even, 0] = self._OE_BLUE
+        buf[bdr, even, 1] = self._CLK_GREEN
+        buf[bdr, even, 2] = 0
+        buf[bdr, odd, 0] = self._OE_BLUE
+        buf[bdr, odd, 1] = 0
+        buf[bdr, odd, 2] = 0
+
+        # Control row: latch the zeros, keep OE disabled
+        buf[bcr, :, 0] = self._OE_BLUE
+        buf[bcr, :, 1] = 0
+        buf[bcr, :, 2] = 0
+        buf[bcr, :, 3] = 0
+        buf[bcr, 0, 2] = self._LAT_RED
+        buf[bcr, 1, 2] = 0
+
     def _init_drm(self):
         self._card = pykms.Card("/dev/dri/card0")
         self._connector = None
@@ -161,12 +194,17 @@ class DpiMatrix:
             raise RuntimeError("No DPI connector found")
 
         mode = self._connector.get_default_mode()
-        if mode.hdisplay != self.dpi_width or mode.vdisplay != self.dpi_height:
+        if mode.hdisplay != self.dpi_width:
             raise RuntimeError(
-                f"DPI mode is {mode.hdisplay}x{mode.vdisplay}, "
-                f"expected {self.dpi_width}x{self.dpi_height}. "
-                f"Update config.txt: dtparam=vactive={self.dpi_height}"
+                f"DPI hactive is {mode.hdisplay}, expected {self.dpi_width}"
             )
+        if mode.vdisplay < self._scan_rows_needed:
+            raise RuntimeError(
+                f"DPI vactive is {mode.vdisplay}, need at least "
+                f"{self._scan_rows_needed}. Update config.txt: "
+                f"dtparam=vactive={self._scan_rows_needed}"
+            )
+        self.dpi_height = mode.vdisplay
 
         self._crtc = self._connector.get_possible_crtcs()[0]
         self._fb = pykms.DumbFramebuffer(
@@ -286,6 +324,7 @@ class DpiMatrix:
         self._frame_buf[:, :, 1] = 0
         self._frame_buf[:, :, 2] = 0
         self._frame_buf[:, :, 3] = 0
+        self._init_blanking_rows()
         self._flush_frame()
 
     @property
