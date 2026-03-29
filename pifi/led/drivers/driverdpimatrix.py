@@ -16,8 +16,8 @@ Requirements:
 config.txt:
     dtoverlay=vc4-kms-v3d
     dtoverlay=vc4-kms-dpi-generic,rgb888
-    dtparam=hactive=128,hfp=1,hsync=1,hbp=1
-    dtparam=vactive=64,vfp=1,vsync=1,vbp=1
+    dtparam=hactive=256,hfp=0,hsync=1,hbp=0
+    dtparam=vactive=256,vfp=1,vsync=1,vbp=1
     dtparam=clock-frequency=2000000
 
 cmdline.txt (append to end of existing line):
@@ -42,12 +42,15 @@ class DpiMatrix:
     """
     DPI-driven HUB75 LED matrix controller.
 
-    Uses 128x64 DPI framebuffer with XRGB8888 pixel format.
+    Uses 256xN DPI framebuffer with XRGB8888 pixel format.
     Layout: 2 DPI rows per bitplane per scan address.
-      - Data row (128 px): 64 panel pixels x 2 (CLK toggle)
-      - Control row (128 px): latch (2 px) + OE (weighted) + padding
+      - Data row (256 px): 64 panel pixels x 2 (CLK toggle) + 128 px padding
+      - Control row (256 px): settle + latch + OE + zero-clock + zero-latch
 
-    With 2-bit color: 16 scans x 2 bits x 2 rows = 64 DPI rows.
+    The extra width allows control rows to clock zeros into the shift
+    register and latch them after the OE period. This clears the output
+    register before hblank, preventing ghost on address 0 (since DPI
+    forces all GPIOs to 0 during blanking, enabling OE on address 0).
     """
 
     # Adafruit HAT GPIO -> DPI byte/bit mapping
@@ -83,14 +86,23 @@ class DpiMatrix:
         self.scan_rows = height // 2  # 16
 
         # DPI framebuffer dimensions
+        # Width is 256 (not 128) to allow zeroing shift registers before hblank.
         # Minimum rows needed: scan_rows * pwm_bits * 2 (data + control per bitplane)
         # Plus 2 blanking rows to prevent ghost on address 0 during vblank
-        self.dpi_width = 128
+        self.dpi_width = 256
+        self._data_clk_pixels = self.panel_width * 2  # 128: real panel data region
         self._scan_rows_needed = self.scan_rows * self.pwm_bits * 2 + 2
 
-        # Control row layout: latch (2px) + OE + padding
+        # Control row layout:
+        #   settle (2px) + latch (2px) + OE (weighted) +
+        #   zero-clock (128px) + zero-latch (2px) + last-pixel-safety (1px)
+        # The zero-clock + zero-latch clears the output register before hblank.
+        self._settle_pixels = 2
         self._latch_pixels = 2
-        self._oe_budget = self.dpi_width - self._latch_pixels  # 126 pixels!
+        self._zero_clk_pixels = self.panel_width * 2  # 128: clock 64 zeros
+        self._zero_lat_pixels = 2
+        self._oe_budget = (self.dpi_width - self._settle_pixels - self._latch_pixels
+                           - self._zero_clk_pixels - self._zero_lat_pixels - 1)
         self._oe_per_bit = self._compute_oe_weights()
 
         # Address line LUT
@@ -111,22 +123,36 @@ class DpiMatrix:
         self._bitmasks = [1 << (7 - bit) for bit in range(self.pwm_bits)]
 
         # Pre-compute column index arrays for vectorized encoding
-        self._even_cols = np.arange(0, self.dpi_width, 2)
-        self._odd_cols = np.arange(1, self.dpi_width, 2)
+        # Only covers the first 128 DPI pixels (64 panel pixels × 2 CLK toggle)
+        self._even_cols = np.arange(0, self._data_clk_pixels, 2)
+        self._odd_cols = np.arange(1, self._data_clk_pixels, 2)
 
-        # Pre-compute row indices and OE column ranges per bitplane
+        # Pre-compute row indices, OE columns, and zero-clocking columns per bitplane
         scans = np.arange(self.scan_rows)
         self._data_rows_per_bit = []
         self._ctrl_rows_per_bit = []
         self._oe_cols_per_bit = []
+        self._zero_even_cols_per_bit = []
+        self._zero_odd_cols_per_bit = []
+        self._zero_lat_col_per_bit = []
         for bit in range(self.pwm_bits):
             data_rows = scans * self.pwm_bits * 2 + bit * 2
             self._data_rows_per_bit.append(data_rows)
             self._ctrl_rows_per_bit.append(data_rows + 1)
             oe_len = self._oe_per_bit[bit]
+            oe_start = self._settle_pixels + self._latch_pixels
             self._oe_cols_per_bit.append(
-                np.arange(self._latch_pixels, self._latch_pixels + oe_len)
+                np.arange(oe_start, oe_start + oe_len)
             )
+            # Zero-clocking region: starts right after OE period
+            zero_start = oe_start + oe_len
+            self._zero_even_cols_per_bit.append(
+                np.arange(zero_start, zero_start + self._zero_clk_pixels, 2)
+            )
+            self._zero_odd_cols_per_bit.append(
+                np.arange(zero_start + 1, zero_start + self._zero_clk_pixels, 2)
+            )
+            self._zero_lat_col_per_bit.append(zero_start + self._zero_clk_pixels)
 
         # Blanking rows: clock zeros into address 0 shift registers before vblank
         self._blank_data_row = self.scan_rows * self.pwm_bits * 2
@@ -179,13 +205,14 @@ class DpiMatrix:
         buf[bdr, odd, 1] = 0
         buf[bdr, odd, 2] = 0
 
-        # Control row: latch the zeros, keep OE disabled
+        # Control row: settle + latch the zeros, keep OE disabled
+        s = self._settle_pixels
         buf[bcr, :, 0] = self._OE_BLUE
         buf[bcr, :, 1] = 0
         buf[bcr, :, 2] = 0
         buf[bcr, :, 3] = 0
-        buf[bcr, 0, 2] = self._LAT_RED
-        buf[bcr, 1, 2] = 0
+        buf[bcr, s, 2] = self._LAT_RED
+        buf[bcr, s + 1, 2] = 0
 
     def _init_drm(self):
         self._card = pykms.Card("/dev/dri/card0")
@@ -272,6 +299,9 @@ class DpiMatrix:
             dr = self._data_rows_per_bit[bit]   # (16,) data row indices
             cr = self._ctrl_rows_per_bit[bit]   # (16,) control row indices
             oe_cols = self._oe_cols_per_bit[bit]
+            zero_even = self._zero_even_cols_per_bit[bit]
+            zero_odd = self._zero_odd_cols_per_bit[bit]
+            zero_lat = self._zero_lat_col_per_bit[bit]
 
             # Test which pixels have this bit set -> uint8 0/1, shape (16, 64)
             top_r = ((top[:, :, 0] & bitmask) != 0).astype(np.uint8)
@@ -286,7 +316,7 @@ class DpiMatrix:
             green_d = top_g * self._G1_GREEN | bot_r * self._R2_GREEN | bot_g * self._G2_GREEN
             red_d = bot_b * self._B2_RED
 
-            # === DATA ROWS: even pixels (CLK high), odd pixels (CLK low) ===
+            # === DATA ROWS: first 128 px clock real data, rest is padding ===
             ar = addr[:, None]  # (16, 1) for broadcasting
 
             buf[dr[:, None], even, 0] = self._OE_BLUE | blue_d
@@ -297,17 +327,32 @@ class DpiMatrix:
             buf[dr[:, None], odd, 1] = green_d
             buf[dr[:, None], odd, 2] = ar | red_d
 
-            # === CONTROL ROWS: latch + OE ===
+            # === CONTROL ROWS: settle + latch + OE + zero-clock + zero-latch ===
+            # Default: OE disabled, address set, all other signals low
             buf[cr, :, 0] = self._OE_BLUE
             buf[cr, :, 1] = 0
             buf[cr, :, 2] = ar
             buf[cr, :, 3] = 0
 
-            buf[cr, 0, 2] = addr | self._LAT_RED
-            buf[cr, 1, 2] = addr
+            # Pixels 0-1: address settling (address set, LAT low, OE disabled)
+            # — lets address lines stabilize after hblank before LAT fires
 
-            buf[cr[:, None], oe_cols, 0] = 0  # OE active
+            # Pixels 2-3: LAT pulse to latch real data
+            s = self._settle_pixels
+            buf[cr, s, 2] = addr | self._LAT_RED   # LAT high
+            buf[cr, s + 1, 2] = addr                 # LAT low
 
+            # OE active for weighted duration (displays real data)
+            buf[cr[:, None], oe_cols, 0] = 0
+
+            # Clock zeros into shift register (OE disabled, CLK toggle, no data)
+            buf[cr[:, None], zero_even, 1] = self._CLK_GREEN
+
+            # Latch zeros — clears output register before hblank
+            buf[cr, zero_lat, 2] = addr | self._LAT_RED
+            buf[cr, zero_lat + 1, 2] = addr
+
+            # Last pixel: ensure OE disabled (held during hblank)
             buf[cr, self.dpi_width - 1, 0] = self._OE_BLUE
 
     def _flush_frame(self):
@@ -442,28 +487,124 @@ def _colorbars(w, h):
     return img
 
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("DPI Matrix Driver Test — 128x64 mode, full 64 columns")
-    print("=" * 60)
+def _ghost_diagnostic(matrix):
+    """Systematic ghost line diagnostic tests.
 
-    matrix = DpiMatrix(width=64, height=32, pwm_bits=2, brightness=100)
+    Displays patterns to isolate the source of address 0 ghost.
+    For each test, observe the bottom row (addr 0 top half)
+    and middle row (addr 0 bottom half).
+    """
+    W, H = matrix.width, matrix.height
+    scan = H // 2  # 16
+
+    tests = []
+
+    # Test 1: All black — is there a baseline ghost?
+    def t1():
+        return np.zeros((H, W, 3), dtype=np.uint8)
+    tests.append(("1. ALL BLACK (any light on bottom/mid = baseline ghost)", t1))
+
+    # Test 2: All white EXCEPT address 0 rows (img[0] and img[16] = black)
+    # Ghost from other rows leaking into address 0?
+    def t2():
+        img = np.full((H, W, 3), 255, dtype=np.uint8)
+        img[0, :, :] = 0      # addr 0 top half
+        img[scan, :, :] = 0   # addr 0 bottom half
+        return img
+    tests.append(("2. ALL WHITE except addr 0 = BLACK (ghost = leak from others)", t2))
+
+    # Test 3: ONLY address 0 rows are white, rest black
+    # Does address 0 display correctly by itself?
+    def t3():
+        img = np.zeros((H, W, 3), dtype=np.uint8)
+        img[0, :, :] = 255    # addr 0 top half
+        img[scan, :, :] = 255 # addr 0 bottom half
+        return img
+    tests.append(("3. ONLY addr 0 = WHITE, rest BLACK (addr 0 displays correctly?)", t3))
+
+    # Test 4: Each address gets a unique color (addr 0 = black)
+    # What color does the ghost show? Tells us which address leaks.
+    def t4():
+        img = np.zeros((H, W, 3), dtype=np.uint8)
+        colors = [
+            [0,0,0],       # addr 0 = black
+            [255,0,0],     # addr 1 = red
+            [0,255,0],     # addr 2 = green
+            [0,0,255],     # addr 3 = blue
+            [255,255,0],   # addr 4 = yellow
+            [0,255,255],   # addr 5 = cyan
+            [255,0,255],   # addr 6 = magenta
+            [255,128,0],   # addr 7 = orange
+            [128,0,255],   # addr 8 = purple
+            [255,255,255], # addr 9 = white
+            [128,128,0],   # addr 10 = olive
+            [0,128,128],   # addr 11 = teal
+            [128,0,0],     # addr 12 = dark red
+            [0,128,0],     # addr 13 = dark green
+            [0,0,128],     # addr 14 = dark blue
+            [128,128,128], # addr 15 = gray
+        ]
+        for addr in range(scan):
+            img[addr, :, :] = colors[addr]        # top half
+            img[addr + scan, :, :] = colors[addr]  # bottom half
+        return img
+    tests.append(("4. UNIQUE COLOR per address, addr 0 = BLACK (which color leaks?)", t4))
+
+    # Test 5: Only adjacent rows lit (addr 1 = white, rest black)
+    # Does proximity matter?
+    def t5():
+        img = np.zeros((H, W, 3), dtype=np.uint8)
+        img[1, :, :] = 255
+        img[1 + scan, :, :] = 255
+        return img
+    tests.append(("5. ONLY addr 1 = WHITE (does neighbor leak into addr 0?)", t5))
+
+    # Test 6: Only far row lit (addr 8 = white, rest black)
+    def t6():
+        img = np.zeros((H, W, 3), dtype=np.uint8)
+        img[8, :, :] = 255
+        img[8 + scan, :, :] = 255
+        return img
+    tests.append(("6. ONLY addr 8 = WHITE (does distant row leak into addr 0?)", t6))
+
+    for name, fn in tests:
+        print(f"\n{'='*60}")
+        print(name)
+        print("Press Enter to continue...")
+        matrix.display_frame(fn())
+        input()
+
+    matrix.clear_screen()
+    print("\nDone!")
+
+
+if __name__ == "__main__":
+    import sys
+
+    matrix = DpiMatrix(width=64, height=32, pwm_bits=4, brightness=100)
     W, H = matrix.width, matrix.height
 
-    for name, fn in [
-        ("Solid RED",    lambda: _solid(W, H, [255,0,0])),
-        ("Solid GREEN",  lambda: _solid(W, H, [0,255,0])),
-        ("Solid BLUE",   lambda: _solid(W, H, [0,0,255])),
-        ("WHITE",        lambda: _solid(W, H, [255,255,255])),
-        ("Top R/Bot B",  lambda: _split(W, H)),
-        ("Gradient",     lambda: _gradient(W, H)),
-        ("RGB Stripes",  lambda: _stripes(W, H)),
-        ("Checkerboard", lambda: _checker(W, H)),
-        ("Color Bars",   lambda: _colorbars(W, H)),
-    ]:
-        print(f"\n--- {name} ---")
-        matrix.display_frame(fn())
-        time.sleep(3)
+    if len(sys.argv) > 1 and sys.argv[1] == 'ghost':
+        _ghost_diagnostic(matrix)
+    else:
+        print("=" * 60)
+        print("DPI Matrix Driver Test")
+        print("=" * 60)
+
+        for name, fn in [
+            ("Solid RED",    lambda: _solid(W, H, [255,0,0])),
+            ("Solid GREEN",  lambda: _solid(W, H, [0,255,0])),
+            ("Solid BLUE",   lambda: _solid(W, H, [0,0,255])),
+            ("WHITE",        lambda: _solid(W, H, [255,255,255])),
+            ("Top R/Bot B",  lambda: _split(W, H)),
+            ("Gradient",     lambda: _gradient(W, H)),
+            ("RGB Stripes",  lambda: _stripes(W, H)),
+            ("Checkerboard", lambda: _checker(W, H)),
+            ("Color Bars",   lambda: _colorbars(W, H)),
+        ]:
+            print(f"\n--- {name} ---")
+            matrix.display_frame(fn())
+            time.sleep(3)
 
     print("\n--- Scrolling ---")
     for offset in range(W * 2):
