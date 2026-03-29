@@ -103,6 +103,10 @@ class DpiMatrix:
             if row & 8: r |= self._D_RED
             self._addr_red[row] = r
 
+        # Scan order: process address 0 last so its shift registers hold real
+        # data for the fewest hblank periods before being blanked
+        self._scan_order = np.array([*range(1, self.scan_rows), 0])
+
         # Bitmasks for each bitplane (MSB first)
         self._bitmasks = [1 << (7 - bit) for bit in range(self.pwm_bits)]
 
@@ -256,9 +260,10 @@ class DpiMatrix:
 
     def _encode_image(self, img):
         buf = self._frame_buf
-        addr = self._addr_red          # (scan_rows,)
-        top = img[:self.scan_rows]     # (16, 64, 3)
-        bot = img[self.scan_rows:]     # (16, 64, 3)
+        order = self._scan_order
+        addr = self._addr_red[order]           # (16,) reordered addresses
+        top = img[order]                       # (16, 64, 3) reordered top rows
+        bot = img[order + self.scan_rows]      # (16, 64, 3) reordered bottom rows
         even = self._even_cols         # (64,)
         odd = self._odd_cols           # (64,)
 
