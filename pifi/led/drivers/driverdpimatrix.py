@@ -403,7 +403,7 @@ class DriverDpiMatrix:
             width = Config.get_or_throw('leds.display_width')
             height = Config.get_or_throw('leds.display_height')
             brightness = Config.get('leds.brightness', 100)
-            pwm_bits = Config.get('dpi_matrix.pwm_bits', 2)
+            pwm_bits = Config.get('dpi_matrix.pwm_bits', 7)
         except ImportError:
             width = 64
             height = 32
@@ -581,7 +581,7 @@ def _ghost_diagnostic(matrix):
 if __name__ == "__main__":
     import sys
 
-    matrix = DpiMatrix(width=64, height=32, pwm_bits=4, brightness=100)
+    matrix = DpiMatrix(width=64, height=32, pwm_bits=7, brightness=100)
     W, H = matrix.width, matrix.height
 
     if len(sys.argv) > 1 and sys.argv[1] == 'ghost':
