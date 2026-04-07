@@ -14,7 +14,7 @@ class Purkinje(Screensaver):
 
     Cycles through four modes drawn from closed-eye and retinal phenomena:
 
-      1. Phosphene rings   - concentric expanding/contracting rings of warm light
+      1. Entoptic lattice  - breathing honeycomb/diamond grid that warps and drifts
       2. Vascular tree     - branching retinal vessel patterns that pulse and regrow
       3. Blue field         - Scheerer's phenomenon: bright dots darting on deep blue
       4. Afterimage         - complementary color ghosts that bloom and invert
@@ -24,7 +24,7 @@ class Purkinje(Screensaver):
     """
 
     # ---- mode constants ----
-    MODE_PHOSPHENE = 0
+    MODE_LATTICE = 0
     MODE_VASCULAR = 1
     MODE_BLUEFIELD = 2
     MODE_AFTERIMAGE = 3
@@ -73,8 +73,8 @@ class Purkinje(Screensaver):
 
         frame = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
 
-        if self.__mode == self.MODE_PHOSPHENE:
-            self.__tick_phosphene(frame)
+        if self.__mode == self.MODE_LATTICE:
+            self.__tick_lattice(frame)
         elif self.__mode == self.MODE_VASCULAR:
             self.__tick_vascular(frame)
         elif self.__mode == self.MODE_BLUEFIELD:
@@ -95,8 +95,8 @@ class Purkinje(Screensaver):
 
     def __setup_mode(self):
         """Initialise state specific to the chosen mode."""
-        if self.__mode == self.MODE_PHOSPHENE:
-            self.__setup_phosphene()
+        if self.__mode == self.MODE_LATTICE:
+            self.__setup_lattice()
         elif self.__mode == self.MODE_VASCULAR:
             self.__setup_vascular()
         elif self.__mode == self.MODE_BLUEFIELD:
@@ -105,73 +105,64 @@ class Purkinje(Screensaver):
             self.__setup_afterimage()
 
     # ================================================================== #
-    #  MODE 0 -- Phosphene rings                                          #
+    #  MODE 0 -- Entoptic lattice                                         #
     # ================================================================== #
 
-    def __setup_phosphene(self):
-        # 1-3 ring sources at random positions
-        n_sources = random.randint(1, 3)
-        self.__ph_sources = []
-        for _ in range(n_sources):
-            sx = random.uniform(self.__width * 0.2, self.__width * 0.8)
-            sy = random.uniform(self.__height * 0.2, self.__height * 0.8)
-            # Pre-compute distance grid from this source
-            dx = self.__x_grid - sx
-            dy = self.__y_grid - sy
-            dist = np.sqrt(dx * dx + dy * dy)
-            phase = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(0.6, 1.4)
-            self.__ph_sources.append({
-                'dist': dist,
-                'phase': phase,
-                'speed': speed,
-            })
+    def __setup_lattice(self):
+        self.__lattice_hex = random.choice([True, False])
+        self.__lattice_scale = random.uniform(3.0, 6.0)
+        self.__lattice_drift_x = random.uniform(-0.3, 0.3)
+        self.__lattice_drift_y = random.uniform(-0.2, 0.2)
 
-    def __tick_phosphene(self, frame):
+    def __tick_lattice(self, frame):
         t = self.__time
+        scale = self.__lattice_scale
 
-        # Accumulate ring patterns from each source
-        combined = np.zeros((self.__height, self.__width), dtype=np.float32)
+        warp_x = math.sin(t * 0.25) * 1.5
+        warp_y = math.cos(t * 0.2) * 1.2
 
-        for src in self.__ph_sources:
-            # Expanding and contracting rings
-            ring_freq = 2.5 + 0.8 * math.sin(t * 0.3 + src['phase'])
-            wave = np.sin(src['dist'] * ring_freq - t * src['speed'] * 3.0 + src['phase'])
+        sx = self.__x_grid + t * self.__lattice_drift_x * 3.0 + warp_x
+        sy = self.__y_grid + t * self.__lattice_drift_y * 3.0 + warp_y
 
-            # Pulse the rings: amplitude breathes
-            amp = 0.6 + 0.4 * math.sin(t * 0.7 + src['phase'] * 2)
-            combined += wave * amp
+        warp_amount = 0.3 + 0.2 * math.sin(t * 0.35)
+        sx = sx + np.sin(self.__y_norm * 4.0 + t * 0.5) * warp_amount
+        sy = sy + np.cos(self.__x_norm * 4.0 + t * 0.4) * warp_amount
 
-        combined /= len(self.__ph_sources)
+        if self.__lattice_hex:
+            row = np.floor(sy / scale)
+            offset = (row % 2) * (scale * 0.5)
+            cell_x = (sx + offset) % scale
+            cell_y = sy % scale
+            dx = cell_x - scale * 0.5
+            dy = cell_y - scale * 0.5
+            dist_to_center = np.sqrt(dx * dx + dy * dy)
+        else:
+            angle = math.pi / 4
+            cos_a = math.cos(angle)
+            sin_a = math.sin(angle)
+            rx = sx * cos_a - sy * sin_a
+            ry = sx * sin_a + sy * cos_a
+            cell_x = rx % scale
+            cell_y = ry % scale
+            dx = cell_x - scale * 0.5
+            dy = cell_y - scale * 0.5
+            dist_to_center = np.sqrt(dx * dx + dy * dy)
 
-        # Map to 0-1 brightness
-        brightness = (combined + 1.0) * 0.5
+        norm_dist = dist_to_center / (scale * 0.5)
+        edge = np.clip(1.0 - np.abs(norm_dist - 0.85) * 6.0, 0, 1)
+        node = np.exp(-dist_to_center * dist_to_center / (scale * 0.15))
+        pattern = edge * 0.7 + node * 0.4
 
-        # Warm phosphene colour: shift between orange-yellow and blue-purple
-        # Use a slow oscillation to pick the palette blend
-        palette_phase = math.sin(t * 0.15) * 0.5 + 0.5  # 0..1
+        breath = 0.5 + 0.5 * math.sin(t * 0.8)
+        pattern *= 0.4 + 0.6 * breath
 
-        # Warm: deep orange / amber
-        r_warm = brightness * 180
-        g_warm = brightness * 90
-        b_warm = brightness * 30
-
-        # Cool: blue-purple
-        r_cool = brightness * 80
-        g_cool = brightness * 40
-        b_cool = brightness * 160
-
-        inv = 1.0 - palette_phase
-        frame[:, :, 0] = r_warm * palette_phase + r_cool * inv
-        frame[:, :, 1] = g_warm * palette_phase + g_cool * inv
-        frame[:, :, 2] = b_warm * palette_phase + b_cool * inv
-
-        # Vignette -- darken edges
-        vignette = 1.0 - 0.5 * (self.__dist_center / max(self.__max_dist, 1))
-        vignette = np.clip(vignette, 0, 1)
-        frame[:, :, 0] *= vignette
-        frame[:, :, 1] *= vignette
-        frame[:, :, 2] *= vignette
+        palette_t = math.sin(t * 0.12) * 0.5 + 0.5
+        r1, g1, b1 = 160, 100, 30
+        r2, g2, b2 = 90, 30, 120
+        inv = 1.0 - palette_t
+        frame[:, :, 0] = pattern * (r1 * palette_t + r2 * inv)
+        frame[:, :, 1] = pattern * (g1 * palette_t + g2 * inv)
+        frame[:, :, 2] = pattern * (b1 * palette_t + b2 * inv)
 
     # ================================================================== #
     #  MODE 1 -- Vascular tree (Purkinje tree)                            #
