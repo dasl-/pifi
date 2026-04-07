@@ -16,6 +16,11 @@ from pifi.screensaver.shadebobs import Shadebobs
 from pifi.screensaver.flowfield import FlowField
 from pifi.screensaver.lavalamp import LavaLamp
 from pifi.screensaver.lenia import Lenia
+from pifi.screensaver.domainwarp import DomainWarp
+from pifi.screensaver.kaleidoscope import Kaleidoscope
+from pifi.screensaver.moire import Moire
+from pifi.screensaver.phyllotaxis import Phyllotaxis
+from pifi.screensaver.cliffordattractor import CliffordAttractor
 from pifi.screensaver.inkinwater import InkInWater
 from pifi.screensaver.perlinworms import PerlinWorms
 from pifi.screensaver.pendulumwaves import PendulumWaves
@@ -58,6 +63,11 @@ class ScreensaverManager:
         FlowField,
         LavaLamp,
         Lenia,
+        DomainWarp,
+        Kaleidoscope,
+        Moire,
+        Phyllotaxis,
+        CliffordAttractor,
         InkInWater,
         PerlinWorms,
         PendulumWaves,
