@@ -20,7 +20,6 @@ from pifi.screensaver.domainwarp import DomainWarp
 from pifi.screensaver.kaleidoscope import Kaleidoscope
 from pifi.screensaver.moire import Moire
 from pifi.screensaver.phyllotaxis import Phyllotaxis
-from pifi.screensaver.cliffordattractor import CliffordAttractor
 from pifi.screensaver.inkinwater import InkInWater
 from pifi.screensaver.perlinworms import PerlinWorms
 from pifi.screensaver.pendulumwaves import PendulumWaves
@@ -67,7 +66,6 @@ class ScreensaverManager:
         Kaleidoscope,
         Moire,
         Phyllotaxis,
-        CliffordAttractor,
         InkInWater,
         PerlinWorms,
         PendulumWaves,
