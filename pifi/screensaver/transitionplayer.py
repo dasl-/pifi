@@ -204,13 +204,10 @@ class TransitionPlayer:
 
         # --- Warm-up phase ---
         # Keep the from_screensaver playing on screen at its natural rate
-        # while fast-forwarding the to_screensaver silently. This finishes
-        # all warm-up BEFORE the transition blend starts.
+        # while building up the to_screensaver's state one tick per frame.
+        # This finishes all warm-up BEFORE the transition blend starts.
         if to_alive and warm_up_ticks > 0:
             from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
-            # Target finishing warm-up in ~0.5s of wall time
-            num_warm_up_frames = max(1, int(0.5 / from_sleep))
-            wu_per_frame = max(1, (warm_up_ticks + num_warm_up_frames - 1) // num_warm_up_frames)
 
             while to_tick < warm_up_ticks and to_alive:
                 step_start = time.time()
@@ -223,15 +220,11 @@ class TransitionPlayer:
                     else:
                         from_alive = False
 
-                # Fast-forward to_screensaver (no display, no sleep)
-                for _ in range(wu_per_frame):
-                    if to_tick >= warm_up_ticks:
-                        break
-                    if to_screensaver._tick(to_tick) is not False:
-                        to_tick += 1
-                    else:
-                        to_alive = False
-                        break
+                # One warm-up tick per frame to stay within CPU budget
+                if to_screensaver._tick(to_tick) is not False:
+                    to_tick += 1
+                else:
+                    to_alive = False
 
                 remaining = from_sleep - (time.time() - step_start)
                 if remaining > 0:
@@ -241,27 +234,34 @@ class TransitionPlayer:
                 to_frame = to_capture.get_current_frame()
 
         # --- Transition blend ---
-        # Both screensavers are now ready. Tick each at its natural rate.
-        from_accum = from_screensaver._tick_sleep if from_alive else 0
-        to_accum = to_screensaver._tick_sleep if to_alive else 0
+        # Both screensavers are now ready. The to_screensaver's tick rate
+        # interpolates from the from_screensaver's rate to its own so the
+        # tempo change is gradual rather than an abrupt shift.
+        from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
+        to_sleep = to_screensaver._tick_sleep if to_alive else tick_sleep
+        from_accum = from_sleep if from_alive else 0
+        to_accum = from_sleep if to_alive else 0  # start at from's rhythm
 
         try:
             for step in range(1, num_steps + 1):
                 step_start = time.time()
+                progress = step / num_steps
 
                 from_accum += tick_sleep
                 to_accum += tick_sleep
 
-                if from_alive and from_accum >= from_screensaver._tick_sleep:
-                    from_accum -= from_screensaver._tick_sleep
+                if from_alive and from_accum >= from_sleep:
+                    from_accum -= from_sleep
                     if from_screensaver._tick(from_tick) is not False:
                         from_tick += 1
                         from_frame = from_capture.get_current_frame()
                     else:
                         from_alive = False
 
-                if to_alive and to_accum >= to_screensaver._tick_sleep:
-                    to_accum -= to_screensaver._tick_sleep
+                # Interpolate tick rate: from_sleep at start → to_sleep at end
+                effective_to_sleep = from_sleep + (to_sleep - from_sleep) * progress
+                if to_alive and to_accum >= effective_to_sleep:
+                    to_accum -= effective_to_sleep
                     if to_screensaver._tick(to_tick) is not False:
                         to_tick += 1
                         to_frame = to_capture.get_current_frame()
@@ -270,7 +270,6 @@ class TransitionPlayer:
 
                 from_float = from_frame.astype(np.float32)
                 to_float = to_frame.astype(np.float32)
-                progress = step / num_steps
                 blended = effect(from_float, to_float, progress, width, height)
                 self.__led_frame_player.play_frame(blended.astype(np.uint8))
 
