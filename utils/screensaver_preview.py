@@ -394,7 +394,8 @@ Config values are auto-detected as int, float, bool, or string.
 
 
 def run_sequence(screensaver_names, frame_player, args):
-    """Run multiple screensavers in sequence with transitions."""
+    """Run multiple screensavers in sequence with transitions, looping forever."""
+    import random
     from pifi.screensaver.transitionplayer import TransitionPlayer
 
     use_transitions = not args.no_transitions
@@ -407,27 +408,32 @@ def run_sequence(screensaver_names, frame_player, args):
         print(f"Each screensaver: {args.duration}s")
     time.sleep(1)
 
-    current = get_screensaver(screensaver_names[0], frame_player)
+    current_name = screensaver_names[0]
+    screensaver = get_screensaver(current_name, frame_player)
+    remaining = list(screensaver_names[1:])
 
-    for i, name in enumerate(screensaver_names):
-        if i == 0:
-            screensaver = current
+    while True:
+        screensaver.play(auto_teardown=not use_transitions)
+
+        # Pick next: drain the initial list first, then random from the full pool
+        if remaining:
+            next_name = remaining.pop(0)
         else:
-            screensaver = get_screensaver(name, frame_player)
+            candidates = [n for n in screensaver_names if n != current_name]
+            if not candidates:
+                candidates = screensaver_names
+            next_name = random.choice(candidates)
 
-        is_last = (i == len(screensaver_names) - 1)
+        next_screensaver = get_screensaver(next_name, frame_player)
 
-        # Play with auto_teardown=False if we need to transition out
-        screensaver.play(auto_teardown=is_last or not use_transitions)
-
-        if not is_last and use_transitions:
-            next_screensaver = get_screensaver(screensaver_names[i + 1], frame_player)
+        if use_transitions:
             transition_player.play_transition(
                 from_screensaver=screensaver,
                 to_screensaver=next_screensaver,
             )
             screensaver._teardown()
-            current = next_screensaver
+        screensaver = next_screensaver
+        current_name = next_name
 
 
 if __name__ == '__main__':
