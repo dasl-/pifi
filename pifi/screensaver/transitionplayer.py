@@ -120,6 +120,108 @@ def _make_wave(width, height):
     return wave
 
 
+def _make_pixelate(width, height):
+    """Factory for pixelate transition.
+
+    From_frame gets increasingly pixelated (mosaic), then at the midpoint
+    switches to the to_frame and de-pixelates back to full resolution.
+    """
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    max_block = max(2, max(width, height) // 2)
+
+    def pixelate(from_frame, to_frame, progress, width, height):
+        if progress < 0.5:
+            # First half: pixelate from_frame more and more
+            t = progress * 2  # 0→1
+            block = max(1, int(1 + _ease(t) * (max_block - 1)))
+            src = from_frame
+        else:
+            # Second half: de-pixelate to_frame
+            t = (1 - progress) * 2  # 1→0
+            block = max(1, int(1 + _ease(t) * (max_block - 1)))
+            src = to_frame
+
+        # Quantize coordinates to block grid, then sample
+        bx = (xs_grid // block) * block + block // 2
+        by = (ys_grid // block) * block + block // 2
+        bx = np.clip(bx, 0, width - 1)
+        by = np.clip(by, 0, height - 1)
+        return src[by, bx].astype(np.uint8)
+
+    pixelate.__name__ = 'pixelate'
+    return pixelate
+
+
+def _make_melt(width, height):
+    """Factory for melt/drip transition.
+
+    Columns of the from_frame drip downward at randomized speeds,
+    revealing the to_frame underneath.
+    """
+    # Each column gets a random delay and speed
+    col_delay = np.random.uniform(0.0, 0.35, size=width)
+    col_speed = np.random.uniform(0.8, 1.5, size=width)
+    ys_grid = np.arange(height).reshape(-1, 1)
+
+    def melt(from_frame, to_frame, progress, width, height):
+        # Per-column drop amount: how far down the column has shifted
+        t = np.clip((progress - col_delay) * col_speed / (1 - col_delay + 1e-6), 0, 1)
+        drop = (_ease_vec(t) * height * 1.5).astype(int)  # overshoot so columns fully clear
+
+        result = to_frame.copy()
+        # For each column, shift from_frame pixels down by drop amount
+        for x in range(width):
+            d = drop[x]
+            if d < height:
+                # Pixels that haven't fallen off screen yet
+                result[d:, x] = from_frame[:height - d, x]
+
+        return result.astype(np.uint8)
+
+    melt.__name__ = 'melt'
+    return melt
+
+
+def _ease_vec(t):
+    """Vectorized smoothstep for numpy arrays."""
+    return t * t * (3 - 2 * t)
+
+
+def _make_zoom(width, height):
+    """Factory for zoom transition.
+
+    From_frame zooms in (expanding from center) while fading out,
+    revealing the to_frame underneath.
+    """
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    cy, cx = height / 2, width / 2
+
+    def zoom(from_frame, to_frame, progress, width, height):
+        p = _ease(progress)
+        # Scale factor: 1.0 → ~3.0 (zooming in)
+        scale = 1.0 + p * 2.0
+
+        # Map each output pixel back to source coordinates (inverse zoom from center)
+        src_x = ((xs_grid - cx) / scale + cx).astype(int)
+        src_y = ((ys_grid - cy) / scale + cy).astype(int)
+
+        # Pixels that map outside the frame become transparent (show to_frame)
+        in_bounds = (src_x >= 0) & (src_x < width) & (src_y >= 0) & (src_y < height)
+        src_x_safe = np.clip(src_x, 0, width - 1)
+        src_y_safe = np.clip(src_y, 0, height - 1)
+
+        zoomed = from_frame[src_y_safe, src_x_safe]
+
+        # Blend: zoomed from_frame fades out, to_frame shows through
+        result = to_frame.copy()
+        alpha = (1 - p) * in_bounds.astype(np.float32)
+        result = (zoomed * alpha[..., np.newaxis] + to_frame * (1 - alpha[..., np.newaxis])).astype(np.uint8)
+        return result
+
+    zoom.__name__ = 'zoom'
+    return zoom
+
+
 def _make_dissolve(width, height):
     """Factory that pre-shuffles pixel order for dissolve effect."""
     total_pixels = width * height
@@ -318,6 +420,9 @@ class TransitionPlayer:
         effects.append(_make_wipe(width, height))
         effects.append(_make_push(width, height))
         effects.append(_make_wave(width, height))
+        effects.append(_make_pixelate(width, height))
+        effects.append(_make_melt(width, height))
+        effects.append(_make_zoom(width, height))
         effects.append(_make_dissolve(width, height))
         effects.append(_make_spiral(width, height))
         return random.choice(effects)
