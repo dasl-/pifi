@@ -32,8 +32,12 @@ from pifi.screensaver.inkinwater import InkInWater
 from pifi.screensaver.perlinworms import PerlinWorms
 from pifi.screensaver.pendulumwaves import PendulumWaves
 from pifi.screensaver.stringart import StringArt
+from pifi.screensaver.blueprint import Blueprint
+from pifi.screensaver.testprint import TestPrint
+from pifi.screensaver.klee import Klee
 from pifi.screensaver.unknownpleasures import UnknownPleasures
 from pifi.screensaver.dvdbounce import DvdBounce
+from pifi.screensaver.hexgrid import HexGrid
 from pifi.screensaver.gradienttest import GradientTest
 from pifi.screensaver.nycsubway import NycSubway
 from pifi.screensaver.wfmu import Wfmu
@@ -85,8 +89,12 @@ class ScreensaverManager:
         PerlinWorms,
         PendulumWaves,
         StringArt,
+        Blueprint,
+        TestPrint,
+        Klee,
         UnknownPleasures,
         DvdBounce,
+        HexGrid,
         GradientTest,
         NycSubway,
         Wfmu,
