@@ -193,8 +193,8 @@ class TransitionPlayer:
             to_capture = FrameCapture()
             to_screensaver._led_frame_player = to_capture
             # If not warmed up, run _setup() here (renders to capture, not
-            # the real display). Warm-up ticks are spread across transition
-            # steps below so the from_screensaver keeps animating.
+            # the real display). Warm-up ticks happen below while the
+            # from_screensaver keeps playing on screen.
             if not to_screensaver._warmed_up:
                 to_screensaver._setup()
                 to_screensaver._warmed_up = True
@@ -202,13 +202,46 @@ class TransitionPlayer:
                 to_capture.play_frame(to_frame)
                 warm_up_ticks = 0  # already warmed up
 
-        # How many warm-up ticks to fast-forward per transition step.
-        # Spread evenly so the computation doesn't cause a single big hitch.
-        ticks_per_step = (warm_up_ticks + num_steps - 1) // num_steps if to_alive and warm_up_ticks > 0 else 0
+        # --- Warm-up phase ---
+        # Keep the from_screensaver playing on screen at its natural rate
+        # while fast-forwarding the to_screensaver silently. This finishes
+        # all warm-up BEFORE the transition blend starts.
+        if to_alive and warm_up_ticks > 0:
+            from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
+            # Target finishing warm-up in ~0.5s of wall time
+            num_warm_up_frames = max(1, int(0.5 / from_sleep))
+            wu_per_frame = max(1, (warm_up_ticks + num_warm_up_frames - 1) // num_warm_up_frames)
 
-        # Accumulators for rate-matching each screensaver's tick_sleep to the
-        # transition frame rate. Initialized at the threshold so the first
-        # step ticks immediately (continues the natural rhythm).
+            while to_tick < warm_up_ticks and to_alive:
+                step_start = time.time()
+
+                # Keep from_screensaver animating on the real display
+                if from_alive:
+                    if from_screensaver._tick(from_tick) is not False:
+                        from_tick += 1
+                        self.__led_frame_player.play_frame(from_capture.get_current_frame())
+                    else:
+                        from_alive = False
+
+                # Fast-forward to_screensaver (no display, no sleep)
+                for _ in range(wu_per_frame):
+                    if to_tick >= warm_up_ticks:
+                        break
+                    if to_screensaver._tick(to_tick) is not False:
+                        to_tick += 1
+                    else:
+                        to_alive = False
+                        break
+
+                remaining = from_sleep - (time.time() - step_start)
+                if remaining > 0:
+                    time.sleep(remaining)
+
+            if to_alive:
+                to_frame = to_capture.get_current_frame()
+
+        # --- Transition blend ---
+        # Both screensavers are now ready. Tick each at its natural rate.
         from_accum = from_screensaver._tick_sleep if from_alive else 0
         to_accum = to_screensaver._tick_sleep if to_alive else 0
 
@@ -219,7 +252,6 @@ class TransitionPlayer:
                 from_accum += tick_sleep
                 to_accum += tick_sleep
 
-                # Tick from_screensaver at its natural rate
                 if from_alive and from_accum >= from_screensaver._tick_sleep:
                     from_accum -= from_screensaver._tick_sleep
                     if from_screensaver._tick(from_tick) is not False:
@@ -228,31 +260,13 @@ class TransitionPlayer:
                     else:
                         from_alive = False
 
-                if to_alive:
-                    if to_tick < warm_up_ticks:
-                        # Warm-up phase: fast-forward to build internal state
-                        # without updating the displayed frame. Early in the
-                        # transition the to_frame is barely visible (low blend
-                        # progress), so holding it static is imperceptible.
-                        for _ in range(ticks_per_step):
-                            if to_tick >= warm_up_ticks:
-                                break
-                            if to_screensaver._tick(to_tick) is not False:
-                                to_tick += 1
-                            else:
-                                to_alive = False
-                                break
-                        # Grab the warmed-up frame once warm-up completes
-                        if to_alive and to_tick >= warm_up_ticks:
-                            to_frame = to_capture.get_current_frame()
-                    elif to_accum >= to_screensaver._tick_sleep:
-                        # Post warm-up: tick at natural rate
-                        to_accum -= to_screensaver._tick_sleep
-                        if to_screensaver._tick(to_tick) is not False:
-                            to_tick += 1
-                            to_frame = to_capture.get_current_frame()
-                        else:
-                            to_alive = False
+                if to_alive and to_accum >= to_screensaver._tick_sleep:
+                    to_accum -= to_screensaver._tick_sleep
+                    if to_screensaver._tick(to_tick) is not False:
+                        to_tick += 1
+                        to_frame = to_capture.get_current_frame()
+                    else:
+                        to_alive = False
 
                 from_float = from_frame.astype(np.float32)
                 to_float = to_frame.astype(np.float32)
@@ -260,7 +274,6 @@ class TransitionPlayer:
                 blended = effect(from_float, to_float, progress, width, height)
                 self.__led_frame_player.play_frame(blended.astype(np.uint8))
 
-                # Sleep only the remaining time to maintain consistent frame rate
                 remaining = tick_sleep - (time.time() - step_start)
                 if remaining > 0:
                     time.sleep(remaining)
