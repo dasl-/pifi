@@ -9,22 +9,18 @@ class Vortices(Screensaver):
     """
     Descartes' Theory of Vortices.
 
-    Irregular Voronoi cells with swirling spiral streamlines,
-    inspired by the Principia Philosophiae illustrations of cosmic
-    vortices filling all of space. Each cell is a whirlpool of
-    matter with a bright center, rotating independently while
-    packed edge-to-edge with its neighbors.
+    Packed circles of varying sizes fill the display, each containing
+    concentric swirling rings — inspired by the Principia Philosophiae
+    illustrations of cosmic vortices filling all of space. Dark gaps
+    outline each vortex cell while matter spirals within.
     """
 
-    PALETTES = [
-        # Antique manuscript — sepia, ochre, burnt umber
-        [(0.55, 0.35, 0.15), (0.4, 0.22, 0.08), (0.7, 0.5, 0.25), (0.25, 0.12, 0.04)],
-        # Cosmic ether — deep blues, violet, gold
-        [(0.05, 0.08, 0.25), (0.15, 0.05, 0.35), (0.55, 0.45, 0.1), (0.08, 0.15, 0.4)],
-        # Celestial — teal, silver, midnight
-        [(0.08, 0.25, 0.35), (0.35, 0.45, 0.45), (0.04, 0.08, 0.18), (0.25, 0.5, 0.45)],
-        # Solar — amber, crimson, deep orange
-        [(0.7, 0.3, 0.05), (0.85, 0.15, 0.05), (0.3, 0.08, 0.03), (0.9, 0.55, 0.1)],
+    TINTS = [
+        (0.80, 0.55, 0.35),  # Warm amber/sepia
+        (0.40, 0.55, 0.80),  # Cool blue
+        (0.75, 0.70, 0.65),  # Neutral cream/parchment
+        (0.55, 0.30, 0.20),  # Brown/umber
+        (0.50, 0.65, 0.80),  # Pale blue
     ]
 
     def __init__(self, led_frame_player=None):
@@ -36,144 +32,126 @@ class Vortices(Screensaver):
         self.__time = 0.0
         w, h = self.__width, self.__height
 
-        # Generate irregular Voronoi cell centers
-        avg_cell_size = max(3.0, min(w, h) / random.uniform(3.0, 5.5))
-        num_cells = max(8, int(w * h / (avg_cell_size ** 2)))
-        margin = avg_cell_size * 1.5
+        circles = self.__pack_circles(w, h)
+        n = len(circles)
+        self.__num_circles = n
 
-        centers_x = np.random.uniform(-margin, w + margin, num_cells)
-        centers_y = np.random.uniform(-margin, h + margin, num_cells)
+        cx = np.array([c[0] for c in circles])
+        cy = np.array([c[1] for c in circles])
+        radii = np.array([c[2] for c in circles])
+        self.__cx = cx
+        self.__cy = cy
+        self.__radii = radii
 
-        # Lloyd relaxation for organic but even spacing
-        for _ in range(4):
-            gx_r, gy_r = np.meshgrid(
-                np.linspace(-margin, w + margin, min(w * 2, 120)),
-                np.linspace(-margin, h + margin, min(h * 2, 80))
-            )
-            px_r, py_r = gx_r.ravel(), gy_r.ravel()
-            dx = centers_x[np.newaxis, :] - px_r[:, np.newaxis]
-            dy = centers_y[np.newaxis, :] - py_r[:, np.newaxis]
-            nearest_r = np.argmin(dx ** 2 + dy ** 2, axis=1)
-
-            for ci in range(num_cells):
-                mask = nearest_r == ci
-                if np.any(mask):
-                    centers_x[ci] = np.mean(px_r[mask])
-                    centers_y[ci] = np.mean(py_r[mask])
-
-        self.__centers_x = centers_x
-        self.__centers_y = centers_y
-        self.__num_cells = num_cells
-
-        # Per-cell vortex properties
+        # Per-circle animation
         self.__rotation_speed = (
-            np.random.uniform(0.8, 2.5, num_cells)
-            * np.random.choice([-1, 1], num_cells)
+            np.random.uniform(0.4, 1.8, n) * np.random.choice([-1, 1], n)
         )
-        self.__num_arms = np.random.choice([2, 3], num_cells).astype(np.float64)
-        self.__spiral_tightness = np.random.uniform(0.2, 0.6, num_cells)
+        self.__num_rings = np.clip(radii * 1.0, 2, 8)
+        self.__spiral_factor = np.random.uniform(0.3, 1.2, n)
 
-        # Per-cell color phase
-        self.__cell_phase = np.random.uniform(0, 1.0, num_cells)
-        self.__phase_drift = (
-            np.random.uniform(0.01, 0.04, num_cells)
-            * np.random.choice([-1, 1], num_cells)
-        )
+        # Per-circle color
+        tint_idx = np.random.randint(0, len(self.TINTS), n)
+        self.__tint = np.array([self.TINTS[i] for i in tint_idx])
 
-        # Build Voronoi assignment for every pixel
-        y_coords = np.arange(h, dtype=np.float64)
-        x_coords = np.arange(w, dtype=np.float64)
-        gx, gy = np.meshgrid(x_coords, y_coords)
+        # Build pixel-to-circle maps
+        gy, gx = np.mgrid[0:h, 0:w].astype(np.float64)
         px, py = gx.ravel(), gy.ravel()
         num_px = len(px)
 
-        cell_map = np.zeros(num_px, dtype=np.int32)
-        cell_dist = np.zeros(num_px, dtype=np.float64)
-        cell_angle = np.zeros(num_px, dtype=np.float64)
+        circle_map = np.full(num_px, -1, dtype=np.int32)
+        norm_dist = np.zeros(num_px, dtype=np.float64)
+        angle = np.zeros(num_px, dtype=np.float64)
 
-        chunk_size = 1000
-        for start in range(0, num_px, chunk_size):
-            end = min(start + chunk_size, num_px)
-            dx = centers_x[np.newaxis, :] - px[start:end, np.newaxis]
-            dy = centers_y[np.newaxis, :] - py[start:end, np.newaxis]
-            dists_sq = dx ** 2 + dy ** 2
-            nearest = np.argmin(dists_sq, axis=1)
-            cell_map[start:end] = nearest
+        # Assign pixels to circles (largest placed first, gets priority)
+        for i in range(n):
+            dx = px - cx[i]
+            dy = py - cy[i]
+            dist = np.sqrt(dx ** 2 + dy ** 2)
+            assign = (dist < radii[i]) & (circle_map == -1)
+            circle_map[assign] = i
+            norm_dist[assign] = dist[assign] / radii[i]
+            angle[assign] = np.arctan2(dy[assign], dx[assign])
 
-            pdx = px[start:end] - centers_x[nearest]
-            pdy = py[start:end] - centers_y[nearest]
-            cell_dist[start:end] = np.sqrt(pdx ** 2 + pdy ** 2)
-            cell_angle[start:end] = np.arctan2(pdy, pdx)
+        self.__circle_map = circle_map.reshape(h, w)
+        self.__norm_dist = norm_dist.reshape(h, w)
+        self.__angle = angle.reshape(h, w)
+        self.__in_circle = self.__circle_map >= 0
 
-        self.__cell_map = cell_map.reshape(h, w)
-        self.__cell_dist = cell_dist.reshape(h, w)
-        self.__cell_angle = cell_angle.reshape(h, w)
+    def __pack_circles(self, w, h):
+        """Greedy circle packing: largest-fitting-gap first."""
+        circles = []
+        min_radius = max(0.7, min(w, h) * 0.025)
+        max_radius = min(w, h) * 0.38
+        gap = 0.5
+        num_attempts = 500
+        max_circles = 120
 
-        # Compute cell radius (max distance) for normalization
-        cell_radius = np.ones(num_cells, dtype=np.float64)
-        flat_map = cell_map
-        flat_dist = cell_dist
-        for ci in range(num_cells):
-            mask = flat_map == ci
-            if np.any(mask):
-                cell_radius[ci] = max(1.0, np.max(flat_dist[mask]))
+        for _ in range(max_circles):
+            cx = np.random.uniform(-1, w + 1, num_attempts)
+            cy = np.random.uniform(-1, h + 1, num_attempts)
 
-        self.__norm_dist = self.__cell_dist / cell_radius[self.__cell_map]
+            if circles:
+                existing = np.array(circles)
+                dx = cx[:, np.newaxis] - existing[:, 0]
+                dy = cy[:, np.newaxis] - existing[:, 1]
+                edge_dist = np.sqrt(dx ** 2 + dy ** 2) - existing[:, 2]
+                max_r = np.min(edge_dist, axis=1) - gap
+            else:
+                max_r = np.full(num_attempts, max_radius)
 
-        # Border darkening
-        self.__border_dark = 1.0 - np.clip(self.__norm_dist, 0, 1) ** 2.5 * 0.55
+            max_r = np.minimum(max_r, max_radius)
+            valid = max_r >= min_radius
 
-        # Color palette
-        palette = random.choice(self.PALETTES)
-        self.__palette = np.array(palette)
-        self.__palette_size = len(palette)
+            if not np.any(valid):
+                break
 
-        # Global color drift
-        self.__color_drift_speed = random.uniform(0.05, 0.15)
+            best = np.argmax(np.where(valid, max_r, -1))
+            circles.append((cx[best], cy[best], max_r[best]))
+
+        return circles
 
     def _tick(self, tick):
         self.__time += 0.02
         t = self.__time
+        h, w = self.__height, self.__width
 
-        # Per-cell color from palette
-        color_pos = (
-            self.__cell_phase + t * self.__phase_drift + t * self.__color_drift_speed
-        ) % 1.0
-        palette_idx = color_pos * (self.__palette_size - 1)
-        idx_low = np.clip(np.floor(palette_idx).astype(np.int32), 0, self.__palette_size - 1)
-        idx_high = np.minimum(idx_low + 1, self.__palette_size - 1)
-        frac = palette_idx - idx_low
+        if self.__num_circles == 0:
+            self._led_frame_player.play_frame(np.zeros((h, w, 3), dtype=np.uint8))
+            return
 
-        cell_r = self.__palette[idx_low, 0] * (1 - frac) + self.__palette[idx_high, 0] * frac
-        cell_g = self.__palette[idx_low, 1] * (1 - frac) + self.__palette[idx_high, 1] * frac
-        cell_b = self.__palette[idx_low, 2] * (1 - frac) + self.__palette[idx_high, 2] * frac
+        # Safe index for array lookups (-1 clipped to 0, masked out later)
+        cids = np.clip(self.__circle_map, 0, self.__num_circles - 1)
+        nd = self.__norm_dist
+        ang = self.__angle
 
-        # Spiral vortex pattern
-        cell_ids = self.__cell_map
-        rotation = (self.__rotation_speed * t)[cell_ids]
-        arms = self.__num_arms[cell_ids]
-        tightness = self.__spiral_tightness[cell_ids]
+        # Spiral ring pattern
+        rings = self.__num_rings[cids]
+        rot = (self.__rotation_speed * t)[cids]
+        spf = self.__spiral_factor[cids]
 
-        phase = self.__cell_angle * arms + self.__cell_dist * tightness - rotation
-        spiral = 0.5 + 0.5 * np.sin(phase)
+        phase = nd * rings * 2 * np.pi - ang * spf + rot
+        pattern = 0.5 + 0.4 * np.cos(phase)
 
-        # Spiral is subtle at center (smooth core), strong at edge (visible streamlines)
-        spiral_strength = np.clip(self.__norm_dist * 1.5, 0, 1)
-        modulated = (1.0 - spiral_strength) + spiral_strength * spiral
+        # Bright outline ring near edge
+        outline = np.exp(-((nd - 0.85) ** 2) / 0.008) * 0.5
 
-        # Center glow — bright core at each vortex center
-        center_glow = 1.0 + 0.3 * np.exp(-self.__norm_dist ** 2 * 5.0)
+        # Center dot
+        center = np.exp(-(nd ** 2) / 0.015) * 0.6
 
-        brightness = modulated * center_glow * self.__border_dark
+        brightness = pattern + outline + center
 
-        frame_r = cell_r[cell_ids] * brightness
-        frame_g = cell_g[cell_ids] * brightness
-        frame_b = cell_b[cell_ids] * brightness
+        # Apply per-circle tint
+        tint = self.__tint[cids]
+        r = tint[..., 0] * brightness
+        g = tint[..., 1] * brightness
+        b = tint[..., 2] * brightness
 
+        mask = self.__in_circle
         frame = np.stack([
-            (np.clip(frame_r, 0, 1) * 255).astype(np.uint8),
-            (np.clip(frame_g, 0, 1) * 255).astype(np.uint8),
-            (np.clip(frame_b, 0, 1) * 255).astype(np.uint8),
+            np.where(mask, np.clip(r * 255, 0, 255), 0).astype(np.uint8),
+            np.where(mask, np.clip(g * 255, 0, 255), 0).astype(np.uint8),
+            np.where(mask, np.clip(b * 255, 0, 255), 0).astype(np.uint8),
         ], axis=-1)
 
         self._led_frame_player.play_frame(frame)
