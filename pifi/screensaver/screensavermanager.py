@@ -15,7 +15,7 @@ from pifi.screensaver.aurora import Aurora
 from pifi.screensaver.shadebobs import Shadebobs
 from pifi.screensaver.flowfield import FlowField
 from pifi.screensaver.lavalamp import LavaLamp
-from pifi.screensaver.reactiondiffusion import ReactionDiffusion
+from pifi.screensaver.lenia import Lenia
 from pifi.screensaver.inkinwater import InkInWater
 from pifi.screensaver.perlinworms import PerlinWorms
 from pifi.screensaver.pendulumwaves import PendulumWaves
@@ -57,7 +57,7 @@ class ScreensaverManager:
         Shadebobs,
         FlowField,
         LavaLamp,
-        ReactionDiffusion,
+        Lenia,
         InkInWater,
         PerlinWorms,
         PendulumWaves,
