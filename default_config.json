@@ -518,6 +518,41 @@
                 "tick_sleep": 0.05,
             },
 
+            // Configuration specific to domain warp screensaver.
+            "domainwarp": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to kaleidoscope screensaver.
+            "kaleidoscope": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to moire screensaver.
+            "moire": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to phyllotaxis screensaver.
+            "phyllotaxis": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to clifford attractor screensaver.
+            "clifford_attractor": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
             // Configuration specific to ink in water screensaver.
             "inkinwater": {
     
