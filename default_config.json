@@ -731,6 +731,34 @@
             },
     
     
+            // Configuration specific to test print screensaver.
+            "test_print": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to hex grid screensaver.
+            "hex_grid": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to Klee screensaver.
+            "klee": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to blueprint screensaver.
+            "blueprint": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
             // Configuration specific to gradient test screensaver (for debugging flicker).
             "gradient_test": {
     
