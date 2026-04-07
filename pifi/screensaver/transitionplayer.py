@@ -12,76 +12,75 @@ from pifi.screensaver.screensaver import FrameCapture
 # Each takes (from_frame, to_frame, progress, width, height) where progress is 0.0 to 1.0.
 # Returns a blended [height, width, 3] uint8 numpy array.
 
+def _ease(t):
+    """Smoothstep ease-in-out: 3t² - 2t³"""
+    return t * t * (3 - 2 * t)
+
+
 def crossfade(from_frame, to_frame, progress, width, height):
     return (from_frame * (1 - progress) + to_frame * progress).astype(np.uint8)
 
 
-def wipe_left(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = int(progress * width)
-    result[:, :boundary] = to_frame[:, :boundary]
-    return result
+def _make_wipe(width, height):
+    """Factory that picks a random wipe direction."""
+    direction = random.choice(['left', 'right', 'up', 'down'])
+
+    def wipe(from_frame, to_frame, progress, width, height):
+        result = from_frame.copy()
+        p = _ease(progress)
+        if direction == 'left':
+            boundary = int(p * width)
+            result[:, :boundary] = to_frame[:, :boundary]
+        elif direction == 'right':
+            boundary = width - int(p * width)
+            result[:, boundary:] = to_frame[:, boundary:]
+        elif direction == 'down':
+            boundary = int(p * height)
+            result[:boundary, :] = to_frame[:boundary, :]
+        else:
+            boundary = height - int(p * height)
+            result[boundary:, :] = to_frame[boundary:, :]
+        return result
+
+    wipe.__name__ = f'wipe_{direction}'
+    return wipe
 
 
-def wipe_right(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = width - int(progress * width)
-    result[:, boundary:] = to_frame[:, boundary:]
-    return result
+def _make_push(width, height):
+    """Factory that picks a random push direction."""
+    direction = random.choice(['left', 'right', 'up', 'down'])
 
+    def push(from_frame, to_frame, progress, width, height):
+        result = np.zeros_like(from_frame)
+        p = _ease(progress)
+        if direction == 'left':
+            offset = int(p * width)
+            if offset < width:
+                result[:, :width - offset] = from_frame[:, offset:]
+            if offset > 0:
+                result[:, width - offset:] = to_frame[:, :offset]
+        elif direction == 'right':
+            offset = int(p * width)
+            if offset < width:
+                result[:, offset:] = from_frame[:, :width - offset]
+            if offset > 0:
+                result[:, :offset] = to_frame[:, width - offset:]
+        elif direction == 'down':
+            offset = int(p * height)
+            if offset < height:
+                result[offset:, :] = from_frame[:height - offset, :]
+            if offset > 0:
+                result[:offset, :] = to_frame[height - offset:, :]
+        else:
+            offset = int(p * height)
+            if offset < height:
+                result[:height - offset, :] = from_frame[offset:, :]
+            if offset > 0:
+                result[height - offset:, :] = to_frame[:offset, :]
+        return result
 
-def wipe_down(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = int(progress * height)
-    result[:boundary, :] = to_frame[:boundary, :]
-    return result
-
-
-def wipe_up(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = height - int(progress * height)
-    result[boundary:, :] = to_frame[boundary:, :]
-    return result
-
-
-def push_left(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * width)
-    if offset < width:
-        result[:, :width - offset] = from_frame[:, offset:]
-    if offset > 0:
-        result[:, width - offset:] = to_frame[:, :offset]
-    return result
-
-
-def push_right(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * width)
-    if offset < width:
-        result[:, offset:] = from_frame[:, :width - offset]
-    if offset > 0:
-        result[:, :offset] = to_frame[:, width - offset:]
-    return result
-
-
-def push_down(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * height)
-    if offset < height:
-        result[offset:, :] = from_frame[:height - offset, :]
-    if offset > 0:
-        result[:offset, :] = to_frame[height - offset:, :]
-    return result
-
-
-def push_up(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * height)
-    if offset < height:
-        result[:height - offset, :] = from_frame[offset:, :]
-    if offset > 0:
-        result[height - offset:, :] = to_frame[:offset, :]
-    return result
+    push.__name__ = f'push_{direction}'
+    return push
 
 
 def _make_dissolve(width, height):
@@ -132,14 +131,6 @@ def _make_spiral(width, height):
 # Simple effects that don't need factories
 SIMPLE_EFFECTS = [
     crossfade,
-    wipe_left,
-    wipe_right,
-    wipe_down,
-    wipe_up,
-    push_left,
-    push_right,
-    push_down,
-    push_up,
 ]
 
 
@@ -287,6 +278,8 @@ class TransitionPlayer:
     def __pick_effect(self, width, height):
         # Build the full list including factory effects
         effects = list(SIMPLE_EFFECTS)
+        effects.append(_make_wipe(width, height))
+        effects.append(_make_push(width, height))
         effects.append(_make_dissolve(width, height))
         effects.append(_make_spiral(width, height))
         return random.choice(effects)
