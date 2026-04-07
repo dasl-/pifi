@@ -148,9 +148,10 @@ class ScreensaverManager:
                 screensaver_cls = self.SCREENSAVER_CLASSES[screensaver_id]
                 screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
 
-            screensaver.play()
+            transitions_enabled = Config.get('screensavers.transitions.enabled', True)
+            screensaver.play(auto_teardown=not transitions_enabled)
 
-            if Config.get('screensavers.transitions.enabled', True):
+            if transitions_enabled:
                 # Pick and pre-render the next screensaver so the transition
                 # moves into an already-running visual instead of a blank frame
                 next_id = random.choice(available_ids)
@@ -164,4 +165,10 @@ class ScreensaverManager:
                 if not next_screensaver._warmed_up:
                     next_screensaver = None
 
-                self.__transition_player.play_transition(to_frame=to_frame)
+                # Live transition: both screensavers animate during the blend
+                self.__transition_player.play_transition(
+                    to_frame=to_frame,
+                    from_screensaver=screensaver,
+                    to_screensaver=next_screensaver,
+                )
+                screensaver._teardown()

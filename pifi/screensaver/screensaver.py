@@ -128,14 +128,17 @@ class Screensaver(ABC):
 
         return capture.get_current_frame()
 
-    def play(self) -> None:
+    def play(self, auto_teardown=True) -> None:
         """Run the screensaver tick loop.
 
         If warm_up() was called first, skips _setup() and continues from
         where warm-up left off. Otherwise starts fresh. Timeout always
         counts from when play() is called, not from warm-up.
 
-        Calls _teardown() in a finally block to ensure cleanup.
+        Args:
+            auto_teardown: If True (default), _teardown() is called when the
+                loop ends. Set to False to keep the screensaver alive for
+                live transitions — the caller must call _teardown() manually.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
         self._start_time = time.time()
@@ -152,7 +155,11 @@ class Screensaver(ABC):
                     break
                 time.sleep(self._tick_sleep)
                 tick += 1
-        finally:
+            self._last_tick = tick
+        except:
+            self._teardown()
+            raise
+        if auto_teardown:
             self._teardown()
         self._screensaver_logger.info(f"{self.get_name()} screensaver ended")
 
