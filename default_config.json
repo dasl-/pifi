@@ -546,6 +546,20 @@
                 "tick_sleep": 0.05,
             },
 
+            // Configuration specific to pixel sort screensaver.
+            "pixelsort": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to fire screensaver.
+            "fire": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
 
             // Configuration specific to ink in water screensaver.
             "inkinwater": {
