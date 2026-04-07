@@ -1,9 +1,34 @@
 import time
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
+
+
+class FrameCapture:
+    """Lightweight stand-in for LedFramePlayer that captures frames without displaying.
+
+    Used during screensaver warm-up to build visual state without sending
+    frames to the LED hardware.
+    """
+
+    def __init__(self):
+        self.__current_frame = None
+
+    def play_frame(self, frame):
+        self.__current_frame = frame.copy()
+
+    def get_current_frame(self):
+        if self.__current_frame is None:
+            return None
+        return self.__current_frame.copy()
+
+    def fade_to_frame(self, frame):
+        """During warm-up, skip the fade animation and just capture the target frame."""
+        self.__current_frame = frame.copy()
 
 
 class Screensaver(ABC):
@@ -58,6 +83,9 @@ class Screensaver(ABC):
         if self._timeout is None:
             self._timeout = 0
 
+        self._warmed_up = False
+        self._warm_up_ticks = 0
+
     def _is_past_timeout(self):
         """Check if the screensaver timeout has been exceeded.
 
@@ -67,18 +95,55 @@ class Screensaver(ABC):
             return False
         return (time.time() - self._start_time) > self._timeout
 
+    def warm_up(self, num_ticks=60):
+        """Pre-render ticks to build up visual state without displaying.
+
+        Runs _setup() and num_ticks iterations of _tick() using a FrameCapture
+        instead of the real LED display. Sets _start_time backward so that
+        time-based screensavers see the correct elapsed time.
+
+        Returns the last captured frame (numpy array), or None if no frames
+        were rendered.
+        """
+        # Simulate time passage so time-based screensavers see realistic elapsed time
+        simulated_duration = num_ticks * max(self._tick_sleep, 0.05)
+        self._start_time = time.time() - simulated_duration
+        self._setup()
+        self._warmed_up = True
+
+        # Temporarily swap to a capture player
+        real_player = self._led_frame_player
+        capture = FrameCapture()
+        self._led_frame_player = capture
+
+        try:
+            for tick in range(num_ticks):
+                if self._tick(tick) is False:
+                    break
+            self._warm_up_ticks = tick + 1 if num_ticks > 0 else 0
+        finally:
+            self._led_frame_player = real_player
+
+        return capture.get_current_frame()
+
     def play(self) -> None:
         """Run the screensaver tick loop.
 
-        Calls _setup(), then runs _tick() in a loop until timeout or
-        _tick() returns False. Calls _teardown() in a finally block
-        to ensure cleanup.
+        If warm_up() was called first, skips _setup() and continues from
+        where warm-up left off. Otherwise starts fresh.
+
+        Calls _teardown() in a finally block to ensure cleanup.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
-        self._start_time = time.time()
-        self._setup()
+        if not self._warmed_up:
+            self._start_time = time.time()
+            self._setup()
+            start_tick = 0
+        else:
+            start_tick = self._warm_up_ticks
+
         try:
-            tick = 0
+            tick = start_tick
             while not self._is_past_timeout():
                 if self._tick(tick) is False:
                     break
