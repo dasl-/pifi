@@ -32,75 +32,95 @@ class CliffordAttractor(Screensaver):
         # Density accumulation buffer
         self.__density = np.zeros((self.__height, self.__width), dtype=np.float64)
 
-        # Attractor parameters — start with known-good values
-        self.__base_params = {
-            'a': random.uniform(-2.0, 2.0),
-            'b': random.uniform(-2.0, 2.0),
-            'c': random.uniform(-2.0, 2.0),
-            'd': random.uniform(-2.0, 2.0),
-        }
+        # Attractor parameters — start with known-good values that produce
+        # interesting shapes
+        presets = [
+            {'a': -1.4, 'b': 1.6, 'c': 1.0, 'd': 0.7},
+            {'a': 1.7, 'b': 1.7, 'c': 0.6, 'd': 1.2},
+            {'a': -1.7, 'b': 1.3, 'c': -0.1, 'd': -1.2},
+            {'a': 1.5, 'b': -1.8, 'c': 1.6, 'd': 0.9},
+            {'a': -1.8, 'b': -2.0, 'c': -0.5, 'd': -0.9},
+            {'a': 1.1, 'b': -1.3, 'c': 1.7, 'd': 0.5},
+        ]
+        self.__base_params = random.choice(presets)
 
-        # Drift speeds for each parameter
-        self.__drift = {
-            'a': random.uniform(-0.003, 0.003),
-            'b': random.uniform(-0.003, 0.003),
-            'c': random.uniform(-0.003, 0.003),
-            'd': random.uniform(-0.003, 0.003),
-        }
+        # Drift speeds for each parameter (slow sinusoidal)
+        self.__drift_freq = {k: random.uniform(0.3, 0.8) for k in 'abcd'}
+        self.__drift_phase = {k: random.uniform(0, 2 * math.pi) for k in 'abcd'}
+        self.__drift_amp = {k: random.uniform(0.15, 0.3) for k in 'abcd'}
 
         # Current point
-        self.__x = random.uniform(-0.1, 0.1)
-        self.__y = random.uniform(-0.1, 0.1)
+        self.__x = 0.1
+        self.__y = 0.1
 
-        # How many iterations per tick
-        self.__iters_per_tick = max(100, self.__width * self.__height * 2)
+        # Track bounds for auto-fitting
+        self.__x_min = self.__x_max = self.__x
+        self.__y_min = self.__y_max = self.__y
+
+        # More iterations = brighter, more filled display
+        self.__iters_per_tick = max(500, self.__width * self.__height * 4)
 
     def _tick(self, tick):
         self.__time += 0.01
 
-        # Slowly drift parameters
-        a = self.__base_params['a'] + math.sin(self.__time * self.__drift['a'] * 100) * 0.5
-        b = self.__base_params['b'] + math.sin(self.__time * self.__drift['b'] * 100 + 1.3) * 0.5
-        c = self.__base_params['c'] + math.sin(self.__time * self.__drift['c'] * 100 + 2.7) * 0.5
-        d = self.__base_params['d'] + math.sin(self.__time * self.__drift['d'] * 100 + 4.1) * 0.5
+        t = self.__time
+
+        # Slowly drift parameters around the preset
+        a = self.__base_params['a'] + self.__drift_amp['a'] * math.sin(t * self.__drift_freq['a'] + self.__drift_phase['a'])
+        b = self.__base_params['b'] + self.__drift_amp['b'] * math.sin(t * self.__drift_freq['b'] + self.__drift_phase['b'])
+        c = self.__base_params['c'] + self.__drift_amp['c'] * math.sin(t * self.__drift_freq['c'] + self.__drift_phase['c'])
+        d = self.__base_params['d'] + self.__drift_amp['d'] * math.sin(t * self.__drift_freq['d'] + self.__drift_phase['d'])
 
         # Fade existing density for trail effect
-        self.__density *= 0.92
+        self.__density *= 0.88
 
-        # Iterate the attractor
-        x, y = self.__x, self.__y
-        w, h = self.__width, self.__height
-        density = self.__density
+        # Vectorized iteration: compute all points from the last known state
+        n = self.__iters_per_tick
+        xs = np.empty(n)
+        ys = np.empty(n)
+        xs[0] = self.__x
+        ys[0] = self.__y
 
-        # Batch iterate using numpy for speed
-        xs = np.empty(self.__iters_per_tick)
-        ys = np.empty(self.__iters_per_tick)
-        xs[0] = x
-        ys[0] = y
-
-        for i in range(1, self.__iters_per_tick):
+        # The recurrence is sequential, but we can at least use numpy scalar ops
+        for i in range(1, n):
             xs[i] = math.sin(a * ys[i - 1]) + c * math.cos(a * xs[i - 1])
             ys[i] = math.sin(b * xs[i - 1]) + d * math.cos(b * ys[i - 1])
 
         self.__x = xs[-1]
         self.__y = ys[-1]
 
-        # Map attractor coordinates to pixel space
-        # Attractor output is roughly in [-3, 3]
-        scale = min(w, h) / 6
-        px = ((xs + 3) * scale).astype(int) + (w - int(6 * scale)) // 2
-        py = ((ys + 3) * scale).astype(int) + (h - int(6 * scale)) // 2
+        # Update running bounds with exponential smoothing
+        cur_xmin, cur_xmax = xs.min(), xs.max()
+        cur_ymin, cur_ymax = ys.min(), ys.max()
+        alpha = 0.05
+        self.__x_min += alpha * (cur_xmin - self.__x_min)
+        self.__x_max += alpha * (cur_xmax - self.__x_max)
+        self.__y_min += alpha * (cur_ymin - self.__y_min)
+        self.__y_max += alpha * (cur_ymax - self.__y_max)
+
+        # Map to pixel space using tracked bounds (auto-fit with padding)
+        x_range = max(self.__x_max - self.__x_min, 0.1)
+        y_range = max(self.__y_max - self.__y_min, 0.1)
+
+        # Fit to display while preserving aspect ratio
+        w, h = self.__width, self.__height
+        scale = min((w - 2) / x_range, (h - 2) / y_range)
+        cx = (self.__x_min + self.__x_max) / 2
+        cy = (self.__y_min + self.__y_max) / 2
+
+        px = ((xs - cx) * scale + w / 2).astype(int)
+        py = ((ys - cy) * scale + h / 2).astype(int)
 
         # Accumulate hits into density buffer
         mask = (px >= 0) & (px < w) & (py >= 0) & (py < h)
-        np.add.at(density, (py[mask], px[mask]), 0.15)
+        np.add.at(self.__density, (py[mask], px[mask]), 0.08)
 
-        # Normalize and render
-        d = np.clip(density, 0, 1)
+        # Render with gamma curve for glow
+        d = np.clip(self.__density, 0, 1)
 
-        hue = (self.__hue_base + d * 0.35 + self.__time * 0.05) % 1.0
-        sat = np.where(d > 0.01, 0.6 + d * 0.3, 0.0)
-        val = np.where(d > 0.01, d ** 0.6, 0.0)  # gamma for glow
+        hue = (self.__hue_base + d * 0.35 + t * 0.03) % 1.0
+        sat = np.where(d > 0.01, 0.55 + d * 0.4, 0.0)
+        val = np.where(d > 0.01, d ** 0.5, 0.0)
 
         frame = _hsv_to_rgb_vec(hue, sat, val)
         self._led_frame_player.play_frame(frame)
