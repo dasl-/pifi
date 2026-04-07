@@ -33,153 +33,145 @@ class ReactionDiffusion(Screensaver):
 
     def _tick(self, tick):
         # Run multiple simulation steps per frame for faster evolution
-        steps_per_frame = Config.get('screensavers.configs.reactiondiffusion.steps_per_frame', 10)
+        steps_per_frame = Config.get('screensavers.configs.reactiondiffusion.steps_per_frame', 5)
         for _ in range(steps_per_frame):
             self.__simulate_step()
 
-        # Periodically inject new seeds to keep evolution going
-        inject_interval = Config.get('screensavers.configs.reactiondiffusion.inject_interval', 100)
-        if self.__time > 0 and self.__time % inject_interval == 0:
-            self.__inject_seed()
+        # Detect if pattern has settled into a fixed point and perturb it
+        if self.__time > 0 and self.__time % 30 == 0:
+            self.__check_and_perturb()
 
         self.__render()
         self.__time += 1
 
     def __reset(self):
         self.__time = 0
+        self.__prev_B_mean = None
 
         # Initialize with A=1 everywhere, B=0 with some seed points
         self.__A = np.ones((self.__height, self.__width), dtype=np.float32)
         self.__B = np.zeros((self.__height, self.__width), dtype=np.float32)
 
-        # Seed some B in random spots - more seeds for faster start
-        num_seeds = Config.get('screensavers.configs.reactiondiffusion.num_seeds', 8)
+        # Seed some B in random spots
+        num_seeds = Config.get('screensavers.configs.reactiondiffusion.num_seeds', 5)
         for _ in range(num_seeds):
-            cx = random.randint(2, self.__width - 3)
-            cy = random.randint(2, self.__height - 3)
-            radius = random.randint(1, 3)
-            for dy in range(-radius, radius + 1):
-                for dx in range(-radius, radius + 1):
-                    if 0 <= cy + dy < self.__height and 0 <= cx + dx < self.__width:
-                        self.__B[cy + dy, cx + dx] = 1.0
+            cx = random.randint(1, self.__width - 2)
+            cy = random.randint(1, self.__height - 2)
+            radius = random.randint(1, 2)
+            y_lo = max(0, cy - radius)
+            y_hi = min(self.__height, cy + radius + 1)
+            x_lo = max(0, cx - radius)
+            x_hi = min(self.__width, cx + radius + 1)
+            self.__B[y_lo:y_hi, x_lo:x_hi] = 1.0
 
-        # Pick random parameters that produce interesting patterns
-        # Prefer more dynamic/chaotic patterns that keep evolving
+        # Parameters tuned for small grids — these stay dynamic longer.
+        # Higher feed rates push more chemical A in, preventing B from
+        # dying out. Slightly higher dB helps patterns spread across the
+        # small grid before settling.
         self.__params = random.choice([
-            # Mitosis (cell division) - very dynamic
-            {'f': 0.0367, 'k': 0.0649, 'dA': 1.0, 'dB': 0.5},
-            # Coral growth - actively growing
-            {'f': 0.0545, 'k': 0.062, 'dA': 1.0, 'dB': 0.5},
-            # Pulsing solitons - constantly moving
-            {'f': 0.03, 'k': 0.062, 'dA': 1.0, 'dB': 0.5},
-            # Worms - wiggly moving patterns
-            {'f': 0.038, 'k': 0.061, 'dA': 1.0, 'dB': 0.5},
-            # Bubbling chaos
-            {'f': 0.026, 'k': 0.051, 'dA': 1.0, 'dB': 0.5},
+            # Mitosis — cells divide and keep splitting
+            {'f': 0.037, 'k': 0.064, 'dA': 1.0, 'dB': 0.5},
+            # Moving spots — solitons that wander
+            {'f': 0.030, 'k': 0.060, 'dA': 1.0, 'dB': 0.5},
+            # Worms — wiggly stripes
+            {'f': 0.040, 'k': 0.060, 'dA': 1.0, 'dB': 0.5},
+            # Chaos — constantly shifting
+            {'f': 0.026, 'k': 0.052, 'dA': 1.0, 'dB': 0.5},
+            # Waves — pulsing rings
+            {'f': 0.014, 'k': 0.045, 'dA': 1.0, 'dB': 0.5},
         ])
 
-        # Color palette
-        self.__hue = random.random()
+        # Slowly rotating hue for color variation over time
+        self.__hue_base = random.random()
 
         self.__logger.info(f"Reaction Diffusion params: f={self.__params['f']}, k={self.__params['k']}")
 
-    def __inject_seed(self):
-        """Inject a new seed to keep the pattern evolving."""
-        cx = random.randint(2, self.__width - 3)
-        cy = random.randint(2, self.__height - 3)
-        radius = random.randint(1, 2)
-        for dy in range(-radius, radius + 1):
-            for dx in range(-radius, radius + 1):
-                if 0 <= cy + dy < self.__height and 0 <= cx + dx < self.__width:
-                    self.__B[cy + dy, cx + dx] = 1.0
+    def __check_and_perturb(self):
+        """Detect stagnation and inject noise to keep things dynamic."""
+        b_mean = float(self.__B.mean())
+        if self.__prev_B_mean is not None:
+            delta = abs(b_mean - self.__prev_B_mean)
+            if delta < 0.0005:
+                # System has settled — inject a band of noise to shake it up
+                axis = random.choice(['h', 'v'])
+                if axis == 'h':
+                    y = random.randint(0, self.__height - 1)
+                    thickness = random.randint(1, max(1, self.__height // 4))
+                    y_lo = max(0, y - thickness // 2)
+                    y_hi = min(self.__height, y_lo + thickness)
+                    self.__B[y_lo:y_hi, :] = np.random.uniform(0.2, 1.0,
+                        (y_hi - y_lo, self.__width)).astype(np.float32)
+                else:
+                    x = random.randint(0, self.__width - 1)
+                    thickness = random.randint(1, max(1, self.__width // 4))
+                    x_lo = max(0, x - thickness // 2)
+                    x_hi = min(self.__width, x_lo + thickness)
+                    self.__B[:, x_lo:x_hi] = np.random.uniform(0.2, 1.0,
+                        (self.__height, x_hi - x_lo)).astype(np.float32)
+        self.__prev_B_mean = b_mean
 
     def __simulate_step(self):
-        f = self.__params['f']  # Feed rate
-        k = self.__params['k']  # Kill rate
-        dA = self.__params['dA']  # Diffusion rate for A
-        dB = self.__params['dB']  # Diffusion rate for B
+        f = self.__params['f']
+        k = self.__params['k']
+        dA = self.__params['dA']
+        dB = self.__params['dB']
 
-        # Compute Laplacian using convolution
-        # Simple 3x3 kernel: neighbors - 4*center
         laplacian_A = self.__laplacian(self.__A)
         laplacian_B = self.__laplacian(self.__B)
 
-        # Reaction-diffusion equations
         AB2 = self.__A * self.__B * self.__B
 
-        # Update concentrations
         self.__A += dA * laplacian_A - AB2 + f * (1 - self.__A)
         self.__B += dB * laplacian_B + AB2 - (k + f) * self.__B
 
-        # Clamp values
-        self.__A = np.clip(self.__A, 0, 1)
-        self.__B = np.clip(self.__B, 0, 1)
+        np.clip(self.__A, 0, 1, out=self.__A)
+        np.clip(self.__B, 0, 1, out=self.__B)
 
     def __laplacian(self, grid):
-        """Compute discrete Laplacian using convolution."""
-        # Pad with wrap-around for continuous boundaries
-        padded = np.pad(grid, 1, mode='wrap')
-
-        # 5-point stencil Laplacian
-        laplacian = (
-            padded[:-2, 1:-1] +  # up
-            padded[2:, 1:-1] +   # down
-            padded[1:-1, :-2] +  # left
-            padded[1:-1, 2:] -   # right
+        """Compute discrete Laplacian with wrap-around boundaries."""
+        # Use roll instead of pad+slice — avoids allocation on small grids
+        return (
+            np.roll(grid, -1, axis=0) +
+            np.roll(grid, 1, axis=0) +
+            np.roll(grid, -1, axis=1) +
+            np.roll(grid, 1, axis=1) -
             4 * grid
         )
 
-        return laplacian
-
     def __render(self):
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        b = self.__B
+        hue = (self.__hue_base + self.__time * 0.002) % 1.0
 
-        # Color based on B concentration
-        # B=0 is background, B=1 is pattern
-        for y in range(self.__height):
-            for x in range(self.__width):
-                b = self.__B[y, x]
+        # Vectorized HSV→RGB: pattern pixels get hue-shifted color,
+        # background gets a subtle glow.
+        h = np.where(b > 0.1, (hue + b * 0.2) % 1.0, hue)
+        s = np.where(b > 0.1, 0.7, 0.3)
+        v = np.where(b > 0.1, 0.3 + b * 0.7, (1 - self.__A) * 0.15)
 
-                if b > 0.1:
-                    # Pattern color
-                    hue = (self.__hue + b * 0.2) % 1.0
-                    sat = 0.7
-                    val = 0.3 + b * 0.7
-                    frame[y, x] = self.__hsv_to_rgb(hue, sat, val)
-                else:
-                    # Background - subtle glow based on A
-                    a = self.__A[y, x]
-                    val = (1 - a) * 0.15
-                    frame[y, x] = self.__hsv_to_rgb(self.__hue, 0.3, val)
-
+        frame = self.__hsv_to_rgb_vec(h, s, v)
         self._led_frame_player.play_frame(frame)
 
-    def __hsv_to_rgb(self, h, s, v):
-        if s == 0.0:
-            val = int(v * 255)
-            return [val, val, val]
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
+    @staticmethod
+    def __hsv_to_rgb_vec(h, s, v):
+        """Vectorized HSV to RGB conversion. Returns [H, W, 3] uint8 array."""
+        i = (h * 6.0).astype(int) % 6
+        f = (h * 6.0) - (h * 6.0).astype(int)
         p = v * (1.0 - s)
         q = v * (1.0 - s * f)
         t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
 
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
+        r = np.zeros_like(h)
+        g = np.zeros_like(h)
+        bl = np.zeros_like(h)
 
-        return [int(r * 255), int(g * 255), int(b * 255)]
+        m0 = i == 0; r[m0] = v[m0]; g[m0] = t[m0]; bl[m0] = p[m0]
+        m1 = i == 1; r[m1] = q[m1]; g[m1] = v[m1]; bl[m1] = p[m1]
+        m2 = i == 2; r[m2] = p[m2]; g[m2] = v[m2]; bl[m2] = t[m2]
+        m3 = i == 3; r[m3] = p[m3]; g[m3] = q[m3]; bl[m3] = v[m3]
+        m4 = i == 4; r[m4] = t[m4]; g[m4] = p[m4]; bl[m4] = v[m4]
+        m5 = i == 5; r[m5] = v[m5]; g[m5] = p[m5]; bl[m5] = q[m5]
+
+        return np.stack([r * 255, g * 255, bl * 255], axis=-1).astype(np.uint8)
 
     @classmethod
     def get_id(cls) -> str:
