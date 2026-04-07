@@ -5,6 +5,7 @@ import numpy as np
 
 from pifi.config import Config
 from pifi.logger import Logger
+from pifi.screensaver.screensaver import FrameCapture
 
 
 # Transition effect functions.
@@ -148,7 +149,8 @@ class TransitionPlayer:
         self.__led_frame_player = led_frame_player
         self.__logger = Logger().set_namespace(self.__class__.__name__)
 
-    def play_transition(self, from_frame=None, to_frame=None):
+    def play_transition(self, from_frame=None, to_frame=None,
+                        from_screensaver=None, to_screensaver=None):
         width = Config.get_or_throw('leds.display_width')
         height = Config.get_or_throw('leds.display_height')
         duration = Config.get('screensavers.transitions.duration', 1.0)
@@ -159,8 +161,6 @@ class TransitionPlayer:
             from_frame = self.__led_frame_player.get_current_frame()
         if from_frame is None:
             from_frame = np.zeros([height, width, 3], np.uint8)
-        # Monochrome video modes produce (H, W) frames. Expand to (H, W, 3)
-        # so blending math works with consistent shapes.
         if from_frame.ndim == 2:
             from_frame = np.stack([from_frame] * 3, axis=-1)
 
@@ -169,20 +169,61 @@ class TransitionPlayer:
         if to_frame.ndim == 2:
             to_frame = np.stack([to_frame] * 3, axis=-1)
 
-        # Convert to float32 for blending math
-        from_float = from_frame.astype(np.float32)
-        to_float = to_frame.astype(np.float32)
-
         # Pick a random effect - include factory-generated effects
         effect = self.__pick_effect(width, height)
 
         self.__logger.info(f"Playing transition: {effect.__name__}")
 
-        for step in range(1, num_steps + 1):
-            progress = step / num_steps
-            blended = effect(from_float, to_float, progress, width, height)
-            self.__led_frame_player.play_frame(blended.astype(np.uint8))
-            time.sleep(tick_sleep)
+        # Set up live ticking if screensaver objects are provided
+        from_capture = None
+        to_capture = None
+        from_tick = 0
+        to_tick = 0
+        from_alive = from_screensaver is not None
+        to_alive = to_screensaver is not None
+
+        if from_alive:
+            from_capture = FrameCapture()
+            from_capture.play_frame(from_frame)
+            from_tick = getattr(from_screensaver, '_last_tick', 0)
+            from_screensaver._led_frame_player = from_capture
+
+        if to_alive:
+            to_capture = FrameCapture()
+            to_capture.play_frame(to_frame)
+            to_tick = to_screensaver._warm_up_ticks
+            to_screensaver._led_frame_player = to_capture
+
+        try:
+            for step in range(1, num_steps + 1):
+                # Tick live screensavers and grab their latest frames
+                if from_alive:
+                    if from_screensaver._tick(from_tick) is not False:
+                        from_tick += 1
+                        from_frame = from_capture.get_current_frame()
+                    else:
+                        from_alive = False
+
+                if to_alive:
+                    if to_screensaver._tick(to_tick) is not False:
+                        to_tick += 1
+                        to_frame = to_capture.get_current_frame()
+                    else:
+                        to_alive = False
+
+                from_float = from_frame.astype(np.float32)
+                to_float = to_frame.astype(np.float32)
+                progress = step / num_steps
+                blended = effect(from_float, to_float, progress, width, height)
+                self.__led_frame_player.play_frame(blended.astype(np.uint8))
+                time.sleep(tick_sleep)
+        finally:
+            # Restore real frame player so play() works after transition
+            if from_screensaver is not None:
+                from_screensaver._led_frame_player = self.__led_frame_player
+            if to_screensaver is not None:
+                to_screensaver._led_frame_player = self.__led_frame_player
+                to_screensaver._warm_up_ticks = to_tick
 
     def __pick_effect(self, width, height):
         # Build the full list including factory effects
