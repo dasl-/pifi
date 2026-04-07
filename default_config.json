@@ -766,6 +766,13 @@
                 "tick_sleep": 0.03,
             },
 
+            // Configuration specific to vortices screensaver.
+            "vortices": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
             // Configuration specific to Purkinje screensaver.
             "purkinje": {
 
