@@ -1,8 +1,6 @@
 import time
 from abc import ABC, abstractmethod
 
-import numpy as np
-
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
@@ -99,30 +97,34 @@ class Screensaver(ABC):
         """Pre-render ticks to build up visual state without displaying.
 
         Runs _setup() and num_ticks iterations of _tick() using a FrameCapture
-        instead of the real LED display. Sets _start_time backward so that
-        time-based screensavers see the correct elapsed time.
+        instead of the real LED display. Ticks run at full speed (no sleeping).
 
         Returns the last captured frame (numpy array), or None if no frames
-        were rendered.
+        were rendered. Sets _warmed_up to True only if all ticks completed;
+        if _tick() returned False early, _warmed_up stays False and the
+        screensaver should not be reused.
         """
-        # Simulate time passage so time-based screensavers see realistic elapsed time
-        simulated_duration = num_ticks * max(self._tick_sleep, 0.05)
-        self._start_time = time.time() - simulated_duration
         self._setup()
-        self._warmed_up = True
 
         # Temporarily swap to a capture player
         real_player = self._led_frame_player
         capture = FrameCapture()
         self._led_frame_player = capture
 
+        completed = True
         try:
             for tick in range(num_ticks):
                 if self._tick(tick) is False:
+                    completed = False
                     break
             self._warm_up_ticks = tick + 1 if num_ticks > 0 else 0
         finally:
             self._led_frame_player = real_player
+
+        if completed:
+            self._warmed_up = True
+        else:
+            self._teardown()
 
         return capture.get_current_frame()
 
@@ -130,13 +132,14 @@ class Screensaver(ABC):
         """Run the screensaver tick loop.
 
         If warm_up() was called first, skips _setup() and continues from
-        where warm-up left off. Otherwise starts fresh.
+        where warm-up left off. Otherwise starts fresh. Timeout always
+        counts from when play() is called, not from warm-up.
 
         Calls _teardown() in a finally block to ensure cleanup.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
+        self._start_time = time.time()
         if not self._warmed_up:
-            self._start_time = time.time()
             self._setup()
             start_tick = 0
         else:
