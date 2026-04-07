@@ -83,6 +83,43 @@ def _make_push(width, height):
     return push
 
 
+def _make_wave(width, height):
+    """Factory for wavy dream/ripple transition.
+
+    The from_frame gets increasingly distorted by sine-wave displacement
+    while the to_frame crossfades in over the distortion.
+    """
+    # Pre-compute base coordinate grids
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    # Random wave parameters for variety
+    freq_x = random.uniform(1.5, 3.0)
+    freq_y = random.uniform(1.5, 3.0)
+    phase_x = random.uniform(0, 2 * np.pi)
+    phase_y = random.uniform(0, 2 * np.pi)
+
+    def wave(from_frame, to_frame, progress, width, height):
+        # Distortion amplitude ramps up then back down (peaks around 0.4)
+        amp = progress * (1 - progress) * 4
+        max_shift = max(width, height) * 0.3
+        shift = amp * max_shift
+
+        # Apply sine displacement to both axes
+        dx = (np.sin(ys_grid * freq_y / height * 2 * np.pi + phase_y + progress * 6) * shift).astype(int)
+        dy = (np.sin(xs_grid * freq_x / width * 2 * np.pi + phase_x + progress * 6) * shift).astype(int)
+
+        src_x = np.clip(xs_grid + dx, 0, width - 1)
+        src_y = np.clip(ys_grid + dy, 0, height - 1)
+
+        warped_from = from_frame[src_y, src_x]
+
+        # Crossfade from warped source to clean destination
+        blend = _ease(progress)
+        return (warped_from * (1 - blend) + to_frame * blend).astype(np.uint8)
+
+    wave.__name__ = 'wave'
+    return wave
+
+
 def _make_dissolve(width, height):
     """Factory that pre-shuffles pixel order for dissolve effect."""
     total_pixels = width * height
@@ -280,6 +317,7 @@ class TransitionPlayer:
         effects = list(SIMPLE_EFFECTS)
         effects.append(_make_wipe(width, height))
         effects.append(_make_push(width, height))
+        effects.append(_make_wave(width, height))
         effects.append(_make_dissolve(width, height))
         effects.append(_make_spiral(width, height))
         return random.choice(effects)
