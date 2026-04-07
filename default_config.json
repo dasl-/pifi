@@ -546,12 +546,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Configuration specific to clifford attractor screensaver.
-            "clifford_attractor": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
 
             // Configuration specific to ink in water screensaver.
             "inkinwater": {
