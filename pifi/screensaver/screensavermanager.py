@@ -153,8 +153,13 @@ class ScreensaverManager:
 
             if transitions_enabled:
                 # Pick and pre-render the next screensaver so the transition
-                # moves into an already-running visual instead of a blank frame
-                next_id = random.choice(available_ids)
+                # moves into an already-running visual instead of a blank frame.
+                # Avoid repeating the same screensaver back-to-back.
+                current_id = screensaver.get_id()
+                candidates = [sid for sid in available_ids if sid != current_id]
+                if not candidates:
+                    candidates = available_ids
+                next_id = random.choice(candidates)
                 next_cls = self.SCREENSAVER_CLASSES[next_id]
                 next_screensaver = next_cls(led_frame_player=self.__led_frame_player)
                 warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
