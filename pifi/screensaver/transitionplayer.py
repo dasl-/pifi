@@ -194,17 +194,28 @@ class TransitionPlayer:
             to_tick = to_screensaver._warm_up_ticks
             to_screensaver._led_frame_player = to_capture
 
+        # Accumulators for rate-matching each screensaver's tick_sleep to the
+        # transition frame rate. Initialized at the threshold so the first
+        # step ticks immediately (continues the natural rhythm).
+        from_accum = from_screensaver._tick_sleep if from_alive else 0
+        to_accum = to_screensaver._tick_sleep if to_alive else 0
+
         try:
             for step in range(1, num_steps + 1):
-                # Tick live screensavers and grab their latest frames
-                if from_alive:
+                from_accum += tick_sleep
+                to_accum += tick_sleep
+
+                # Tick each screensaver at its natural rate
+                if from_alive and from_accum >= from_screensaver._tick_sleep:
+                    from_accum -= from_screensaver._tick_sleep
                     if from_screensaver._tick(from_tick) is not False:
                         from_tick += 1
                         from_frame = from_capture.get_current_frame()
                     else:
                         from_alive = False
 
-                if to_alive:
+                if to_alive and to_accum >= to_screensaver._tick_sleep:
+                    to_accum -= to_screensaver._tick_sleep
                     if to_screensaver._tick(to_tick) is not False:
                         to_tick += 1
                         to_frame = to_capture.get_current_frame()
