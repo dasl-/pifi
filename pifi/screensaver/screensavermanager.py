@@ -20,6 +20,9 @@ from pifi.screensaver.pixelsort import PixelSort
 from pifi.screensaver.fire import Fire
 from pifi.screensaver.colorfield import ColorField
 from pifi.screensaver.doublependulum import DoublePendulum
+from pifi.screensaver.overprint import Overprint
+from pifi.screensaver.halftone import Halftone
+from pifi.screensaver.misprint import Misprint
 from pifi.screensaver.opart import OpArt
 from pifi.screensaver.noisegradient import NoiseGradient
 from pifi.screensaver.domainwarp import DomainWarp
@@ -75,6 +78,9 @@ class ScreensaverManager:
         Fire,
         ColorField,
         DoublePendulum,
+        Overprint,
+        Halftone,
+        Misprint,
         OpArt,
         NoiseGradient,
         InkInWater,

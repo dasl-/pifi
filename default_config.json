@@ -576,6 +576,27 @@
                 "tick_sleep": 0.03,
             },
 
+            // Configuration specific to overprint screensaver.
+            "overprint": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to halftone screensaver.
+            "halftone": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
+            // Configuration specific to misprint screensaver.
+            "misprint": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
             // Configuration specific to op art screensaver.
             "opart": {
 
