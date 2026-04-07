@@ -147,6 +147,12 @@
 
             // Optional, float, default: 0.03. Seconds to sleep between transition frames.
             "tick_sleep": 0.03,
+
+            // Optional, integer, default: 60. Number of ticks to pre-render the next screensaver
+            // before playing the transition. This makes the transition move into an already-running
+            // screensaver instead of a blank frame. Higher values give the next screensaver more
+            // time to build up visual state. Set to 0 to disable pre-rendering.
+            "warm_up_ticks": 60,
         },
 
         // Per-screensaver configuration.

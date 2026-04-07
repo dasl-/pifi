@@ -120,6 +120,7 @@ class ScreensaverManager:
         return ScreensaverManager._all_screensavers_cache
 
     def run(self):
+        next_screensaver = None
         while True:
             # Reload config overrides from database before playing
             # This picks up any changes made via the settings UI
@@ -137,12 +138,24 @@ class ScreensaverManager:
             if not available_ids:
                 available_ids.append('game_of_life')
 
-            # Pick a random screensaver and instantiate fresh
-            # Fresh instance is needed to pick up config changes from the UI
-            screensaver_id = random.choice(available_ids)
-            screensaver_cls = self.SCREENSAVER_CLASSES[screensaver_id]
-            screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
+            if next_screensaver is not None:
+                # Use the pre-warmed screensaver from last iteration's transition
+                screensaver = next_screensaver
+                next_screensaver = None
+            else:
+                # First iteration or transitions disabled — fresh start
+                screensaver_id = random.choice(available_ids)
+                screensaver_cls = self.SCREENSAVER_CLASSES[screensaver_id]
+                screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
+
             screensaver.play()
 
             if Config.get('screensavers.transitions.enabled', True):
-                self.__transition_player.play_transition()
+                # Pick and pre-render the next screensaver so the transition
+                # moves into an already-running visual instead of a blank frame
+                next_id = random.choice(available_ids)
+                next_cls = self.SCREENSAVER_CLASSES[next_id]
+                next_screensaver = next_cls(led_frame_player=self.__led_frame_player)
+                warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
+                to_frame = next_screensaver.warm_up(num_ticks=warm_up_ticks)
+                self.__transition_player.play_transition(to_frame=to_frame)
