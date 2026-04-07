@@ -158,4 +158,10 @@ class ScreensaverManager:
                 next_screensaver = next_cls(led_frame_player=self.__led_frame_player)
                 warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
                 to_frame = next_screensaver.warm_up(num_ticks=warm_up_ticks)
+
+                # If the screensaver ended early during warm-up (e.g. missing
+                # dependency), discard it so we don't immediately exit in play()
+                if not next_screensaver._warmed_up:
+                    next_screensaver = None
+
                 self.__transition_player.play_transition(to_frame=to_frame)
