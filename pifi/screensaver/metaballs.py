@@ -110,10 +110,10 @@ class Metaballs(Screensaver):
             contribution = (radius * radius) / dist_sq
             field += contribution
 
-            # Weighted color contribution
+            # Weighted color contribution (0-1 range)
             rgb = self.__hsv_to_rgb(hue, 0.8, 1.0)
             for c in range(3):
-                color_field[:, :, c] += contribution * rgb[c]
+                color_field[:, :, c] += contribution * (rgb[c] / 255.0)
 
         # Threshold the field to create blob shapes
         threshold = Config.get('screensavers.configs.metaballs.threshold', 1.0)
