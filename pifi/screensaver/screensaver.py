@@ -104,12 +104,14 @@ class Screensaver(ABC):
         if _tick() returned False early, _warmed_up stays False and the
         screensaver should not be reused.
         """
-        self._setup()
-
-        # Temporarily swap to a capture player
+        # Swap to capture BEFORE _setup() — some screensavers render in
+        # _setup() (e.g. CellularAutomaton seeds the board), and we don't
+        # want those frames going to the real display.
         real_player = self._led_frame_player
         capture = FrameCapture()
         self._led_frame_player = capture
+
+        self._setup()
 
         completed = True
         try:
