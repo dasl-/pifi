@@ -759,6 +759,20 @@
                 "tick_sleep": 0.05,
             },
 
+            // Configuration specific to geodesic screensaver.
+            "geodesic": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
+            // Configuration specific to Purkinje screensaver.
+            "purkinje": {
+
+                // Optional, float, default: 0.05. Tick sleep time.
+                "tick_sleep": 0.05,
+            },
+
             // Configuration specific to gradient test screensaver (for debugging flicker).
             "gradient_test": {
     
