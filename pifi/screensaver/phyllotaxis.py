@@ -38,6 +38,23 @@ class Phyllotaxis(Screensaver):
         area = self.__width * self.__height
         self.__max_dots = int(area * 0.6)
 
+        # Color scheme — controls how hue varies across the spiral
+        self.__color_scheme = random.choice([
+            'mono',       # single hue with brightness variation
+            'duo',        # two complementary hues alternating by ring
+            'gradient',   # smooth gradient from center to edge
+            'rainbow',    # full spectrum across dots
+        ])
+        # Hue spread: how much hue range the scheme covers
+        if self.__color_scheme == 'mono':
+            self.__hue_spread = 0.0
+        elif self.__color_scheme == 'duo':
+            self.__hue_spread = 0.5  # complementary
+        elif self.__color_scheme == 'gradient':
+            self.__hue_spread = random.uniform(0.15, 0.35)
+        else:  # rainbow
+            self.__hue_spread = 1.0
+
         # Pre-allocate canvas
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
 
@@ -69,9 +86,21 @@ class Phyllotaxis(Screensaver):
             iy = int(round(py))
 
             if 0 <= ix < self.__width and 0 <= iy < self.__height:
-                # Color: hue varies with position in spiral
                 norm_r = r / self.__max_radius
-                hue = (self.__hue_base + i * 0.003 + t * 0.05) % 1.0
+
+                # Color depends on scheme
+                if self.__color_scheme == 'duo':
+                    # Alternate hue by spiral arm (even/odd index)
+                    hue = (self.__hue_base + (i % 2) * self.__hue_spread + t * 0.03) % 1.0
+                elif self.__color_scheme == 'gradient':
+                    # Hue shifts from center to edge
+                    hue = (self.__hue_base + norm_r * self.__hue_spread + t * 0.03) % 1.0
+                elif self.__color_scheme == 'rainbow':
+                    hue = (self.__hue_base + i * 0.003 + t * 0.03) % 1.0
+                else:  # mono
+                    hue = (self.__hue_base + t * 0.03) % 1.0
+
+                sat = 0.85 if self.__color_scheme == 'mono' else 0.75
 
                 # Brightness: inner dots brighter, plus breathing
                 val = (1.0 - norm_r * 0.5) * breath
@@ -80,7 +109,7 @@ class Phyllotaxis(Screensaver):
                 pulse = 0.5 + 0.5 * math.sin(norm_r * 12 - t * 4)
                 val *= 0.5 + 0.5 * pulse
 
-                r_c, g_c, b_c = _hsv_to_rgb(hue, 0.75, val)
+                r_c, g_c, b_c = _hsv_to_rgb(hue, sat, val)
                 # Additive — overlapping dots glow brighter
                 self.__canvas[iy, ix, 0] = min(1.0, self.__canvas[iy, ix, 0] + r_c)
                 self.__canvas[iy, ix, 1] = min(1.0, self.__canvas[iy, ix, 1] + g_c)
