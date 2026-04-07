@@ -202,6 +202,8 @@ class TransitionPlayer:
 
         try:
             for step in range(1, num_steps + 1):
+                step_start = time.time()
+
                 from_accum += tick_sleep
                 to_accum += tick_sleep
 
@@ -227,7 +229,11 @@ class TransitionPlayer:
                 progress = step / num_steps
                 blended = effect(from_float, to_float, progress, width, height)
                 self.__led_frame_player.play_frame(blended.astype(np.uint8))
-                time.sleep(tick_sleep)
+
+                # Sleep only the remaining time to maintain consistent frame rate
+                remaining = tick_sleep - (time.time() - step_start)
+                if remaining > 0:
+                    time.sleep(remaining)
         finally:
             # Restore real frame player so play() works after transition
             if from_screensaver is not None:
