@@ -511,22 +511,13 @@
                 "tick_sleep": 0.05,
             },
     
-            // Configuration specific to reaction diffusion screensaver.
-            "reactiondiffusion": {
-    
-                // Optional, integer, default: 8. Number of initial seed points.
-                "num_seeds": 8,
-    
-                // Optional, integer, default: 10. Simulation steps per frame.
-                "steps_per_frame": 10,
-    
-                // Optional, integer, default: 100. Frames between injecting new seeds.
-                "inject_interval": 100,
-    
+            // Configuration specific to lenia screensaver.
+            "lenia": {
+
                 // Optional, float, default: 0.05. Tick sleep time.
                 "tick_sleep": 0.05,
             },
-    
+
             // Configuration specific to ink in water screensaver.
             "inkinwater": {
     
