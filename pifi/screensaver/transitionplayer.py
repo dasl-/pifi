@@ -230,9 +230,10 @@ class TransitionPlayer:
 
                 if to_alive:
                     if to_tick < warm_up_ticks:
-                        # Warm-up phase: fast-forward multiple ticks to build
-                        # state, but only update the displayed frame at the
-                        # screensaver's natural rate so it doesn't look sped up.
+                        # Warm-up phase: fast-forward to build internal state
+                        # without updating the displayed frame. Early in the
+                        # transition the to_frame is barely visible (low blend
+                        # progress), so holding it static is imperceptible.
                         for _ in range(ticks_per_step):
                             if to_tick >= warm_up_ticks:
                                 break
@@ -241,8 +242,8 @@ class TransitionPlayer:
                             else:
                                 to_alive = False
                                 break
-                        if to_alive and to_accum >= to_screensaver._tick_sleep:
-                            to_accum -= to_screensaver._tick_sleep
+                        # Grab the warmed-up frame once warm-up completes
+                        if to_alive and to_tick >= warm_up_ticks:
                             to_frame = to_capture.get_current_frame()
                     elif to_accum >= to_screensaver._tick_sleep:
                         # Post warm-up: tick at natural rate
