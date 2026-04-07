@@ -18,9 +18,7 @@ from pifi.screensaver.lavalamp import LavaLamp
 from pifi.screensaver.lenia import Lenia
 from pifi.screensaver.pixelsort import PixelSort
 from pifi.screensaver.fire import Fire
-from pifi.screensaver.ikeda import Ikeda
 from pifi.screensaver.colorfield import ColorField
-from pifi.screensaver.glitchtextile import GlitchTextile
 from pifi.screensaver.opart import OpArt
 from pifi.screensaver.noisegradient import NoiseGradient
 from pifi.screensaver.domainwarp import DomainWarp
@@ -74,9 +72,7 @@ class ScreensaverManager:
         Phyllotaxis,
         PixelSort,
         Fire,
-        Ikeda,
         ColorField,
-        GlitchTextile,
         OpArt,
         NoiseGradient,
         InkInWater,

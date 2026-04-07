@@ -560,12 +560,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Configuration specific to ikeda screensaver.
-            "ikeda": {
-
-                // Optional, float, default: 0.03. Tick sleep time.
-                "tick_sleep": 0.03,
-            },
 
             // Configuration specific to color field screensaver.
             "colorfield": {
@@ -574,12 +568,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Configuration specific to glitch textile screensaver.
-            "glitch_textile": {
-
-                // Optional, float, default: 0.08. Tick sleep time.
-                "tick_sleep": 0.08,
-            },
 
             // Configuration specific to op art screensaver.
             "opart": {
