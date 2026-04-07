@@ -672,30 +672,6 @@
                 "tick_sleep": 0.05,
             },
     
-            // Configuration specific to cloudscape screensaver.
-            "cloudscape": {
-    
-                // Optional, integer, default: 3. Number of cloud layers.
-                "num_layers": 3,
-    
-                // Optional, float, default: 0.2. Cloud drift speed.
-                "drift_speed": 0.2,
-    
-                // Optional, string, default: pastel. Sky mode: pastel, day, dawn, sunset, night.
-                "sky_mode": "pastel",
-    
-                // Optional, float, default: 0.7. Cloud density (0-1).
-                "cloud_density": 0.7,
-    
-                // Optional, float, default: 0.04. Cloud scale (smaller = bigger clouds).
-                "cloud_scale": 0.04,
-    
-                // Optional, float, default: 0.001. Sky color shift speed.
-                "sky_shift_speed": 0.001,
-    
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
     
             // Configuration specific to gradient test screensaver (for debugging flicker).
             "gradient_test": {
