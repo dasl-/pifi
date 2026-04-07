@@ -569,6 +569,13 @@
             },
 
 
+            // Configuration specific to double pendulum screensaver.
+            "double_pendulum": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
             // Configuration specific to op art screensaver.
             "opart": {
 

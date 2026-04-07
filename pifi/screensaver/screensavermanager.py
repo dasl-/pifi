@@ -19,6 +19,7 @@ from pifi.screensaver.lenia import Lenia
 from pifi.screensaver.pixelsort import PixelSort
 from pifi.screensaver.fire import Fire
 from pifi.screensaver.colorfield import ColorField
+from pifi.screensaver.doublependulum import DoublePendulum
 from pifi.screensaver.opart import OpArt
 from pifi.screensaver.noisegradient import NoiseGradient
 from pifi.screensaver.domainwarp import DomainWarp
@@ -73,6 +74,7 @@ class ScreensaverManager:
         PixelSort,
         Fire,
         ColorField,
+        DoublePendulum,
         OpArt,
         NoiseGradient,
         InkInWater,
