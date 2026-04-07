@@ -175,8 +175,10 @@ def _deduplicate_verts(verts, tol=0.01):
     return np.array(unique, dtype=np.float64)
 
 
-def _edges_by_distance(verts, k):
-    """Build edges by connecting each vertex to its k nearest neighbors."""
+def _edges_by_distance(verts, k, min_dist=0.0):
+    """Build edges by connecting each vertex to its k nearest neighbors.
+    Skips pairs closer than min_dist (handles overlapping padded vertices).
+    """
     n = len(verts)
     dists = np.zeros((n, n))
     for i in range(n):
@@ -184,8 +186,16 @@ def _edges_by_distance(verts, k):
     edge_set = set()
     for i in range(n):
         sorted_idx = np.argsort(dists[i])
-        for j in sorted_idx[1:k+1]:
+        count = 0
+        for j in sorted_idx[1:]:
+            if count >= k:
+                break
+            if dists[i, int(j)] <= min_dist:
+                continue
             edge_set.add((min(i, int(j)), max(i, int(j))))
+            count += 1
+    if not edge_set:
+        return np.zeros((0, 2), dtype=np.int32)
     return np.array(sorted(edge_set), dtype=np.int32)
 
 
@@ -271,14 +281,18 @@ class Geodesic(Screensaver):
         self.__num_verts = len(v)
         self.__num_edges = len(e)
 
+        # Compute average connectivity (k) for each shape
+        self.__shape_k = {}
+        for name, (v, e) in self.__all_shapes.items():
+            self.__shape_k[name] = max(3, round(len(e) * 2.0 / len(v)))
+
         # Morphing state
         self.__morph_progress = 1.0  # 1.0 = fully arrived
         self.__is_morphing = False
-        self.__morph_t = 0.0
         self.__morph_from_verts = None
-        self.__morph_from_edges = None
         self.__morph_to_verts = None
-        self.__morph_to_edges = None
+        self.__morph_from_k = 0
+        self.__morph_to_k = 0
         self.__morph_timer = 0.0
         self.__morph_interval = random.uniform(6.0, 12.0)
         self.__morph_duration = random.uniform(2.0, 4.0)
@@ -339,14 +353,12 @@ class Geodesic(Screensaver):
             candidates = [s for s in self.__shape_names if s != self.__current_shape]
             next_shape = random.choice(candidates)
 
-            target_v, target_e = self.__all_shapes[next_shape]
-            pf, pfe, pt, pte = self.__build_morph_target(
-                self.__verts, self.__edges, target_v, target_e
-            )
+            target_v, _ = self.__all_shapes[next_shape]
+            self.__morph_from_k = self.__shape_k[self.__current_shape]
+            self.__morph_to_k = self.__shape_k[next_shape]
+            pf, pt = self.__build_morph_target(self.__verts, target_v)
             self.__morph_from_verts = pf
-            self.__morph_from_edges = pfe
             self.__morph_to_verts = pt
-            self.__morph_to_edges = pte
             self.__verts = pf.copy()
             self.__num_verts = len(pf)
             self.__morph_progress = 0.0
@@ -358,11 +370,15 @@ class Geodesic(Screensaver):
             self.__morph_progress = min(1.0, self.__morph_progress + dt / self.__morph_duration)
             p = self.__morph_progress
             t = p * p * (3 - 2 * p)
-            self.__morph_t = t
 
             interp = self.__morph_from_verts * (1 - t) + self.__morph_to_verts * t
             self.__verts = _normalize_rows(interp)
             self.__num_verts = len(self.__verts)
+
+            # Rebuild edges from current vertex positions — topology evolves naturally
+            k = int(round(self.__morph_from_k * (1 - t) + self.__morph_to_k * t))
+            self.__edges = _edges_by_distance(self.__verts, max(3, k), min_dist=0.05)
+            self.__num_edges = len(self.__edges)
         elif self.__is_morphing:
             # Morph just completed — reset to canonical target shape
             v, e = self.__all_shapes[self.__current_shape]
@@ -388,26 +404,19 @@ class Geodesic(Screensaver):
         # Decay canvas
         self.__canvas *= self.__decay
 
-        # Render edges (cross-fade during morph)
-        if self.__is_morphing:
-            t = self.__morph_t
-            self.__render_edges(proj_x, proj_y, z_vals, depth_brightness, base_color,
-                                self.__morph_from_edges, 1.0 - t)
-            self.__render_edges(proj_x, proj_y, z_vals, depth_brightness, base_color,
-                                self.__morph_to_edges, t)
-        else:
-            self.__render_edges(proj_x, proj_y, z_vals, depth_brightness, base_color,
-                                self.__edges, 1.0)
+        # Render
+        self.__render_edges(proj_x, proj_y, z_vals, depth_brightness, base_color,
+                            self.__edges)
         self.__render_vertices(proj_x, proj_y, depth_brightness, base_color)
 
         frame = (np.clip(self.__canvas, 0.0, 1.0) * 255).astype(np.uint8)
         self._led_frame_player.play_frame(frame)
 
-    def __build_morph_target(self, from_verts, from_edges, to_verts, to_edges):
-        """Build padded vertex/edge arrays for morphing between shapes.
+    def __build_morph_target(self, from_verts, to_verts):
+        """Build padded vertex arrays for morphing between shapes.
 
-        Returns (padded_from_verts, padded_from_edges, padded_to_verts, padded_to_edges)
-        all in a shared index space of size max(n_from, n_to).
+        Returns (padded_from, padded_to) in a shared index space of
+        size max(n_from, n_to). Edges are rebuilt dynamically each frame.
         """
         n_from = len(from_verts)
         n_to = len(to_verts)
@@ -416,7 +425,6 @@ class Geodesic(Screensaver):
             # Greedy 1:1 nearest-neighbor mapping
             padded_from = from_verts.copy()
             padded_to = np.zeros_like(from_verts)
-            to_to_padded = np.zeros(n_to, dtype=np.int32)
             used = set()
             for i in range(n_from):
                 dists = np.linalg.norm(to_verts - from_verts[i], axis=1)
@@ -424,72 +432,27 @@ class Geodesic(Screensaver):
                     j = int(j)
                     if j not in used:
                         padded_to[i] = to_verts[j]
-                        to_to_padded[j] = i
                         used.add(j)
                         break
-
-            remapped = set()
-            for e in to_edges:
-                a, b = int(e[0]), int(e[1])
-                pa, pb = int(to_to_padded[a]), int(to_to_padded[b])
-                remapped.add((min(pa, pb), max(pa, pb)))
-            padded_to_edges = np.array(sorted(remapped), dtype=np.int32)
-
-            return padded_from, from_edges.copy(), padded_to, padded_to_edges
+            return padded_from, padded_to
 
         elif n_from > n_to:
-            # More from_verts — keep from index space, map each to nearest to_vert
+            # More from_verts — map each to nearest to_vert
             padded_from = from_verts.copy()
-            mapping = np.zeros(n_from, dtype=np.int32)
+            padded_to = np.zeros_like(from_verts)
             for i in range(n_from):
                 dists = np.linalg.norm(to_verts - from_verts[i], axis=1)
-                mapping[i] = int(np.argmin(dists))
-            padded_to = to_verts[mapping]
-
-            # Remap to_edges: pick one from_vert as representative per to_vert
-            to_to_padded = {}
-            for i in range(n_from):
-                ti = int(mapping[i])
-                if ti not in to_to_padded:
-                    to_to_padded[ti] = i
-
-            remapped = set()
-            for e in to_edges:
-                a, b = int(e[0]), int(e[1])
-                if a in to_to_padded and b in to_to_padded:
-                    pa, pb = to_to_padded[a], to_to_padded[b]
-                    if pa != pb:
-                        remapped.add((min(pa, pb), max(pa, pb)))
-            padded_to_edges = np.array(sorted(remapped), dtype=np.int32) if remapped else from_edges.copy()
-
-            return padded_from, from_edges.copy(), padded_to, padded_to_edges
+                padded_to[i] = to_verts[int(np.argmin(dists))]
+            return padded_from, padded_to
 
         else:
-            # More to_verts — use to index space, expand from_verts
+            # More to_verts — expand from_verts to match
             padded_to = to_verts.copy()
-            mapping = np.zeros(n_to, dtype=np.int32)
+            padded_from = np.zeros_like(to_verts)
             for i in range(n_to):
                 dists = np.linalg.norm(from_verts - to_verts[i], axis=1)
-                mapping[i] = int(np.argmin(dists))
-            padded_from = from_verts[mapping]
-
-            # Remap from_edges: pick one to_vert as representative per from_vert
-            from_to_padded = {}
-            for i in range(n_to):
-                fi = int(mapping[i])
-                if fi not in from_to_padded:
-                    from_to_padded[fi] = i
-
-            remapped = set()
-            for e in from_edges:
-                a, b = int(e[0]), int(e[1])
-                if a in from_to_padded and b in from_to_padded:
-                    pa, pb = from_to_padded[a], from_to_padded[b]
-                    if pa != pb:
-                        remapped.add((min(pa, pb), max(pa, pb)))
-            padded_from_edges = np.array(sorted(remapped), dtype=np.int32) if remapped else to_edges.copy()
-
-            return padded_from, padded_from_edges, padded_to, to_edges.copy()
+                padded_from[i] = from_verts[int(np.argmin(dists))]
+            return padded_from, padded_to
 
     def __get_base_color(self, tick):
         if self.__color_mode == self._MODE_WHITE:
