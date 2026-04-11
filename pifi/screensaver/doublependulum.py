@@ -29,11 +29,14 @@ class DoublePendulum(Screensaver):
         # Canvas for trail (float for smooth fading)
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
 
-        # Pendulum parameters
-        # Arm lengths scaled to fit display
-        scale = min(self.__width, self.__height) / 2 * 0.42
-        self.__l1 = scale * random.uniform(0.8, 1.0)
-        self.__l2 = scale * random.uniform(0.8, 1.0)
+        # Pendulum parameters — scale to use most of the screen.
+        # Total arm length is constrained by horizontal half-width,
+        # then the pivot is placed so the fully extended pendulum
+        # just touches the bottom of the screen.
+        bob_radius = 2  # must match the radius used in __draw_arms
+        max_reach = (self.__width / 2 - 1 - bob_radius) * 0.85
+        self.__l1 = max_reach * random.uniform(0.45, 0.55)
+        self.__l2 = max_reach - self.__l1
         self.__m1 = random.uniform(0.8, 1.2)
         self.__m2 = random.uniform(0.8, 1.2)
         self.__g = 9.81
@@ -44,9 +47,10 @@ class DoublePendulum(Screensaver):
         self.__omega1 = random.uniform(-0.5, 0.5)
         self.__omega2 = random.uniform(-0.5, 0.5)
 
-        # Center point (pivot)
+        # Center point (pivot) — placed so fully extended pendulum
+        # reaches the bottom row of the screen.
         self.__cx = self.__width / 2
-        self.__cy = self.__height * 0.35
+        self.__cy = self.__height - 1 - bob_radius - (self.__l1 + self.__l2)
 
         # Previous tip position for line drawing
         self.__prev_x = None
@@ -79,10 +83,11 @@ class DoublePendulum(Screensaver):
             self.__prev_x = x2
             self.__prev_y = y2
 
-        # Also draw the pendulum arms faintly
-        self.__draw_arms()
+        # Draw arms onto a temporary copy so they don't ghost into the trail
+        display = self.__canvas.copy()
+        self.__draw_arms(display)
 
-        frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
+        frame = (np.clip(display, 0, 1) * 255).astype(np.uint8)
         self._led_frame_player.play_frame(frame)
 
     def __step(self):
@@ -115,13 +120,13 @@ class DoublePendulum(Screensaver):
         denom1 = (m1 + m2) * l1 - m2 * l1 * cos_d * cos_d
         denom2 = (l2 / l1) * denom1
 
-        a1 = (m2 * l1 * w1 * w1 * sin_d * cos_d +
-              m2 * g * math.sin(t2) * cos_d +
+        a1 = (-m2 * l1 * w1 * w1 * sin_d * cos_d +
+              m2 * g * math.sin(t2) * cos_d -
               m2 * l2 * w2 * w2 * sin_d -
               (m1 + m2) * g * math.sin(t1)) / denom1
 
-        a2 = (-m2 * l2 * w2 * w2 * sin_d * cos_d +
-              (m1 + m2) * g * math.sin(t1) * cos_d -
+        a2 = (m2 * l2 * w2 * w2 * sin_d * cos_d +
+              (m1 + m2) * g * math.sin(t1) * cos_d +
               (m1 + m2) * l1 * w1 * w1 * sin_d -
               (m1 + m2) * g * math.sin(t2)) / denom2
 
@@ -158,29 +163,43 @@ class DoublePendulum(Screensaver):
                 self.__canvas[iy, ix, 1] = min(1.0, self.__canvas[iy, ix, 1] + g * 0.4)
                 self.__canvas[iy, ix, 2] = min(1.0, self.__canvas[iy, ix, 2] + b * 0.4)
 
-    def __draw_arms(self):
-        """Draw the pendulum arms faintly on top of the trail."""
+    def __draw_arms(self, canvas):
+        """Draw the pendulum arms and bobs clearly on top of the trail."""
         x1 = self.__cx + self.__l1 * math.sin(self.__theta1)
         y1 = self.__cy + self.__l1 * math.cos(self.__theta1)
         x2 = x1 + self.__l2 * math.sin(self.__theta2)
         y2 = y1 + self.__l2 * math.cos(self.__theta2)
 
-        # Draw arms as dim white lines
+        arm_color = np.array([0.45, 0.45, 0.55])
+
+        # Draw arms as visible lines
         for ax1, ay1, ax2, ay2 in [(self.__cx, self.__cy, x1, y1), (x1, y1, x2, y2)]:
             dist = math.sqrt((ax2 - ax1) ** 2 + (ay2 - ay1) ** 2)
-            steps = max(1, int(dist * 2))
+            steps = max(1, int(dist * 3))
             for s in range(steps + 1):
                 t = s / steps if steps > 0 else 0
-                px = int(round(ax1 + (ax2 - ax1) * t))
-                py = int(round(ay1 + (ay2 - ay1) * t))
-                if 0 <= px < self.__width and 0 <= py < self.__height:
-                    self.__canvas[py, px] = np.maximum(self.__canvas[py, px], 0.15)
+                px = ax1 + (ax2 - ax1) * t
+                py = ay1 + (ay2 - ay1) * t
+                ix, iy = int(round(px)), int(round(py))
+                if 0 <= ix < self.__width and 0 <= iy < self.__height:
+                    canvas[iy, ix] = np.maximum(canvas[iy, ix], arm_color)
 
-        # Bright dot at joints and tip
-        for jx, jy, brightness in [(self.__cx, self.__cy, 0.3), (x1, y1, 0.4), (x2, y2, 0.6)]:
-            ix, iy = int(round(jx)), int(round(jy))
-            if 0 <= ix < self.__width and 0 <= iy < self.__height:
-                self.__canvas[iy, ix] = np.maximum(self.__canvas[iy, ix], brightness)
+        # Draw bobs as bright discs — pivot, joint, and tip
+        hue = (self.__hue_base + self.__time * 0.02) % 1.0
+        tip_r, tip_g, tip_b = _hsv_to_rgb_scalar(hue, 0.7, 1.0)
+        bobs = [
+            (self.__cx, self.__cy, 1, np.array([0.5, 0.5, 0.6])),     # pivot — small, dim
+            (x1, y1, 2, np.array([0.8, 0.8, 0.9])),                    # joint — medium
+            (x2, y2, 2, np.array([tip_r, tip_g, tip_b])),              # tip — bright, colored
+        ]
+        for bx, by, radius, color in bobs:
+            for dy in range(-radius, radius + 1):
+                for dx in range(-radius, radius + 1):
+                    if dx * dx + dy * dy <= radius * radius:
+                        ix = int(round(bx)) + dx
+                        iy = int(round(by)) + dy
+                        if 0 <= ix < self.__width and 0 <= iy < self.__height:
+                            canvas[iy, ix] = np.maximum(canvas[iy, ix], color)
 
     @classmethod
     def get_id(cls) -> str:
