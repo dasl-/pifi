@@ -33,21 +33,28 @@ class Fire(Screensaver):
         # Wind — slight horizontal bias
         self.__wind = random.uniform(-0.15, 0.15)
 
+        # Persistent heat source that evolves smoothly
+        self.__base_heat = np.random.uniform(0.4, 0.9, self.__width)
+
     def _tick(self, tick):
         h, w = self.__height, self.__width
         heat = self.__heat
 
-        # Bottom row: mix of hot spots and cooler gaps for variation
-        base = np.random.uniform(0.0, 0.6, w)
-        # Random hot clusters
-        num_hot = random.randint(2, max(2, w // 6))
-        for _ in range(num_hot):
+        # Smoothly evolve the persistent heat source rather than
+        # regenerating it from scratch each frame.
+        drift = np.random.uniform(-0.06, 0.06, w)
+        self.__base_heat = np.clip(self.__base_heat + drift, 0.2, 1.0)
+
+        # Occasionally shift a hot spot to a new location
+        if random.random() < 0.08:
             cx = random.randint(0, w - 1)
-            spread = random.randint(1, max(1, w // 10))
+            spread = random.randint(1, max(1, w // 8))
             x_lo = max(0, cx - spread)
             x_hi = min(w, cx + spread + 1)
-            base[x_lo:x_hi] = np.random.uniform(0.8, 1.0, x_hi - x_lo)
-        heat[h, :] = base
+            target = random.uniform(0.85, 1.0)
+            self.__base_heat[x_lo:x_hi] += (target - self.__base_heat[x_lo:x_hi]) * 0.4
+
+        heat[h, :] = self.__base_heat
 
         # Propagate heat upward with averaging and cooling
         for y in range(h - 1, -1, -1):
@@ -62,17 +69,8 @@ class Fire(Screensaver):
                 avg = (below * (2 + self.__wind) + below_left + below_right * (1 - self.__wind)) / 4
 
             # Cooling increases with height for shorter flames
-            cooling = self.__cooling * np.random.uniform(0.8, 1.3, w)
             height_factor = 1.0 + (1 - y / h) * 2.0
-            heat[y] = np.clip(avg - cooling * height_factor / h, 0, 1)
-
-        # Occasional bright sparks
-        if random.random() < 0.2:
-            spark_x = random.randint(0, w - 1)
-            spark_w = random.randint(1, max(1, w // 10))
-            x_lo = max(0, spark_x - spark_w // 2)
-            x_hi = min(w, x_lo + spark_w)
-            heat[h - 1, x_lo:x_hi] = 1.0
+            heat[y] = np.clip(avg - self.__cooling * height_factor / h, 0, 1)
 
         # Map heat to color via palette
         indices = (np.clip(heat[:h], 0, 1) * 255).astype(int)
