@@ -270,9 +270,9 @@ class TestRenderTick(unittest.TestCase):
 
     def test_calls_setup_on_first_invocation(self):
         ss = _RenderingSetupScreensaver(led_frame_player=None)
-        self.assertFalse(ss._is_set_up)
+        self.assertFalse(ss._Screensaver__is_set_up)
         frame, alive = ss.render_tick(0)
-        self.assertTrue(ss._is_set_up)
+        self.assertTrue(ss._Screensaver__is_set_up)
 
     def test_setup_frame_captured_not_displayed(self):
         """Frames rendered during _setup() should be captured, not sent to real display."""

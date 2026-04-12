@@ -62,17 +62,17 @@ class TestTimeoutResolution(unittest.TestCase):
     def test_default_timeout_is_120(self):
         """When timeout is set to 120 in config (as in default_config.json), it's used."""
         ss = self._make({'screensavers': {'timeout': 120}})
-        self.assertEqual(ss._timeout, 120)
+        self.assertEqual(ss._Screensaver__timeout, 120)
 
     def test_timeout_absent_means_unlimited(self):
         """When timeout key is absent from config entirely, it's unlimited."""
         ss = self._make({'screensavers': {}})
-        self.assertEqual(ss._timeout, 0)
+        self.assertEqual(ss._Screensaver__timeout, 0)
 
     def test_global_timeout_overrides_default(self):
         """Global screensavers.timeout overrides the hardcoded default."""
         ss = self._make({'screensavers': {'timeout': 60}})
-        self.assertEqual(ss._timeout, 60)
+        self.assertEqual(ss._Screensaver__timeout, 60)
 
     def test_per_screensaver_timeout_overrides_global(self):
         """Per-screensaver timeout overrides the global timeout."""
@@ -82,7 +82,7 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': 30}},
             }
         })
-        self.assertEqual(ss._timeout, 30)
+        self.assertEqual(ss._Screensaver__timeout, 30)
 
     def test_no_per_screensaver_timeout_falls_back_to_global(self):
         """When per-screensaver timeout is absent, global timeout is used."""
@@ -92,20 +92,20 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'tick_sleep': 0.01}},
             }
         })
-        self.assertEqual(ss._timeout, 90)
+        self.assertEqual(ss._Screensaver__timeout, 90)
 
     def test_timeout_zero_means_unlimited(self):
         """Timeout of 0 means unlimited — _is_past_timeout always returns False."""
         ss = self._make({'screensavers': {'timeout': 0}})
-        self.assertEqual(ss._timeout, 0)
-        ss._start_time = time.time() - 99999
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
     def test_global_timeout_none_means_unlimited(self):
         """Global timeout of None means unlimited (same as 0)."""
         ss = self._make({'screensavers': {'timeout': None}})
-        self.assertEqual(ss._timeout, 0)
-        ss._start_time = time.time() - 99999
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
     def test_per_screensaver_timeout_null_falls_back_to_global(self):
@@ -116,7 +116,7 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': None}},
             }
         })
-        self.assertEqual(ss._timeout, 60)
+        self.assertEqual(ss._Screensaver__timeout, 60)
 
     def test_per_screensaver_timeout_zero_means_unlimited(self):
         """Per-screensaver timeout of 0 means unlimited, not fallback."""
@@ -126,20 +126,20 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': 0}},
             }
         })
-        self.assertEqual(ss._timeout, 0)
-        ss._start_time = time.time() - 99999
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
         self.assertFalse(ss._is_past_timeout())
 
     def test_positive_timeout_expires(self):
         """A positive timeout causes _is_past_timeout to return True after elapsed time."""
         ss = self._make({'screensavers': {'timeout': 10}})
-        ss._start_time = time.time() - 11
+        ss._Screensaver__start_time = time.time() - 11
         self.assertTrue(ss._is_past_timeout())
 
     def test_positive_timeout_not_expired(self):
         """A positive timeout returns False before the time elapses."""
         ss = self._make({'screensavers': {'timeout': 10}})
-        ss._start_time = time.time()
+        ss._Screensaver__start_time = time.time()
         self.assertFalse(ss._is_past_timeout())
 
 
