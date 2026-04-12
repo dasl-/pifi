@@ -46,6 +46,5 @@ class VideoScreensaver(Screensaver):
     def get_description(cls) -> str:
         return 'Saved video playback'
 
-    @classmethod
-    def supports_live_transition(cls) -> bool:
+    def supports_live_transition(self) -> bool:
         return False

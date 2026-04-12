@@ -9,8 +9,8 @@ from pifi.logger import Logger
 class FrameCapture:
     """Lightweight stand-in for LedFramePlayer that captures frames without displaying.
 
-    Used during screensaver warm-up to build visual state without sending
-    frames to the LED hardware.
+    Used internally by render_tick() to intercept frames that a screensaver
+    renders via self._led_frame_player, without sending them to LED hardware.
     """
 
     def __init__(self):
@@ -25,7 +25,7 @@ class FrameCapture:
         return self.__current_frame.copy()
 
     def fade_to_frame(self, frame):
-        """During warm-up, skip the fade animation and just capture the target frame."""
+        """During capture, skip the fade animation and just capture the target frame."""
         self.__current_frame = frame.copy()
 
 
@@ -67,11 +67,11 @@ class Screensaver(ABC):
         # e.g. screensavers.configs.boids.tick_sleep overrides screensavers.tick_sleep
         sid = self.get_id()
 
-        self._tick_sleep = Config.get(f'screensavers.configs.{sid}.tick_sleep')
-        if self._tick_sleep is None:
-            self._tick_sleep = Config.get('screensavers.tick_sleep')
-        if self._tick_sleep is None:
-            self._tick_sleep = 0
+        self.__tick_sleep = Config.get(f'screensavers.configs.{sid}.tick_sleep')
+        if self.__tick_sleep is None:
+            self.__tick_sleep = Config.get('screensavers.tick_sleep')
+        if self.__tick_sleep is None:
+            self.__tick_sleep = 0
 
         # For timeout, null means unlimited at the global level (0 also means
         # unlimited). At the per-screensaver level, null falls back to global.
@@ -81,9 +81,19 @@ class Screensaver(ABC):
         if self._timeout is None:
             self._timeout = 0
 
-        self._warmed_up = False
-        self._warm_up_ticks = 0
-        self._last_tick = 0
+        self.warmed_up = False
+        self.warm_up_ticks = 0
+        self.__last_tick = 0
+        self._render_capture = FrameCapture()
+        self._is_set_up = False
+
+    def tick_sleep(self):
+        """Seconds to sleep between ticks (read-only, from config)."""
+        return self.__tick_sleep
+
+    def last_tick(self):
+        """The tick number reached when play() last exited (read-only)."""
+        return self.__last_tick
 
     def _is_past_timeout(self):
         """Check if the screensaver timeout has been exceeded.
@@ -94,44 +104,69 @@ class Screensaver(ABC):
             return False
         return (time.time() - self._start_time) > self._timeout
 
+    def setup(self):
+        """Initialize the screensaver for ticking. Idempotent — safe to call
+        multiple times, but only runs _setup() once."""
+        if not self._is_set_up:
+            self._setup()
+            self._is_set_up = True
+
+    def teardown(self):
+        """Clean up resources after the screensaver finishes."""
+        self._teardown()
+        self._is_set_up = False
+
+    def render_tick(self, tick):
+        """Advance state by one tick, capturing the rendered frame without
+        displaying it on the LED hardware.
+
+        Calls setup() on first invocation (under the capture, so any frames
+        rendered during _setup() are intercepted rather than displayed).
+
+        Returns:
+            (frame, alive) where frame is a numpy array (or None if nothing
+            was rendered) and alive is True unless _tick() returned False.
+        """
+        real_player = self._led_frame_player
+        self._led_frame_player = self._render_capture
+        try:
+            self.setup()
+            alive = self._tick(tick) is not False
+            return self._render_capture.get_current_frame(), alive
+        finally:
+            self._led_frame_player = real_player
+
     def play(self, auto_teardown=True) -> None:
         """Run the screensaver tick loop.
 
-        If the screensaver was warmed up by a transition, skips _setup()
+        If the screensaver was warmed up by a transition, skips setup()
         and continues from where warm-up left off. Otherwise starts fresh.
         Timeout always counts from when play() is called, not from warm-up.
 
         Args:
-            auto_teardown: If True (default), _teardown() is called when the
+            auto_teardown: If True (default), teardown() is called when the
                 loop ends. Set to False to keep the screensaver alive for
-                live transitions — the caller must call _teardown() manually.
+                live transitions — the caller must call teardown() manually.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
         self._start_time = time.time()
-        if not self._warmed_up:
-            self._setup()
-            start_tick = 0
-        else:
-            start_tick = self._warm_up_ticks
+        self.setup()
+        start_tick = self.warm_up_ticks if self.warmed_up else 0
 
         try:
             tick = start_tick
             while not self._is_past_timeout():
                 if self._tick(tick) is False:
                     break
-                time.sleep(self._tick_sleep)
+                time.sleep(self.tick_sleep())
                 tick += 1
-            self._last_tick = tick
+            self.__last_tick = tick
         except Exception:
-            self._teardown()
+            self.teardown()
             raise
         if auto_teardown:
-            self._teardown()
+            self.teardown()
         self._screensaver_logger.info(f"{self.get_name()} screensaver ended")
-
-    def set_led_frame_player(self, led_frame_player):
-        """Replace the LED frame player (e.g. with a FrameCapture during transitions)."""
-        self._led_frame_player = led_frame_player
 
     def _setup(self):
         """Called once before the tick loop. Override for initialization."""
@@ -168,8 +203,7 @@ class Screensaver(ABC):
         """Return brief description"""
         pass
 
-    @classmethod
-    def supports_live_transition(cls) -> bool:
+    def supports_live_transition(self) -> bool:
         """Whether this screensaver can participate in live transitions.
 
         Screensavers that block in _tick() or require the full LedFramePlayer

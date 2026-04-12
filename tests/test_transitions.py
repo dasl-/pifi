@@ -4,11 +4,12 @@ Unit tests for screensaver transition behavior.
 
 Covers:
 - supports_live_transition() contract
-- _last_tick initialization and updates
+- last_tick initialization and updates
 - Frame player restoration after transition (including on exception)
-- _warmed_up state when warm-up fails
+- warmed_up state when warm-up fails
 - auto_teardown=False skips teardown
 - warm_up_ticks=0 captures to_frame from _setup()
+- render_tick() captures frames without displaying
 """
 
 import copy
@@ -120,7 +121,7 @@ class _RenderingSetupScreensaver(Screensaver):
         self._height = Config.get_or_throw('leds.display_height')
 
     def _tick(self, tick):
-        pass
+        _render_frame(self, value=42)
 
     @classmethod
     def get_id(cls):
@@ -160,32 +161,35 @@ def setUpModule():
 
 
 class TestSupportsLiveTransition(unittest.TestCase):
-    """Test the supports_live_transition() class method."""
+    """Test the supports_live_transition() method."""
 
     def setUp(self):
         Config._Config__is_loaded = True
         Config._Config__config = copy.deepcopy(BASE_CONFIG)
 
     def test_default_is_true(self):
-        self.assertTrue(_StubScreensaver.supports_live_transition())
+        ss = _StubScreensaver(led_frame_player=None)
+        self.assertTrue(ss.supports_live_transition())
 
     def test_video_screensaver_returns_false(self):
         from pifi.screensaver.videoscreensaver import VideoScreensaver
-        self.assertFalse(VideoScreensaver.supports_live_transition())
+        ss = VideoScreensaver(led_frame_player=None)
+        self.assertFalse(ss.supports_live_transition())
 
     def test_regular_screensavers_return_true(self):
         from pifi.screensaver.screensavermanager import ScreensaverManager
         from pifi.screensaver.videoscreensaver import VideoScreensaver
         for sid, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
             with self.subTest(screensaver=sid):
+                instance = cls(led_frame_player=None)
                 if cls is VideoScreensaver:
-                    self.assertFalse(cls.supports_live_transition())
+                    self.assertFalse(instance.supports_live_transition())
                 else:
-                    self.assertTrue(cls.supports_live_transition())
+                    self.assertTrue(instance.supports_live_transition())
 
 
 class TestLastTick(unittest.TestCase):
-    """Test _last_tick initialization and updates."""
+    """Test last_tick initialization and updates."""
 
     def setUp(self):
         Config._Config__is_loaded = True
@@ -193,12 +197,12 @@ class TestLastTick(unittest.TestCase):
 
     def test_initialized_to_zero(self):
         ss = _StubScreensaver(led_frame_player=None)
-        self.assertEqual(ss._last_tick, 0)
+        self.assertEqual(ss.last_tick(), 0)
 
     def test_updated_after_play(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=5)
         ss.play()
-        self.assertEqual(ss._last_tick, 5)
+        self.assertEqual(ss.last_tick(), 5)
 
 
 class TestAutoTeardown(unittest.TestCase):
@@ -221,8 +225,72 @@ class TestAutoTeardown(unittest.TestCase):
         ss._teardown.assert_not_called()
 
 
-class TestFramePlayerRestoration(unittest.TestCase):
-    """Test that frame players are restored after transition, even on exception."""
+class TestRenderTick(unittest.TestCase):
+    """Test render_tick() captures frames without displaying."""
+
+    def setUp(self):
+        Config._Config__is_loaded = True
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+
+    def test_returns_frame_and_alive(self):
+        ss = _StubScreensaver(led_frame_player=None)
+        frame, alive = ss.render_tick(0)
+        self.assertTrue(alive)
+        self.assertIsNotNone(frame)
+        self.assertEqual(frame.shape, (4, 4, 3))
+
+    def test_does_not_render_to_real_player(self):
+        """render_tick() should not call play_frame on the real LedFramePlayer."""
+        player = MagicMock()
+        player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
+
+        ss = _StubScreensaver(led_frame_player=player)
+        player.play_frame.reset_mock()
+
+        frame, alive = ss.render_tick(0)
+        player.play_frame.assert_not_called()
+
+    def test_restores_frame_player_after_tick(self):
+        player = MagicMock()
+        ss = _StubScreensaver(led_frame_player=player)
+        ss.render_tick(0)
+        self.assertIs(ss._led_frame_player, player)
+
+    def test_restores_frame_player_on_exception(self):
+        player = MagicMock()
+        ss = _ExplodingTickScreensaver(led_frame_player=player, explode_after=0)
+        with self.assertRaises(RuntimeError):
+            ss.render_tick(0)
+        self.assertIs(ss._led_frame_player, player)
+
+    def test_returns_false_alive_when_tick_stops(self):
+        ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
+        frame, alive = ss.render_tick(0)
+        self.assertFalse(alive)
+
+    def test_calls_setup_on_first_invocation(self):
+        ss = _RenderingSetupScreensaver(led_frame_player=None)
+        self.assertFalse(ss._is_set_up)
+        frame, alive = ss.render_tick(0)
+        self.assertTrue(ss._is_set_up)
+
+    def test_setup_frame_captured_not_displayed(self):
+        """Frames rendered during _setup() should be captured, not sent to real display."""
+        player = MagicMock()
+        player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
+
+        ss = _RenderingSetupScreensaver(led_frame_player=player)
+        player.play_frame.reset_mock()
+
+        frame, alive = ss.render_tick(0)
+        # The real player should NOT have received any frames
+        player.play_frame.assert_not_called()
+        # But we should have captured a frame
+        self.assertIsNotNone(frame)
+
+
+class TestTransitionFramePlayerIntegrity(unittest.TestCase):
+    """Test that frame players are never corrupted by transitions."""
 
     def setUp(self):
         Config._Config__is_loaded = True
@@ -233,54 +301,40 @@ class TestFramePlayerRestoration(unittest.TestCase):
         player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
         return player
 
-    def test_restored_after_normal_transition(self):
+    def test_screensaver_player_unchanged_after_transition(self):
+        """Both screensavers should still have their original _led_frame_player
+        after the transition completes (render_tick restores per-call)."""
         player = self._make_player()
         tp = TransitionPlayer(player)
 
         from_ss = _StubScreensaver(led_frame_player=None)
         to_ss = _StubScreensaver(led_frame_player=None)
+        from_original = from_ss._led_frame_player
+        to_original = to_ss._led_frame_player
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
-        # Both should have the real player restored
-        self.assertIs(from_ss._led_frame_player, player)
-        self.assertIs(to_ss._led_frame_player, player)
+        self.assertIs(from_ss._led_frame_player, from_original)
+        self.assertIs(to_ss._led_frame_player, to_original)
 
-    def test_restored_after_exception_in_warmup(self):
-        """If to_screensaver raises during warm-up, frame players are still restored."""
+    def test_screensaver_player_intact_after_exception(self):
         player = self._make_player()
         tp = TransitionPlayer(player)
 
         from_ss = _StubScreensaver(led_frame_player=None)
-
-        # Explodes on tick 0 — during warm-up phase
         to_ss = _ExplodingTickScreensaver(led_frame_player=None, explode_after=0)
+        from_original = from_ss._led_frame_player
+        to_original = to_ss._led_frame_player
 
         with self.assertRaises(RuntimeError):
             tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
-        self.assertIs(from_ss._led_frame_player, player)
-        self.assertIs(to_ss._led_frame_player, player)
-
-    def test_restored_after_exception_in_blend(self):
-        """If to_screensaver raises during blend, frame players are still restored."""
-        player = self._make_player()
-        tp = TransitionPlayer(player)
-
-        from_ss = _StubScreensaver(led_frame_player=None)
-
-        # Survives warm-up (3 ticks) but explodes during blend
-        to_ss = _ExplodingTickScreensaver(led_frame_player=None, explode_after=5)
-
-        with self.assertRaises(RuntimeError):
-            tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
-
-        self.assertIs(from_ss._led_frame_player, player)
-        self.assertIs(to_ss._led_frame_player, player)
+        self.assertIs(from_ss._led_frame_player, from_original)
+        self.assertIs(to_ss._led_frame_player, to_original)
 
 
 class TestWarmedUpState(unittest.TestCase):
-    """Test that _warmed_up reflects whether warm-up actually succeeded."""
+    """Test that warmed_up reflects whether warm-up actually succeeded."""
 
     def setUp(self):
         Config._Config__is_loaded = True
@@ -297,13 +351,13 @@ class TestWarmedUpState(unittest.TestCase):
 
         from_ss = _StubScreensaver(led_frame_player=None)
         to_ss = _StubScreensaver(led_frame_player=None)
-        self.assertFalse(to_ss._warmed_up)
+        self.assertFalse(to_ss.warmed_up)
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
-        self.assertTrue(to_ss._warmed_up)
+        self.assertTrue(to_ss.warmed_up)
 
     def test_warmed_up_false_when_tick_returns_false_during_warmup(self):
-        """If _tick() returns False during warm-up, _warmed_up stays False."""
+        """If _tick() returns False during warm-up, warmed_up stays False."""
         player = self._make_player()
         tp = TransitionPlayer(player)
 
@@ -313,7 +367,7 @@ class TestWarmedUpState(unittest.TestCase):
         to_ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
-        self.assertFalse(to_ss._warmed_up)
+        self.assertFalse(to_ss.warmed_up)
 
 
 class TestWarmUpTicksZero(unittest.TestCase):
@@ -353,6 +407,25 @@ class TestWarmUpTicksZero(unittest.TestCase):
             last_frame,
             np.full([4, 4, 3], 42, dtype=np.uint8),
         )
+
+
+class TestStaticTransition(unittest.TestCase):
+    """Test static-frame transitions (no live screensavers)."""
+
+    def setUp(self):
+        Config._Config__is_loaded = True
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+
+    def test_static_transition_runs(self):
+        """play_transition() with no screensavers should crossfade to black."""
+        player = MagicMock()
+        player.get_current_frame.return_value = np.full([4, 4, 3], 200, np.uint8)
+        tp = TransitionPlayer(player)
+
+        tp.play_transition()
+
+        # Should have called play_frame for each blend step
+        self.assertGreater(player.play_frame.call_count, 0)
 
 
 if __name__ == '__main__':
