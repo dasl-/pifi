@@ -409,6 +409,28 @@ class TestWarmUpTicksZero(unittest.TestCase):
         )
 
 
+class TestFromDiesDuringWarmup(unittest.TestCase):
+    """Test that to_screensaver still warms up when from dies during warm-up."""
+
+    def setUp(self):
+        Config._Config__is_loaded = True
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+
+    def test_to_still_warms_up(self):
+        """If from_screensaver dies during warm-up, the to_screensaver
+        should still complete warm-up successfully."""
+        player = MagicMock()
+        player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
+        tp = TransitionPlayer(player)
+
+        from_ss = _FailingTickScreensaver(led_frame_player=None, fail_after=1)
+        to_ss = _StubScreensaver(led_frame_player=None)
+
+        tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
+
+        self.assertTrue(to_ss.warmed_up)
+
+
 class TestStaticTransition(unittest.TestCase):
     """Test static-frame transitions (no live screensavers)."""
 
@@ -426,6 +448,35 @@ class TestStaticTransition(unittest.TestCase):
 
         # Should have called play_frame for each blend step
         self.assertGreater(player.play_frame.call_count, 0)
+
+    def test_static_transition_ends_at_black(self):
+        """The last frame of a static transition should be black."""
+        player = MagicMock()
+        player.get_current_frame.return_value = np.full([4, 4, 3], 200, np.uint8)
+        tp = TransitionPlayer(player)
+
+        tp.play_transition()
+
+        last_frame = player.play_frame.call_args_list[-1].args[0]
+        np.testing.assert_array_equal(
+            last_frame,
+            np.zeros([4, 4, 3], dtype=np.uint8),
+        )
+
+    def test_static_transition_from_none(self):
+        """Static transition when get_current_frame returns None should not crash."""
+        player = MagicMock()
+        player.get_current_frame.return_value = None
+        tp = TransitionPlayer(player)
+
+        tp.play_transition()
+
+        self.assertGreater(player.play_frame.call_count, 0)
+        last_frame = player.play_frame.call_args_list[-1].args[0]
+        np.testing.assert_array_equal(
+            last_frame,
+            np.zeros([4, 4, 3], dtype=np.uint8),
+        )
 
 
 if __name__ == '__main__':
