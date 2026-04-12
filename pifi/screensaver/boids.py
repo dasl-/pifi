@@ -49,6 +49,13 @@ class Boids(Screensaver):
             np.sin(angles) * speeds
         ])
 
+        # Fixed hue per boid — evenly spaced with slight jitter
+        base_hues = np.linspace(0, 1, num_boids, endpoint=False)
+        self.__hues = (base_hues + np.random.uniform(-0.05, 0.05, num_boids)) % 1.0
+
+        # Trail canvas (float for smooth fading)
+        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+
     def __update_velocities(self):
         separation = self.__calculate_separation()
         alignment = self.__calculate_alignment()
@@ -142,18 +149,33 @@ class Boids(Screensaver):
         self.__positions[:, 1] = self.__positions[:, 1] % self.__height
 
     def __render(self):
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        # Fade trail
+        self.__canvas *= 0.82
 
         for i, pos in enumerate(self.__positions):
             x = int(pos[0]) % self.__width
             y = int(pos[1]) % self.__height
 
-            # Color based on velocity direction (rainbow effect)
-            vx, vy = self.__velocities[i]
-            angle = math.atan2(vy, vx)
-            hue = (angle + math.pi) / (2 * math.pi)  # Normalize to 0-1
+            rgb = self.__hsv_to_rgb(self.__hues[i], 0.8, 1.0)
+            color = np.array(rgb, dtype=np.float64) / 255.0
 
-            rgb = self.__hsv_to_rgb(hue, 1.0, 1.0)
+            # Deposit trail at current position (additive, builds up in clusters)
+            self.__canvas[y, x] = np.minimum(1.0, self.__canvas[y, x] + color * 0.35)
+
+            # Tail pixel — one pixel behind the direction of travel
+            speed = math.sqrt(self.__velocities[i, 0] ** 2 + self.__velocities[i, 1] ** 2)
+            if speed > 0.01:
+                tx = int(round(pos[0] - self.__velocities[i, 0] / speed)) % self.__width
+                ty = int(round(pos[1] - self.__velocities[i, 1] / speed)) % self.__height
+                self.__canvas[ty, tx] = np.minimum(1.0, self.__canvas[ty, tx] + color * 0.15)
+
+        # Composite: bright boid heads on top of the trail
+        frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
+
+        for i, pos in enumerate(self.__positions):
+            x = int(pos[0]) % self.__width
+            y = int(pos[1]) % self.__height
+            rgb = self.__hsv_to_rgb(self.__hues[i], 0.6, 1.0)
             frame[y, x] = rgb
 
         self._led_frame_player.play_frame(frame)
