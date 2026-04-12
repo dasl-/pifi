@@ -151,13 +151,13 @@ class TransitionPlayer:
     def play_transition(self, from_screensaver=None, to_screensaver=None):
         """Play a transition between two screensavers.
 
-        Both screensavers stay alive and animate during the transition.
-        The to_screensaver is warmed up (setup + N ticks) while the
-        from_screensaver keeps playing on the real display, then both
-        frames are blended together for the visual transition.
+        Live transition (both screensavers provided): both screensavers
+        stay alive and animate during the blend. The to_screensaver is
+        warmed up (setup + N ticks) while the from_screensaver keeps
+        playing on the real display.
 
-        Can also be called with no screensavers for a static-frame
-        transition (crossfade from the current display to black).
+        Static transition (no screensavers provided): crossfade from the
+        current display to black.
         """
         width = Config.get_or_throw('leds.display_width')
         height = Config.get_or_throw('leds.display_height')
