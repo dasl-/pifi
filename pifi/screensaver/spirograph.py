@@ -31,7 +31,7 @@ class Spirograph(Screensaver):
         self.__time = 0.0
         self.__variant = random.choice(self.VARIANTS)
 
-        self.__speed = random.uniform(0.02, 0.05)
+        self.__speed = random.uniform(0.04, 0.08)
         self.__hue_speed = random.uniform(0.001, 0.003)
         self.__cx = self.__width / 2.0
         self.__cy = self.__height / 2.0
@@ -159,7 +159,7 @@ class Spirograph(Screensaver):
                 1.0, self.__canvas[iy, ix] + np.array(color) * 0.5
             )
 
-        self.__canvas *= 0.997
+        self.__canvas *= 0.999
 
         display = self.__canvas.copy()
         self.__draw_mechanism(display, mech)
