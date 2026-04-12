@@ -13,7 +13,7 @@ class BlackHoleFramePlayer(FramePlayerBase):
         self.__current_frame = None
 
     def play_frame(self, frame):
-        self.__current_frame = frame.copy()
+        self.__current_frame = frame
 
     def get_current_frame(self):
         if self.__current_frame is None:
@@ -22,4 +22,4 @@ class BlackHoleFramePlayer(FramePlayerBase):
 
     def fade_to_frame(self, frame):
         """Skip the fade animation and just capture the target frame."""
-        self.__current_frame = frame.copy()
+        self.__current_frame = frame
