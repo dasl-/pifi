@@ -43,7 +43,6 @@ from pifi.screensaver.purkinje import Purkinje
 from pifi.screensaver.vortices import Vortices
 from pifi.screensaver.escher import Escher
 from pifi.screensaver.selfhealingsquares import SelfHealingSquares
-from pifi.screensaver.gradienttest import GradientTest
 from pifi.screensaver.nycsubway import NycSubway
 from pifi.screensaver.wfmu import Wfmu
 from pifi.screensaver.sonoskaraoke import SonosKaraoke
@@ -105,7 +104,6 @@ class ScreensaverManager:
         Vortices,
         Escher,
         SelfHealingSquares,
-        GradientTest,
         NycSubway,
         Wfmu,
         SonosKaraoke,
