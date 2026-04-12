@@ -45,11 +45,11 @@ class Screensaver(ABC):
         # e.g. screensavers.configs.boids.tick_sleep overrides screensavers.tick_sleep
         sid = self.get_id()
 
-        self.__tick_sleep = Config.get(f'screensavers.configs.{sid}.tick_sleep')
-        if self.__tick_sleep is None:
-            self.__tick_sleep = Config.get('screensavers.tick_sleep')
-        if self.__tick_sleep is None:
-            self.__tick_sleep = 0
+        self._tick_sleep = Config.get(f'screensavers.configs.{sid}.tick_sleep')
+        if self._tick_sleep is None:
+            self._tick_sleep = Config.get('screensavers.tick_sleep')
+        if self._tick_sleep is None:
+            self._tick_sleep = 0
 
         # For timeout, null means unlimited at the global level (0 also means
         # unlimited). At the per-screensaver level, null falls back to global.
@@ -67,7 +67,7 @@ class Screensaver(ABC):
 
     def tick_sleep(self):
         """Seconds to sleep between ticks (read-only, from config)."""
-        return self.__tick_sleep
+        return self._tick_sleep
 
     def last_tick(self):
         """The tick number reached when play() last exited (read-only)."""
