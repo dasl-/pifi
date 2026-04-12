@@ -184,9 +184,6 @@ class TransitionPlayer:
         from_alive = from_screensaver is not None
         to_alive = to_screensaver is not None
 
-        if to_alive and to_screensaver.warmed_up:
-            warm_up_ticks = 0
-
         # --- Warm-up phase ---
         to_frame, from_tick, to_tick, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
