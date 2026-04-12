@@ -974,7 +974,7 @@ class KaraokeBase(Screensaver):
                 line_end_time = self.__line_start_time + self.__line_duration
                 dwell_buffer = 0.3
                 time_for_scroll = max(0.5, line_end_time - self.__preview_wall_start - dwell_buffer)
-                complete_in_ticks = int(time_for_scroll / self._tick_sleep)
+                complete_in_ticks = int(time_for_scroll / self.tick_sleep())
 
                 preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
@@ -1039,7 +1039,7 @@ class KaraokeBase(Screensaver):
                 line_end_time = self.__line_start_time + self.__line_duration
                 dwell_buffer = 0.3
                 time_for_scroll = max(0.5, line_end_time - self.__preview_wall_start - dwell_buffer)
-                complete_in_ticks = int(time_for_scroll / self._tick_sleep)
+                complete_in_ticks = int(time_for_scroll / self.tick_sleep())
 
                 preview_scroll_offset = self.__tick_count - self.__preview_scroll_start
                 textutils.draw_scrolling_text(
