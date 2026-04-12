@@ -192,7 +192,7 @@ class TransitionPlayer:
         )
 
         if to_alive:
-            to_screensaver.transition_warmed_up = True
+            to_screensaver.live_transition_warmed_up = True
 
         # --- Transition blend ---
         self.__run_blend(
@@ -203,7 +203,7 @@ class TransitionPlayer:
         )
 
         if to_screensaver is not None:
-            to_screensaver.transition_warm_up_ticks = to_tick
+            to_screensaver.live_transition_warm_up_ticks = to_tick
 
     def __run_warm_up(self, from_screensaver, to_screensaver,
                       from_frame, from_tick, to_tick, from_alive, to_alive,

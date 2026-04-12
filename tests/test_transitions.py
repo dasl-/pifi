@@ -6,7 +6,7 @@ Covers:
 - supports_live_transition() contract
 - last_tick initialization and updates
 - Frame player restoration after transition (including on exception)
-- transition_warmed_up state when warm-up fails
+- live_transition_warmed_up state when warm-up fails
 - auto_teardown=False skips teardown
 - warm_up_ticks=0 captures to_frame from _setup()
 - render_tick() captures frames without displaying
@@ -315,7 +315,7 @@ class TestTransitionFramePlayerIntegrity(unittest.TestCase):
 
 
 class TestWarmedUpState(unittest.TestCase):
-    """Test that transition_warmed_up reflects whether warm-up actually succeeded."""
+    """Test that live_transition_warmed_up reflects whether warm-up actually succeeded."""
 
     def setUp(self):
         Config._Config__is_loaded = True
@@ -326,19 +326,19 @@ class TestWarmedUpState(unittest.TestCase):
         player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
         return player
 
-    def test_transition_warmed_up_true_after_successful_warmup(self):
+    def test_live_transition_warmed_up_true_after_successful_warmup(self):
         player = self._make_player()
         tp = TransitionPlayer(player)
 
         from_ss = _StubScreensaver(led_frame_player=None)
         to_ss = _StubScreensaver(led_frame_player=None)
-        self.assertFalse(to_ss.transition_warmed_up)
+        self.assertFalse(to_ss.live_transition_warmed_up)
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
-        self.assertTrue(to_ss.transition_warmed_up)
+        self.assertTrue(to_ss.live_transition_warmed_up)
 
-    def test_transition_warmed_up_false_when_tick_returns_false_during_warmup(self):
-        """If _tick() returns False during warm-up, transition_warmed_up stays False."""
+    def test_live_transition_warmed_up_false_when_tick_returns_false_during_warmup(self):
+        """If _tick() returns False during warm-up, live_transition_warmed_up stays False."""
         player = self._make_player()
         tp = TransitionPlayer(player)
 
@@ -348,7 +348,7 @@ class TestWarmedUpState(unittest.TestCase):
         to_ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
-        self.assertFalse(to_ss.transition_warmed_up)
+        self.assertFalse(to_ss.live_transition_warmed_up)
 
 
 class TestWarmUpTicksZero(unittest.TestCase):
@@ -409,10 +409,10 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
-        self.assertTrue(to_ss.transition_warmed_up)
+        self.assertTrue(to_ss.live_transition_warmed_up)
         # Warm-up should have ended early — to_ss should have far fewer
         # warm-up ticks than the configured warm_up_ticks.
-        self.assertLess(to_ss.transition_warm_up_ticks, 10)
+        self.assertLess(to_ss.live_transition_warm_up_ticks, 10)
 
 
 class TestStaticTransition(unittest.TestCase):

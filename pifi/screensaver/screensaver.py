@@ -59,8 +59,8 @@ class Screensaver(ABC):
         if self.__timeout is None:
             self.__timeout = 0
 
-        self.transition_warmed_up = False
-        self.transition_warm_up_ticks = 0
+        self.live_transition_warmed_up = False
+        self.live_transition_warm_up_ticks = 0
         self.__last_tick = 0
         self.__black_hole_frame_player = BlackHoleFramePlayer()
         self.__is_set_up = False
@@ -129,7 +129,7 @@ class Screensaver(ABC):
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
         self.__start_time = time.time()
         self.setup()
-        start_tick = self.transition_warm_up_ticks if self.transition_warmed_up else 0
+        start_tick = self.live_transition_warm_up_ticks if self.live_transition_warmed_up else 0
 
         try:
             tick = start_tick

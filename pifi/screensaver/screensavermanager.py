@@ -187,6 +187,6 @@ class ScreensaverManager:
 
             # If the transition tried to warm up next_screensaver but it
             # failed, discard it so we don't immediately exit in play().
-            if can_live_transition and not next_screensaver.transition_warmed_up:
+            if can_live_transition and not next_screensaver.live_transition_warmed_up:
                 next_screensaver.teardown()
                 next_screensaver = None
