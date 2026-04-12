@@ -156,17 +156,17 @@ class TestTickSleepResolution(unittest.TestCase):
     def test_default_tick_sleep(self):
         """When tick_sleep is set to 0.05 in config (as in default_config.json), it's used."""
         ss = self._make({'screensavers': {'tick_sleep': 0.05}})
-        self.assertEqual(ss.tick_sleep(), 0.05)
+        self.assertEqual(ss.get_tick_sleep(), 0.05)
 
     def test_tick_sleep_absent_means_zero(self):
         """When tick_sleep key is absent from config entirely, it's 0."""
         ss = self._make({'screensavers': {}})
-        self.assertEqual(ss.tick_sleep(), 0)
+        self.assertEqual(ss.get_tick_sleep(), 0)
 
     def test_global_tick_sleep_overrides_default(self):
         """Global screensavers.tick_sleep overrides the hardcoded default."""
         ss = self._make({'screensavers': {'tick_sleep': 0.1}})
-        self.assertEqual(ss.tick_sleep(), 0.1)
+        self.assertEqual(ss.get_tick_sleep(), 0.1)
 
     def test_per_screensaver_tick_sleep_overrides_global(self):
         """Per-screensaver tick_sleep overrides the global tick_sleep."""
@@ -176,7 +176,7 @@ class TestTickSleepResolution(unittest.TestCase):
                 'configs': {'stub': {'tick_sleep': 0.02}},
             }
         })
-        self.assertEqual(ss.tick_sleep(), 0.02)
+        self.assertEqual(ss.get_tick_sleep(), 0.02)
 
     def test_no_per_screensaver_tick_sleep_falls_back_to_global(self):
         """When per-screensaver tick_sleep is absent, global is used."""
@@ -186,7 +186,7 @@ class TestTickSleepResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': 60}},
             }
         })
-        self.assertEqual(ss.tick_sleep(), 0.08)
+        self.assertEqual(ss.get_tick_sleep(), 0.08)
 
     def test_per_screensaver_tick_sleep_null_falls_back_to_global(self):
         """Per-screensaver tick_sleep of null falls back to global tick_sleep."""
@@ -196,12 +196,12 @@ class TestTickSleepResolution(unittest.TestCase):
                 'configs': {'stub': {'tick_sleep': None}},
             }
         })
-        self.assertEqual(ss.tick_sleep(), 0.08)
+        self.assertEqual(ss.get_tick_sleep(), 0.08)
 
     def test_global_tick_sleep_none_means_zero(self):
         """Global tick_sleep of None means 0 (no sleep between ticks)."""
         ss = self._make({'screensavers': {'tick_sleep': None}})
-        self.assertEqual(ss.tick_sleep(), 0)
+        self.assertEqual(ss.get_tick_sleep(), 0)
 
 
 if __name__ == '__main__':

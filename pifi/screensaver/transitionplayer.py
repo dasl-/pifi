@@ -179,7 +179,7 @@ class TransitionPlayer:
         effect = self.__pick_effect(width, height)
         self.__logger.info(f"Playing transition: {effect.__name__}")
 
-        from_tick = from_screensaver.last_tick() if from_screensaver else 0
+        from_tick = from_screensaver.get_last_tick() if from_screensaver else 0
         to_tick = 0
         from_alive = from_screensaver is not None
         to_alive = to_screensaver is not None
@@ -226,7 +226,7 @@ class TransitionPlayer:
                 to_tick += 1
             return to_frame, from_tick, to_tick, from_alive, to_alive
 
-        from_sleep = from_screensaver.tick_sleep() if from_alive else tick_sleep
+        from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
 
         while to_tick < warm_up_ticks and to_alive:
             step_start = time.time()
@@ -262,8 +262,8 @@ class TransitionPlayer:
                     from_tick, to_tick, from_alive, to_alive,
                     num_steps, tick_sleep):
         """Blend both screensavers together over num_steps."""
-        from_sleep = from_screensaver.tick_sleep() if from_alive else tick_sleep
-        to_sleep = to_screensaver.tick_sleep() if to_alive else tick_sleep
+        from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
+        to_sleep = to_screensaver.get_tick_sleep() if to_alive else tick_sleep
         # Prime accumulators so both screensavers tick on the first step,
         # maintaining continuity from the warm-up phase.
         from_accum = from_sleep if from_alive else 0

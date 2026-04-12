@@ -197,12 +197,12 @@ class TestLastTick(unittest.TestCase):
 
     def test_initialized_to_zero(self):
         ss = _StubScreensaver(led_frame_player=None)
-        self.assertEqual(ss.last_tick(), 0)
+        self.assertEqual(ss.get_last_tick(), 0)
 
     def test_updated_after_play(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=5)
         ss.play()
-        self.assertEqual(ss.last_tick(), 5)
+        self.assertEqual(ss.get_last_tick(), 5)
 
 
 class TestAutoTeardown(unittest.TestCase):

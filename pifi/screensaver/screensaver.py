@@ -65,11 +65,11 @@ class Screensaver(ABC):
         self.__render_capture = BlackHoleFramePlayer()
         self.__is_set_up = False
 
-    def tick_sleep(self):
+    def get_tick_sleep(self):
         """Seconds to sleep between ticks (read-only, from config)."""
         return self._tick_sleep
 
-    def last_tick(self):
+    def get_last_tick(self):
         """The tick number reached when play() last exited (read-only)."""
         return self.__last_tick
 
@@ -136,7 +136,7 @@ class Screensaver(ABC):
             while not self._is_past_timeout():
                 if self._tick(tick) is False:
                     break
-                time.sleep(self.tick_sleep())
+                time.sleep(self.get_tick_sleep())
                 tick += 1
             self.__last_tick = tick
         except Exception:
