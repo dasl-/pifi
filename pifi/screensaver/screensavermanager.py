@@ -119,38 +119,13 @@ class ScreensaverManager:
 
         return ScreensaverManager._all_screensavers_cache
 
-    def __pick_next_screensaver(self, available_ids, exclude_id=None):
-        """Pick a random screensaver, avoiding back-to-back repeats."""
-        n = len(available_ids)
-        if exclude_id not in available_ids or n <= 1:
-            next_id = random.choice(available_ids)
-        else:
-            idx = random.randrange(n - 1)
-            if available_ids[idx] == exclude_id:
-                idx = n - 1
-            next_id = available_ids[idx]
-        next_cls = self.SCREENSAVER_CLASSES[next_id]
-        return next_cls(led_frame_player=self.__led_frame_player)
-
     def run(self):
         next_screensaver = None
+
+        # Reload config overrides from database before playing
+        # This picks up any changes made via the settings UI
+        available_ids = self.__reload_screensaver_config()
         while True:
-            # Reload config overrides from database before playing
-            # This picks up any changes made via the settings UI
-            Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
-
-            enabled = Config.get('screensavers.enabled')
-
-            # Build list of available screensaver IDs
-            available_ids = []
-            for screensaver_id in enabled:
-                if screensaver_id in self.SCREENSAVER_CLASSES:
-                    available_ids.append(screensaver_id)
-
-            # Fall back to game of life if nothing enabled
-            if not available_ids:
-                available_ids.append('game_of_life')
-
             if next_screensaver is not None:
                 # Use the pre-warmed screensaver from last iteration's transition
                 screensaver = next_screensaver
@@ -162,13 +137,16 @@ class ScreensaverManager:
             transitions_enabled = Config.get('screensavers.transitions.enabled', True)
             screensaver.play(auto_teardown=not transitions_enabled)
 
+            # Reload config so next_screensaver picks up any settings
+            # changes made while the current screensaver was playing.
+            available_ids = self.__reload_screensaver_config()
+
             if not transitions_enabled:
                 continue
 
             next_screensaver = self.__pick_next_screensaver(
                 available_ids, exclude_id=screensaver.get_id()
             )
-
             can_live_transition = (
                 screensaver.supports_live_transition()
                 and next_screensaver.supports_live_transition()
@@ -190,3 +168,34 @@ class ScreensaverManager:
             if can_live_transition and not next_screensaver.live_transition_warmed_up:
                 next_screensaver.teardown()
                 next_screensaver = None
+
+    def __reload_screensaver_config(self):
+        Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])
+        enabled = Config.get('screensavers.enabled')
+
+        # Build list of available screensaver IDs
+        available_ids = []
+        for screensaver_id in enabled:
+            if screensaver_id in self.SCREENSAVER_CLASSES:
+                available_ids.append(screensaver_id)
+
+        # Fall back to game of life if nothing enabled
+        if not available_ids:
+            available_ids.append('game_of_life')
+
+        return available_ids
+
+    def __pick_next_screensaver(self, available_ids, exclude_id=None):
+        """Pick a random screensaver, avoiding back-to-back repeats."""
+        n = len(available_ids)
+        if n <= 1:
+            next_id = random.choice(available_ids)
+        else:
+            idx = random.randrange(n)
+            if available_ids[idx] == exclude_id:
+                idx = random.randrange(n - 1)
+                if available_ids[idx] == exclude_id:
+                    idx = n - 1
+            next_id = available_ids[idx]
+        next_cls = self.SCREENSAVER_CLASSES[next_id]
+        return next_cls(led_frame_player=self.__led_frame_player)

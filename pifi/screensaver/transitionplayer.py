@@ -217,10 +217,13 @@ class TransitionPlayer:
         if not (to_alive and warm_up_ticks > 0):
             # No warm-up needed — grab initial frame if setup rendered one
             if to_alive:
-                frame, _ = to_screensaver.render_tick(to_tick)
-                if frame is not None:
-                    to_frame = frame
-                to_tick += 1
+                frame, alive = to_screensaver.render_tick(to_tick)
+                if alive:
+                    to_tick += 1
+                    if frame is not None:
+                        to_frame = frame
+                else:
+                    to_alive = False
             return from_frame, to_frame, from_tick, to_tick, from_alive, to_alive
 
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
