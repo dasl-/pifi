@@ -160,47 +160,33 @@ class ScreensaverManager:
                 screensaver = self.__pick_next_screensaver(available_ids)
 
             transitions_enabled = Config.get('screensavers.transitions.enabled', True)
-            can_live_transition = (
-                transitions_enabled
-                and screensaver.supports_live_transition()
-            )
-            screensaver.play(auto_teardown=not can_live_transition)
+            screensaver.play(auto_teardown=not transitions_enabled)
 
             if not transitions_enabled:
                 continue
 
-            if can_live_transition:
-                next_screensaver = self.__pick_next_screensaver(
-                    available_ids, exclude_id=screensaver.get_id()
-                )
+            next_screensaver = self.__pick_next_screensaver(
+                available_ids, exclude_id=screensaver.get_id()
+            )
+            can_live_transition = (
+                screensaver.supports_live_transition()
+                and next_screensaver.supports_live_transition()
+            )
 
-                # If the next screensaver doesn't support live transition,
-                # fall back to a static-frame transition (crossfade to black)
-                if not next_screensaver.supports_live_transition():
-                    try:
-                        self.__transition_player.play_transition()
-                    finally:
-                        screensaver.teardown()
-                    next_screensaver = None
-                    continue
-
-                # Live transition: both screensavers animate during the blend.
-                # The transition handles setup() and warm-up of the next
-                # screensaver internally, spread across transition steps.
-                try:
+            try:
+                if can_live_transition:
                     self.__transition_player.play_transition(
                         from_screensaver=screensaver,
                         to_screensaver=next_screensaver,
                     )
-                finally:
-                    screensaver.teardown()
-
-                # If the next screensaver failed during warm-up (e.g. missing
-                # dependency), discard it so we don't immediately exit in play()
-                if not next_screensaver.warmed_up:
-                    next_screensaver.teardown()
+                else:
+                    self.__transition_player.play_transition()
                     next_screensaver = None
-            else:
-                # Screensaver doesn't support live transitions —
-                # do a static-frame transition (crossfade from last frame to black)
-                self.__transition_player.play_transition()
+            finally:
+                screensaver.teardown()
+
+            # If the next screensaver failed during warm-up (e.g. missing
+            # dependency), discard it so we don't immediately exit in play()
+            if next_screensaver is not None and not next_screensaver.warmed_up:
+                next_screensaver.teardown()
+                next_screensaver = None
