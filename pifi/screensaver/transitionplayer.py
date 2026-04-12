@@ -185,14 +185,14 @@ class TransitionPlayer:
         to_alive = to_screensaver is not None
 
         # --- Warm-up phase ---
-        to_frame, from_tick, to_tick, from_alive, to_alive = self.__run_warm_up(
+        from_frame, to_frame, from_tick, to_tick, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
             from_frame, from_tick, to_tick, from_alive, to_alive,
             warm_up_ticks, tick_sleep,
         )
 
         if to_alive:
-            to_screensaver.warmed_up = True
+            to_screensaver.transition_warmed_up = True
 
         # --- Transition blend ---
         self.__run_blend(
@@ -203,14 +203,14 @@ class TransitionPlayer:
         )
 
         if to_screensaver is not None:
-            to_screensaver.warm_up_ticks = to_tick
+            to_screensaver.transition_warm_up_ticks = to_tick
 
     def __run_warm_up(self, from_screensaver, to_screensaver,
                       from_frame, from_tick, to_tick, from_alive, to_alive,
                       warm_up_ticks, tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.
 
-        Returns (to_frame, from_tick, to_tick, from_alive, to_alive).
+        Returns (from_frame, to_frame, from_tick, to_tick, from_alive, to_alive).
         """
         to_frame = np.zeros_like(from_frame)
 
@@ -221,7 +221,7 @@ class TransitionPlayer:
                 if frame is not None:
                     to_frame = frame
                 to_tick += 1
-            return to_frame, from_tick, to_tick, from_alive, to_alive
+            return from_frame, to_frame, from_tick, to_tick, from_alive, to_alive
 
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
 
@@ -251,7 +251,7 @@ class TransitionPlayer:
             if remaining > 0:
                 time.sleep(remaining)
 
-        return to_frame, from_tick, to_tick, from_alive, to_alive
+        return from_frame, to_frame, from_tick, to_tick, from_alive, to_alive
 
     def __run_blend(self, from_screensaver, to_screensaver,
                     from_frame, to_frame, effect,
