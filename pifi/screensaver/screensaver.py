@@ -83,6 +83,7 @@ class Screensaver(ABC):
 
         self._warmed_up = False
         self._warm_up_ticks = 0
+        self._last_tick = 0
 
     def _is_past_timeout(self):
         """Check if the screensaver timeout has been exceeded.
@@ -93,49 +94,12 @@ class Screensaver(ABC):
             return False
         return (time.time() - self._start_time) > self._timeout
 
-    def warm_up(self, num_ticks=60):
-        """Pre-render ticks to build up visual state without displaying.
-
-        Runs _setup() and num_ticks iterations of _tick() using a FrameCapture
-        instead of the real LED display. Ticks run at full speed (no sleeping).
-
-        Returns the last captured frame (numpy array), or None if no frames
-        were rendered. Sets _warmed_up to True only if all ticks completed;
-        if _tick() returned False early, _warmed_up stays False and the
-        screensaver should not be reused.
-        """
-        # Swap to capture BEFORE _setup() — some screensavers render in
-        # _setup() (e.g. CellularAutomaton seeds the board), and we don't
-        # want those frames going to the real display.
-        real_player = self._led_frame_player
-        capture = FrameCapture()
-        self._led_frame_player = capture
-
-        self._setup()
-
-        completed = True
-        try:
-            for tick in range(num_ticks):
-                if self._tick(tick) is False:
-                    completed = False
-                    break
-            self._warm_up_ticks = tick + 1 if num_ticks > 0 else 0
-        finally:
-            self._led_frame_player = real_player
-
-        if completed:
-            self._warmed_up = True
-        else:
-            self._teardown()
-
-        return capture.get_current_frame()
-
     def play(self, auto_teardown=True) -> None:
         """Run the screensaver tick loop.
 
-        If warm_up() was called first, skips _setup() and continues from
-        where warm-up left off. Otherwise starts fresh. Timeout always
-        counts from when play() is called, not from warm-up.
+        If the screensaver was warmed up by a transition, skips _setup()
+        and continues from where warm-up left off. Otherwise starts fresh.
+        Timeout always counts from when play() is called, not from warm-up.
 
         Args:
             auto_teardown: If True (default), _teardown() is called when the
@@ -158,12 +122,16 @@ class Screensaver(ABC):
                 time.sleep(self._tick_sleep)
                 tick += 1
             self._last_tick = tick
-        except:
+        except Exception:
             self._teardown()
             raise
         if auto_teardown:
             self._teardown()
         self._screensaver_logger.info(f"{self.get_name()} screensaver ended")
+
+    def set_led_frame_player(self, led_frame_player):
+        """Replace the LED frame player (e.g. with a FrameCapture during transitions)."""
+        self._led_frame_player = led_frame_player
 
     def _setup(self):
         """Called once before the tick loop. Override for initialization."""
@@ -199,3 +167,12 @@ class Screensaver(ABC):
     def get_description(cls) -> str:
         """Return brief description"""
         pass
+
+    @classmethod
+    def supports_live_transition(cls) -> bool:
+        """Whether this screensaver can participate in live transitions.
+
+        Screensavers that block in _tick() or require the full LedFramePlayer
+        API (beyond play_frame/fade_to_frame) should return False.
+        """
+        return True
