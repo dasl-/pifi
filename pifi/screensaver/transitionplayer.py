@@ -228,19 +228,18 @@ class TransitionPlayer:
 
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
 
-        while to_tick < warm_up_ticks and to_alive:
+        while to_tick < warm_up_ticks and to_alive and from_alive:
             step_start = time.time()
 
             # Keep from_screensaver animating on the real display
-            if from_alive:
-                frame, alive = from_screensaver.render_tick(from_tick)
-                if alive:
-                    from_tick += 1
-                    if frame is not None:
-                        from_frame = frame
-                        self.__led_frame_player.play_frame(frame)
-                else:
-                    from_alive = False
+            frame, alive = from_screensaver.render_tick(from_tick)
+            if alive:
+                from_tick += 1
+                if frame is not None:
+                    from_frame = frame
+                    self.__led_frame_player.play_frame(frame)
+            else:
+                from_alive = False
 
             # One warm-up tick per frame to stay within CPU budget
             frame, alive = to_screensaver.render_tick(to_tick)
