@@ -62,7 +62,7 @@ class Screensaver(ABC):
         self.warmed_up = False
         self.warm_up_ticks = 0
         self.__last_tick = 0
-        self.__render_capture = BlackHoleFramePlayer()
+        self.__black_hole_frame_player = BlackHoleFramePlayer()
         self.__is_set_up = False
 
     def get_tick_sleep(self):
@@ -106,11 +106,11 @@ class Screensaver(ABC):
             was rendered) and alive is True unless _tick() returned False.
         """
         real_player = self._led_frame_player
-        self._led_frame_player = self.__render_capture
+        self._led_frame_player = self.__black_hole_frame_player
         try:
             self.setup()
             alive = self._tick(tick) is not False
-            return self.__render_capture.get_current_frame(), alive
+            return self.__black_hole_frame_player.get_current_frame(), alive
         finally:
             self._led_frame_player = real_player
 
