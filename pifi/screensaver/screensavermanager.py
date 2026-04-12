@@ -168,6 +168,7 @@ class ScreensaverManager:
             next_screensaver = self.__pick_next_screensaver(
                 available_ids, exclude_id=screensaver.get_id()
             )
+
             can_live_transition = (
                 screensaver.supports_live_transition()
                 and next_screensaver.supports_live_transition()
@@ -181,12 +182,11 @@ class ScreensaverManager:
                     )
                 else:
                     self.__transition_player.play_transition()
-                    next_screensaver = None
             finally:
                 screensaver.teardown()
 
-            # If the next screensaver failed during warm-up (e.g. missing
-            # dependency), discard it so we don't immediately exit in play()
-            if next_screensaver is not None and not next_screensaver.warmed_up:
+            # If the transition tried to warm up next_screensaver but it
+            # failed, discard it so we don't immediately exit in play().
+            if can_live_transition and not next_screensaver.warmed_up:
                 next_screensaver.teardown()
                 next_screensaver = None
