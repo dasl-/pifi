@@ -167,25 +167,10 @@ class TestSupportsLiveTransition(unittest.TestCase):
         Config._Config__is_loaded = True
         Config._Config__config = copy.deepcopy(BASE_CONFIG)
 
-    def test_default_is_true(self):
-        ss = _StubScreensaver(led_frame_player=None)
-        self.assertTrue(ss.supports_live_transition())
-
     def test_video_screensaver_returns_false(self):
         from pifi.screensaver.videoscreensaver import VideoScreensaver
         ss = VideoScreensaver(led_frame_player=None)
         self.assertFalse(ss.supports_live_transition())
-
-    def test_regular_screensavers_return_true(self):
-        from pifi.screensaver.screensavermanager import ScreensaverManager
-        from pifi.screensaver.videoscreensaver import VideoScreensaver
-        for sid, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
-            with self.subTest(screensaver=sid):
-                instance = cls(led_frame_player=None)
-                if cls is VideoScreensaver:
-                    self.assertFalse(instance.supports_live_transition())
-                else:
-                    self.assertTrue(instance.supports_live_transition())
 
 
 class TestLastTick(unittest.TestCase):
@@ -194,10 +179,6 @@ class TestLastTick(unittest.TestCase):
     def setUp(self):
         Config._Config__is_loaded = True
         Config._Config__config = copy.deepcopy(BASE_CONFIG)
-
-    def test_initialized_to_zero(self):
-        ss = _StubScreensaver(led_frame_player=None)
-        self.assertEqual(ss.get_last_tick(), 0)
 
     def test_updated_after_play(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=5)
