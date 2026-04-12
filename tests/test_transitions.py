@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
-from pifi.screensaver.screensaver import Screensaver, FrameCapture
+from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver.transitionplayer import TransitionPlayer
 
 
