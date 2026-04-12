@@ -42,6 +42,7 @@ from pifi.screensaver.geodesic import Geodesic
 from pifi.screensaver.purkinje import Purkinje
 from pifi.screensaver.vortices import Vortices
 from pifi.screensaver.escher import Escher
+from pifi.screensaver.selfhealingsquares import SelfHealingSquares
 from pifi.screensaver.gradienttest import GradientTest
 from pifi.screensaver.nycsubway import NycSubway
 from pifi.screensaver.wfmu import Wfmu
@@ -103,6 +104,7 @@ class ScreensaverManager:
         Purkinje,
         Vortices,
         Escher,
+        SelfHealingSquares,
         GradientTest,
         NycSubway,
         Wfmu,
