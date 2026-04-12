@@ -162,6 +162,8 @@ class TransitionPlayer:
             from_frame = self.__led_frame_player.get_current_frame()
         if from_frame is None:
             from_frame = np.zeros([height, width, 3], np.uint8)
+        # Monochrome video modes produce (H, W) frames. Expand to (H, W, 3)
+        # so blending math works with consistent shapes.
         if from_frame.ndim == 2:
             from_frame = np.stack([from_frame] * 3, axis=-1)
 
@@ -186,63 +188,65 @@ class TransitionPlayer:
         if from_alive:
             from_capture = FrameCapture()
             from_capture.play_frame(from_frame)
-            from_tick = getattr(from_screensaver, '_last_tick', 0)
-            from_screensaver._led_frame_player = from_capture
+            from_tick = from_screensaver._last_tick
+            from_screensaver.set_led_frame_player(from_capture)
 
         if to_alive:
             to_capture = FrameCapture()
-            to_screensaver._led_frame_player = to_capture
+            to_screensaver.set_led_frame_player(to_capture)
             # If not warmed up, run _setup() here (renders to capture, not
             # the real display). Warm-up ticks happen below while the
             # from_screensaver keeps playing on screen.
             if not to_screensaver._warmed_up:
                 to_screensaver._setup()
-                to_screensaver._warmed_up = True
             else:
                 to_capture.play_frame(to_frame)
                 warm_up_ticks = 0  # already warmed up
 
-        # --- Warm-up phase ---
-        # Keep the from_screensaver playing on screen at its natural rate
-        # while building up the to_screensaver's state one tick per frame.
-        # This finishes all warm-up BEFORE the transition blend starts.
-        if to_alive and warm_up_ticks > 0:
-            from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
+        try:
+            # --- Warm-up phase ---
+            # Keep the from_screensaver playing on screen at its natural rate
+            # while building up the to_screensaver's state one tick per frame.
+            # This finishes all warm-up BEFORE the transition blend starts.
+            if to_alive and warm_up_ticks > 0:
+                from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
 
-            while to_tick < warm_up_ticks and to_alive:
-                step_start = time.time()
+                while to_tick < warm_up_ticks and to_alive:
+                    step_start = time.time()
 
-                # Keep from_screensaver animating on the real display
-                if from_alive:
-                    if from_screensaver._tick(from_tick) is not False:
-                        from_tick += 1
-                        self.__led_frame_player.play_frame(from_capture.get_current_frame())
+                    # Keep from_screensaver animating on the real display
+                    if from_alive:
+                        if from_screensaver._tick(from_tick) is not False:
+                            from_tick += 1
+                            self.__led_frame_player.play_frame(from_capture.get_current_frame())
+                        else:
+                            from_alive = False
+
+                    # One warm-up tick per frame to stay within CPU budget
+                    if to_screensaver._tick(to_tick) is not False:
+                        to_tick += 1
                     else:
-                        from_alive = False
+                        to_alive = False
 
-                # One warm-up tick per frame to stay within CPU budget
-                if to_screensaver._tick(to_tick) is not False:
-                    to_tick += 1
-                else:
-                    to_alive = False
-
-                remaining = from_sleep - (time.time() - step_start)
-                if remaining > 0:
-                    time.sleep(remaining)
+                    remaining = from_sleep - (time.time() - step_start)
+                    if remaining > 0:
+                        time.sleep(remaining)
 
             if to_alive:
-                to_frame = to_capture.get_current_frame()
+                captured = to_capture.get_current_frame()
+                if captured is not None:
+                    to_frame = captured
+                to_screensaver._warmed_up = True
 
-        # --- Transition blend ---
-        # Both screensavers are now ready. The to_screensaver's tick rate
-        # interpolates from the from_screensaver's rate to its own so the
-        # tempo change is gradual rather than an abrupt shift.
-        from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
-        to_sleep = to_screensaver._tick_sleep if to_alive else tick_sleep
-        from_accum = from_sleep if from_alive else 0
-        to_accum = from_sleep if to_alive else 0  # start at from's rhythm
+            # --- Transition blend ---
+            # Both screensavers are now ready. The to_screensaver's tick rate
+            # interpolates from the from_screensaver's rate to its own so the
+            # tempo change is gradual rather than an abrupt shift.
+            from_sleep = from_screensaver._tick_sleep if from_alive else tick_sleep
+            to_sleep = to_screensaver._tick_sleep if to_alive else tick_sleep
+            from_accum = from_sleep if from_alive else 0
+            to_accum = from_sleep if to_alive else 0  # start at from's rhythm
 
-        try:
             for step in range(1, num_steps + 1):
                 step_start = time.time()
                 progress = step / num_steps
@@ -279,9 +283,9 @@ class TransitionPlayer:
         finally:
             # Restore real frame player so play() works after transition
             if from_screensaver is not None:
-                from_screensaver._led_frame_player = self.__led_frame_player
+                from_screensaver.set_led_frame_player(self.__led_frame_player)
             if to_screensaver is not None:
-                to_screensaver._led_frame_player = self.__led_frame_player
+                to_screensaver.set_led_frame_player(self.__led_frame_player)
                 to_screensaver._warm_up_ticks = to_tick
 
     def __pick_effect(self, width, height):

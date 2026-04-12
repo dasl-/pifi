@@ -149,9 +149,13 @@ class ScreensaverManager:
                 screensaver = screensaver_cls(led_frame_player=self.__led_frame_player)
 
             transitions_enabled = Config.get('screensavers.transitions.enabled', True)
-            screensaver.play(auto_teardown=not transitions_enabled)
+            can_live_transition = (
+                transitions_enabled
+                and screensaver.supports_live_transition()
+            )
+            screensaver.play(auto_teardown=not can_live_transition)
 
-            if transitions_enabled:
+            if can_live_transition:
                 # Pick next screensaver. Warm-up is handled inside the
                 # transition so the from_screensaver keeps animating.
                 # Avoid repeating the same screensaver back-to-back.
@@ -163,16 +167,25 @@ class ScreensaverManager:
                 next_cls = self.SCREENSAVER_CLASSES[next_id]
                 next_screensaver = next_cls(led_frame_player=self.__led_frame_player)
 
+                # Skip live transition if the next screensaver doesn't support it
+                if not next_screensaver.supports_live_transition():
+                    screensaver._teardown()
+                    next_screensaver = None
+                    continue
+
                 # Live transition: both screensavers animate during the blend.
                 # The transition handles _setup() and warm-up of the next
                 # screensaver internally, spread across transition steps.
-                self.__transition_player.play_transition(
-                    from_screensaver=screensaver,
-                    to_screensaver=next_screensaver,
-                )
-                screensaver._teardown()
+                try:
+                    self.__transition_player.play_transition(
+                        from_screensaver=screensaver,
+                        to_screensaver=next_screensaver,
+                    )
+                finally:
+                    screensaver._teardown()
 
                 # If the next screensaver failed during warm-up (e.g. missing
                 # dependency), discard it so we don't immediately exit in play()
                 if not next_screensaver._warmed_up:
+                    next_screensaver._teardown()
                     next_screensaver = None
