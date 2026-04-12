@@ -195,7 +195,7 @@ class TransitionPlayer:
             to_screensaver.live_transition_warmed_up = True
 
         # --- Transition blend ---
-        self.__run_blend(
+        to_tick = self.__run_blend(
             from_screensaver, to_screensaver,
             from_frame, to_frame, effect,
             from_tick, to_tick, from_alive, to_alive,
@@ -260,7 +260,10 @@ class TransitionPlayer:
                     from_frame, to_frame, effect,
                     from_tick, to_tick, from_alive, to_alive,
                     num_steps, tick_sleep):
-        """Blend both screensavers together over num_steps."""
+        """Blend both screensavers together over num_steps.
+
+        Returns to_tick so the caller can record the final tick count.
+        """
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
         to_sleep = to_screensaver.get_tick_sleep() if to_alive else tick_sleep
         # Prime accumulators so both screensavers tick on the first step,
@@ -306,6 +309,8 @@ class TransitionPlayer:
             remaining = tick_sleep - (time.time() - step_start)
             if remaining > 0:
                 time.sleep(remaining)
+
+        return to_tick
 
     def __pick_effect(self, width, height):
         # Build the full list including factory effects
