@@ -2,31 +2,9 @@ import time
 from abc import ABC, abstractmethod
 
 from pifi.config import Config
+from pifi.led.blackholeframeplayer import BlackHoleFramePlayer
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.logger import Logger
-
-
-class FrameCapture:
-    """Lightweight stand-in for LedFramePlayer that captures frames without displaying.
-
-    Used internally by render_tick() to intercept frames that a screensaver
-    renders via self._led_frame_player, without sending them to LED hardware.
-    """
-
-    def __init__(self):
-        self.__current_frame = None
-
-    def play_frame(self, frame):
-        self.__current_frame = frame.copy()
-
-    def get_current_frame(self):
-        if self.__current_frame is None:
-            return None
-        return self.__current_frame.copy()
-
-    def fade_to_frame(self, frame):
-        """During capture, skip the fade animation and just capture the target frame."""
-        self.__current_frame = frame.copy()
 
 
 class Screensaver(ABC):
@@ -84,7 +62,7 @@ class Screensaver(ABC):
         self.warmed_up = False
         self.warm_up_ticks = 0
         self.__last_tick = 0
-        self._render_capture = FrameCapture()
+        self._render_capture = BlackHoleFramePlayer()
         self._is_set_up = False
 
     def tick_sleep(self):
