@@ -394,8 +394,10 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
     """Test that to_screensaver still warms up when from dies during warm-up."""
 
     def setUp(self):
+        config = copy.deepcopy(BASE_CONFIG)
+        config['screensavers']['transitions']['warm_up_ticks'] = 60
         Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__config = config
 
     def test_to_still_warms_up(self):
         """If from_screensaver dies during warm-up, warm-up ends early
@@ -410,9 +412,9 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
         self.assertTrue(to_ss.live_transition_warmed_up)
-        # Warm-up should have ended early — to_ss should have far fewer
-        # warm-up ticks than the configured warm_up_ticks.
-        self.assertLess(to_ss.live_transition_warm_up_ticks, 10)
+        # Warm-up should have ended early (from died after 1 tick), so
+        # total ticks (warm-up + blend) should be far less than 60.
+        self.assertLess(to_ss.live_transition_warm_up_ticks, 30)
 
 
 class TestStaticTransition(unittest.TestCase):
