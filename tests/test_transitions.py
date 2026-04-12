@@ -417,8 +417,8 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
         Config._Config__config = copy.deepcopy(BASE_CONFIG)
 
     def test_to_still_warms_up(self):
-        """If from_screensaver dies during warm-up, the to_screensaver
-        should still complete warm-up successfully."""
+        """If from_screensaver dies during warm-up, warm-up ends early
+        and jumps straight to the blend phase."""
         player = MagicMock()
         player.get_current_frame.return_value = np.zeros([4, 4, 3], np.uint8)
         tp = TransitionPlayer(player)
@@ -429,6 +429,9 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
         self.assertTrue(to_ss.warmed_up)
+        # Warm-up should have ended early — to_ss should have far fewer
+        # warm-up ticks than the configured 60.
+        self.assertLess(to_ss.warm_up_ticks, 10)
 
 
 class TestStaticTransition(unittest.TestCase):
