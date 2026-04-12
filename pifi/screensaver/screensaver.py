@@ -124,7 +124,7 @@ class Screensaver(ABC):
         Args:
             auto_teardown: If True (default), teardown() is called when the
                 loop ends. Set to False to keep the screensaver alive for
-                live transitions — the caller must call teardown() manually.
+                transitions — the caller must call teardown() manually.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
         self.__start_time = time.time()
@@ -183,6 +183,9 @@ class Screensaver(ABC):
 
     def supports_live_transition(self) -> bool:
         """Whether this screensaver can participate in live transitions.
+
+        Live transitions animate both screensavers during the blend.
+        Static transitions crossfade from the last displayed frame to black.
 
         Screensavers that block in _tick() or require the full LedFramePlayer
         API (beyond play_frame/fade_to_frame) should return False.
