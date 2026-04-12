@@ -33,7 +33,7 @@ class Screensaver(ABC):
               line of their __init__ method.
         """
         # Flag to verify subclasses call super().__init__()
-        self._screensaver_base_init_called = True
+        self.__screensaver_base_init_called = True
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -53,17 +53,17 @@ class Screensaver(ABC):
 
         # For timeout, null means unlimited at the global level (0 also means
         # unlimited). At the per-screensaver level, null falls back to global.
-        self._timeout = Config.get(f'screensavers.configs.{sid}.timeout')
-        if self._timeout is None:
-            self._timeout = Config.get('screensavers.timeout')
-        if self._timeout is None:
-            self._timeout = 0
+        self.__timeout = Config.get(f'screensavers.configs.{sid}.timeout')
+        if self.__timeout is None:
+            self.__timeout = Config.get('screensavers.timeout')
+        if self.__timeout is None:
+            self.__timeout = 0
 
         self.warmed_up = False
         self.warm_up_ticks = 0
         self.__last_tick = 0
-        self._render_capture = BlackHoleFramePlayer()
-        self._is_set_up = False
+        self.__render_capture = BlackHoleFramePlayer()
+        self.__is_set_up = False
 
     def tick_sleep(self):
         """Seconds to sleep between ticks (read-only, from config)."""
@@ -78,21 +78,21 @@ class Screensaver(ABC):
 
         A timeout of 0 or None means unlimited (never times out).
         """
-        if not self._timeout:
+        if not self.__timeout:
             return False
-        return (time.time() - self._start_time) > self._timeout
+        return (time.time() - self.__start_time) > self.__timeout
 
     def setup(self):
         """Initialize the screensaver for ticking. Idempotent — safe to call
         multiple times, but only runs _setup() once."""
-        if not self._is_set_up:
+        if not self.__is_set_up:
             self._setup()
-            self._is_set_up = True
+            self.__is_set_up = True
 
     def teardown(self):
         """Clean up resources after the screensaver finishes."""
         self._teardown()
-        self._is_set_up = False
+        self.__is_set_up = False
 
     def render_tick(self, tick):
         """Advance state by one tick, capturing the rendered frame without
@@ -106,11 +106,11 @@ class Screensaver(ABC):
             was rendered) and alive is True unless _tick() returned False.
         """
         real_player = self._led_frame_player
-        self._led_frame_player = self._render_capture
+        self._led_frame_player = self.__render_capture
         try:
             self.setup()
             alive = self._tick(tick) is not False
-            return self._render_capture.get_current_frame(), alive
+            return self.__render_capture.get_current_frame(), alive
         finally:
             self._led_frame_player = real_player
 
@@ -127,7 +127,7 @@ class Screensaver(ABC):
                 live transitions — the caller must call teardown() manually.
         """
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
-        self._start_time = time.time()
+        self.__start_time = time.time()
         self.setup()
         start_tick = self.warm_up_ticks if self.warmed_up else 0
 

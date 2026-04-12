@@ -181,13 +181,13 @@ class TestScreensaverInterface(unittest.TestCase):
 
                 # Check if the base class __init__ was called by verifying the flag
                 self.assertTrue(
-                    hasattr(instance, '_screensaver_base_init_called'),
+                    hasattr(instance, '_Screensaver__screensaver_base_init_called'),
                     f"{screensaver_id} does not call super().__init__() - "
-                    f"missing _screensaver_base_init_called attribute"
+                    f"missing __screensaver_base_init_called attribute"
                 )
                 self.assertTrue(
-                    instance._screensaver_base_init_called,
-                    f"{screensaver_id}._screensaver_base_init_called is not True"
+                    instance._Screensaver__screensaver_base_init_called,
+                    f"{screensaver_id}.__screensaver_base_init_called is not True"
                 )
 
 
