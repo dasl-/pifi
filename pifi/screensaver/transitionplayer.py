@@ -179,15 +179,13 @@ class TransitionPlayer:
         effect = self.__pick_effect(width, height)
         self.__logger.info(f"Playing transition: {effect.__name__}")
 
-        from_tick = from_screensaver.get_last_tick() if from_screensaver else 0
-        to_tick = 0
         from_alive = from_screensaver is not None
         to_alive = to_screensaver is not None
 
         # --- Warm-up phase ---
-        from_frame, to_frame, from_tick, to_tick, from_alive, to_alive = self.__run_warm_up(
+        from_frame, to_frame, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
-            from_frame, from_tick, to_tick, from_alive, to_alive,
+            from_frame, from_alive, to_alive,
             warm_up_ticks, tick_sleep,
         )
 
@@ -195,46 +193,41 @@ class TransitionPlayer:
             to_screensaver.live_transition_warmed_up = True
 
         # --- Transition blend ---
-        to_tick = self.__run_blend(
+        self.__run_blend(
             from_screensaver, to_screensaver,
             from_frame, to_frame, effect,
-            from_tick, to_tick, from_alive, to_alive,
+            from_alive, to_alive,
             num_steps, tick_sleep,
         )
 
-        if to_screensaver is not None:
-            to_screensaver.live_transition_warm_up_ticks = to_tick
-
     def __run_warm_up(self, from_screensaver, to_screensaver,
-                      from_frame, from_tick, to_tick, from_alive, to_alive,
+                      from_frame, from_alive, to_alive,
                       warm_up_ticks, tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.
 
-        Returns (from_frame, to_frame, from_tick, to_tick, from_alive, to_alive).
+        Returns (from_frame, to_frame, from_alive, to_alive).
         """
         to_frame = np.zeros_like(from_frame)
 
         if not (to_alive and warm_up_ticks > 0):
             # No warm-up needed — grab initial frame if setup rendered one
             if to_alive:
-                frame, alive = to_screensaver.render_tick(to_tick)
+                frame, alive = to_screensaver.render_tick()
                 if alive:
-                    to_tick += 1
                     if frame is not None:
                         to_frame = frame
                 else:
                     to_alive = False
-            return from_frame, to_frame, from_tick, to_tick, from_alive, to_alive
+            return from_frame, to_frame, from_alive, to_alive
 
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
 
-        while to_tick < warm_up_ticks and to_alive and from_alive:
+        while to_screensaver.get_last_tick() < warm_up_ticks and to_alive and from_alive:
             step_start = time.time()
 
             # Keep from_screensaver animating on the real display
-            frame, alive = from_screensaver.render_tick(from_tick)
+            frame, alive = from_screensaver.render_tick()
             if alive:
-                from_tick += 1
                 if frame is not None:
                     from_frame = frame
                     self.__led_frame_player.play_frame(frame)
@@ -242,9 +235,8 @@ class TransitionPlayer:
                 from_alive = False
 
             # One warm-up tick per frame to stay within CPU budget
-            frame, alive = to_screensaver.render_tick(to_tick)
+            frame, alive = to_screensaver.render_tick()
             if alive:
-                to_tick += 1
                 if frame is not None:
                     to_frame = frame
             else:
@@ -254,16 +246,13 @@ class TransitionPlayer:
             if remaining > 0:
                 time.sleep(remaining)
 
-        return from_frame, to_frame, from_tick, to_tick, from_alive, to_alive
+        return from_frame, to_frame, from_alive, to_alive
 
     def __run_blend(self, from_screensaver, to_screensaver,
                     from_frame, to_frame, effect,
-                    from_tick, to_tick, from_alive, to_alive,
+                    from_alive, to_alive,
                     num_steps, tick_sleep):
-        """Blend both screensavers together over num_steps.
-
-        Returns to_tick so the caller can record the final tick count.
-        """
+        """Blend both screensavers together over num_steps."""
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
         to_sleep = to_screensaver.get_tick_sleep() if to_alive else tick_sleep
         # Prime accumulators so both screensavers tick on the first step,
@@ -280,9 +269,8 @@ class TransitionPlayer:
 
             if from_alive and from_accum >= from_sleep:
                 from_accum -= from_sleep
-                frame, alive = from_screensaver.render_tick(from_tick)
+                frame, alive = from_screensaver.render_tick()
                 if alive:
-                    from_tick += 1
                     if frame is not None:
                         from_frame = frame
                 else:
@@ -292,9 +280,8 @@ class TransitionPlayer:
             effective_to_sleep = from_sleep + (to_sleep - from_sleep) * progress
             if to_alive and to_accum >= effective_to_sleep:
                 to_accum -= effective_to_sleep
-                frame, alive = to_screensaver.render_tick(to_tick)
+                frame, alive = to_screensaver.render_tick()
                 if alive:
-                    to_tick += 1
                     if frame is not None:
                         to_frame = frame
                 else:
@@ -309,8 +296,6 @@ class TransitionPlayer:
             remaining = tick_sleep - (time.time() - step_start)
             if remaining > 0:
                 time.sleep(remaining)
-
-        return to_tick
 
     def __pick_effect(self, width, height):
         # Build the full list including factory effects

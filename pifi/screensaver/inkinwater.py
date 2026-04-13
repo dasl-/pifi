@@ -27,7 +27,7 @@ class InkInWater(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Add new drops more frequently for more activity
         drop_chance = Config.get('screensavers.configs.inkinwater.drop_chance', 0.06)
         if random.random() < drop_chance:

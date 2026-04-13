@@ -42,7 +42,7 @@ def _render_frame(screensaver, value=128):
 class _StubScreensaver(Screensaver):
     """Basic stub that renders a frame each tick."""
 
-    def _tick(self, tick):
+    def _tick(self):
         _render_frame(self)
 
     @classmethod
@@ -65,8 +65,8 @@ class _FailingTickScreensaver(Screensaver):
         super().__init__(led_frame_player)
         self._fail_after = fail_after
 
-    def _tick(self, tick):
-        if tick >= self._fail_after:
+    def _tick(self):
+        if self.get_last_tick() >= self._fail_after:
             return False
         _render_frame(self)
 
@@ -90,8 +90,8 @@ class _ExplodingTickScreensaver(Screensaver):
         super().__init__(led_frame_player)
         self._explode_after = explode_after
 
-    def _tick(self, tick):
-        if tick >= self._explode_after:
+    def _tick(self):
+        if self.get_last_tick() >= self._explode_after:
             raise RuntimeError("boom")
         _render_frame(self)
 
@@ -120,7 +120,7 @@ class _RenderingSetupScreensaver(Screensaver):
         self._width = Config.get_or_throw('leds.display_width')
         self._height = Config.get_or_throw('leds.display_height')
 
-    def _tick(self, tick):
+    def _tick(self):
         _render_frame(self, value=42)
 
     @classmethod
@@ -185,6 +185,18 @@ class TestLastTick(unittest.TestCase):
         ss.play()
         self.assertEqual(ss.get_last_tick(), 5)
 
+    def test_updated_after_render_tick(self):
+        ss = _StubScreensaver(led_frame_player=None)
+        ss.render_tick()
+        self.assertEqual(ss.get_last_tick(), 1)
+        ss.render_tick()
+        self.assertEqual(ss.get_last_tick(), 2)
+
+    def test_not_updated_when_tick_fails(self):
+        ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
+        ss.render_tick()
+        self.assertEqual(ss.get_last_tick(), 0)
+
 
 class TestAutoTeardown(unittest.TestCase):
     """Test auto_teardown parameter of play()."""
@@ -215,7 +227,7 @@ class TestRenderTick(unittest.TestCase):
 
     def test_returns_frame_and_alive(self):
         ss = _StubScreensaver(led_frame_player=None)
-        frame, alive = ss.render_tick(0)
+        frame, alive = ss.render_tick()
         self.assertTrue(alive)
         self.assertIsNotNone(frame)
         self.assertEqual(frame.shape, (4, 4, 3))
@@ -228,31 +240,31 @@ class TestRenderTick(unittest.TestCase):
         ss = _StubScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick(0)
+        frame, alive = ss.render_tick()
         player.play_frame.assert_not_called()
 
     def test_restores_frame_player_after_tick(self):
         player = MagicMock()
         ss = _StubScreensaver(led_frame_player=player)
-        ss.render_tick(0)
+        ss.render_tick()
         self.assertIs(ss._led_frame_player, player)
 
     def test_restores_frame_player_on_exception(self):
         player = MagicMock()
         ss = _ExplodingTickScreensaver(led_frame_player=player, explode_after=0)
         with self.assertRaises(RuntimeError):
-            ss.render_tick(0)
+            ss.render_tick()
         self.assertIs(ss._led_frame_player, player)
 
     def test_returns_false_alive_when_tick_stops(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
-        frame, alive = ss.render_tick(0)
+        frame, alive = ss.render_tick()
         self.assertFalse(alive)
 
     def test_calls_setup_on_first_invocation(self):
         ss = _RenderingSetupScreensaver(led_frame_player=None)
         self.assertFalse(ss._Screensaver__is_set_up)
-        frame, alive = ss.render_tick(0)
+        frame, alive = ss.render_tick()
         self.assertTrue(ss._Screensaver__is_set_up)
 
     def test_setup_frame_captured_not_displayed(self):
@@ -263,7 +275,7 @@ class TestRenderTick(unittest.TestCase):
         ss = _RenderingSetupScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick(0)
+        frame, alive = ss.render_tick()
         # The real player should NOT have received any frames
         player.play_frame.assert_not_called()
         # But we should have captured a frame
@@ -414,7 +426,7 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
         self.assertTrue(to_ss.live_transition_warmed_up)
         # Warm-up should have ended early (from died after 1 tick), so
         # total ticks (warm-up + blend) should be far less than 60.
-        self.assertLess(to_ss.live_transition_warm_up_ticks, 30)
+        self.assertLess(to_ss.get_last_tick(), 30)
 
 
 class TestStaticTransition(unittest.TestCase):

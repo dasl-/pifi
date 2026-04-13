@@ -91,7 +91,6 @@ class NycSubway(Screensaver):
         self.__station_names_loaded = False
         self.__fetch_in_progress = False  # Background fetch flag
         self.__fetch_lock = threading.Lock()  # Protect shared state
-        self.__tick_count = 0  # For animations
 
         # Animation state for smooth transitions
         self.__display_rows = []  # Currently displayed rows with animation state
@@ -308,7 +307,7 @@ class NycSubway(Screensaver):
         """Start initial data fetch."""
         self.__start_background_fetch()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Fetch new data if needed and render one frame."""
         current_time = time.time()
         if current_time - self.__last_update > self.__update_interval:

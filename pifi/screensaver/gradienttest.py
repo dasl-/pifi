@@ -159,7 +159,7 @@ class GradientTest(Screensaver):
         self.__mode = old_mode
         return frame
 
-    def _tick(self, tick):
+    def _tick(self):
         """Display the pre-generated static frame."""
         self._led_frame_player.play_frame(self.__frame)
 

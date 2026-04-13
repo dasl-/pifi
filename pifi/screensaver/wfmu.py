@@ -140,7 +140,7 @@ class Wfmu(Screensaver):
         """Start initial data fetch."""
         self.__start_background_fetch()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Fetch new data if needed and render one frame."""
         current_time = time.time()
         if current_time - self.__last_update > self.__update_interval:

@@ -27,12 +27,11 @@ class Shadebobs(Screensaver):
 
         # Bob state
         self.__bobs = []
-        self.__time = 0
 
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Fade the buffer
         fade = Config.get('screensavers.configs.shadebobs.fade', 0.92)
         self.__buffer *= fade
@@ -43,7 +42,7 @@ class Shadebobs(Screensaver):
             bob['hue'] = (bob['hue'] + bob['hue_speed']) % 1.0
 
             # Calculate position using Lissajous curves
-            t = self.__time * bob['speed'] * 0.05
+            t = self.get_last_tick() * bob['speed'] * 0.05
             x = math.sin(bob['freq_x'] * t + bob['phase_x'])
             y = math.sin(bob['freq_y'] * t + bob['phase_y'])
 
@@ -56,12 +55,10 @@ class Shadebobs(Screensaver):
 
         # Render to display
         self.__render()
-        self.__time += 1
 
     def __reset(self):
         # Float buffer for smooth color accumulation
         self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
-        self.__time = 0
 
         # Create bobs with different Lissajous parameters
         num_bobs = Config.get('screensavers.configs.shadebobs.num_bobs', 5)

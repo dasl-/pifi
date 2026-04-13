@@ -35,7 +35,7 @@ class Lorenz(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Lorenz system parameters (classic values)
         sigma = Config.get('screensavers.configs.lorenz.sigma', 10.0)
         rho = Config.get('screensavers.configs.lorenz.rho', 28.0)

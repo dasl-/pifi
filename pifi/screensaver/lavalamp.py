@@ -21,19 +21,15 @@ class LavaLamp(Screensaver):
         self.__height = Config.get_or_throw('leds.display_height')
 
         self.__blobs = []
-        self.__time = 0
 
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__update_blobs()
         self.__render()
-        self.__time += 1
 
     def __reset(self):
-        self.__time = 0
-
         # Create blobs - more blobs for more activity
         num_blobs = Config.get('screensavers.configs.lavalamp.num_blobs', 10)
         self.__blobs = []
@@ -83,7 +79,7 @@ class LavaLamp(Screensaver):
             blob['vy'] += (target_y - blob['y']) * buoyancy * 0.15
 
             # Add wobble motion using sine waves for organic movement
-            wobble = math.sin(self.__time * 0.05 + blob['x']) * 0.02
+            wobble = math.sin(self.get_last_tick() * 0.05 + blob['x']) * 0.02
             blob['vx'] += wobble
 
             # More horizontal drift

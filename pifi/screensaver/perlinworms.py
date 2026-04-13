@@ -212,7 +212,7 @@ class PerlinWorms(Screensaver):
         """Initialize worms."""
         self.__init_worms()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Update worms and render one frame."""
         self.__time += self.__time_speed
         self.__update_worms()

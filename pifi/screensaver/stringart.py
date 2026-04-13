@@ -36,7 +36,6 @@ class StringArt(Screensaver):
         self.__multiplier = 2.0  # Connection multiplier (creates different patterns)
         self.__rotation = 0.0
         self.__hue = 0.0
-        self.__tick = 0
 
     def __init_pattern(self):
         """Initialize the pattern."""
@@ -44,7 +43,6 @@ class StringArt(Screensaver):
         self.__rotation = 0.0
         self.__hue = np.random.random()
         self.__canvas.fill(0)
-        self.__tick = 0
 
     def __get_circle_point(self, index, radius, center_x, center_y):
         """Get a point on the circle."""
@@ -150,13 +148,12 @@ class StringArt(Screensaver):
 
         self.__rotation += self.__rotation_speed
         self.__hue = (self.__hue + 0.001) % 1.0
-        self.__tick += 1
 
     def _setup(self):
         """Initialize the pattern."""
         self.__init_pattern()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Update pattern and render one frame."""
         self.__update()
 

@@ -60,7 +60,6 @@ class Screensaver(ABC):
             self.__timeout = 0
 
         self.live_transition_warmed_up = False
-        self.live_transition_warm_up_ticks = 0
         self.__last_tick = 0
         self.__black_hole_frame_player = BlackHoleFramePlayer()
         self.__is_set_up = False
@@ -70,7 +69,12 @@ class Screensaver(ABC):
         return self._tick_sleep
 
     def get_last_tick(self):
-        """The tick number reached when play() last exited (read-only)."""
+        """The next tick number to execute (read-only).
+
+        Updated by both play() and render_tick(). Starts at 0 for a fresh
+        screensaver; after a transition warm-up it reflects how far the
+        screensaver has already been ticked.
+        """
         return self.__last_tick
 
     def _is_past_timeout(self):
@@ -94,7 +98,7 @@ class Screensaver(ABC):
         self._teardown()
         self.__is_set_up = False
 
-    def render_tick(self, tick):
+    def render_tick(self):
         """Advance state by one tick, capturing the rendered frame without
         displaying it on the LED hardware.
 
@@ -109,7 +113,9 @@ class Screensaver(ABC):
         self._led_frame_player = self.__black_hole_frame_player
         try:
             self.setup()
-            alive = self._tick(tick) is not False
+            alive = self._tick() is not False
+            if alive:
+                self.__last_tick += 1
             return self.__black_hole_frame_player.get_current_frame(), alive
         finally:
             self._led_frame_player = real_player
@@ -129,16 +135,13 @@ class Screensaver(ABC):
         self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
         self.__start_time = time.time()
         self.setup()
-        start_tick = self.live_transition_warm_up_ticks if self.live_transition_warmed_up else 0
 
         try:
-            tick = start_tick
             while not self._is_past_timeout():
-                if self._tick(tick) is False:
+                if self._tick() is False:
                     break
                 time.sleep(self.get_tick_sleep())
-                tick += 1
-            self.__last_tick = tick
+                self.__last_tick += 1
         except Exception:
             self.teardown()
             raise
@@ -155,11 +158,12 @@ class Screensaver(ABC):
         pass
 
     @abstractmethod
-    def _tick(self, tick) -> None:
+    def _tick(self) -> None:
         """Called each iteration of the tick loop.
 
         Return False to stop the loop early. Any other return value
-        (including None) continues the loop.
+        (including None) continues the loop. Use self.get_last_tick()
+        to get the current tick number if needed.
         """
         pass
 

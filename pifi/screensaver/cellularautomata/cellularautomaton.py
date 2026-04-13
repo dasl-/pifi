@@ -20,7 +20,7 @@ class CellularAutomaton(Screensaver, ABC):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         self._update_board()
         self.__show_board()
         self.__do_tick_bookkeeping()

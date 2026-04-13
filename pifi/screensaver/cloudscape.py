@@ -59,8 +59,6 @@ class Cloudscape(Screensaver):
         self.__sky_cache_tick = -999  # Ensures first frame triggers update
         self.__sky_update_interval = 30  # Update sky every N frames
 
-        self.__time = 0.0
-
     def __generate_permutation(self):
         """Generate permutation table for Perlin noise."""
         p = np.arange(256, dtype=np.int32)
@@ -181,9 +179,10 @@ class Cloudscape(Screensaver):
         base = np.array(cloud_colors.get(self.__sky_mode, (255, 255, 255)), dtype=np.float32)
         return base * layer_brightness
 
-    def __render(self, tick):
+    def __render(self):
         """Render the cloudscape with optimized buffer reuse."""
         # Update sky gradient less frequently (it changes slowly)
+        tick = self.get_last_tick()
         if tick - self.__sky_cache_tick >= self.__sky_update_interval:
             self.__compute_sky_gradient()
             self.__sky_cache_tick = tick
@@ -203,7 +202,7 @@ class Cloudscape(Screensaver):
             layer_alpha = 0.7 + layer_depth * 0.3
 
             # Calculate noise coordinates (reuse grid)
-            drift_x = self.__time * self.__drift_speed * layer_speed
+            drift_x = tick * self.__drift_speed * layer_speed
             noise_x = (self.__x_grid + drift_x) * layer_scale
             noise_y = self.__y_grid * layer_scale * 1.2 + layer * 100
 
@@ -239,13 +238,11 @@ class Cloudscape(Screensaver):
     def _setup(self):
         """Initialize noise and reset state."""
         self.__perm = self.__generate_permutation()
-        self.__time = 0.0
         self.__sky_cache_tick = -1
 
-    def _tick(self, tick):
-        """Advance time and render one frame."""
-        self.__time += 1
-        self.__render(tick)
+    def _tick(self):
+        """Render one frame."""
+        self.__render()
 
     @classmethod
     def get_id(cls) -> str:

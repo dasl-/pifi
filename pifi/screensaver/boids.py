@@ -27,7 +27,7 @@ class Boids(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__update_velocities()
         self.__update_positions()
         self.__render()

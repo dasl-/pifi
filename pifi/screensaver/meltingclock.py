@@ -137,7 +137,7 @@ class MeltingClock(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Get current time in configured timezone
         if self.__timezone:
             current_datetime = datetime.now(self.__timezone)

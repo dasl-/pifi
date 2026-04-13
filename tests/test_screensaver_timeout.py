@@ -27,7 +27,7 @@ from pifi.screensaver.screensaver import Screensaver
 
 # Concrete subclass for testing
 class _StubScreensaver(Screensaver):
-    def _tick(self, tick):
+    def _tick(self):
         pass
 
     @classmethod
