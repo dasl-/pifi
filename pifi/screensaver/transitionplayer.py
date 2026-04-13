@@ -177,15 +177,15 @@ class TransitionPlayer:
             from_frame, tick_sleep,
         )
 
-        if to_alive:
-            to_screensaver.live_transition_warmed_up = True
-
         # --- Transition blend ---
-        self.__run_blend(
+        to_alive = self.__run_blend(
             from_screensaver, to_screensaver,
             from_frame, to_frame,
             from_alive, to_alive, tick_sleep,
         )
+
+        if to_alive:
+            to_screensaver.live_transition_warmed_up = True
 
     def __run_warm_up(self, from_screensaver, to_screensaver, from_frame, tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.
@@ -286,6 +286,8 @@ class TransitionPlayer:
             remaining = tick_sleep - (time.time() - step_start)
             if remaining > 0:
                 time.sleep(remaining)
+
+        return to_alive
 
     def __pick_effect(self, width, height):
         # Build the full list including factory effects
