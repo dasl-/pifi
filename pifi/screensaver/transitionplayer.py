@@ -171,7 +171,6 @@ class TransitionPlayer:
         if from_frame.ndim == 2:
             from_frame = np.stack([from_frame] * 3, axis=-1)
 
-
         # --- Warm-up phase ---
         from_frame, to_frame, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
