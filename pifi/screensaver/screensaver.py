@@ -154,7 +154,7 @@ class Screensaver(ABC):
         pass
 
     def _teardown(self):
-        """Called after the tick loop (in finally block). Override for cleanup."""
+        """Called after the tick loop ends. Override for cleanup."""
         pass
 
     @abstractmethod

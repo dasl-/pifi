@@ -16,7 +16,7 @@ import copy
 import unittest
 import sys
 import os
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 import numpy as np
 
