@@ -136,16 +136,16 @@ class ScreensaverManager:
 
             transitions_enabled = Config.get('screensavers.transitions.enabled', True)
             screensaver.play(auto_teardown=not transitions_enabled)
-
-            # Reload config so next_screensaver picks up any settings
-            # changes made while the current screensaver was playing.
-            available_ids = self.__reload_screensaver_config()
-
-            if not transitions_enabled:
-                continue
-
             can_live_transition = False
             try:
+
+                # Reload config so next_screensaver picks up any settings
+                # changes made while the current screensaver was playing.
+                available_ids = self.__reload_screensaver_config()
+
+                if not transitions_enabled:
+                    continue
+
                 next_screensaver = self.__pick_next_screensaver(
                     available_ids, exclude_id=screensaver.get_id()
                 )
@@ -166,7 +166,7 @@ class ScreensaverManager:
                 # If the transition tried to warm up next_screensaver but it
                 # failed (or an exception occurred before warm-up finished),
                 # discard it so we don't immediately exit in play().
-                if can_live_transition and not next_screensaver.live_transition_warmed_up:
+                if can_live_transition and next_screensaver and not next_screensaver.live_transition_warmed_up:
                     next_screensaver.teardown()
                     next_screensaver = None
 
