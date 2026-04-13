@@ -162,12 +162,12 @@ class ScreensaverManager:
                     self.__transition_player.play_transition()
             finally:
                 screensaver.teardown()
-
-            # If the transition tried to warm up next_screensaver but it
-            # failed, discard it so we don't immediately exit in play().
-            if can_live_transition and not next_screensaver.live_transition_warmed_up:
-                next_screensaver.teardown()
-                next_screensaver = None
+                # If the transition tried to warm up next_screensaver but it
+                # failed (or an exception occurred before warm-up finished),
+                # discard it so we don't immediately exit in play().
+                if can_live_transition and not next_screensaver.live_transition_warmed_up:
+                    next_screensaver.teardown()
+                    next_screensaver = None
 
     def __reload_screensaver_config(self):
         Config.reload_overrides([SettingsDb.SCREENSAVER_SETTINGS])

@@ -142,7 +142,7 @@ class Screensaver(ABC):
                     break
                 time.sleep(self.get_tick_sleep())
                 self.__last_tick += 1
-        except Exception:
+        except BaseException:
             self.teardown()
             raise
         if auto_teardown:
