@@ -161,10 +161,7 @@ class TransitionPlayer:
         """
         width = Config.get_or_throw('leds.display_width')
         height = Config.get_or_throw('leds.display_height')
-        duration = Config.get('screensavers.transitions.duration', 1.0)
         tick_sleep = Config.get('screensavers.transitions.tick_sleep', 0.03)
-        warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
-        num_steps = max(1, int(duration / tick_sleep)) if tick_sleep > 0 else 1
 
         from_frame = self.__led_frame_player.get_current_frame()
         if from_frame is None:
@@ -186,7 +183,7 @@ class TransitionPlayer:
         from_frame, to_frame, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
             from_frame, from_alive, to_alive,
-            warm_up_ticks, tick_sleep,
+            tick_sleep,
         )
 
         if to_alive:
@@ -196,19 +193,18 @@ class TransitionPlayer:
         self.__run_blend(
             from_screensaver, to_screensaver,
             from_frame, to_frame, effect,
-            from_alive, to_alive,
-            num_steps, tick_sleep,
+            from_alive, to_alive, tick_sleep,
         )
 
     def __run_warm_up(self, from_screensaver, to_screensaver,
                       from_frame, from_alive, to_alive,
-                      warm_up_ticks, tick_sleep):
+                      tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.
 
         Returns (from_frame, to_frame, from_alive, to_alive).
         """
+        warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
         to_frame = np.zeros_like(from_frame)
-
         if not (to_alive and warm_up_ticks > 0):
             # No warm-up needed — grab initial frame if setup rendered one
             if to_alive:
@@ -250,9 +246,10 @@ class TransitionPlayer:
 
     def __run_blend(self, from_screensaver, to_screensaver,
                     from_frame, to_frame, effect,
-                    from_alive, to_alive,
-                    num_steps, tick_sleep):
+                    from_alive, to_alive, tick_sleep):
         """Blend both screensavers together over num_steps."""
+        duration = Config.get('screensavers.transitions.duration', 1.0)
+        num_steps = max(1, int(duration / tick_sleep)) if tick_sleep > 0 else 1
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
         to_sleep = to_screensaver.get_tick_sleep() if to_alive else tick_sleep
         # Prime accumulators so both screensavers tick on the first step,
