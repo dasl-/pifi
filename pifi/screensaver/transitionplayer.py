@@ -171,17 +171,11 @@ class TransitionPlayer:
         if from_frame.ndim == 2:
             from_frame = np.stack([from_frame] * 3, axis=-1)
 
-        effect = self.__pick_effect(width, height)
-        self.__logger.info(f"Playing transition: {effect.__name__}")
-
-        from_alive = from_screensaver is not None
-        to_alive = to_screensaver is not None
 
         # --- Warm-up phase ---
         from_frame, to_frame, from_alive, to_alive = self.__run_warm_up(
             from_screensaver, to_screensaver,
-            from_frame, from_alive, to_alive,
-            tick_sleep,
+            from_frame, tick_sleep,
         )
 
         if to_alive:
@@ -190,19 +184,19 @@ class TransitionPlayer:
         # --- Transition blend ---
         self.__run_blend(
             from_screensaver, to_screensaver,
-            from_frame, to_frame, effect,
+            from_frame, to_frame,
             from_alive, to_alive, tick_sleep,
         )
 
-    def __run_warm_up(self, from_screensaver, to_screensaver,
-                      from_frame, from_alive, to_alive,
-                      tick_sleep):
+    def __run_warm_up(self, from_screensaver, to_screensaver, from_frame, tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.
 
         Returns (from_frame, to_frame, from_alive, to_alive).
         """
         warm_up_ticks = Config.get('screensavers.transitions.warm_up_ticks', 60)
         to_frame = np.zeros_like(from_frame)
+        from_alive = from_screensaver is not None
+        to_alive = to_screensaver is not None
         if not (to_alive and warm_up_ticks > 0):
             # No warm-up needed — grab initial frame if setup rendered one
             if to_alive:
@@ -243,9 +237,12 @@ class TransitionPlayer:
         return from_frame, to_frame, from_alive, to_alive
 
     def __run_blend(self, from_screensaver, to_screensaver,
-                    from_frame, to_frame, effect,
+                    from_frame, to_frame,
                     from_alive, to_alive, tick_sleep):
         """Blend both screensavers together over num_steps."""
+        width, height = from_frame.shape[1], from_frame.shape[0]
+        effect = self.__pick_effect(width, height)
+        self.__logger.info(f"Playing transition: {effect.__name__}")
         duration = Config.get('screensavers.transitions.duration', 1.0)
         num_steps = max(1, int(duration / tick_sleep)) if tick_sleep > 0 else 1
         from_sleep = from_screensaver.get_tick_sleep() if from_alive else tick_sleep
@@ -284,8 +281,7 @@ class TransitionPlayer:
 
             from_float = from_frame.astype(np.float32)
             to_float = to_frame.astype(np.float32)
-            blended = effect(from_float, to_float, progress,
-                             from_frame.shape[1], from_frame.shape[0])
+            blended = effect(from_float, to_float, progress, width, height)
             self.__led_frame_player.play_frame(blended.astype(np.uint8))
 
             remaining = tick_sleep - (time.time() - step_start)
