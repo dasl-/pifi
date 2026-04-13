@@ -94,9 +94,10 @@ class Screensaver(ABC):
             self.__is_set_up = True
 
     def teardown(self):
-        """Clean up resources after the screensaver finishes."""
-        self._teardown()
-        self.__is_set_up = False
+        """Clean up resources after the screensaver finishes. Idempotent."""
+        if self.__is_set_up:
+            self._teardown()
+            self.__is_set_up = False
 
     def render_tick(self):
         """Advance state by one tick, capturing the rendered frame without
