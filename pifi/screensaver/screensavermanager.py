@@ -144,15 +144,16 @@ class ScreensaverManager:
             if not transitions_enabled:
                 continue
 
-            next_screensaver = self.__pick_next_screensaver(
-                available_ids, exclude_id=screensaver.get_id()
-            )
-            can_live_transition = (
-                screensaver.supports_live_transition()
-                and next_screensaver.supports_live_transition()
-            )
-
+            can_live_transition = False
             try:
+                next_screensaver = self.__pick_next_screensaver(
+                    available_ids, exclude_id=screensaver.get_id()
+                )
+                can_live_transition = (
+                    screensaver.supports_live_transition()
+                    and next_screensaver.supports_live_transition()
+                )
+
                 if can_live_transition:
                     self.__transition_player.play_transition(
                         from_screensaver=screensaver,
