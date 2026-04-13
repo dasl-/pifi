@@ -355,9 +355,6 @@ class NycSubway(Screensaver):
             # Advance scroll
             self.__scroll_offset += 1.0
 
-        # Advance animation tick
-        self.__tick_count += 1
-
         self._led_frame_player.play_frame(frame)
 
     def __update_display_rows(self, new_arrivals):
@@ -500,7 +497,7 @@ class NycSubway(Screensaver):
         for idx, (time_text, time_color) in enumerate(times_display):
             # Pulse effect for imminent arrivals
             if int(time_text) <= 1:
-                pulse = abs((self.__tick_count % 20) - 10) / 10.0
+                pulse = abs((self.get_last_tick() % 20) - 10) / 10.0
                 time_color = (
                     int(time_color[0] * (0.5 + 0.5 * pulse)),
                     int(time_color[1] * (0.5 + 0.5 * pulse)),
