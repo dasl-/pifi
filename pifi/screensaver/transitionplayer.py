@@ -171,8 +171,6 @@ class TransitionPlayer:
         if from_frame.ndim == 2:
             from_frame = np.stack([from_frame] * 3, axis=-1)
 
-        to_frame = np.zeros([height, width, 3], np.uint8)
-
         effect = self.__pick_effect(width, height)
         self.__logger.info(f"Playing transition: {effect.__name__}")
 
