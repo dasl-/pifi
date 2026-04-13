@@ -32,7 +32,7 @@ class MatrixRain(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         fade_rate = Config.get('screensavers.configs.matrix_rain.fade_rate', 0.85)
         spawn_rate = Config.get('screensavers.configs.matrix_rain.spawn_rate', 0.08)
 

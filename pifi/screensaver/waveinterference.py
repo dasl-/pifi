@@ -35,7 +35,7 @@ class WaveInterference(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__update_sources()
         self.__render()
 

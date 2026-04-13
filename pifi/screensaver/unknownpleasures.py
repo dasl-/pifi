@@ -176,7 +176,7 @@ class UnknownPleasures(Screensaver):
         self.__init_colors()
         self.__time = 0.0
 
-    def _tick(self, tick):
+    def _tick(self):
         """Advance time and render one frame."""
         self.__time += self.__wave_speed
         self.__render()

@@ -19,7 +19,7 @@ class VideoScreensaver(Screensaver):
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
-    def _tick(self, tick):
+    def _tick(self):
         if not self.video_list:
             return False
 

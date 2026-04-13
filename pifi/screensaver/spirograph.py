@@ -31,7 +31,7 @@ class Spirograph(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         time_speed = Config.get('screensavers.configs.spirograph.time_speed', 1.0)
         self.__time += time_speed
 

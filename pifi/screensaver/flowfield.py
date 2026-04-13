@@ -37,7 +37,7 @@ class FlowField(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Fade buffer
         fade = Config.get('screensavers.configs.flowfield.fade', 0.95)
         self.__buffer *= fade

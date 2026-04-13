@@ -40,7 +40,7 @@ class Aurora(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         time_speed = Config.get('screensavers.configs.aurora.time_speed', 1.0)
         self.__time += 0.05 * time_speed
 

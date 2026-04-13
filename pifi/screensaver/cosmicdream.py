@@ -42,14 +42,12 @@ class CosmicDream(Screensaver):
 
         # Time tracking for animations
         self.__start_time = None
-        self.__frame_count = 0
 
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         t = time.time() - self.__start_time
-        self.__frame_count += 1
 
         # Create the layered frame
         frame = self.__render_plasma_layer(t)
@@ -63,7 +61,6 @@ class CosmicDream(Screensaver):
 
     def __reset(self):
         self.__start_time = time.time()
-        self.__frame_count = 0
 
         # Initialize particles for flow field
         num_particles = Config.get('screensavers.configs.cosmic_dream.num_particles', 20)

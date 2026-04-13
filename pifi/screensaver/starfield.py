@@ -27,7 +27,7 @@ class Starfield(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         speed = Config.get('screensavers.configs.starfield.speed', 0.02)
 
         # Move stars toward viewer (decrease z)

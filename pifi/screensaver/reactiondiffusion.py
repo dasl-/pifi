@@ -26,12 +26,10 @@ class ReactionDiffusion(Screensaver):
         self.__A = None  # Chemical A
         self.__B = None  # Chemical B
 
-        self.__time = 0
-
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Run multiple simulation steps per frame for faster evolution
         steps_per_frame = Config.get('screensavers.configs.reactiondiffusion.steps_per_frame', 10)
         for _ in range(steps_per_frame):
@@ -39,15 +37,13 @@ class ReactionDiffusion(Screensaver):
 
         # Periodically inject new seeds to keep evolution going
         inject_interval = Config.get('screensavers.configs.reactiondiffusion.inject_interval', 100)
-        if self.__time > 0 and self.__time % inject_interval == 0:
+        tick = self.get_last_tick()
+        if tick > 0 and tick % inject_interval == 0:
             self.__inject_seed()
 
         self.__render()
-        self.__time += 1
 
     def __reset(self):
-        self.__time = 0
-
         # Initialize with A=1 everywhere, B=0 with some seed points
         self.__A = np.ones((self.__height, self.__width), dtype=np.float32)
         self.__B = np.zeros((self.__height, self.__width), dtype=np.float32)

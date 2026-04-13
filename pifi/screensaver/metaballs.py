@@ -33,7 +33,7 @@ class Metaballs(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__update_balls()
         self.__render()
         self.__time += 0.1

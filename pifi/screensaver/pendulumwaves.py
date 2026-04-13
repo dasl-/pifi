@@ -36,8 +36,6 @@ class PendulumWaves(Screensaver):
         # Canvas buffer
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
 
-        self.__tick = 0
-
     def __init_pendulums(self):
         """Initialize pendulum parameters."""
         # Each pendulum completes one more oscillation than the previous
@@ -57,7 +55,6 @@ class PendulumWaves(Screensaver):
             self.__periods.append(period)
 
         self.__canvas.fill(0)
-        self.__tick = 0
 
     def __hsv_to_rgb(self, h, s, v):
         """Convert HSV to RGB."""
@@ -138,7 +135,7 @@ class PendulumWaves(Screensaver):
 
             # Y position based on sinusoidal motion
             # Phase is determined by time and period
-            phase = (self.__tick / self.__periods[i]) * 2 * math.pi
+            phase = (self.get_last_tick() / self.__periods[i]) * 2 * math.pi
             y_normalized = math.sin(phase)
 
             # Map to screen coordinates
@@ -151,13 +148,11 @@ class PendulumWaves(Screensaver):
             r, g, b = self.__get_pendulum_color(i)
             self.__draw_bob(x, y, r, g, b, self.__bob_size)
 
-        self.__tick += 1
-
     def _setup(self):
         """Initialize pendulums."""
         self.__init_pendulums()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Update pendulums and render one frame."""
         self.__update()
 

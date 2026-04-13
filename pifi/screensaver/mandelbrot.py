@@ -60,7 +60,7 @@ class Mandelbrot(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         # Smoothly move center towards target
         lerp_factor = Config.get('screensavers.configs.mandelbrot.lerp_factor', 0.02)
         self.__center_x += (self.__target_x - self.__center_x) * lerp_factor

@@ -113,7 +113,7 @@ class KaraokeBase(Screensaver):
         self.__poll_thread = threading.Thread(target=self._polling_loop, daemon=True)
         self.__poll_thread.start()
 
-    def _tick(self, tick):
+    def _tick(self):
         if self.__connection_failed_time is not None:
             if (time.time() - self.__connection_failed_time) > 10:
                 return False

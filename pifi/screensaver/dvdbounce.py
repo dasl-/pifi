@@ -52,7 +52,7 @@ class DvdBounce(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
         """Update position and check for bounces."""
         # Update position
         self.__x += self.__vx
