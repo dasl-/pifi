@@ -413,7 +413,7 @@ def run_sequence(screensaver_names, frame_player, args):
     remaining = list(screensaver_names[1:])
 
     while True:
-        screensaver.play(auto_teardown=not use_transitions)
+        screensaver.play()
 
         # Pick next: drain the initial list first, then random from the full pool
         if remaining:
@@ -424,15 +424,10 @@ def run_sequence(screensaver_names, frame_player, args):
                 candidates = screensaver_names
             next_name = random.choice(candidates)
 
-        next_screensaver = get_screensaver(next_name, frame_player)
-
         if use_transitions:
-            transition_player.play_transition(
-                from_screensaver=screensaver,
-                to_screensaver=next_screensaver,
-            )
-            screensaver._teardown()
-        screensaver = next_screensaver
+            transition_player.play_transition()
+
+        screensaver = get_screensaver(next_name, frame_player)
         current_name = next_name
 
 

@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import random
-import time
 
 from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver

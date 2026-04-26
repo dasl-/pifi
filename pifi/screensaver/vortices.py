@@ -1,5 +1,4 @@
 import numpy as np
-import random
 
 from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
