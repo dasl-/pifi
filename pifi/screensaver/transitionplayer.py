@@ -11,76 +11,206 @@ from pifi.logger import Logger
 # Each takes (from_frame, to_frame, progress, width, height) where progress is 0.0 to 1.0.
 # Returns a blended [height, width, 3] uint8 numpy array.
 
+def _ease(t):
+    """Smoothstep ease-in-out: 3t² - 2t³"""
+    return t * t * (3 - 2 * t)
+
+
 def crossfade(from_frame, to_frame, progress, width, height):
     return (from_frame * (1 - progress) + to_frame * progress).astype(np.uint8)
 
 
-def wipe_left(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = int(progress * width)
-    result[:, :boundary] = to_frame[:, :boundary]
-    return result
+def _make_wipe(width, height):
+    """Factory that picks a random wipe direction."""
+    direction = random.choice(['left', 'right', 'up', 'down'])
+
+    def wipe(from_frame, to_frame, progress, width, height):
+        result = from_frame.copy()
+        p = _ease(progress)
+        if direction == 'left':
+            boundary = int(p * width)
+            result[:, :boundary] = to_frame[:, :boundary]
+        elif direction == 'right':
+            boundary = width - int(p * width)
+            result[:, boundary:] = to_frame[:, boundary:]
+        elif direction == 'down':
+            boundary = int(p * height)
+            result[:boundary, :] = to_frame[:boundary, :]
+        else:
+            boundary = height - int(p * height)
+            result[boundary:, :] = to_frame[boundary:, :]
+        return result
+
+    wipe.__name__ = f'wipe_{direction}'
+    return wipe
 
 
-def wipe_right(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = width - int(progress * width)
-    result[:, boundary:] = to_frame[:, boundary:]
-    return result
+def _make_push(width, height):
+    """Factory that picks a random push direction."""
+    direction = random.choice(['left', 'right', 'up', 'down'])
+
+    def push(from_frame, to_frame, progress, width, height):
+        result = np.zeros_like(from_frame)
+        p = _ease(progress)
+        if direction == 'left':
+            offset = int(p * width)
+            if offset < width:
+                result[:, :width - offset] = from_frame[:, offset:]
+            if offset > 0:
+                result[:, width - offset:] = to_frame[:, :offset]
+        elif direction == 'right':
+            offset = int(p * width)
+            if offset < width:
+                result[:, offset:] = from_frame[:, :width - offset]
+            if offset > 0:
+                result[:, :offset] = to_frame[:, width - offset:]
+        elif direction == 'down':
+            offset = int(p * height)
+            if offset < height:
+                result[offset:, :] = from_frame[:height - offset, :]
+            if offset > 0:
+                result[:offset, :] = to_frame[height - offset:, :]
+        else:
+            offset = int(p * height)
+            if offset < height:
+                result[:height - offset, :] = from_frame[offset:, :]
+            if offset > 0:
+                result[height - offset:, :] = to_frame[:offset, :]
+        return result
+
+    push.__name__ = f'push_{direction}'
+    return push
 
 
-def wipe_down(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = int(progress * height)
-    result[:boundary, :] = to_frame[:boundary, :]
-    return result
+def _make_wave(width, height):
+    """Factory for wavy dream/ripple transition.
+
+    The from_frame gets increasingly distorted by sine-wave displacement
+    while the to_frame crossfades in over the distortion.
+    """
+    # Pre-compute base coordinate grids
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    # Random wave parameters for variety
+    freq_x = random.uniform(1.5, 3.0)
+    freq_y = random.uniform(1.5, 3.0)
+    phase_x = random.uniform(0, 2 * np.pi)
+    phase_y = random.uniform(0, 2 * np.pi)
+
+    def wave(from_frame, to_frame, progress, width, height):
+        # Distortion amplitude ramps up then back down (peaks at 1.0 when progress == 0.5)
+        amp = progress * (1 - progress) * 4
+        max_shift = max(width, height) * 0.3
+        shift = amp * max_shift
+
+        # Cross-couple axes (dx varies along y, dy along x) so the displacement
+        # forms a 2D ripple instead of parallel stripes.
+        dx = (np.sin(ys_grid * freq_y / height * 2 * np.pi + phase_y + progress * 6) * shift).astype(int)
+        dy = (np.sin(xs_grid * freq_x / width * 2 * np.pi + phase_x + progress * 6) * shift).astype(int)
+
+        src_x = np.clip(xs_grid + dx, 0, width - 1)
+        src_y = np.clip(ys_grid + dy, 0, height - 1)
+
+        warped_from = from_frame[src_y, src_x]
+
+        # Crossfade from warped source to clean destination
+        blend = _ease(progress)
+        return (warped_from * (1 - blend) + to_frame * blend).astype(np.uint8)
+
+    wave.__name__ = 'wave'
+    return wave
 
 
-def wipe_up(from_frame, to_frame, progress, width, height):
-    result = from_frame.copy()
-    boundary = height - int(progress * height)
-    result[boundary:, :] = to_frame[boundary:, :]
-    return result
+def _make_pixelate(width, height):
+    """Factory for pixelate transition.
+
+    From_frame gets increasingly pixelated (mosaic), then at the midpoint
+    switches to the to_frame and de-pixelates back to full resolution.
+    """
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    max_block = max(2, max(width, height) // 2)  # at peak, the longer axis collapses to 2 blocks
+
+    def pixelate(from_frame, to_frame, progress, width, height):
+        if progress < 0.5:
+            # First half: pixelate from_frame more and more
+            t = progress * 2  # 0→1
+            src = from_frame
+        else:
+            # Second half: de-pixelate to_frame
+            t = (1 - progress) * 2  # 1→0
+            src = to_frame
+        block = max(1, int(1 + _ease(t) * (max_block - 1)))
+
+        # Quantize coordinates to block grid, then sample
+        bx = (xs_grid // block) * block + block // 2
+        by = (ys_grid // block) * block + block // 2
+        bx = np.clip(bx, 0, width - 1)
+        by = np.clip(by, 0, height - 1)
+        return src[by, bx].astype(np.uint8)
+
+    pixelate.__name__ = 'pixelate'
+    return pixelate
 
 
-def push_left(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * width)
-    if offset < width:
-        result[:, :width - offset] = from_frame[:, offset:]
-    if offset > 0:
-        result[:, width - offset:] = to_frame[:, :offset]
-    return result
+def _make_melt(width, height):
+    """Factory for melt/drip transition.
+
+    Columns of the from_frame drip downward at randomized speeds,
+    revealing the to_frame underneath.
+    """
+    # Each column gets a random delay and speed
+    col_delay = np.random.uniform(0.0, 0.35, size=width)
+    col_speed = np.random.uniform(0.8, 1.5, size=width)
+    ys_grid = np.arange(height).reshape(-1, 1)
+    xs_grid = np.arange(width).reshape(1, -1)
+
+    def melt(from_frame, to_frame, progress, width, height):
+        # Per-column drop amount: how far down the column has shifted
+        t = np.clip((progress - col_delay) * col_speed / (1 - col_delay + 1e-6), 0, 1)
+        drop = (_ease(t) * height * 1.5).astype(int)  # overshoot so columns fully clear
+
+        # Vectorized: src_y[y, x] = y - drop[x] is where this pixel came from
+        src_y = ys_grid - drop
+        mask = (src_y >= 0) & (src_y < height)
+        src_y_safe = np.clip(src_y, 0, height - 1)
+
+        from_shifted = from_frame[src_y_safe, xs_grid]
+        return np.where(mask[..., np.newaxis], from_shifted, to_frame).astype(np.uint8)
+
+    melt.__name__ = 'melt'
+    return melt
 
 
-def push_right(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * width)
-    if offset < width:
-        result[:, offset:] = from_frame[:, :width - offset]
-    if offset > 0:
-        result[:, :offset] = to_frame[:, width - offset:]
-    return result
+def _make_zoom(width, height):
+    """Factory for zoom transition.
 
+    From_frame zooms in (expanding from center) while fading out,
+    revealing the to_frame underneath.
+    """
+    ys_grid, xs_grid = np.mgrid[0:height, 0:width]
+    cy, cx = height / 2, width / 2
 
-def push_down(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * height)
-    if offset < height:
-        result[offset:, :] = from_frame[:height - offset, :]
-    if offset > 0:
-        result[:offset, :] = to_frame[height - offset:, :]
-    return result
+    def zoom(from_frame, to_frame, progress, width, height):
+        p = _ease(progress)
+        # Scale factor: 1.0 → ~3.0 (zooming in)
+        scale = 1.0 + p * 2.0
 
+        # Map each output pixel back to source coordinates (inverse zoom from center)
+        src_x = ((xs_grid - cx) / scale + cx).astype(int)
+        src_y = ((ys_grid - cy) / scale + cy).astype(int)
 
-def push_up(from_frame, to_frame, progress, width, height):
-    result = np.zeros_like(from_frame)
-    offset = int(progress * height)
-    if offset < height:
-        result[:height - offset, :] = from_frame[offset:, :]
-    if offset > 0:
-        result[height - offset:, :] = to_frame[:offset, :]
-    return result
+        # Pixels that map outside the frame become transparent (show to_frame)
+        in_bounds = (src_x >= 0) & (src_x < width) & (src_y >= 0) & (src_y < height)
+        src_x_safe = np.clip(src_x, 0, width - 1)
+        src_y_safe = np.clip(src_y, 0, height - 1)
+
+        zoomed = from_frame[src_y_safe, src_x_safe]
+
+        # Blend: zoomed from_frame fades out, to_frame shows through
+        alpha = ((1 - p) * in_bounds.astype(np.float32))[..., np.newaxis]
+        return (zoomed * alpha + to_frame * (1 - alpha)).astype(np.uint8)
+
+    zoom.__name__ = 'zoom'
+    return zoom
 
 
 def _make_dissolve(width, height):
@@ -131,14 +261,6 @@ def _make_spiral(width, height):
 # Simple effects that don't need factories
 SIMPLE_EFFECTS = [
     crossfade,
-    wipe_left,
-    wipe_right,
-    wipe_down,
-    wipe_up,
-    push_left,
-    push_right,
-    push_down,
-    push_up,
 ]
 
 
@@ -292,6 +414,12 @@ class TransitionPlayer:
     def __pick_effect(self, width, height):
         # Build the full list including factory effects
         effects = list(SIMPLE_EFFECTS)
+        effects.append(_make_wipe(width, height))
+        effects.append(_make_push(width, height))
+        effects.append(_make_wave(width, height))
+        effects.append(_make_pixelate(width, height))
+        effects.append(_make_melt(width, height))
+        effects.append(_make_zoom(width, height))
         effects.append(_make_dissolve(width, height))
         effects.append(_make_spiral(width, height))
         return random.choice(effects)
