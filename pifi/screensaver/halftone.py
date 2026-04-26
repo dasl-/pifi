@@ -53,7 +53,7 @@ class Halftone(Screensaver):
         self.__pattern_speed = random.uniform(0.005, 0.012)
         self.__pattern_phases = [random.uniform(0, 10) for _ in range(6)]
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__pattern_speed
         t = self.__time
 

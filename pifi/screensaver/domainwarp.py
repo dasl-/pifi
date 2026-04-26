@@ -38,7 +38,7 @@ class DomainWarp(Screensaver):
         # Random phase offsets for each noise layer
         self.__phases = [random.uniform(0, 100) for _ in range(8)]
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__speed
 
         t = self.__time

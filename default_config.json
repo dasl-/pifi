@@ -788,6 +788,13 @@
                 "tick_sleep": 0.05,
             },
 
+            // Configuration specific to Self-Healing Squares screensaver.
+            "self_healing_squares": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
             // Configuration specific to DVD bounce screensaver.
             "dvd_bounce": {
     

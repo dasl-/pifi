@@ -55,7 +55,7 @@ class Blueprint(Screensaver):
         self.__spawn_timer = 0.0
         self.__spawn_interval = random.uniform(0.3, 0.8)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.02
         t = self.__time
         w, h = self.__width, self.__height

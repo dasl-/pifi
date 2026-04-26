@@ -48,7 +48,7 @@ class NoiseGradient(Screensaver):
         self.__breath_speed = random.uniform(0.3, 0.6)
         self.__base_val = random.uniform(0.45, 0.65)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.015
         t = self.__time
 

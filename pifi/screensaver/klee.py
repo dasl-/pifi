@@ -89,7 +89,7 @@ class Klee(Screensaver):
         self.__grid_cols = random.randint(4, min(8, self.__width // 2))
         self.__grid_rows = random.randint(3, min(6, self.__height // 2))
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.02
         t = self.__time
 

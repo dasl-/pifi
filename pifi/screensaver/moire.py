@@ -56,7 +56,7 @@ class Moire(Screensaver):
                 layer['rot_speed'] = self.__layers[0]['rot_speed'] + random.uniform(0.15, 0.4) * random.choice([-1, 1])
             self.__layers.append(layer)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__speed
 
         t = self.__time

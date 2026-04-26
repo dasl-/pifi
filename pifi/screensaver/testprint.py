@@ -52,7 +52,7 @@ class TestPrint(Screensaver):
             self.__height * random.uniform(0.3, 0.7),
         )
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.015
         t = self.__time
 

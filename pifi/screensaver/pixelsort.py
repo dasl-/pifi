@@ -40,7 +40,7 @@ class PixelSort(Screensaver):
         self.__pattern_freqs = [random.uniform(2, 6) for _ in range(4)]
         self.__pattern_phases = [random.uniform(0, 10) for _ in range(4)]
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__speed
         t = self.__time
 

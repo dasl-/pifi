@@ -69,7 +69,7 @@ class Misprint(Screensaver):
         self.__comp_rot_speed = random.uniform(-0.1, 0.1)
         self.__comp_drift = random.uniform(0.3, 0.6)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.012
         t = self.__time
 

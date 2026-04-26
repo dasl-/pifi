@@ -110,7 +110,7 @@ class Vortices(Screensaver):
 
         return circles
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.02
         t = self.__time
         h, w = self.__height, self.__width

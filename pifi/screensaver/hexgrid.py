@@ -115,7 +115,7 @@ class HexGrid(Screensaver):
         self.__wave_speed = random.uniform(1.5, 3.0)
         self.__color_drift = random.uniform(0.1, 0.3)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.015
         t = self.__time
         w, h = self.__width, self.__height

@@ -61,7 +61,8 @@ class OpArt(Screensaver):
         self.__freq = random.uniform(0.6, 1.5)
         self.__warp_strength = random.uniform(0.3, 0.8)
 
-    def _tick(self, tick):
+    def _tick(self):
+        tick = self.get_last_tick()
         self.__time += self.__speed
         t = self.__time
 

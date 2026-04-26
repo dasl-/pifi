@@ -60,7 +60,7 @@ class Escher(Screensaver):
         self.__scroll_speed = random.uniform(0.04, 0.12)
         self.__scroll_angle = random.uniform(0, 2 * np.pi)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.015
         t = self.__time
         ts = self.__tile_size

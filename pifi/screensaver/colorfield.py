@@ -62,7 +62,7 @@ class ColorField(Screensaver):
         # Breathing phase offsets per band
         self.__breath_phases = [random.uniform(0, 2 * math.pi) for _ in range(self.__num_bands)]
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.02
         t = self.__time
 

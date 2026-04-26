@@ -335,7 +335,8 @@ class Geodesic(Screensaver):
         self.__line_half_width = max(0.6, min_dim / 50.0)
         self.__vertex_radius = max(1.0, min_dim / 30.0)
 
-    def _tick(self, tick):
+    def _tick(self):
+        tick = self.get_last_tick()
         self.__angle_y += self.__speed_y
         self.__angle_tilt += self.__speed_tilt
 

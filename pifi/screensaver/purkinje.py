@@ -66,7 +66,7 @@ class Purkinje(Screensaver):
         self.__time = 0.0
         self.__setup_mode()
 
-    def _tick(self, tick):
+    def _tick(self):
         dt = 0.025
         self.__time += dt
 

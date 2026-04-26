@@ -26,7 +26,8 @@ class Lenia(Screensaver):
     def _setup(self):
         self.__reset()
 
-    def _tick(self, tick):
+    def _tick(self):
+        tick = self.get_last_tick()
         self.__step()
 
         # Check for extinction or stagnation

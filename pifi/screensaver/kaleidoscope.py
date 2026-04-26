@@ -50,7 +50,7 @@ class Kaleidoscope(Screensaver):
         self.__freqs = [random.uniform(2, 5) for _ in range(4)]
         self.__phases = [random.uniform(0, 10) for _ in range(6)]
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__speed
 
         t = self.__time

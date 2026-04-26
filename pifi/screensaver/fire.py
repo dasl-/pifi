@@ -36,7 +36,7 @@ class Fire(Screensaver):
         # Persistent heat source that evolves smoothly
         self.__base_heat = np.random.uniform(0.4, 0.9, self.__width)
 
-    def _tick(self, tick):
+    def _tick(self):
         h, w = self.__height, self.__width
         heat = self.__heat
 

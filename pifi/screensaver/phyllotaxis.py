@@ -58,7 +58,7 @@ class Phyllotaxis(Screensaver):
         # Pre-allocate canvas
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__speed
 
         self.__canvas *= 0.0  # clear each frame

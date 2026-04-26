@@ -63,7 +63,7 @@ class DoublePendulum(Screensaver):
         # Trail fade rate
         self.__fade = 0.985
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += self.__dt * self.__steps_per_tick
 
         # Fade trail

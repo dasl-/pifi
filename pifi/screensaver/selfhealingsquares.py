@@ -53,7 +53,7 @@ class SelfHealingSquares(Screensaver):
         # Frame buffer
         self.__frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
 
-    def _tick(self, tick):
+    def _tick(self):
         self.__time += 0.015
 
         self.__frame[:] = 0
