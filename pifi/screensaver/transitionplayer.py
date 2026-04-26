@@ -102,7 +102,8 @@ def _make_wave(width, height):
         max_shift = max(width, height) * 0.3
         shift = amp * max_shift
 
-        # Apply sine displacement to both axes
+        # Cross-couple axes (dx varies along y, dy along x) so the displacement
+        # forms a 2D ripple instead of parallel stripes.
         dx = (np.sin(ys_grid * freq_y / height * 2 * np.pi + phase_y + progress * 6) * shift).astype(int)
         dy = (np.sin(xs_grid * freq_x / width * 2 * np.pi + phase_x + progress * 6) * shift).astype(int)
 
@@ -126,19 +127,18 @@ def _make_pixelate(width, height):
     switches to the to_frame and de-pixelates back to full resolution.
     """
     ys_grid, xs_grid = np.mgrid[0:height, 0:width]
-    max_block = max(2, max(width, height) // 2)  # peaks at ~2x2 block grid
+    max_block = max(2, max(width, height) // 2)  # at peak, the longer axis collapses to 2 blocks
 
     def pixelate(from_frame, to_frame, progress, width, height):
         if progress < 0.5:
             # First half: pixelate from_frame more and more
             t = progress * 2  # 0→1
-            block = max(1, int(1 + _ease(t) * (max_block - 1)))
             src = from_frame
         else:
             # Second half: de-pixelate to_frame
             t = (1 - progress) * 2  # 1→0
-            block = max(1, int(1 + _ease(t) * (max_block - 1)))
             src = to_frame
+        block = max(1, int(1 + _ease(t) * (max_block - 1)))
 
         # Quantize coordinates to block grid, then sample
         bx = (xs_grid // block) * block + block // 2
@@ -206,9 +206,8 @@ def _make_zoom(width, height):
         zoomed = from_frame[src_y_safe, src_x_safe]
 
         # Blend: zoomed from_frame fades out, to_frame shows through
-        alpha = (1 - p) * in_bounds.astype(np.float32)
-        result = (zoomed * alpha[..., np.newaxis] + to_frame * (1 - alpha[..., np.newaxis])).astype(np.uint8)
-        return result
+        alpha = ((1 - p) * in_bounds.astype(np.float32))[..., np.newaxis]
+        return (zoomed * alpha + to_frame * (1 - alpha)).astype(np.uint8)
 
     zoom.__name__ = 'zoom'
     return zoom
