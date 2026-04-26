@@ -327,7 +327,7 @@ Config values are auto-detected as int, float, bool, or string.
         '-c', '--config',
         action='append',
         metavar='KEY=VALUE',
-        help='Set arbitrary config option using dot notation (can be used multiple times)'
+        help='Set arbitrary config option using dot notation (can be used multiple times). Example: --config melting_clock.timezone=America/New_York'
     )
 
     args = parser.parse_args()
