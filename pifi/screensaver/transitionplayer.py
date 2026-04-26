@@ -97,7 +97,7 @@ def _make_wave(width, height):
     phase_y = random.uniform(0, 2 * np.pi)
 
     def wave(from_frame, to_frame, progress, width, height):
-        # Distortion amplitude ramps up then back down (peaks around 0.4)
+        # Distortion amplitude ramps up then back down (peaks at 1.0 when progress == 0.5)
         amp = progress * (1 - progress) * 4
         max_shift = max(width, height) * 0.3
         shift = amp * max_shift
@@ -126,7 +126,7 @@ def _make_pixelate(width, height):
     switches to the to_frame and de-pixelates back to full resolution.
     """
     ys_grid, xs_grid = np.mgrid[0:height, 0:width]
-    max_block = max(2, max(width, height) // 2)
+    max_block = max(2, max(width, height) // 2)  # peaks at ~2x2 block grid
 
     def pixelate(from_frame, to_frame, progress, width, height):
         if progress < 0.5:
@@ -161,29 +161,23 @@ def _make_melt(width, height):
     col_delay = np.random.uniform(0.0, 0.35, size=width)
     col_speed = np.random.uniform(0.8, 1.5, size=width)
     ys_grid = np.arange(height).reshape(-1, 1)
+    xs_grid = np.arange(width).reshape(1, -1)
 
     def melt(from_frame, to_frame, progress, width, height):
         # Per-column drop amount: how far down the column has shifted
         t = np.clip((progress - col_delay) * col_speed / (1 - col_delay + 1e-6), 0, 1)
-        drop = (_ease_vec(t) * height * 1.5).astype(int)  # overshoot so columns fully clear
+        drop = (_ease(t) * height * 1.5).astype(int)  # overshoot so columns fully clear
 
-        result = to_frame.copy()
-        # For each column, shift from_frame pixels down by drop amount
-        for x in range(width):
-            d = drop[x]
-            if d < height:
-                # Pixels that haven't fallen off screen yet
-                result[d:, x] = from_frame[:height - d, x]
+        # Vectorized: src_y[y, x] = y - drop[x] is where this pixel came from
+        src_y = ys_grid - drop
+        mask = (src_y >= 0) & (src_y < height)
+        src_y_safe = np.clip(src_y, 0, height - 1)
 
-        return result.astype(np.uint8)
+        from_shifted = from_frame[src_y_safe, xs_grid]
+        return np.where(mask[..., np.newaxis], from_shifted, to_frame).astype(np.uint8)
 
     melt.__name__ = 'melt'
     return melt
-
-
-def _ease_vec(t):
-    """Vectorized smoothstep for numpy arrays."""
-    return t * t * (3 - 2 * t)
 
 
 def _make_zoom(width, height):
@@ -212,7 +206,6 @@ def _make_zoom(width, height):
         zoomed = from_frame[src_y_safe, src_x_safe]
 
         # Blend: zoomed from_frame fades out, to_frame shows through
-        result = to_frame.copy()
         alpha = (1 - p) * in_bounds.astype(np.float32)
         result = (zoomed * alpha[..., np.newaxis] + to_frame * (1 - alpha[..., np.newaxis])).astype(np.uint8)
         return result
