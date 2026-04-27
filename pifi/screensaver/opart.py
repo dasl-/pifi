@@ -60,9 +60,9 @@ class OpArt(Screensaver):
         # Pattern parameters
         self.__freq = random.uniform(0.6, 1.5)
         self.__warp_strength = random.uniform(0.3, 0.8)
+        self.__slices = random.choice([6, 8, 10, 12])
 
     def _tick(self):
-        tick = self.get_last_tick()
         self.__time += self.__speed
         t = self.__time
 
@@ -86,9 +86,7 @@ class OpArt(Screensaver):
             v = np.sin((np.abs(gx) + gy * 0.7) * freq + t * 5)
         elif self.__pattern == 'radial':
             # Rotating pie slices
-            num_slices = random.choice([6, 8, 10, 12]) if tick == 0 else getattr(self, '_slices', 8)
-            self._slices = num_slices if tick == 0 else self._slices
-            v = np.sin(angle * self._slices + dist * 0.3 - t * 6)
+            v = np.sin(angle * self.__slices + dist * 0.3 - t * 6)
         elif self.__pattern == 'diamonds':
             # Rotated grid
             rot_x = gx * 0.7 + gy * 0.7
