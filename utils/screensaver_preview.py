@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Build registry dynamically from ScreensaverManager
+from pifi.led.frameplayerbase import FramePlayerBase
 from pifi.screensaver.screensavermanager import ScreensaverManager
 
 SCREENSAVER_REGISTRY = []
@@ -34,7 +35,7 @@ for s in SCREENSAVER_REGISTRY:
         SCREENSAVER_BY_NAME[alias] = s
 
 
-class TerminalFramePlayer:
+class TerminalFramePlayer(FramePlayerBase):
     """
     Mock LedFramePlayer that renders frames to the terminal using ANSI colors.
 
