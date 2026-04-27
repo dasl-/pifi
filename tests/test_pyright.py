@@ -18,7 +18,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class TestPyright(unittest.TestCase):
     def test_pyright_clean(self):
         if shutil.which('pyright') is None:
-            self.skipTest(
+            self.fail(
                 "pyright not installed — run install/install_dev_dependencies.sh"
             )
 
