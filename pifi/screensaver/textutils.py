@@ -688,7 +688,7 @@ def draw_vertical_scroll_text_with_words(frame, word_timings, x, y, max_width,
     for line_idx in range(num_lines):
         lines.append([])
 
-    for word_idx, (line_idx, char_offset) in enumerate(word_line_positions):
+    for word_idx, (line_idx, char_offset) in enumerate(word_line_positions):  # pyright: ignore[reportUnusedVariable]
         lines[line_idx].append((word_idx, word_timings[word_idx]))
 
     # Draw visible lines

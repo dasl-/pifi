@@ -160,7 +160,7 @@ class Mandelbrot(Screensaver):
         idx = np.clip(idx, 0, 255)
 
         # Direct palette lookup - fully vectorized
-        frame = self.__palette[idx].copy()
+        frame = self.__palette[idx].copy()  # pyright: ignore[reportOptionalSubscript]
 
         # Set interior points to black
         interior_mask = (M == 0)

@@ -1,10 +1,11 @@
+# pyright: reportImportCycles=false
 import json
 import numpy as np
-from pygame import mixer
+from pygame import mixer  # pyright: ignore[reportMissingImports]
 import random
 import secrets
 import signal
-import simpleaudio
+import simpleaudio  # pyright: ignore[reportMissingImports]
 import socket
 import sys
 import time
@@ -33,8 +34,8 @@ class Snake:
 
     __APPLE_COLOR_CHANGE_FREQ = 0.2
 
-    __VICTORY_SOUND_FILE = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"
-    __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +
+    __VICTORY_SOUND_FILE = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
+    __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +  # pyright: ignore[reportOptionalOperand]
         "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
     # settings: dict shaped like return value of Snake.make_settings_from_playlist_item
@@ -65,7 +66,7 @@ class Snake:
             'radia_senki_reimei_hen_06_unknown_village_elfas.wav',
             'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
         ])
-        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
+        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))  # pyright: ignore[reportOptionalOperand]
         self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('snake.game_color_mode'))
         self.__led_frame_player = LedFramePlayer()
 
@@ -233,7 +234,7 @@ class Snake:
         # Play snake death sound in multiplayer if any snakes were eliminated
         if len(eliminated_snakes) > 0 and self.__settings['num_players'] > 1:
             self.__last_eliminated_snake_sound = simpleaudio.WaveObject.from_wave_file(
-                DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()
+                DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()  # pyright: ignore[reportOptionalOperand]
 
     def __is_game_over(self):
         if self.__settings['num_players'] > 1:
@@ -262,7 +263,7 @@ class Snake:
             apple_rgb = self.__game_color_helper.get_rgb(
                 GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks
             )
-            frame[self.__apple[0], self.__apple[1]] = apple_rgb
+            frame[self.__apple[0], self.__apple[1]] = apple_rgb  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         self.__led_frame_player.play_frame(frame)
 
@@ -319,7 +320,7 @@ class Snake:
                     if (
                         (
                             did_play_victory_sound and
-                            not victory_sound.is_playing() and
+                            not victory_sound.is_playing() and  # pyright: ignore[reportOptionalMemberAccess]
                             while_counter > (2 * self.ELIMINATED_SNAKE_BLINK_TICK_COUNT)
                         ) or
                         (while_counter > max_loops)
@@ -337,7 +338,7 @@ class Snake:
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
 
     def __do_scoring(self, score):
-        simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()
+        simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()  # pyright: ignore[reportOptionalOperand]
         scores = Scores()
         is_high_score = scores.is_high_score(score, self.GAME_TITLE)
         score_id = scores.insert_score(score, self.GAME_TITLE)
@@ -354,7 +355,7 @@ class Snake:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
-        for x in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board
+        for x in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board  # pyright: ignore[reportUnusedVariable]
             time.sleep(0.1)
             self.__show_board()
             self.__increment_tick_counters()
@@ -374,7 +375,7 @@ class Snake:
         score_displayer = ScoreDisplayer(self.__led_frame_player, score)
         score_displayer.display_score(score_color)
 
-        for i in range(1, 100):
+        for i in range(1, 100):  # pyright: ignore[reportUnusedVariable]
             # if someone clicks "New Game" while the score is being displayed, immediately start a new game
             # instead of waiting for the score to stop being displayed
             #

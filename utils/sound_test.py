@@ -21,8 +21,8 @@
 # We keep the source file (input.wav) around in case we need to adjust it more in the future --
 # better to have the original file.
 import time
-import simpleaudio
-from pygame import mixer
+import simpleaudio  # pyright: ignore[reportMissingImports]
+from pygame import mixer  # pyright: ignore[reportMissingImports]
 import os
 import sys
 
@@ -47,11 +47,11 @@ from pifi.directoryutils import DirectoryUtils
 #  Setting to 256, and we'd see dropouts sometimes. Setting to 1024, and the lag was way too noticeable
 mixer.init(frequency = 22050, buffer = 512)
 
-apple_sound_slow = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
-apple_sound_fast = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")
+apple_sound_slow = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")  # pyright: ignore[reportOptionalOperand]
+apple_sound_fast = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7.wav")  # pyright: ignore[reportOptionalOperand]
 
 # play background music during sound test so that if stuttering / dropouts occurs, it is more noticeable
-background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/04 Solitary Warrior.wav")
+background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/04 Solitary Warrior.wav")  # pyright: ignore[reportOptionalOperand]
 background_music.play(loops = -1)
 
 while True:

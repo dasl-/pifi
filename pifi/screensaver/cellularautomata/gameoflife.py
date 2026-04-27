@@ -52,14 +52,14 @@ class GameOfLife(CellularAutomaton):
             seed = np.random.random_sample([x - 2 for x in shape]) < probability
             self._board[1:-1, 1:-1][seed] = 1
 
-    def _board_to_frame(self):
+    def _board_to_frame(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self._num_ticks)
-        frame[(self._board[1:-1, 1:-1] == 1)] = rgb
+        frame[(self._board[1:-1, 1:-1] == 1)] = rgb  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         if self.__variant == self.__VARIANT_IMMIGRATION:
             rgb2 = self.__game_color_helper.get_rgb2(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self._num_ticks)
-            frame[(self._board[1:-1, 1:-1] == 2)] = rgb2
+            frame[(self._board[1:-1, 1:-1] == 2)] = rgb2  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         return frame
 
@@ -130,8 +130,8 @@ class GameOfLife(CellularAutomaton):
         # 3. All other cells die (over or underpopulation).
         new_board = np.zeros(b.shape, np.uint8)
         new_board[1:-1,1:-1][survivors] = b[1:-1,1:-1][survivors]
-        new_board[1:-1,1:-1][new_cells & (ones > twos)] = 1
-        new_board[1:-1,1:-1][new_cells & (twos > ones)] = 2
+        new_board[1:-1,1:-1][new_cells & (ones > twos)] = 1  # pyright: ignore[reportOptionalOperand]
+        new_board[1:-1,1:-1][new_cells & (twos > ones)] = 2  # pyright: ignore[reportOptionalOperand]
 
         self._board = new_board
 

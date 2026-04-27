@@ -1,4 +1,4 @@
-import rpi_ws281x
+import rpi_ws281x  # pyright: ignore[reportMissingImports]
 import numpy as np
 
 from pifi.config import Config

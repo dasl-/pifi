@@ -65,7 +65,7 @@ class _FailingTickScreensaver(Screensaver):
         super().__init__(led_frame_player)
         self._fail_after = fail_after
 
-    def _tick(self):
+    def _tick(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if self.get_last_tick() >= self._fail_after:
             return False
         _render_frame(self)
@@ -154,7 +154,7 @@ BASE_CONFIG = {
 
 
 def setUpModule():
-    LedFramePlayer.__init__ = lambda self: None
+    LedFramePlayer.__init__ = lambda self: None  # pyright: ignore[reportAttributeAccessIssue]
     LedFramePlayer.play_frame = MagicMock()
     LedFramePlayer.fade_to_frame = MagicMock()
     LedFramePlayer.get_current_frame = MagicMock(return_value=np.zeros([4, 4, 3], np.uint8))
@@ -164,8 +164,8 @@ class TestSupportsLiveTransition(unittest.TestCase):
     """Test the supports_live_transition() method."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_video_screensaver_returns_false(self):
         from pifi.screensaver.videoscreensaver import VideoScreensaver
@@ -177,8 +177,8 @@ class TestLastTick(unittest.TestCase):
     """Test last_tick initialization and updates."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_updated_after_play(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=5)
@@ -202,35 +202,35 @@ class TestAutoTeardown(unittest.TestCase):
     """Test auto_teardown parameter of play()."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_auto_teardown_true_calls_teardown(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
-        ss._teardown = MagicMock()
+        ss._teardown = MagicMock()  # pyright: ignore[reportPrivateUsage]
         ss.play(auto_teardown=True)
-        ss._teardown.assert_called_once()
+        ss._teardown.assert_called_once()  # pyright: ignore[reportPrivateUsage]
 
     def test_auto_teardown_false_skips_teardown(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
-        ss._teardown = MagicMock()
+        ss._teardown = MagicMock()  # pyright: ignore[reportPrivateUsage]
         ss.play(auto_teardown=False)
-        ss._teardown.assert_not_called()
+        ss._teardown.assert_not_called()  # pyright: ignore[reportPrivateUsage]
 
 
 class TestRenderTick(unittest.TestCase):
     """Test render_tick() captures frames without displaying."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_returns_frame_and_alive(self):
         ss = _StubScreensaver(led_frame_player=None)
         frame, alive = ss.render_tick()
         self.assertTrue(alive)
         self.assertIsNotNone(frame)
-        self.assertEqual(frame.shape, (4, 4, 3))
+        self.assertEqual(frame.shape, (4, 4, 3))  # pyright: ignore[reportOptionalMemberAccess]
 
     def test_does_not_render_to_real_player(self):
         """render_tick() should not call play_frame on the real LedFramePlayer."""
@@ -240,32 +240,32 @@ class TestRenderTick(unittest.TestCase):
         ss = _StubScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick()
+        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
         player.play_frame.assert_not_called()
 
     def test_restores_frame_player_after_tick(self):
         player = MagicMock()
         ss = _StubScreensaver(led_frame_player=player)
         ss.render_tick()
-        self.assertIs(ss._led_frame_player, player)
+        self.assertIs(ss._led_frame_player, player)  # pyright: ignore[reportPrivateUsage]
 
     def test_restores_frame_player_on_exception(self):
         player = MagicMock()
         ss = _ExplodingTickScreensaver(led_frame_player=player, explode_after=0)
         with self.assertRaises(RuntimeError):
             ss.render_tick()
-        self.assertIs(ss._led_frame_player, player)
+        self.assertIs(ss._led_frame_player, player)  # pyright: ignore[reportPrivateUsage]
 
     def test_returns_false_alive_when_tick_stops(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
-        frame, alive = ss.render_tick()
+        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
         self.assertFalse(alive)
 
     def test_calls_setup_on_first_invocation(self):
         ss = _RenderingSetupScreensaver(led_frame_player=None)
-        self.assertFalse(ss._Screensaver__is_set_up)
-        frame, alive = ss.render_tick()
-        self.assertTrue(ss._Screensaver__is_set_up)
+        self.assertFalse(ss._Screensaver__is_set_up)  # pyright: ignore[reportAttributeAccessIssue]
+        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
+        self.assertTrue(ss._Screensaver__is_set_up)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_setup_frame_captured_not_displayed(self):
         """Frames rendered during _setup() should be captured, not sent to real display."""
@@ -275,7 +275,7 @@ class TestRenderTick(unittest.TestCase):
         ss = _RenderingSetupScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick()
+        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
         # The real player should NOT have received any frames
         player.play_frame.assert_not_called()
         # But we should have captured a frame
@@ -286,8 +286,8 @@ class TestTransitionFramePlayerIntegrity(unittest.TestCase):
     """Test that frame players are never corrupted by transitions."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def _make_player(self):
         player = MagicMock()
@@ -302,13 +302,13 @@ class TestTransitionFramePlayerIntegrity(unittest.TestCase):
 
         from_ss = _StubScreensaver(led_frame_player=None)
         to_ss = _StubScreensaver(led_frame_player=None)
-        from_original = from_ss._led_frame_player
-        to_original = to_ss._led_frame_player
+        from_original = from_ss._led_frame_player  # pyright: ignore[reportPrivateUsage]
+        to_original = to_ss._led_frame_player  # pyright: ignore[reportPrivateUsage]
 
         tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
-        self.assertIs(from_ss._led_frame_player, from_original)
-        self.assertIs(to_ss._led_frame_player, to_original)
+        self.assertIs(from_ss._led_frame_player, from_original)  # pyright: ignore[reportPrivateUsage]
+        self.assertIs(to_ss._led_frame_player, to_original)  # pyright: ignore[reportPrivateUsage]
 
     def test_screensaver_player_intact_after_exception(self):
         player = self._make_player()
@@ -316,22 +316,22 @@ class TestTransitionFramePlayerIntegrity(unittest.TestCase):
 
         from_ss = _StubScreensaver(led_frame_player=None)
         to_ss = _ExplodingTickScreensaver(led_frame_player=None, explode_after=0)
-        from_original = from_ss._led_frame_player
-        to_original = to_ss._led_frame_player
+        from_original = from_ss._led_frame_player  # pyright: ignore[reportPrivateUsage]
+        to_original = to_ss._led_frame_player  # pyright: ignore[reportPrivateUsage]
 
         with self.assertRaises(RuntimeError):
             tp.play_transition(from_screensaver=from_ss, to_screensaver=to_ss)
 
-        self.assertIs(from_ss._led_frame_player, from_original)
-        self.assertIs(to_ss._led_frame_player, to_original)
+        self.assertIs(from_ss._led_frame_player, from_original)  # pyright: ignore[reportPrivateUsage]
+        self.assertIs(to_ss._led_frame_player, to_original)  # pyright: ignore[reportPrivateUsage]
 
 
 class TestWarmedUpState(unittest.TestCase):
     """Test that live_transition_warmed_up reflects whether warm-up actually succeeded."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def _make_player(self):
         player = MagicMock()
@@ -369,8 +369,8 @@ class TestWarmUpTicksZero(unittest.TestCase):
     def setUp(self):
         config = copy.deepcopy(BASE_CONFIG)
         config['screensavers']['transitions']['warm_up_ticks'] = 0
-        Config._Config__is_loaded = True
-        Config._Config__config = config
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
 
     def _make_player(self):
         player = MagicMock()
@@ -408,8 +408,8 @@ class TestFromDiesDuringWarmup(unittest.TestCase):
     def setUp(self):
         config = copy.deepcopy(BASE_CONFIG)
         config['screensavers']['transitions']['warm_up_ticks'] = 60
-        Config._Config__is_loaded = True
-        Config._Config__config = config
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_to_still_warms_up(self):
         """If from_screensaver dies during warm-up, warm-up ends early
@@ -433,8 +433,8 @@ class TestStaticTransition(unittest.TestCase):
     """Test static-frame transitions (no live screensavers)."""
 
     def setUp(self):
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(BASE_CONFIG)
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_static_transition_runs(self):
         """play_transition() with no screensavers should crossfade to black."""

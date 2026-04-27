@@ -121,7 +121,7 @@ class MatrixRain(Screensaver):
             # Bright heads are white-green, trails are green
             for y in range(self.__height):
                 for x in range(self.__width):
-                    b = self.__trail_buffer[y, x]
+                    b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         if b > 0.9:
                             # Bright head: white-green
@@ -138,7 +138,7 @@ class MatrixRain(Screensaver):
             # Rainbow variation - each column has a different hue
             for y in range(self.__height):
                 for x in range(self.__width):
-                    b = self.__trail_buffer[y, x]
+                    b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         hue = (x / self.__width) % 1.0
                         if b > 0.9:
@@ -152,7 +152,7 @@ class MatrixRain(Screensaver):
             # Blue/cyan variation
             for y in range(self.__height):
                 for x in range(self.__width):
-                    b = self.__trail_buffer[y, x]
+                    b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         if b > 0.9:
                             frame[y, x] = [200, 255, 255]
@@ -166,7 +166,7 @@ class MatrixRain(Screensaver):
             # Monochrome white
             for y in range(self.__height):
                 for x in range(self.__width):
-                    b = self.__trail_buffer[y, x]
+                    b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         intensity = int(b * 255)
                         frame[y, x] = [intensity, intensity, intensity]

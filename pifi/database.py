@@ -1,3 +1,4 @@
+# pyright: reportImportCycles=false
 import sqlite3
 import threading
 import time
@@ -19,7 +20,7 @@ thread_local = threading.local()
 
 class Database:
 
-    __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
+    __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'  # pyright: ignore[reportOptionalOperand]
 
     # Zero indexed schema_version (first version is v0).
     __SCHEMA_VERSION = 4

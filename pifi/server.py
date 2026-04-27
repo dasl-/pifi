@@ -1,4 +1,4 @@
-from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPStatus
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler, HTTPStatus  # pyright: ignore[reportAttributeAccessIssue]
 from io import BytesIO
 import json
 import ssl
@@ -202,7 +202,7 @@ class PifiAPI():
     def get_brightness(self):
         default = Config.get('leds.brightness')
         try:
-            brightness = int(self.__settings_db.get(SettingsDb.BRIGHTNESS, default))
+            brightness = int(self.__settings_db.get(SettingsDb.BRIGHTNESS, default))  # pyright: ignore[reportArgumentType]
         except (ValueError, TypeError):
             brightness = default
         return {
@@ -316,7 +316,7 @@ class PifiAPI():
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
-        self.__root_dir = DirectoryUtils().root_dir + "/app/build"
+        self.__root_dir = DirectoryUtils().root_dir + "/app/build"  # pyright: ignore[reportOptionalOperand]
         self.__api = PifiAPI()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
@@ -351,8 +351,8 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def __do_api_GET(self, path):
-        parsed_path = urllib.parse.urlparse(path)
-        get_data = urllib.parse.unquote(parsed_path.query)
+        parsed_path = urllib.parse.urlparse(path)  # pyright: ignore[reportAttributeAccessIssue]
+        get_data = urllib.parse.unquote(parsed_path.query)  # pyright: ignore[reportAttributeAccessIssue]
         if get_data:
             get_data = json.loads(get_data)
 
@@ -430,13 +430,13 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.path = '/index.html'
 
         if self.path == '/snake' or self.path == '/snake/':
-            self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
+            self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'  # pyright: ignore[reportOptionalOperand]
         elif self.path == '/pong' or self.path == '/pong/':
-            self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'
+            self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'  # pyright: ignore[reportOptionalOperand]
         elif self.path == '/settings' or self.path == '/settings/':
-            self.path = DirectoryUtils().root_dir + '/assets/settings/settings.html'
+            self.path = DirectoryUtils().root_dir + '/assets/settings/settings.html'  # pyright: ignore[reportOptionalOperand]
         elif self.path.startswith('/assets/'):
-            self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
+            self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]  # pyright: ignore[reportOptionalOperand]
         else:
             self.path = self.__root_dir + self.path
 
@@ -461,12 +461,12 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
         if type(file_to_open) is bytes:
             self.wfile.write(file_to_open)
         else:
-            self.wfile.write(bytes(file_to_open, 'utf-8'))
+            self.wfile.write(bytes(file_to_open, 'utf-8'))  # pyright: ignore[reportArgumentType]
         return
 
     def log_request(self, code='-', size='-'):
         if isinstance(code, HTTPStatus):
-            code = code.value
+            code = code.value  # pyright: ignore[reportAttributeAccessIssue]
         self.log_message('[REQUEST] "%s" %s %s', self.requestline, str(code), str(size))
 
     def log_error(self, format, *args):
@@ -493,7 +493,7 @@ class Server:
             self.__server = PifiThreadingHTTPServer(('0.0.0.0', 80), PifiServerRequestHandler)
         else:
             self.__server = PifiThreadingHTTPServer(('0.0.0.0', 443), PifiServerRequestHandler)
-            self.__server.socket = ssl.wrap_socket(self.__server.socket,
+            self.__server.socket = ssl.wrap_socket(self.__server.socket,  # pyright: ignore[reportAttributeAccessIssue]
                                                    keyfile=Config.get_or_throw('server.keyfile'),
                                                    certfile=Config.get_or_throw('server.certfile'),
                                                    server_side=True)

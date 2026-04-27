@@ -1,4 +1,4 @@
-from apa102_pi.driver import apa102
+from apa102_pi.driver import apa102  # pyright: ignore[reportMissingImports]
 import numpy as np
 
 from pifi.config import Config

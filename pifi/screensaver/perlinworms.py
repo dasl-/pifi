@@ -118,7 +118,7 @@ class PerlinWorms(Screensaver):
 
     def __update_worms(self):
         """Update worm positions following the flow field."""
-        for i, worm in enumerate(self.__worms):
+        for i, worm in enumerate(self.__worms):  # pyright: ignore[reportUnusedVariable]
             # Get head position
             hx, hy = worm[0]
 

@@ -108,7 +108,7 @@ class FlowField(Screensaver):
         }
 
     def __render(self):
-        frame = np.clip(self.__buffer, 0, 255).astype(np.uint8)
+        frame = np.clip(self.__buffer, 0, 255).astype(np.uint8)  # pyright: ignore[reportArgumentType, reportCallIssue]
         self._led_frame_player.play_frame(frame)
 
     def __noise(self, x, y, z):
