@@ -27,6 +27,20 @@ def _normalize_rows(arr):
     return arr / norms
 
 
+def _nearest_pad(source, target):
+    """For each row in `source`, find the nearest row in `target`.
+
+    Returns an array shaped like `source` where row i is the closest
+    target row to source[i] (with replacement). Used to expand a shorter
+    vertex list to match a longer one during shape morphing.
+    """
+    padded = np.zeros_like(source)
+    for i in range(len(source)):
+        dists = np.linalg.norm(target - source[i], axis=1)
+        padded[i] = target[int(np.argmin(dists))]
+    return padded
+
+
 def _edges_from_faces(faces, num_verts):
     edge_set = set()
     for f in faces:
@@ -423,8 +437,7 @@ class Geodesic(Screensaver):
         n_to = len(to_verts)
 
         if n_from == n_to:
-            # Greedy 1:1 nearest-neighbor mapping
-            padded_from = from_verts.copy()
+            # Greedy 1:1 nearest-neighbor mapping (no replacement)
             padded_to = np.zeros_like(from_verts)
             used = set()
             for i in range(n_from):
@@ -435,25 +448,14 @@ class Geodesic(Screensaver):
                         padded_to[i] = to_verts[j]
                         used.add(j)
                         break
-            return padded_from, padded_to
+            return from_verts.copy(), padded_to
 
-        elif n_from > n_to:
-            # More from_verts — map each to nearest to_vert
-            padded_from = from_verts.copy()
-            padded_to = np.zeros_like(from_verts)
-            for i in range(n_from):
-                dists = np.linalg.norm(to_verts - from_verts[i], axis=1)
-                padded_to[i] = to_verts[int(np.argmin(dists))]
-            return padded_from, padded_to
-
-        else:
-            # More to_verts — expand from_verts to match
-            padded_to = to_verts.copy()
-            padded_from = np.zeros_like(to_verts)
-            for i in range(n_to):
-                dists = np.linalg.norm(from_verts - to_verts[i], axis=1)
-                padded_from[i] = from_verts[int(np.argmin(dists))]
-            return padded_from, padded_to
+        # Unequal counts — expand the smaller list by mapping each entry of
+        # the larger list to its nearest neighbor in the smaller list (with
+        # replacement). The padded arrays share the larger list's index space.
+        if n_from > n_to:
+            return from_verts.copy(), _nearest_pad(from_verts, to_verts)
+        return _nearest_pad(to_verts, from_verts), to_verts.copy()
 
     def __get_base_color(self, tick):
         if self.__color_mode == self._MODE_WHITE:

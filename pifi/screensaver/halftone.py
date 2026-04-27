@@ -53,6 +53,9 @@ class Halftone(Screensaver):
         self.__pattern_speed = random.uniform(0.005, 0.012)
         self.__pattern_phases = [random.uniform(0, 10) for _ in range(6)]
 
+        # Reusable per-tick frame buffer (zeroed at the start of each tick)
+        self.__frame = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+
     def _tick(self):
         self.__time += self.__pattern_speed
         t = self.__time
@@ -61,7 +64,8 @@ class Halftone(Screensaver):
         p = self.__pattern_phases
         w, h = self.__width, self.__height
 
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        frame = self.__frame
+        frame.fill(0.0)
 
         for ch in range(3):
             angle = self.__angles[ch] + t * 0.3

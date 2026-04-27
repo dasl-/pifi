@@ -69,6 +69,13 @@ class Misprint(Screensaver):
         self.__comp_rot_speed = random.uniform(-0.1, 0.1)
         self.__comp_drift = random.uniform(0.3, 0.6)
 
+        # Pre-compute block sizes for the 'blocks' composition so
+        # __render_composition stays deterministic across ticks.
+        self.__block_sizes = [
+            (random.uniform(0.2, 0.35), random.uniform(0.15, 0.25))
+            for _ in range(3)
+        ]
+
     def _tick(self):
         self.__time += 0.012
         t = self.__time
@@ -140,13 +147,11 @@ class Misprint(Screensaver):
         else:  # blocks
             # Large overlapping rectangles
             mask = np.zeros_like(gx)
-            for j in range(3):
+            for j, (bw_frac, bh_frac) in enumerate(self.__block_sizes):
                 bx = math.sin(t * 0.3 + j * 2.1) * scale * 0.2
                 by = math.cos(t * 0.25 + j * 1.7) * scale * 0.15
-                bw = scale * random.uniform(0.2, 0.35) if not hasattr(self, f'_bw{j}') else getattr(self, f'_bw{j}')
-                bh = scale * random.uniform(0.15, 0.25) if not hasattr(self, f'_bh{j}') else getattr(self, f'_bh{j}')
-                setattr(self, f'_bw{j}', bw)
-                setattr(self, f'_bh{j}', bh)
+                bw = scale * bw_frac
+                bh = scale * bh_frac
                 in_block = (np.abs(gx - bx) < bw) & (np.abs(gy - by) < bh)
                 mask[in_block] = 0.9
             return mask

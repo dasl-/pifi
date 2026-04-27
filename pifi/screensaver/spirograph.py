@@ -39,11 +39,11 @@ class Spirograph(Screensaver):
         # Trail canvas (persistent, fading)
         self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
 
-        setup_fn = {
-            'hypotrochoid': self.__setup_hypotrochoid,
-            'epitrochoid': self.__setup_epitrochoid,
-            'compound': self.__setup_compound,
-            'star_ring': self.__setup_star_ring,
+        setup_fn, self.__compute_fn = {
+            'hypotrochoid': (self.__setup_hypotrochoid, self.__compute_hypotrochoid),
+            'epitrochoid': (self.__setup_epitrochoid, self.__compute_epitrochoid),
+            'compound': (self.__setup_compound, self.__compute_compound),
+            'star_ring': (self.__setup_star_ring, self.__compute_star_ring),
         }[self.__variant]
         setup_fn()
 
@@ -136,14 +136,7 @@ class Spirograph(Screensaver):
         self.__time += time_speed
 
         t = self.__time * self.__speed
-
-        compute_fn = {
-            'hypotrochoid': self.__compute_hypotrochoid,
-            'epitrochoid': self.__compute_epitrochoid,
-            'compound': self.__compute_compound,
-            'star_ring': self.__compute_star_ring,
-        }[self.__variant]
-        pen_x, pen_y, mech = compute_fn(t)
+        pen_x, pen_y, mech = self.__compute_fn(t)
 
         # Convert to screen coords and deposit on trail
         scale = self.__scale

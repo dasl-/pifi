@@ -79,7 +79,7 @@ class ColorField(Screensaver):
             self.__boundaries[i] += self.__boundary_drifts[i]
             # Keep boundaries ordered and in range
             lo = 0.15 if i == 0 else self.__boundaries[i - 1] + 0.1
-            hi = 0.85 if i == len(self.__boundaries) - 1 else self.__boundaries[i + 1] - 0.1 if i + 1 < len(self.__boundaries) else 0.85
+            hi = 0.85 if i == len(self.__boundaries) - 1 else self.__boundaries[i + 1] - 0.1
             if self.__boundaries[i] < lo or self.__boundaries[i] > hi:
                 self.__boundary_drifts[i] *= -1
                 self.__boundaries[i] = np.clip(self.__boundaries[i], lo, hi)

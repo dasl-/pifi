@@ -107,7 +107,11 @@ class DoublePendulum(Screensaver):
         self.__omega2 = state[3]
 
     def __derivs(self, state):
-        """Compute derivatives for the double pendulum system."""
+        """Compute derivatives for the double pendulum system.
+
+        Standard Lagrangian equations of motion. See
+        https://en.wikipedia.org/wiki/Double_pendulum#Lagrangian
+        """
         t1, w1, t2, w2 = state
         m1, m2 = self.__m1, self.__m2
         l1, l2 = self.__l1, self.__l2

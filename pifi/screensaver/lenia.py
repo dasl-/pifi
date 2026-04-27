@@ -147,11 +147,14 @@ class Lenia(Screensaver):
 
     def __check_vitality(self):
         """Re-seed if the grid has gone dead or stagnant."""
+        # 0.05 is the activity threshold — Lenia values stay close to 0
+        # outside live regions, so > 0.05 reliably picks out "alive" cells.
         alive = (self.__grid > 0.05).sum()
         total = self.__width * self.__height
         mean = float(self.__grid.mean())
 
-        # Check for extinction
+        # Extinction: fewer than 2% of cells active means the pattern
+        # has died out and won't recover on its own — re-seed.
         if alive < total * 0.02:
             self.__logger.info("Lenia: extinction detected, re-seeding")
             self.__seed_creatures(3)

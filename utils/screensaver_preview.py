@@ -409,11 +409,18 @@ def run_sequence(screensaver_names, frame_player, args):
     time.sleep(1)
 
     current_name = screensaver_names[0]
-    screensaver = get_screensaver(current_name, frame_player)
     remaining = list(screensaver_names[1:])
+    next_screensaver = None
 
     while True:
-        screensaver.play()
+        # Reuse a screensaver warmed up by last iteration's live transition
+        if next_screensaver is not None:
+            screensaver = next_screensaver
+            next_screensaver = None
+        else:
+            screensaver = get_screensaver(current_name, frame_player)
+
+        screensaver.play(auto_teardown=not use_transitions)
 
         # Pick next: drain the initial list first, then random from the full pool
         if remaining:
@@ -424,11 +431,31 @@ def run_sequence(screensaver_names, frame_player, args):
                 candidates = screensaver_names
             next_name = random.choice(candidates)
 
-        if use_transitions:
-            transition_player.play_transition()
+        can_live = False
+        try:
+            if not use_transitions:
+                continue
 
-        screensaver = get_screensaver(next_name, frame_player)
-        current_name = next_name
+            next_screensaver = get_screensaver(next_name, frame_player)
+            can_live = (
+                screensaver.supports_live_transition()
+                and next_screensaver.supports_live_transition()
+            )
+            if can_live:
+                transition_player.play_transition(
+                    from_screensaver=screensaver,
+                    to_screensaver=next_screensaver,
+                )
+            else:
+                transition_player.play_transition()
+        finally:
+            if use_transitions:
+                screensaver.teardown()
+                # If warm-up didn't complete, discard so we re-instantiate fresh
+                if can_live and next_screensaver and not next_screensaver.live_transition_warmed_up:
+                    next_screensaver.teardown()
+                    next_screensaver = None
+            current_name = next_name
 
 
 if __name__ == '__main__':
