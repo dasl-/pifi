@@ -511,47 +511,17 @@
                 "tick_sleep": 0.05,
             },
     
-            // Configuration specific to lenia screensaver.
-            "lenia": {
+            "lenia": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "domainwarp": {},
 
-            // Configuration specific to domain warp screensaver.
-            "domainwarp": {
+            "kaleidoscope": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "moire": {},
 
-            // Configuration specific to kaleidoscope screensaver.
-            "kaleidoscope": {
+            "phyllotaxis": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to moire screensaver.
-            "moire": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to phyllotaxis screensaver.
-            "phyllotaxis": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to pixel sort screensaver.
-            "pixelsort": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "pixelsort": {},
 
             // Configuration specific to fire screensaver.
             "fire": {
@@ -561,12 +531,7 @@
             },
 
 
-            // Configuration specific to color field screensaver.
-            "colorfield": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "colorfield": {},
 
 
             // Configuration specific to double pendulum screensaver.
@@ -576,19 +541,9 @@
                 "tick_sleep": 0.03,
             },
 
-            // Configuration specific to halftone screensaver.
-            "halftone": {
+            "halftone": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to misprint screensaver.
-            "misprint": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "misprint": {},
 
             // Configuration specific to op art screensaver.
             "opart": {
@@ -597,12 +552,7 @@
                 "tick_sleep": 0.03,
             },
 
-            // Configuration specific to noise gradient screensaver.
-            "noise_gradient": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "noise_gradient": {},
 
 
             // Configuration specific to ink in water screensaver.
@@ -731,33 +681,13 @@
             },
     
     
-            // Configuration specific to test print screensaver.
-            "test_print": {
+            "test_print": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "hex_grid": {},
 
-            // Configuration specific to hex grid screensaver.
-            "hex_grid": {
+            "klee": {},
 
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to Klee screensaver.
-            "klee": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
-
-            // Configuration specific to blueprint screensaver.
-            "blueprint": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "blueprint": {},
 
             // Configuration specific to geodesic screensaver.
             "geodesic": {
@@ -781,12 +711,7 @@
             },
 
 
-            // Configuration specific to Purkinje screensaver.
-            "purkinje": {
-
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
-            },
+            "purkinje": {},
 
             // Configuration specific to Self-Healing Squares screensaver.
             "self_healing_squares": {
