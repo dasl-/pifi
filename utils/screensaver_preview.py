@@ -4,13 +4,13 @@ import argparse
 import os
 import sys
 import time
-import signal
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Build registry dynamically from ScreensaverManager
+from pifi.led.frameplayerbase import FramePlayerBase
 from pifi.screensaver.screensavermanager import ScreensaverManager
 
 SCREENSAVER_REGISTRY = []
@@ -34,7 +34,7 @@ for s in SCREENSAVER_REGISTRY:
         SCREENSAVER_BY_NAME[alias] = s
 
 
-class TerminalFramePlayer:
+class TerminalFramePlayer(FramePlayerBase):
     """
     Mock LedFramePlayer that renders frames to the terminal using ANSI colors.
 
@@ -51,16 +51,34 @@ class TerminalFramePlayer:
         self.scale = scale
         self._frame_count = 0
         self._start_time = time.time()
+        self._current_frame = None
 
+    def __enter__(self):
         # Hide cursor and clear screen
         sys.stdout.write('\033[?25l')  # Hide cursor
         sys.stdout.write('\033[2J')     # Clear screen
         sys.stdout.flush()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore terminal state
+        sys.stdout.write('\033[0m')     # Reset colors
+        sys.stdout.write('\033[?25h')   # Show cursor
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        return False  # don't suppress exceptions
 
     def play_frame(self, frame):
         """Render a frame to the terminal."""
+        self._current_frame = frame.copy()
         self._render_frame(frame)
         self._frame_count += 1
+
+    def get_current_frame(self):
+        """Return the last rendered frame (needed by TransitionPlayer)."""
+        if self._current_frame is None:
+            return None
+        return self._current_frame.copy()
 
     def fade_to_frame(self, frame):
         """For terminal preview, just render directly (no fade)."""
@@ -105,13 +123,6 @@ class TerminalFramePlayer:
             output.append(f'\033[0mFrame: {self._frame_count} | FPS: {fps:.1f} | Press Ctrl+C to exit')
 
         sys.stdout.write(''.join(output))
-        sys.stdout.flush()
-
-    def cleanup(self):
-        """Restore terminal state."""
-        sys.stdout.write('\033[0m')     # Reset colors
-        sys.stdout.write('\033[?25h')   # Show cursor
-        sys.stdout.write('\n')
         sys.stdout.flush()
 
 
@@ -246,9 +257,9 @@ Examples:
   %(prog)s cosmic_dream
   %(prog)s boids --width 48 --height 24
   %(prog)s game_of_life --scale 2
+  %(prog)s boids cosmic_dream lenia --duration 5 --transition-duration 1.5
+  %(prog)s --all --duration 8
   %(prog)s melting_clock --config melting_clock.timezone=America/New_York
-  %(prog)s boids --config boids.num_boids=25 --config boids.max_speed=2.0
-  %(prog)s starfield --width 64 --height 32 --config starfield.num_stars=150
 
 Config options use dot notation (e.g., screensaver_name.setting_name).
 Config values are auto-detected as int, float, bool, or string.
@@ -256,10 +267,10 @@ Config values are auto-detected as int, float, bool, or string.
     )
 
     parser.add_argument(
-        'screensaver',
-        nargs='?',
-        default='cosmic_dream',
-        help='Name of screensaver to preview (default: cosmic_dream)'
+        'screensavers',
+        nargs='*',
+        default=['cosmic_dream'],
+        help='Name(s) of screensaver(s) to preview (default: cosmic_dream)'
     )
 
     parser.add_argument(
@@ -290,6 +301,32 @@ Config values are auto-detected as int, float, bool, or string.
     )
 
     parser.add_argument(
+        '-a', '--all',
+        action='store_true',
+        help='Preview all screensavers in sequence'
+    )
+
+    parser.add_argument(
+        '-d', '--duration',
+        type=float,
+        default=None,
+        help='How long each screensaver plays in seconds (default: until timeout or Ctrl+C)'
+    )
+
+    parser.add_argument(
+        '-t', '--transition-duration',
+        type=float,
+        default=1.0,
+        help='Duration of transitions between screensavers in seconds (default: 1.0)'
+    )
+
+    parser.add_argument(
+        '--no-transitions',
+        action='store_true',
+        help='Disable transitions between screensavers'
+    )
+
+    parser.add_argument(
         '-c', '--config',
         action='append',
         metavar='KEY=VALUE',
@@ -308,36 +345,105 @@ Config values are auto-detected as int, float, bool, or string.
     # Set up mock config
     setup_mock_config(args.width, args.height, config_overrides)
 
-    # Create terminal frame player
-    frame_player = TerminalFramePlayer(args.width, args.height, args.scale)
+    # Apply duration as screensaver timeout if set
+    if args.duration is not None:
+        from pifi.config import Config
+        Config.set('screensavers.timeout', args.duration)
 
-    # Handle Ctrl+C gracefully
-    def signal_handler(sig, frame):
-        frame_player.cleanup()
-        print("\nExited.")
-        sys.exit(0)
+    # Apply transition config
+    from pifi.config import Config
+    Config.set('screensavers.transitions.duration', args.transition_duration)
 
-    signal.signal(signal.SIGINT, signal_handler)
+    # Build screensaver list
+    if args.all:
+        screensaver_names = [s[0] for s in SCREENSAVER_REGISTRY]
+    else:
+        screensaver_names = args.screensavers
 
     try:
-        # Get and run screensaver
-        screensaver = get_screensaver(args.screensaver, frame_player)
-        print(f"Starting {args.screensaver} ({args.width}x{args.height})...")
-        time.sleep(1)
-        screensaver.play()
-
+        with TerminalFramePlayer(args.width, args.height, args.scale) as frame_player:
+            if len(screensaver_names) == 1 and not args.all:
+                # Single screensaver — simple mode
+                screensaver = get_screensaver(screensaver_names[0], frame_player)
+                print(f"Starting {screensaver_names[0]} ({args.width}x{args.height})...")
+                time.sleep(1)
+                screensaver.play()
+            else:
+                # Multiple screensavers with transitions
+                run_sequence(screensaver_names, frame_player, args)
+    except KeyboardInterrupt:
+        print("\nExited.")
+        return 0
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    except Exception as e:
-        frame_player.cleanup()
-        raise
-
-    finally:
-        frame_player.cleanup()
-
     return 0
+
+
+def run_sequence(screensaver_names, frame_player, args):
+    """Run multiple screensavers in sequence with transitions, looping forever."""
+    import random
+    from pifi.screensaver.transitionplayer import TransitionPlayer
+
+    use_transitions = not args.no_transitions
+    transition_player = TransitionPlayer(frame_player) if use_transitions else None
+
+    print(f"Playing {len(screensaver_names)} screensavers ({args.width}x{args.height})")
+    if use_transitions:
+        print(f"Transition duration: {args.transition_duration}s")
+    if args.duration:
+        print(f"Each screensaver: {args.duration}s")
+    time.sleep(1)
+
+    current_name = screensaver_names[0]
+    remaining = list(screensaver_names[1:])
+    next_screensaver = None
+
+    while True:
+        # Reuse a screensaver warmed up by last iteration's live transition
+        if next_screensaver is not None:
+            screensaver = next_screensaver
+            next_screensaver = None
+        else:
+            screensaver = get_screensaver(current_name, frame_player)
+
+        screensaver.play(auto_teardown=not use_transitions)
+
+        # Pick next: drain the initial list first, then random from the full pool
+        if remaining:
+            next_name = remaining.pop(0)
+        else:
+            candidates = [n for n in screensaver_names if n != current_name]
+            if not candidates:
+                candidates = screensaver_names
+            next_name = random.choice(candidates)
+
+        can_live = False
+        try:
+            if not use_transitions:
+                continue
+
+            next_screensaver = get_screensaver(next_name, frame_player)
+            can_live = (
+                screensaver.supports_live_transition()
+                and next_screensaver.supports_live_transition()
+            )
+            if can_live:
+                transition_player.play_transition(
+                    from_screensaver=screensaver,
+                    to_screensaver=next_screensaver,
+                )
+            else:
+                transition_player.play_transition()
+        finally:
+            if use_transitions:
+                screensaver.teardown()
+                # If warm-up didn't complete, discard so we re-instantiate fresh
+                if can_live and next_screensaver and not next_screensaver.live_transition_warmed_up:
+                    next_screensaver.teardown()
+                    next_screensaver = None
+            current_name = next_name
 
 
 if __name__ == '__main__':

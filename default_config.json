@@ -511,22 +511,50 @@
                 "tick_sleep": 0.05,
             },
     
-            // Configuration specific to reaction diffusion screensaver.
-            "reactiondiffusion": {
-    
-                // Optional, integer, default: 8. Number of initial seed points.
-                "num_seeds": 8,
-    
-                // Optional, integer, default: 10. Simulation steps per frame.
-                "steps_per_frame": 10,
-    
-                // Optional, integer, default: 100. Frames between injecting new seeds.
-                "inject_interval": 100,
-    
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
+            "lenia": {},
+
+            "domainwarp": {},
+
+            "kaleidoscope": {},
+
+            "moire": {},
+
+            "phyllotaxis": {},
+
+            "pixelsort": {},
+
+            // Configuration specific to fire screensaver.
+            "fire": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
             },
-    
+
+
+            "colorfield": {},
+
+
+            // Configuration specific to double pendulum screensaver.
+            "double_pendulum": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
+            "halftone": {},
+
+            "misprint": {},
+
+            // Configuration specific to op art screensaver.
+            "opart": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
+            "noise_gradient": {},
+
+
             // Configuration specific to ink in water screensaver.
             "inkinwater": {
     
@@ -652,43 +680,46 @@
                 "tick_sleep": 0.05,
             },
     
-            // Configuration specific to cloudscape screensaver.
-            "cloudscape": {
     
-                // Optional, integer, default: 3. Number of cloud layers.
-                "num_layers": 3,
-    
-                // Optional, float, default: 0.2. Cloud drift speed.
-                "drift_speed": 0.2,
-    
-                // Optional, string, default: pastel. Sky mode: pastel, day, dawn, sunset, night.
-                "sky_mode": "pastel",
-    
-                // Optional, float, default: 0.7. Cloud density (0-1).
-                "cloud_density": 0.7,
-    
-                // Optional, float, default: 0.04. Cloud scale (smaller = bigger clouds).
-                "cloud_scale": 0.04,
-    
-                // Optional, float, default: 0.001. Sky color shift speed.
-                "sky_shift_speed": 0.001,
-    
-                // Optional, float, default: 0.05. Tick sleep time.
-                "tick_sleep": 0.05,
+            "test_print": {},
+
+            "hex_grid": {},
+
+            "klee": {},
+
+            "blueprint": {},
+
+            // Configuration specific to geodesic screensaver.
+            "geodesic": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
             },
-    
-            // Configuration specific to gradient test screensaver (for debugging flicker).
-            "gradient_test": {
-    
-                // Optional, string, default: pastel_sky. Test pattern to display.
-                // Valid values: pastel_sky, white, half_white, dim_white, red, green, blue,
-                // horizontal_gradient, vertical_gradient, checkerboard, stripes, color_bars
-                "mode": "pastel_sky",
-    
-                // Optional, float, default: 0.1. Tick sleep time (high = low CPU).
-                "tick_sleep": 0.1,
+
+            // Configuration specific to vortices screensaver.
+            "vortices": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
             },
-    
+
+            // Configuration specific to Escher tessellation screensaver.
+            "escher": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
+
+            "purkinje": {},
+
+            // Configuration specific to Self-Healing Squares screensaver.
+            "self_healing_squares": {
+
+                // Optional, float, default: 0.03. Tick sleep time.
+                "tick_sleep": 0.03,
+            },
+
             // Configuration specific to DVD bounce screensaver.
             "dvd_bounce": {
     

@@ -15,15 +15,34 @@ from pifi.screensaver.aurora import Aurora
 from pifi.screensaver.shadebobs import Shadebobs
 from pifi.screensaver.flowfield import FlowField
 from pifi.screensaver.lavalamp import LavaLamp
-from pifi.screensaver.reactiondiffusion import ReactionDiffusion
+from pifi.screensaver.lenia import Lenia
+from pifi.screensaver.pixelsort import PixelSort
+from pifi.screensaver.fire import Fire
+from pifi.screensaver.colorfield import ColorField
+from pifi.screensaver.doublependulum import DoublePendulum
+from pifi.screensaver.halftone import Halftone
+from pifi.screensaver.misprint import Misprint
+from pifi.screensaver.opart import OpArt
+from pifi.screensaver.noisegradient import NoiseGradient
+from pifi.screensaver.domainwarp import DomainWarp
+from pifi.screensaver.kaleidoscope import Kaleidoscope
+from pifi.screensaver.moire import Moire
+from pifi.screensaver.phyllotaxis import Phyllotaxis
 from pifi.screensaver.inkinwater import InkInWater
 from pifi.screensaver.perlinworms import PerlinWorms
 from pifi.screensaver.pendulumwaves import PendulumWaves
 from pifi.screensaver.stringart import StringArt
+from pifi.screensaver.blueprint import Blueprint
+from pifi.screensaver.testprint import TestPrint
+from pifi.screensaver.klee import Klee
 from pifi.screensaver.unknownpleasures import UnknownPleasures
-from pifi.screensaver.cloudscape import Cloudscape
 from pifi.screensaver.dvdbounce import DvdBounce
-from pifi.screensaver.gradienttest import GradientTest
+from pifi.screensaver.hexgrid import HexGrid
+from pifi.screensaver.geodesic import Geodesic
+from pifi.screensaver.purkinje import Purkinje
+from pifi.screensaver.vortices import Vortices
+from pifi.screensaver.escher import Escher
+from pifi.screensaver.selfhealingsquares import SelfHealingSquares
 from pifi.screensaver.nycsubway import NycSubway
 from pifi.screensaver.wfmu import Wfmu
 from pifi.screensaver.sonoskaraoke import SonosKaraoke
@@ -57,15 +76,34 @@ class ScreensaverManager:
         Shadebobs,
         FlowField,
         LavaLamp,
-        ReactionDiffusion,
+        Lenia,
+        DomainWarp,
+        Kaleidoscope,
+        Moire,
+        Phyllotaxis,
+        PixelSort,
+        Fire,
+        ColorField,
+        DoublePendulum,
+        Halftone,
+        Misprint,
+        OpArt,
+        NoiseGradient,
         InkInWater,
         PerlinWorms,
         PendulumWaves,
         StringArt,
+        Blueprint,
+        TestPrint,
+        Klee,
         UnknownPleasures,
-        Cloudscape,
         DvdBounce,
-        GradientTest,
+        HexGrid,
+        Geodesic,
+        Purkinje,
+        Vortices,
+        Escher,
+        SelfHealingSquares,
         NycSubway,
         Wfmu,
         SonosKaraoke,
