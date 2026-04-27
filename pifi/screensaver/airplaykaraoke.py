@@ -285,4 +285,4 @@ class AirPlayKaraoke(KaraokeBase):
 
     @classmethod
     def get_description(cls) -> str:
-        return 'Synced lyrics display for AirPlay playback via shairport-sync'
+        return 'Displays synced lyrics for music playing via AirPlay (shairport-sync)'

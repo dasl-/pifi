@@ -44,7 +44,7 @@ class VideoScreensaver(Screensaver):
 
     @classmethod
     def get_description(cls) -> str:
-        return 'Saved video playback'
+        return 'Plays saved video files from the data/screensavers directory.'
 
     def supports_live_transition(self) -> bool:
         return False

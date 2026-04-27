@@ -279,4 +279,4 @@ class Wfmu(Screensaver):
 
     @classmethod
     def get_description(cls) -> str:
-        return 'Shows current track playing on WFMU radio'
+        return 'Shows current track, artist, and show name from WFMU radio streams.'

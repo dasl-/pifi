@@ -169,6 +169,27 @@ class TestScreensaverInterface(unittest.TestCase):
                     f"Screensaver '{screensaver_id}' has no matching key in screensavers.configs."
                 )
 
+    def test_config_keys_in_alphabetical_order(self):
+        """Screensavers.configs keys should be sorted alphabetically.
+
+        Keeping a deterministic order makes diffs cleaner and makes a key
+        easy to find when scanning default_config.json by hand.
+        """
+        import pyjson5
+
+        default_config_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'default_config.json'
+        )
+        with open(default_config_path) as f:
+            default_config = pyjson5.decode(f.read())
+
+        keys = list(default_config.get('screensavers', {}).get('configs', {}).keys())
+        self.assertEqual(
+            keys, sorted(keys),
+            f"screensavers.configs keys are not in alphabetical order. Expected: {sorted(keys)}"
+        )
+
     def test_all_screensavers_call_super_init(self):
         """Verify all screensaver subclasses call super().__init__() in their __init__ method."""
         for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
