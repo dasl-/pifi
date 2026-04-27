@@ -38,7 +38,7 @@ class ScoreDisplayer:
         self.__score = score
 
     # TODO: validate if score too big
-    def display_score(self, rgb = [255, 0, 0]):
+    def display_score(self, rgb = [255, 0, 0]):  # pyright: ignore[reportCallInDefaultInitializer]
         score_string = str(self.__score)
         digit_component_length = self.__get_digit_component_length()
 

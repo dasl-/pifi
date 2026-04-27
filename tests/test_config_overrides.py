@@ -11,7 +11,7 @@ import json
 import unittest
 import sys
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock  # pyright: ignore[reportUnusedImport]
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -34,10 +34,10 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
 
     def setUp(self):
         """Reset Config state before each test."""
-        Config._Config__is_loaded = True
-        Config._Config__config = copy.deepcopy(self.BASE_CONFIG)
-        Config._Config__base_config = copy.deepcopy(self.BASE_CONFIG)
-        Config._Config__applied_overrides = {}
+        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__config = copy.deepcopy(self.BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__base_config = copy.deepcopy(self.BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
+        Config._Config__applied_overrides = {}  # pyright: ignore[reportAttributeAccessIssue]
 
     @patch('pifi.settingsdb.SettingsDb')
     def test_applies_overrides(self, MockSettingsDb):
@@ -245,7 +245,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
 
         # Mutate config directly to detect if rebuild happens
-        Config._Config__config['screensavers']['configs']['boids']['num_boids'] = 999
+        Config._Config__config['screensavers']['configs']['boids']['num_boids'] = 999  # pyright: ignore[reportAttributeAccessIssue]
 
         # Same DB value — should skip rebuild, keeping the mutation
         Config.reload_overrides(['screensaver_settings'])
@@ -261,7 +261,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
 
         # Mutate config directly
-        Config._Config__config['screensavers']['configs']['boids']['num_boids'] = 999
+        Config._Config__config['screensavers']['configs']['boids']['num_boids'] = 999  # pyright: ignore[reportAttributeAccessIssue]
 
         # Different DB value — should rebuild, overwriting the mutation
         mock_db.get.return_value = json.dumps({'screensavers': {'configs': {'boids': {'num_boids': 75}}}})

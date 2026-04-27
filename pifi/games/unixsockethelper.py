@@ -63,7 +63,7 @@ class UnixSocketHelper:
         return self
 
     def set_server_socket_timeout(self, timeout_s):
-        self.__server_socket.settimeout(timeout_s)
+        self.__server_socket.settimeout(timeout_s)  # pyright: ignore[reportOptionalMemberAccess]
 
     def set_connection_socket(self, socket):
         self.__connection_socket = socket
@@ -71,7 +71,7 @@ class UnixSocketHelper:
 
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def accept(self):
-        self.__connection_socket, unused_address = self.__server_socket.accept()
+        self.__connection_socket, unused_address = self.__server_socket.accept()  # pyright: ignore[reportOptionalMemberAccess, reportUnusedVariable]
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_HANDSHAKE_TIMEOUT_S)
         self.__exchange_connection_handshake_messages()
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
@@ -88,7 +88,7 @@ class UnixSocketHelper:
         return self
 
     def is_ready_to_read(self):
-        is_ready_to_read, ignore1, ignore2 = select.select([self.__connection_socket], [], [], 0)
+        is_ready_to_read, ignore1, ignore2 = select.select([self.__connection_socket], [], [], 0)  # pyright: ignore[reportUnusedVariable]
         return bool(is_ready_to_read)
 
     # param: msg - string
@@ -98,7 +98,7 @@ class UnixSocketHelper:
     def send_msg(self, msg):
         if len(msg) > self.__MSG_LENGTH:
             raise Exception("Message is too long: {}".format(msg))
-        self.__connection_socket.sendall(msg.ljust(self.__MSG_LENGTH).encode())
+        self.__connection_socket.sendall(msg.ljust(self.__MSG_LENGTH).encode())  # pyright: ignore[reportOptionalMemberAccess]
 
     # return: string
     # raises: ConnectionResetError, SocketClosedException if the other end of the socket was closed. Maybe other
@@ -108,7 +108,7 @@ class UnixSocketHelper:
         msg_len = len(msg)
         while msg_len < self.__MSG_LENGTH:
             # can raise ConnectionResetError if other end of socket was closed
-            msg += self.__connection_socket.recv(self.__MSG_LENGTH - msg_len)
+            msg += self.__connection_socket.recv(self.__MSG_LENGTH - msg_len)  # pyright: ignore[reportOptionalMemberAccess]
             msg_len = len(msg)
 
             # receiving 0 bytes indicates the connection has been closed: https://docs.python.org/3.7/howto/sockets.html#using-a-socket

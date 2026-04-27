@@ -2,7 +2,7 @@ import os
 import time
 import shlex
 import signal
-import simpleaudio
+import simpleaudio  # pyright: ignore[reportMissingImports]
 import subprocess
 import traceback
 
@@ -97,7 +97,7 @@ class Queue:
                 pass_fds = (unix_socket_fd,)
             elif playlist_item["title"] == Pong.GAME_TITLE:
                 try:
-                    pong_settings = Pong.make_settings_from_playlist_item(playlist_item)
+                    pong_settings = Pong.make_settings_from_playlist_item(playlist_item)  # pyright: ignore[reportUnusedVariable]
                 except Exception:
                     self.__logger.error(f'Caught exception: {traceback.format_exc()}')
                     Logger.set_uuid('')
@@ -216,7 +216,7 @@ class Queue:
     reenqueue the video so as not to deplete the queue when a lot of snake games are being played.
     """
     def __should_reenqueue_current_playlist_item(self, was_current_playlist_item_skipped):
-        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:
+        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:  # pyright: ignore[reportOptionalSubscript]
             return False
 
         if not was_current_playlist_item_skipped:
@@ -241,12 +241,12 @@ class Queue:
             if self.__is_screensaver_enabled:
                 if should_play_sound:
                     simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"  # pyright: ignore[reportOptionalOperand]
                     ).play()
             else:
                 if should_play_sound:
                     simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"  # pyright: ignore[reportOptionalOperand]
                     ).play()
                 if self.__is_screensaver_playing():
                     self.__stop_playback_if_playing()

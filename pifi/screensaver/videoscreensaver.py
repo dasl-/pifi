@@ -15,11 +15,11 @@ class VideoScreensaver(Screensaver):
         self.video_list = Config.get("screensavers.configs.video_screensaver.saved_videos", [])
 
     def __getScreensaverPath(self):
-        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
+        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY  # pyright: ignore[reportOptionalOperand]
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
-    def _tick(self):
+    def _tick(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self.video_list:
             return False
 

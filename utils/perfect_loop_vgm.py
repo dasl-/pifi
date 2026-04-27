@@ -69,7 +69,7 @@ Options:
 print("trimming vgm...")
 vgm_trim_output = (subprocess
     .check_output(
-        DirectoryUtils().root_dir + '/utils/vgm_trim ' + shlex.quote(input_file) + ' 0 0 ' + str(loop_num_samples) + ' tmp_perfect_loop.vgm',
+        DirectoryUtils().root_dir + '/utils/vgm_trim ' + shlex.quote(input_file) + ' 0 0 ' + str(loop_num_samples) + ' tmp_perfect_loop.vgm',  # pyright: ignore[reportOptionalOperand]
         shell = True,
         executable = '/usr/bin/bash',
         stderr = subprocess.STDOUT
@@ -92,7 +92,7 @@ Options:
 print("converting vgm to wav ({})...".format(output_file))
 vgm2wav_output = (subprocess
     .check_output(
-        DirectoryUtils().root_dir + '/utils/vgm2wav --loop-count 1 tmp_perfect_loop.vgm ' + shlex.quote(output_file),
+        DirectoryUtils().root_dir + '/utils/vgm2wav --loop-count 1 tmp_perfect_loop.vgm ' + shlex.quote(output_file),  # pyright: ignore[reportOptionalOperand]
         shell = True,
         executable = '/usr/bin/bash',
         stderr = subprocess.STDOUT
@@ -103,7 +103,7 @@ print(vgm2wav_output)
 os.remove('tmp_perfect_loop.vgm')
 
 print("Success! Playing perfect loop on repeat. Press ctrl + c to exit...")
-from pygame import mixer
+from pygame import mixer  # pyright: ignore[reportMissingImports]
 mixer.init(frequency = 22050, buffer = 512)
 
 loop_test = mixer.Sound(output_file)

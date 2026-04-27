@@ -123,7 +123,7 @@ class VideoProcessor:
         )
 
     def __get_data_directory(self):
-        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
+        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY  # pyright: ignore[reportOptionalOperand]
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
@@ -195,7 +195,7 @@ class VideoProcessor:
     def __populate_frames(
         self, frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
     ):
-        is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)
+        is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)  # pyright: ignore[reportUnusedVariable]
         if not is_ready_to_read:
             return [False, vid_start_time]
 
@@ -400,12 +400,12 @@ class VideoProcessor:
             pix_fmt = 'rgb24'
 
         return (
-            self.get_standard_ffmpeg_cmd() + ' '
+            self.get_standard_ffmpeg_cmd() + ' ' +
             '-i pipe:0 ' + # read input video from stdin
             '-filter:v ' + shlex.quote( # resize video
-                'scale=' + str(Config.get_or_throw('leds.display_width')) + 'x' + str(Config.get_or_throw('leds.display_height'))) + " "
+                'scale=' + str(Config.get_or_throw('leds.display_width')) + 'x' + str(Config.get_or_throw('leds.display_height'))) + " " +
             '-c:a copy ' + # don't process the audio at all
-            '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " # output in numpy compatible byte format
+            '-f rawvideo -pix_fmt ' + shlex.quote(pix_fmt) + " " + # output in numpy compatible byte format
             'pipe:1' # output to stdout
         )
 
@@ -480,7 +480,7 @@ class VideoProcessor:
     def __update_yt_dlp(self):
         update_yt_dlp_output = (subprocess
             .check_output(
-                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',  # pyright: ignore[reportOperatorIssue]
                 shell = True,
                 executable = '/usr/bin/bash',
                 stderr = subprocess.STDOUT

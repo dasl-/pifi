@@ -142,7 +142,7 @@ def _build_snub_cube():
 
 def _build_geodesic():
     """Build a 1x subdivided icosahedron (geodesic sphere)."""
-    base_v, base_e = _build_icosahedron()
+    base_v, base_e = _build_icosahedron()  # pyright: ignore[reportUnusedVariable]
     faces = [
         (0,11,5),(0,5,1),(0,1,7),(0,7,10),(0,10,11),
         (1,5,9),(5,11,4),(11,10,2),(10,7,6),(7,1,8),
@@ -386,7 +386,7 @@ class Geodesic(Screensaver):
             p = self.__morph_progress
             t = p * p * (3 - 2 * p)
 
-            interp = self.__morph_from_verts * (1 - t) + self.__morph_to_verts * t
+            interp = self.__morph_from_verts * (1 - t) + self.__morph_to_verts * t  # pyright: ignore[reportOptionalOperand]
             self.__verts = _normalize_rows(interp)
             self.__num_verts = len(self.__verts)
 

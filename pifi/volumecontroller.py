@@ -14,7 +14,7 @@ class VolumeController:
     # returns a float in the range [0, 100]
     def get_vol_pct(self):
         vol_val = self.get_vol_val()
-        if vol_val <= VolumeController.__get_global_min_vol_val():
+        if vol_val <= VolumeController.__get_global_min_vol_val():  # pyright: ignore[reportOperatorIssue]
             return 0
 
         if VolumeController.__should_adjust_volume_logarithmically():
@@ -24,10 +24,10 @@ class VolumeController:
 
             # convert from decibel attenuation amount to perceptual loudness %
             # see: http://www.sengpielaudio.com/calculator-levelchange.htm
-            db_level = mb_level / 100
+            db_level = mb_level / 100  # pyright: ignore[reportOptionalOperand]
             vol_pct = 100 * math.pow(2, (db_level / 10))
         else:
-            vol_pct = 100 * vol_val / VolumeController.__get_limited_max_vol_val()
+            vol_pct = 100 * vol_val / VolumeController.__get_limited_max_vol_val()  # pyright: ignore[reportOperatorIssue]
 
         vol_pct = max(0, vol_pct)
         vol_pct = min(100, vol_pct)
@@ -45,7 +45,7 @@ class VolumeController:
             mb_level = VolumeController.pct_to_millibels(vol_pct)
             vol_val = mb_level
         else:
-            vol_val = vol_pct * VolumeController.__get_limited_max_vol_val() / 100
+            vol_val = vol_pct * VolumeController.__get_limited_max_vol_val() / 100  # pyright: ignore[reportOperatorIssue]
 
         vol_val = round(vol_val)
         subprocess.check_output(
@@ -89,11 +89,11 @@ class VolumeController:
             # use the defaults for the raspberry pi built in headphone jack:
             # amixer output: ; type=INTEGER,access=rw---R--,values=1,min=-10239,max=400,step=0
             # These values are in millibels.
-            VolumeController.__GLOBAL_MIN_VOL_VAL = -10239
-            VolumeController.__GLOBAL_MAX_VOL_VAL = 400
+            VolumeController.__GLOBAL_MIN_VOL_VAL = -10239  # pyright: ignore[reportConstantRedefinition]
+            VolumeController.__GLOBAL_MAX_VOL_VAL = 400  # pyright: ignore[reportConstantRedefinition]
         else:
-            VolumeController.__GLOBAL_MIN_VOL_VAL = int(m.group(1))
-            VolumeController.__GLOBAL_MAX_VOL_VAL = int(m.group(2))
+            VolumeController.__GLOBAL_MIN_VOL_VAL = int(m.group(1))  # pyright: ignore[reportConstantRedefinition]
+            VolumeController.__GLOBAL_MAX_VOL_VAL = int(m.group(2))  # pyright: ignore[reportConstantRedefinition]
 
     @staticmethod
     def __should_adjust_volume_logarithmically():
@@ -134,8 +134,8 @@ class VolumeController:
             return VolumeController.__get_global_min_vol_val()
 
         vol_val = int(m.group(1))
-        vol_val = max(VolumeController.__get_global_min_vol_val(), vol_val)
-        vol_val = min(VolumeController.__get_limited_max_vol_val(), vol_val)
+        vol_val = max(VolumeController.__get_global_min_vol_val(), vol_val)  # pyright: ignore[reportArgumentType]
+        vol_val = min(VolumeController.__get_limited_max_vol_val(), vol_val)  # pyright: ignore[reportArgumentType]
         return vol_val
 
     # Map the volume from [0, 100] to [0, 1]
@@ -157,6 +157,6 @@ class VolumeController:
             # see: http://www.sengpielaudio.com/calculator-levelchange.htm
             mb_level = 1000 * math.log(vol_pct / 100, 2)
 
-        mb_level = max(VolumeController.__get_global_min_vol_val(), mb_level)
-        mb_level = min(VolumeController.__get_limited_max_vol_val(), mb_level)
+        mb_level = max(VolumeController.__get_global_min_vol_val(), mb_level)  # pyright: ignore[reportArgumentType]
+        mb_level = min(VolumeController.__get_limited_max_vol_val(), mb_level)  # pyright: ignore[reportArgumentType]
         return mb_level

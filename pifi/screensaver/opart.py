@@ -1,6 +1,6 @@
 import numpy as np
 import random
-import math
+import math  # pyright: ignore[reportUnusedImport]
 
 from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver

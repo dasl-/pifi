@@ -12,7 +12,7 @@ TEST_SONGS = [
 ]
 
 print("Testing syncedlyrics library...\n")
-print(f"syncedlyrics version: {syncedlyrics.__version__}\n")
+print(f"syncedlyrics version: {syncedlyrics.__version__}\n")  # pyright: ignore[reportAttributeAccessIssue]
 
 for title, artist in TEST_SONGS:
     query = f"{title} {artist}"

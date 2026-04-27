@@ -273,7 +273,7 @@ class MeltingClock(Screensaver):
 
         # Position based on character index
         x = start_x
-        for i in range(char_index):
+        for i in range(char_index):  # pyright: ignore[reportUnusedVariable]
             x += self.DIGIT_WIDTH + 1  # digit width + spacing
 
         return x
