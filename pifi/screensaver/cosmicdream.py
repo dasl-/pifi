@@ -47,7 +47,7 @@ class CosmicDream(Screensaver):
         self.__reset()
 
     def _tick(self):
-        t = time.time() - self.__start_time
+        t = time.time() - self.__start_time  # pyright: ignore[reportOperatorIssue]
 
         # Create the layered frame
         frame = self.__render_plasma_layer(t)
@@ -124,7 +124,7 @@ class CosmicDream(Screensaver):
         # Breathing radius
         base_radius = min(self.__width, self.__height) * 0.35
         breath = math.sin(t * 0.8) * 0.3 + 1.0  # 0.7 to 1.3
-        radius = base_radius * breath
+        radius = base_radius * breath  # pyright: ignore[reportUnusedVariable]
 
         # Multiple concentric rings at different phases
         for ring in range(3):
@@ -167,12 +167,12 @@ class CosmicDream(Screensaver):
         Flow field particles with trails.
         Particles follow a noise-based vector field, leaving fading trails.
         """
-        num_particles = len(self.__particles)
-        trail_length = self.__particle_trails.shape[1]
+        num_particles = len(self.__particles)  # pyright: ignore[reportArgumentType]
+        trail_length = self.__particle_trails.shape[1]  # pyright: ignore[reportOptionalMemberAccess]
 
         # Update particle positions using noise-based flow field
         for i in range(num_particles):
-            px, py = self.__particles[i]
+            px, py = self.__particles[i]  # pyright: ignore[reportOptionalSubscript]
 
             # Compute flow angle from pseudo-noise (layered sines)
             noise_val = self.__sample_flow_noise(px, py, t)
@@ -180,24 +180,24 @@ class CosmicDream(Screensaver):
 
             # Move particle
             speed = Config.get('screensavers.configs.cosmic_dream.particle_speed', 0.5)
-            self.__particles[i, 0] += math.cos(angle) * speed
-            self.__particles[i, 1] += math.sin(angle) * speed
+            self.__particles[i, 0] += math.cos(angle) * speed  # pyright: ignore[reportOptionalSubscript]
+            self.__particles[i, 1] += math.sin(angle) * speed  # pyright: ignore[reportOptionalSubscript]
 
             # Wrap around edges
-            self.__particles[i, 0] %= self.__width
-            self.__particles[i, 1] %= self.__height
+            self.__particles[i, 0] %= self.__width  # pyright: ignore[reportOptionalSubscript]
+            self.__particles[i, 1] %= self.__height  # pyright: ignore[reportOptionalSubscript]
 
         # Shift trail buffer and add new position
-        self.__particle_trails[:, 1:, :] = self.__particle_trails[:, :-1, :]
-        self.__particle_trails[:, 0, :] = self.__particles
+        self.__particle_trails[:, 1:, :] = self.__particle_trails[:, :-1, :]  # pyright: ignore[reportOptionalSubscript]
+        self.__particle_trails[:, 0, :] = self.__particles  # pyright: ignore[reportOptionalSubscript]
 
         # Render trails with fading
         for i in range(num_particles):
             # Particle hue based on position and time
-            base_hue = (self.__particles[i, 0] / self.__width + t * 0.05) % 1.0
+            base_hue = (self.__particles[i, 0] / self.__width + t * 0.05) % 1.0  # pyright: ignore[reportOptionalSubscript]
 
             for trail_idx in range(trail_length):
-                tx, ty = self.__particle_trails[i, trail_idx]
+                tx, ty = self.__particle_trails[i, trail_idx]  # pyright: ignore[reportOptionalSubscript]
                 px, py = int(tx) % self.__width, int(ty) % self.__height
 
                 # Fade based on trail position (newer = brighter)
@@ -226,12 +226,12 @@ class CosmicDream(Screensaver):
         # Multiple octaves of sine waves at different frequencies
         o = self.__noise_offsets
         noise = 0
-        noise += math.sin(nx * 1.0 + o[0] + t * 0.3) * 0.5
-        noise += math.sin(ny * 1.2 + o[1] + t * 0.25) * 0.5
-        noise += math.sin((nx + ny) * 0.7 + o[2] + t * 0.2) * 0.3
-        noise += math.sin((nx - ny) * 0.9 + o[3] - t * 0.15) * 0.3
-        noise += math.sin(nx * 2.1 + ny * 1.8 + o[4] + t * 0.4) * 0.2
-        noise += math.sin(math.sqrt(nx*nx + ny*ny) * 1.5 + o[5] + t * 0.35) * 0.2
+        noise += math.sin(nx * 1.0 + o[0] + t * 0.3) * 0.5  # pyright: ignore[reportOptionalSubscript]
+        noise += math.sin(ny * 1.2 + o[1] + t * 0.25) * 0.5  # pyright: ignore[reportOptionalSubscript]
+        noise += math.sin((nx + ny) * 0.7 + o[2] + t * 0.2) * 0.3  # pyright: ignore[reportOptionalSubscript]
+        noise += math.sin((nx - ny) * 0.9 + o[3] - t * 0.15) * 0.3  # pyright: ignore[reportOptionalSubscript]
+        noise += math.sin(nx * 2.1 + ny * 1.8 + o[4] + t * 0.4) * 0.2  # pyright: ignore[reportOptionalSubscript]
+        noise += math.sin(math.sqrt(nx*nx + ny*ny) * 1.5 + o[5] + t * 0.35) * 0.2  # pyright: ignore[reportOptionalSubscript]
 
         # Normalize to 0-1
         return (noise / 2.0 + 0.5) % 1.0
@@ -255,7 +255,7 @@ class CosmicDream(Screensaver):
         # Simple hue rotation approximation
         r = frame[:, :, 0]
         g = frame[:, :, 1]
-        b = frame[:, :, 2]
+        b = frame[:, :, 2]  # pyright: ignore[reportUnusedVariable]
 
         # Rotate in RG plane slightly
         new_r = r * cos_a - g * sin_a * 0.3

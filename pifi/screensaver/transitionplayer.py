@@ -307,7 +307,7 @@ class TransitionPlayer:
         )
 
         if to_alive:
-            to_screensaver.live_transition_warmed_up = True
+            to_screensaver.live_transition_warmed_up = True  # pyright: ignore[reportOptionalMemberAccess]
 
     def __run_warm_up(self, from_screensaver, to_screensaver, from_frame, tick_sleep):
         """Warm up the to_screensaver while from_screensaver keeps playing.

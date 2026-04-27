@@ -31,7 +31,7 @@ class DvdBounce(Screensaver):
 
         if requested_width >= self.__width or requested_height >= self.__height:
             self.__logger.warning(
-                f"Logo dimensions ({requested_width}x{requested_height}) too large for display "
+                f"Logo dimensions ({requested_width}x{requested_height}) too large for display " +
                 f"({self.__width}x{self.__height}). Clamped to {self.__logo_width}x{self.__logo_height}."
             )
 

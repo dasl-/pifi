@@ -1,10 +1,10 @@
 import json
 import math
 import numpy as np
-from pygame import mixer
+from pygame import mixer  # pyright: ignore[reportMissingImports]
 import random
 import signal
-import simpleaudio
+import simpleaudio  # pyright: ignore[reportMissingImports]
 import socket
 import sys
 import time
@@ -15,8 +15,8 @@ from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.games.gamecolorhelper import GameColorHelper
-from pifi.games.scoredisplayer import ScoreDisplayer
-from pifi.games.scores import Scores
+from pifi.games.scoredisplayer import ScoreDisplayer  # pyright: ignore[reportUnusedImport]
+from pifi.games.scores import Scores  # pyright: ignore[reportUnusedImport]
 from pifi.games.pongplayer import PongPlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.directoryutils import DirectoryUtils
@@ -64,10 +64,10 @@ class Pong:
         # Audio
         mixer.init(frequency=22050, buffer=512)
         self.__bounce_sound = simpleaudio.WaveObject.from_wave_file(
-            DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav"
+            DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
         )
         self.__score_sound = simpleaudio.WaveObject.from_wave_file(
-            DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav"
+            DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
         )
 
         self.__led_frame_player = LedFramePlayer()
@@ -124,7 +124,7 @@ class Pong:
 
     def __countdown(self):
         """Show a brief countdown before the game starts."""
-        for i in range(3, 0, -1):
+        for i in range(3, 0, -1):  # pyright: ignore[reportUnusedVariable]
             self.__show_board()
             time.sleep(0.5)
 
@@ -265,7 +265,7 @@ class Pong:
             ball_color = self.__game_color_helper.get_rgb(
                 GameColorHelper.GAME_COLOR_MODE_RAINBOW, 0.2, self.__num_ticks
             )
-            frame[ball_iy, ball_ix] = ball_color
+            frame[ball_iy, ball_ix] = ball_color  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Draw center line (dashed)
         center_x = self.__display_width // 2

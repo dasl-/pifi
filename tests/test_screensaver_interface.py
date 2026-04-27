@@ -13,7 +13,7 @@ import unittest
 import sys
 import os
 import subprocess
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch  # pyright: ignore[reportUnusedImport]
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,8 +27,8 @@ from pifi.led.ledframeplayer import LedFramePlayer
 def setUpModule():
     """Set up mock config for all tests."""
     # Mock the Config to avoid needing a real config file
-    Config._Config__is_loaded = True
-    Config._Config__config = {
+    Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__config = {  # pyright: ignore[reportAttributeAccessIssue]
         'leds': {
             'driver': 'apa102',
             'display_width': 32,
@@ -56,14 +56,14 @@ def setUpModule():
     }
 
     # Mock LedFramePlayer.__init__ to avoid hardware initialization
-    original_init = LedFramePlayer.__init__
+    original_init = LedFramePlayer.__init__  # pyright: ignore[reportUnusedVariable]
 
     def mock_init(self):
         # Just set the basic attributes without initializing hardware
         self.__led_driver = MagicMock()
         self.__gamma = MagicMock()
 
-    LedFramePlayer.__init__ = mock_init
+    LedFramePlayer.__init__ = mock_init  # pyright: ignore[reportAttributeAccessIssue]
     LedFramePlayer.play_frame = MagicMock()
     LedFramePlayer.fade_to_frame = MagicMock()
 
@@ -203,7 +203,7 @@ class TestScreensaverInterface(unittest.TestCase):
                 # Check if the base class __init__ was called by verifying the flag
                 self.assertTrue(
                     hasattr(instance, '_Screensaver__screensaver_base_init_called'),
-                    f"{screensaver_id} does not call super().__init__() - "
+                    f"{screensaver_id} does not call super().__init__() - " +
                     f"missing __screensaver_base_init_called attribute"
                 )
                 self.assertTrue(
@@ -244,7 +244,7 @@ class TestSpecificScreensavers(unittest.TestCase):
         """Verify CellularAutomaton inherits from Screensaver."""
         from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 
-        self.assertTrue(issubclass(CellularAutomaton, Screensaver))
+        self.assertTrue(issubclass(CellularAutomaton, Screensaver))  # pyright: ignore[reportUnnecessaryIsInstance]
 
 
 class TestScreensaverPreviewIntegration(unittest.TestCase):

@@ -44,7 +44,7 @@ class SonosKaraoke(KaraokeBase):
         4. Fall back to any available speaker
         """
         try:
-            import soco
+            import soco  # pyright: ignore[reportMissingImports]
 
             speakers = soco.discover(timeout=5)
             if not speakers:
@@ -70,7 +70,7 @@ class SonosKaraoke(KaraokeBase):
                     state = transport.get('current_transport_state', '')
                     track = speaker.get_current_track_info()
                     title = track.get('title', '')
-                    artist = track.get('artist', '')
+                    artist = track.get('artist', '')  # pyright: ignore[reportUnusedVariable]
                     position = track.get('position', '')
 
                     is_coordinator = speaker.is_coordinator
@@ -79,7 +79,7 @@ class SonosKaraoke(KaraokeBase):
                     valid_position = position and 'NOT_IMPLEMENTED' not in position
 
                     self._logger.info(
-                        f"  {speaker.player_name}: state={state}, coordinator={is_coordinator}, "
+                        f"  {speaker.player_name}: state={state}, coordinator={is_coordinator}, " +
                         f"title='{title[:30]}', valid_pos={valid_position}"
                     )
 
@@ -108,7 +108,7 @@ class SonosKaraoke(KaraokeBase):
                 best = candidates[0]
                 self.__speaker = best['speaker']
                 self._logger.info(
-                    f"Selected: {self.__speaker.player_name} "
+                    f"Selected: {self.__speaker.player_name} " +
                     f"(score={score(best)}, playing={best['is_playing']}, track={best['has_track']})"
                 )
                 return True
@@ -168,7 +168,7 @@ class SonosKaraoke(KaraokeBase):
             with self._poll_lock:
                 KaraokeBase._position_seconds = position_seconds
                 KaraokeBase._song_duration = song_duration
-                KaraokeBase._last_poll_time = poll_time
+                KaraokeBase._last_poll_time = poll_time  # pyright: ignore[reportAttributeAccessIssue]
                 KaraokeBase._is_playing = is_playing
                 KaraokeBase._current_track = title
                 KaraokeBase._current_artist = artist
@@ -203,7 +203,7 @@ class SonosKaraoke(KaraokeBase):
         try:
             # Sonos album_art URIs may be relative paths — build full URL
             if uri.startswith('/'):
-                base_url = f"http://{self.__speaker.ip_address}:1400"
+                base_url = f"http://{self.__speaker.ip_address}:1400"  # pyright: ignore[reportOptionalMemberAccess]
                 uri = base_url + uri
 
             resp = requests.get(uri, timeout=5)
@@ -214,7 +214,7 @@ class SonosKaraoke(KaraokeBase):
 
             # Keep album art square and center it on the display
             size = min(self._width, self._height)
-            img = img.resize((size, size), Image.LANCZOS)
+            img = img.resize((size, size), Image.LANCZOS)  # pyright: ignore[reportAttributeAccessIssue]
             square = np.array(img, dtype=np.float64)
             square = (square * 0.5).astype(np.uint8)
 
@@ -222,9 +222,9 @@ class SonosKaraoke(KaraokeBase):
             x_offset = (self._width - size) // 2
             y_offset = (self._height - size) // 2
             art_frame[y_offset:y_offset + size, x_offset:x_offset + size] = square
-            KaraokeBase._album_art_frame = art_frame
+            KaraokeBase._album_art_frame = art_frame  # pyright: ignore[reportAttributeAccessIssue]
             self._logger.info(
-                f"Album art loaded ({len(resp.content)} bytes) "
+                f"Album art loaded ({len(resp.content)} bytes) " +
                 f"shape={art_frame.shape} max={art_frame.max()}"
             )
         except Exception as e:

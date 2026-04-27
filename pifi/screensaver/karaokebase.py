@@ -113,7 +113,7 @@ class KaraokeBase(Screensaver):
         self.__poll_thread = threading.Thread(target=self._polling_loop, daemon=True)
         self.__poll_thread.start()
 
-    def _tick(self):
+    def _tick(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         if self.__connection_failed_time is not None:
             if (time.time() - self.__connection_failed_time) > 10:
                 return False
@@ -256,7 +256,7 @@ class KaraokeBase(Screensaver):
                     diff = abs(mm_first - ll_first)
 
                     self._logger.info(
-                        f"Timing comparison: Musixmatch={mm_first:.1f}s, "
+                        f"Timing comparison: Musixmatch={mm_first:.1f}s, " +
                         f"LRCLIB={ll_first:.1f}s, diff={diff:.1f}s"
                     )
 
@@ -297,7 +297,7 @@ class KaraokeBase(Screensaver):
                                 source_provider = provider
                                 self._logger.info(f"Found lyrics via {provider}")
                                 self._logger.debug(
-                                    f"{provider} response ({len(result)} bytes): "
+                                    f"{provider} response ({len(result)} bytes): " +
                                     f"{result[:500]}"
                                 )
                                 break
@@ -354,7 +354,7 @@ class KaraokeBase(Screensaver):
             if (current_track and current_artist and
                     (current_track != title or current_artist != artist)):
                 self._logger.info(
-                    f"Track changed during fetch, re-fetching for: "
+                    f"Track changed during fetch, re-fetching for: " +
                     f"'{current_track}' by '{current_artist}'"
                 )
                 self.__start_lyrics_fetch(current_track, current_artist)
@@ -376,7 +376,7 @@ class KaraokeBase(Screensaver):
         }, timeout=(3, 5))
         raw_text = r.text
         self._logger.debug(
-            f"Musixmatch token.get response ({len(raw_text)} bytes): "
+            f"Musixmatch token.get response ({len(raw_text)} bytes): " +
             f"{raw_text[:500]}"
         )
         data = r.json()
@@ -406,7 +406,7 @@ class KaraokeBase(Screensaver):
             r = requests.get(self.__MM_URL + endpoint, params=req_params, timeout=(3, 5))
             raw_text = r.text
             self._logger.debug(
-                f"Musixmatch {endpoint} response ({len(raw_text)} bytes): "
+                f"Musixmatch {endpoint} response ({len(raw_text)} bytes): " +
                 f"{raw_text[:500]}"
             )
             data = r.json()
@@ -436,7 +436,7 @@ class KaraokeBase(Screensaver):
             track_id = track['track_id']
             matched_length = track.get('track_length', 0)
             self._logger.debug(
-                f"Musixmatch matcher: '{track.get('track_name', '')}' "
+                f"Musixmatch matcher: '{track.get('track_name', '')}' " +
                 f"(id={track_id}, length={matched_length}s)"
             )
 
@@ -448,7 +448,7 @@ class KaraokeBase(Screensaver):
 
             if not duration_ok:
                 self._logger.debug(
-                    f"Musixmatch matcher duration mismatch: {matched_length}s vs expected {duration}s, "
+                    f"Musixmatch matcher duration mismatch: {matched_length}s vs expected {duration}s, " +
                     f"trying search"
                 )
             else:
@@ -489,7 +489,7 @@ class KaraokeBase(Screensaver):
 
         if best_id and best_diff <= 10:
             self._logger.debug(
-                f"Musixmatch search: '{best_name}' (id={best_id}, length={best_length}s, "
+                f"Musixmatch search: '{best_name}' (id={best_id}, length={best_length}s, " +  # pyright: ignore[reportPossiblyUnboundVariable]
                 f"diff={best_diff}s)"
             )
             return best_id
@@ -548,7 +548,7 @@ class KaraokeBase(Screensaver):
         r = requests.get('https://lrclib.net/api/get', params=params, timeout=(3, 5))
         raw_text = r.text
         self._logger.debug(
-            f"LRCLIB response (status={r.status_code}, {len(raw_text)} bytes): "
+            f"LRCLIB response (status={r.status_code}, {len(raw_text)} bytes): " +
             f"{raw_text[:500]}"
         )
         if r.status_code != 200:
@@ -679,9 +679,9 @@ class KaraokeBase(Screensaver):
                 pos = self.__get_interpolated_position()
                 poll_age = time.time() - self._last_poll_time if self._last_poll_time else -1
                 self._logger.debug(
-                    f"Render: lyrics line={self.__current_line_index} "
-                    f"pos={pos:.1f}s playing={self._is_playing} "
-                    f"max_pos={self.__max_position:.1f}s "
+                    f"Render: lyrics line={self.__current_line_index} " +
+                    f"pos={pos:.1f}s playing={self._is_playing} " +
+                    f"max_pos={self.__max_position:.1f}s " +
                     f"poll_age={poll_age:.1f}s"
                 )
             self.__render_lyrics(frame)

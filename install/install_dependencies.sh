@@ -7,6 +7,9 @@ RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 # OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
 CONFIG='/boot/firmware/config.txt'
 
+# shellcheck source=_lib.sh
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/_lib.sh"
+
 main(){
     trap 'fail $? $LINENO' ERR
 
@@ -14,6 +17,7 @@ main(){
     installDeno
     setupUv
     installYtDlp
+    installDevTools
     enableSpi
     installLedDriver
     installNode
@@ -105,6 +109,8 @@ installYtDlp(){
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp'
     "$BASE_DIR"/utils/update_yt-dlp.sh
 }
+
+# installDevTools is defined in _lib.sh, sourced above.
 
 enableSpi(){
     if [ "$(sudo raspi-config nonint get_spi)" = "1" ]; then

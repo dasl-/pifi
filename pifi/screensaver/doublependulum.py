@@ -3,7 +3,7 @@ import random
 import math
 
 from pifi.config import Config
-from pifi.logger import Logger
+from pifi.logger import Logger  # pyright: ignore[reportUnusedImport]
 from pifi.screensaver.screensaver import Screensaver
 
 

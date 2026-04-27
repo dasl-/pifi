@@ -115,7 +115,7 @@ class LedFramePlayer(FramePlayerBase):
         filename = 'loading_screen_monochrome.npy'
         if VideoColorMode.is_color_mode_rgb(self.__video_color_mode):
             filename = 'loading_screen_color.npy'
-        loading_screen_path = DirectoryUtils().root_dir + '/' + filename
+        loading_screen_path = DirectoryUtils().root_dir + '/' + filename  # pyright: ignore[reportOptionalOperand]
         self.play_frame(np.load(loading_screen_path))
 
     def can_multiple_driver_instances_coexist(self):
@@ -154,27 +154,27 @@ class LedFramePlayer(FramePlayerBase):
                 gamma_index = self.__gamma_controller.getGammaIndexForMonochromeFrame(frame)
 
             if self.__video_color_mode == VideoColorMode.COLOR_MODE_COLOR:
-                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, frame[:, :, 0])
-                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, frame[:, :, 1])
-                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, frame[:, :, 2])
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, frame[:, :, 0])  # pyright: ignore[reportArgumentType, reportCallIssue]
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, frame[:, :, 1])  # pyright: ignore[reportArgumentType, reportCallIssue]
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, frame[:, :, 2])  # pyright: ignore[reportArgumentType, reportCallIssue]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_R:
-                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_G:
-                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_B:
-                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_BW:
-                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])
-                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])
-                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_COLOR:
-                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - frame[:, :, 0])
-                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - frame[:, :, 1])
-                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - frame[:, :, 2])
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curve, 255 - frame[:, :, 0])  # pyright: ignore[reportArgumentType, reportCallIssue]
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curve, 255 - frame[:, :, 1])  # pyright: ignore[reportArgumentType, reportCallIssue]
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curve, 255 - frame[:, :, 2])  # pyright: ignore[reportArgumentType, reportCallIssue]
             elif self.__video_color_mode == VideoColorMode.COLOR_MODE_INVERT_BW:
-                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - frame[:, :])
-                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - frame[:, :])
-                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - frame[:, :])
+                transformed_frame[:, :, 0] = np.take(self.__scale_red_gamma_curves[gamma_index], 255 - frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
+                transformed_frame[:, :, 1] = np.take(self.__scale_green_gamma_curves[gamma_index], 255 - frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
+                transformed_frame[:, :, 2] = np.take(self.__scale_blue_gamma_curves[gamma_index], 255 - frame[:, :])  # pyright: ignore[reportOptionalSubscript, reportPossiblyUnboundVariable]
             else:
                 raise Exception(f'Unexpected color mode: {self.__video_color_mode}.')
         else:
