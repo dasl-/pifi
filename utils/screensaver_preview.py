@@ -4,7 +4,6 @@ import argparse
 import os
 import sys
 import time
-import signal
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -54,10 +53,20 @@ class TerminalFramePlayer(FramePlayerBase):
         self._start_time = time.time()
         self._current_frame = None
 
+    def __enter__(self):
         # Hide cursor and clear screen
         sys.stdout.write('\033[?25l')  # Hide cursor
         sys.stdout.write('\033[2J')     # Clear screen
         sys.stdout.flush()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Restore terminal state
+        sys.stdout.write('\033[0m')     # Reset colors
+        sys.stdout.write('\033[?25h')   # Show cursor
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        return False  # don't suppress exceptions
 
     def play_frame(self, frame):
         """Render a frame to the terminal."""
@@ -114,13 +123,6 @@ class TerminalFramePlayer(FramePlayerBase):
             output.append(f'\033[0mFrame: {self._frame_count} | FPS: {fps:.1f} | Press Ctrl+C to exit')
 
         sys.stdout.write(''.join(output))
-        sys.stdout.flush()
-
-    def cleanup(self):
-        """Restore terminal state."""
-        sys.stdout.write('\033[0m')     # Reset colors
-        sys.stdout.write('\033[?25h')   # Show cursor
-        sys.stdout.write('\n')
         sys.stdout.flush()
 
 
@@ -352,17 +354,6 @@ Config values are auto-detected as int, float, bool, or string.
     from pifi.config import Config
     Config.set('screensavers.transitions.duration', args.transition_duration)
 
-    # Create terminal frame player
-    frame_player = TerminalFramePlayer(args.width, args.height, args.scale)
-
-    # Handle Ctrl+C gracefully
-    def signal_handler(sig, frame):
-        frame_player.cleanup()
-        print("\nExited.")
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
-
     # Build screensaver list
     if args.all:
         screensaver_names = [s[0] for s in SCREENSAVER_REGISTRY]
@@ -370,26 +361,22 @@ Config values are auto-detected as int, float, bool, or string.
         screensaver_names = args.screensavers
 
     try:
-        if len(screensaver_names) == 1 and not args.all:
-            # Single screensaver — simple mode
-            screensaver = get_screensaver(screensaver_names[0], frame_player)
-            print(f"Starting {screensaver_names[0]} ({args.width}x{args.height})...")
-            time.sleep(1)
-            screensaver.play()
-        else:
-            # Multiple screensavers with transitions
-            run_sequence(screensaver_names, frame_player, args)
-
+        with TerminalFramePlayer(args.width, args.height, args.scale) as frame_player:
+            if len(screensaver_names) == 1 and not args.all:
+                # Single screensaver — simple mode
+                screensaver = get_screensaver(screensaver_names[0], frame_player)
+                print(f"Starting {screensaver_names[0]} ({args.width}x{args.height})...")
+                time.sleep(1)
+                screensaver.play()
+            else:
+                # Multiple screensavers with transitions
+                run_sequence(screensaver_names, frame_player, args)
+    except KeyboardInterrupt:
+        print("\nExited.")
+        return 0
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
-
-    except Exception as e:
-        frame_player.cleanup()
-        raise
-
-    finally:
-        frame_player.cleanup()
 
     return 0
 
