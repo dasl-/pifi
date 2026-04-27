@@ -158,7 +158,6 @@
         // Per-screensaver configuration.
         // Each screensaver has its own stanza with configurable options.
         "configs": {
-            // Displays synced lyrics for music playing via AirPlay (shairport-sync).
             "airplay_karaoke": {
     
                 // Optional, string, default: "/tmp/shairport-sync-metadata".
@@ -173,7 +172,6 @@
                 "pulse_lyrics": true,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "aurora": {
     
                 // Optional, integer, default: 4. Number of aurora curtains.
@@ -194,7 +192,6 @@
 
             "blueprint": {},
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "boids": {
     
                 // Optional, integer, default: 15. Number of boids in the simulation.
@@ -224,7 +221,6 @@
 
             "colorfield": {},
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "cosmic_dream": {
     
                 // Optional, integer, default: 20. Number of particles in the flow field.
@@ -240,7 +236,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "cyclic_automaton": {
     
                 // Optional, float, default: 0.07. How long to sleep between ticks, in seconds,
@@ -314,7 +309,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "game_of_life": {
     
                 // Optional, float in range: [0,1], default: 0.3333. How likely each pixel is to be alive (on)
@@ -396,7 +390,6 @@
 
             "lenia": {},
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "lorenz": {
     
                 // Optional, float, default: 10.0. Lorenz sigma parameter.
@@ -424,7 +417,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "mandelbrot": {
     
                 // Optional, integer, default: 100. Maximum iterations for escape calculation.
@@ -443,7 +435,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "matrix_rain": {
     
                 // Optional, float, default: 0.2. Minimum drop fall speed.
@@ -472,7 +463,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "melting_clock": {
     
                 // Optional, boolean, default: false. Whether to show seconds (HH:MM:SS vs HH:MM).
@@ -503,7 +493,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "metaballs": {
     
                 // Optional, integer, default: 5. Number of metaballs.
@@ -528,7 +517,6 @@
 
             "noise_gradient": {},
 
-            // Requires nyct-gtfs library: pip install nyct-gtfs
             "nyc_subway": {
     
                 // Optional, array of strings, default: ["127N", "127S"].
@@ -625,7 +613,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "shadebobs": {
     
                 // Optional, integer, default: 5. Number of bobs (glowing circles).
@@ -638,7 +625,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Displays synced lyrics for music playing on Sonos speakers.
             "sonos_karaoke": {
     
                 // Optional, string, default: null. Name of Sonos speaker to use.
@@ -657,7 +643,6 @@
                 "pulse_lyrics": true,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "spirograph": {
     
                 // Optional, integer, default: 500. Number of points in the trail.
@@ -673,7 +658,6 @@
                 "tick_sleep": 0.02,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "starfield": {
     
                 // Optional, integer, default: 80. Number of stars.
@@ -745,7 +729,6 @@
                 "tick_sleep": 0.05,
             },
 
-            // Plays saved video files from the data/screensavers directory.
             "video_screensaver": {
 
                 // Optional, array, default: []. Videos that may be cycled through as screensavers.
@@ -759,7 +742,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Optional. This whole stanza is optional because none of the keys within it are required.
             "wave_interference": {
     
                 // Optional, integer, default: 4. Number of wave sources.
@@ -782,7 +764,6 @@
                 "tick_sleep": 0.03,
             },
 
-            // Shows current track, artist, and show name from WFMU streams.
             "wfmu": {
     
                 // Optional, string, default: "wfmu". Which WFMU stream to display.

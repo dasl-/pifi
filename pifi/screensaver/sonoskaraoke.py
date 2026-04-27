@@ -251,4 +251,4 @@ class SonosKaraoke(KaraokeBase):
 
     @classmethod
     def get_description(cls) -> str:
-        return 'Synced lyrics display for Sonos playback'
+        return 'Displays synced lyrics for music playing on Sonos speakers.'
