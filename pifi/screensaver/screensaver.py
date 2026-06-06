@@ -114,7 +114,7 @@ class Screensaver(ABC):
         self._led_frame_player = self.__black_hole_frame_player
         try:
             self.setup()
-            alive = self._tick() is not False  # pyright: ignore[reportUnnecessaryComparison]
+            alive = self._tick() is not False
             if alive:
                 self.__last_tick += 1
             return self.__black_hole_frame_player.get_current_frame(), alive
@@ -139,7 +139,7 @@ class Screensaver(ABC):
 
         try:
             while not self._is_past_timeout():
-                if self._tick() is False:  # pyright: ignore[reportUnnecessaryComparison]
+                if self._tick() is False:
                     break
                 time.sleep(self.get_tick_sleep())
                 self.__last_tick += 1
@@ -159,7 +159,7 @@ class Screensaver(ABC):
         pass
 
     @abstractmethod
-    def _tick(self) -> None:
+    def _tick(self) -> bool | None:
         """Called each iteration of the tick loop.
 
         Return False to stop the loop early. Any other return value

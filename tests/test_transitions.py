@@ -65,7 +65,7 @@ class _FailingTickScreensaver(Screensaver):
         super().__init__(led_frame_player)
         self._fail_after = fail_after
 
-    def _tick(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def _tick(self):
         if self.get_last_tick() >= self._fail_after:
             return False
         _render_frame(self)
