@@ -161,6 +161,15 @@ installLedDriverRgbMatrix(){
     local clone_dir venv_python
     clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
     venv_python="$BASE_DIR/.venv/bin/python"
+
+    # The binding is built from .pyx (Cython) sources — upstream ships no
+    # generated C++ — so Cython must be importable by the venv interpreter we
+    # build against. Pull it into the venv from the lock-pinned rgbmatrix-build
+    # group (only the rgbmatrix path needs it). The system has python3-dev's job
+    # covered by the managed Python's bundled headers.
+    info "Adding the rgbmatrix build toolchain (Cython) to the venv..."
+    ( cd "$BASE_DIR" && uv sync --frozen --managed-python --group rgbmatrix-build )
+
     if [ -d "$clone_dir" ]; then
         info "Pulling repo in $clone_dir ..."
         pushd "$clone_dir"
@@ -177,6 +186,11 @@ installLedDriverRgbMatrix(){
     make build-python PYTHON="$venv_python"
     make install-python PYTHON="$venv_python"
     popd
+
+    # Fail loudly here if the binding didn't actually build/install, rather than
+    # only discovering it when the queue first tries to drive the matrix.
+    info "Verifying the rgbmatrix binding imports..."
+    "$venv_python" -c 'import rgbmatrix'
 }
 
 configureLedDriverWs2812b(){

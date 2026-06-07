@@ -27,6 +27,10 @@ ws2812b = ["rpi-ws281x"]
 [dependency-groups]
 # Dev tooling — never shipped to the Pi runtime.
 dev = ["pyright==1.1.409", "pytest"]
+# Build-time only: rgbmatrix's Python binding is .pyx (Cython) sources with no
+# shipped C++, so it must be cythonized at build time. Synced into the venv only
+# on the rgbmatrix path (installLedDriverRgbMatrix); apa102/ws2812b don't need it.
+rgbmatrix-build = ["cython"]
 
 [tool.uv]
 # pifi is run in-place via the bin/ scripts (which add the repo root to
