@@ -39,30 +39,36 @@ updateAndInstallPackages(){
     # SDL/OpenBLAS. What's left:
     #   git: clone rpi-rgb-led-matrix; uv builds simpleaudio from a git URL.
     #   python3-pip: bootstraps uv (setupUv).
-    #   build-essential, python3-dev, libasound2-dev: compile the source-built
-    #     extensions in the venv — simpleaudio (git, links ALSA) and, for the
-    #     ws2812b driver, rpi-ws281x (sdist). NOTE: rgbmatrix's `make
-    #     build-python` may additionally need cython3 — add it here if that
-    #     fails on a Pi.
+    #   build-essential, libasound2-dev: compile the source-built extensions in
+    #     the venv — simpleaudio (git, links ALSA) and, for the ws2812b driver,
+    #     rpi-ws281x (sdist). They build against the uv-managed Python's bundled
+    #     headers (setupVenv), so the system python3-dev isn't needed. NOTE:
+    #     rgbmatrix's `make build-python` may additionally need cython3 — add it
+    #     (or python3-dev) here if a source build fails on a Pi.
     #   ffmpeg: video processing/playback. sqlite3: DB CLI. mbuffer: video
     #     streaming buffer. parallel: update_yt-dlp.sh.
-    sudo apt -y install git python3-pip build-essential python3-dev libasound2-dev \
+    sudo apt -y install git python3-pip build-essential libasound2-dev \
         ffmpeg sqlite3 mbuffer parallel
     sudo apt -y full-upgrade
 }
 
 # Build the pifi virtualenv (.venv) from uv.lock — the same single source the
-# dev env uses. Pinned (--frozen), built on the system python3 (the Pi runs
-# 3.13) so the source-built extensions (simpleaudio, rpi-ws281x) compile against
-# the running interpreter's headers and we don't download a second python.
+# dev env uses. Pinned (--frozen). --managed-python makes uv use (downloading if
+# needed) its own CPython matching .python-version / requires-python (3.13),
+# independent of whatever python the base OS ships — so the install isn't tied
+# to the Pi running a particular system python. The source-built extensions
+# (simpleaudio, rpi-ws281x) compile against that managed python's bundled
+# headers, which is why the system python3-dev isn't needed.
 # Installs runtime deps + the dev group (pyright/pytest); the LED-driver extra
 # is added later by installLedDriver. pifi itself is not installed as a package
 # ([tool.uv] package = false) — the bin/ scripts run it in-place via sys.path.
-# Run unprivileged so .venv is owned by the repo user; the (root) systemd
-# services just execute .venv/bin/python, which root can read fine.
+# Run unprivileged so .venv (and uv's managed python) are owned by the repo
+# user; the (root) systemd services just execute .venv/bin/python, which root
+# can read fine. Kept separate from the root-owned /opt/uv python that yt-dlp
+# uses (setupUv), per https://github.com/astral-sh/uv/issues/11360.
 setupVenv(){
     info "\\nCreating the pifi virtualenv (.venv) from uv.lock..."
-    ( cd "$BASE_DIR" && uv sync --frozen --python "$(command -v python3)" )
+    ( cd "$BASE_DIR" && uv sync --frozen --managed-python )
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
@@ -143,7 +149,7 @@ installLedDriver(){
 # and dev group; it just adds the extra's packages.
 syncLedExtra(){
     info "Installing the '$1' LED-driver extra into the venv..."
-    ( cd "$BASE_DIR" && uv sync --frozen --python "$(command -v python3)" --extra "$1" )
+    ( cd "$BASE_DIR" && uv sync --frozen --managed-python --extra "$1" )
 }
 
 # e.g. https://www.adafruit.com/product/2276
