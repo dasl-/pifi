@@ -1,3 +1,24 @@
+### Python development environment
+
+pifi's Python dependencies are managed with [uv](https://docs.astral.sh/uv/),
+pinned by `pyproject.toml` / `uv.lock`. Set up a local dev environment once:
+
+1. Install uv: https://docs.astral.sh/uv/getting-started/installation/
+2. Create the virtualenv (`.venv`) with all runtime + dev dependencies:
+   `./install/install_dev_dependencies.sh` (this just runs `uv sync`).
+
+Then run pifi commands and tooling through the venv with `uv run`:
+
+```
+uv run ./bin/server      # run a pifi entrypoint
+uv run pytest tests/     # run the test suite (see ../tests/README.md)
+uv run pyright           # type-check; enforced by tests/test_pyright.py
+```
+
+`uv run` puts `.venv` first on PATH, so scripts that shell out to `python3`
+use the venv interpreter too. To reconcile the pyright suppression baseline
+after type changes: `uv run utils/pyright_suppress.py`.
+
 ### Setting up sublime via rmate:
 1. `sudo wget -O /usr/local/bin/subl https://raw.github.com/aurora/rmate/master/rmate`
 1. `sudo chmod a+x /usr/local/bin/subl`
