@@ -10,18 +10,13 @@ CONFIG='/boot/firmware/config.txt'
 main(){
     trap 'fail $? $LINENO' ERR
 
-    # Resolve the LED driver once: installPythonDeps needs it to pick the
-    # hardware extra, and installLedDriver needs it for the hardware setup.
-    local led_driver
-    led_driver=$("$BASE_DIR"/utils/get_config_value --keys leds.driver)
-
     updateAndInstallPackages
     installDeno
     setupUv
-    installPythonDeps "$led_driver"
+    setupVenv
     installYtDlp
     enableSpi
-    installLedDriver "$led_driver"
+    installLedDriver
     installNode
 
     if [ -f $RESTART_REQUIRED_FILE ]; then
@@ -38,71 +33,40 @@ updateAndInstallPackages(){
 
     sudo apt update
 
+    # These are system libraries and build tooling, NOT Python packages —
+    # pifi's Python dependencies live in pyproject.toml / uv.lock and are
+    # installed into a venv by setupVenv. We deliberately no longer apt-install
+    # python3-numpy / python3-requests / python3-pil; those come from PyPI
+    # wheels in the venv now (prebuilt aarch64 wheels, no compilation).
+    #
     # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
     #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
-    # libsdl2-mixer: needed for pygame
-    #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
-    # libsdl2-dev: needed for pygame
-    #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
-    # parallel: needed for update_yt-dlp.sh script
-    #
-    # The apt-provided Python packages (python3-numpy / python3-requests /
-    # python3-pil) come from [tool.pifi] apt-provided in pyproject.toml — the
-    # same single source the rest of the install reads. We use apt for these
-    # (prebuilt, distro BLAS) and exclude them from the uv install below.
-    # python3-pil is also needed for the rgb-matrix LED driver and karaoke
-    # album-art processing.
-    local apt_provided
-    mapfile -t apt_provided < <(aptProvided apt)
+    # libsdl2-mixer / libsdl2-dev: historically for building pygame.
+    # libopenblas-dev: historically for building numpy.
+    #   (Both pygame and numpy now install as prebuilt wheels that bundle their
+    #   own SDL / OpenBLAS, so these may be removable — kept pending Pi testing.)
+    # parallel: needed for update_yt-dlp.sh script.
+    # build-dep python3-pygame: pulls the C toolchain + headers (gcc, python3-dev,
+    #   ALSA, etc.) that the source-built extensions still need — simpleaudio
+    #   (installed from git) and rpi-ws281x (sdist only) compile on the Pi.
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev "${apt_provided[@]}"
-    sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
+        libopenblas-dev
+    sudo apt -y build-dep python3-pygame # toolchain/headers for the source-built python extensions
     sudo apt -y full-upgrade
 }
 
-# Read the [tool.pifi] apt-provided table from pyproject.toml — our single
-# source for the "these come from apt, not pip" exception. With arg "pip" echo
-# the pip/PyPI names (keys); with "apt" echo the Debian package names (values),
-# one per line. tomllib is stdlib on the Pi's Python 3.13.
-aptProvided(){
-    python3 - "$BASE_DIR/pyproject.toml" "$1" <<'PY'
-import sys, tomllib
-with open(sys.argv[1], 'rb') as f:
-    mapping = tomllib.load(f)['tool']['pifi']['apt-provided']
-print('\n'.join(mapping.keys() if sys.argv[2] == 'pip' else mapping.values()))
-PY
-}
-
-# Install pifi's Python dependencies into the system interpreter, pinned by
-# uv.lock (--frozen). Single-sourced from pyproject.toml:
-#   - runtime deps, minus the apt-provided ones (--no-emit-package), which are
-#     already installed by apt above and must stay the distro builds;
-#   - the dev group (pyright/pytest — invoked by humans over SSH, never by
-#     runtime code), so the Pi gets the same pinned tools as the dev box;
-#   - the LED-driver extra selected by leds.driver (apa102 / ws2812b). rgbmatrix
-#     has no pip package — it's a source build in installLedDriverRgbMatrix.
-# pifi runs in-place via the bin/ scripts under the system python3, so we
-# install there (PIP_BREAK_SYSTEM_PACKAGES) rather than into a venv.
-installPythonDeps(){
-    local led_driver=$1
-    info "\\nInstalling Python dependencies (pinned by uv.lock)..."
-
-    local export_args=(export --frozen --no-hashes --no-emit-project --group dev)
-    case $led_driver in
-        apa102)   export_args+=(--extra apa102) ;;
-        ws2812b)  export_args+=(--extra ws2812b) ;;
-    esac
-
-    local pkg
-    while IFS= read -r pkg; do
-        [ -n "$pkg" ] && export_args+=(--no-emit-package "$pkg")
-    done < <(aptProvided pip)
-
-    local reqs
-    reqs="$(mktemp)"
-    ( cd "$BASE_DIR" && uv "${export_args[@]}" -o "$reqs" )
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade -r "$reqs"
-    rm -f "$reqs"
+# Build the pifi virtualenv (.venv) from uv.lock — the same single source the
+# dev env uses. Pinned (--frozen), built on the system python3 (the Pi runs
+# 3.13) so the source-built extensions (simpleaudio, rpi-ws281x) compile against
+# the running interpreter's headers and we don't download a second python.
+# Installs runtime deps + the dev group (pyright/pytest); the LED-driver extra
+# is added later by installLedDriver. pifi itself is not installed as a package
+# ([tool.uv] package = false) — the bin/ scripts run it in-place via sys.path.
+# Run unprivileged so .venv is owned by the repo user; the (root) systemd
+# services just execute .venv/bin/python, which root can read fine.
+setupVenv(){
+    info "\\nCreating the pifi virtualenv (.venv) from uv.lock..."
+    ( cd "$BASE_DIR" && uv sync --frozen --python "$(command -v python3)" )
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
@@ -128,9 +92,9 @@ installDeno(){
 setupUv(){
     info "\\nSetting up uv..."
 
-    # uv is an install-time tool (used just below and by installPythonDeps), not
-    # a pifi runtime dependency, so it's installed directly with pip rather than
-    # listed in pyproject.toml.
+    # uv is an install-time tool (used just below, by setupVenv, and by the
+    # yt-dlp update cron), not a pifi runtime dependency, so it's installed
+    # directly with pip rather than listed in pyproject.toml.
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade uv
 
     sudo mkdir --parents /opt/uv/python /opt/uv/python-bin /opt/uv/tools /opt/uv/tools-bin
@@ -162,25 +126,37 @@ enableSpi(){
 }
 
 installLedDriver(){
-    local led_driver=$1
-    info "Installing LED driver..."
-    # The pip-installable drivers (apa102, ws2812b) are installed from their
-    # extra by installPythonDeps. What's left here is the hardware-side setup:
-    # rgbmatrix's source build, and ws2812b's SPI/clock tuning.
+    info "\\nInstalling LED driver..."
+    # Read the driver via the venv python (setupVenv has run, so pifi's config
+    # deps are available). apa102 / ws2812b ship as pip extras and just need
+    # their package synced into the venv; ws2812b additionally needs SPI/clock
+    # tuning. rgbmatrix has no pip package — it's a source build into the venv.
+    local led_driver
+    led_driver=$("$BASE_DIR"/.venv/bin/python "$BASE_DIR"/utils/get_config_value --keys leds.driver)
+    info "Configured LED driver: $led_driver"
     case $led_driver in
-        apa102)     info "apa102 driver installed from the apa102 extra (see installPythonDeps)." ;;
+        apa102)     syncLedExtra apa102 ;;
+        ws2812b)    syncLedExtra ws2812b; configureLedDriverWs2812b ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;
-        ws2812b)    configureLedDriverWs2812b ;;
         *)          die "Unsupported LED driver: $led_driver" ;;
     esac
+}
+
+# Add an LED-driver extra (apa102 / ws2812b) from pyproject's optional
+# dependencies into the venv, pinned by the lock. uv sync keeps the base deps
+# and dev group; it just adds the extra's packages.
+syncLedExtra(){
+    info "Installing the '$1' LED-driver extra into the venv..."
+    ( cd "$BASE_DIR" && uv sync --frozen --python "$(command -v python3)" --extra "$1" )
 }
 
 # e.g. https://www.adafruit.com/product/2276
 installLedDriverRgbMatrix(){
     info "Installing LED driver RGB Matrix..."
 
-    local clone_dir
+    local clone_dir venv_python
     clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
+    venv_python="$BASE_DIR/.venv/bin/python"
     if [ -d "$clone_dir" ]; then
         info "Pulling repo in $clone_dir ..."
         pushd "$clone_dir"
@@ -191,8 +167,11 @@ installLedDriverRgbMatrix(){
         pushd "$clone_dir"
     fi
 
-    make build-python PYTHON="$(command -v python3)"
-    sudo make install-python PYTHON="$(command -v python3)"
+    # Build and install the python binding into the venv (no sudo — the venv is
+    # owned by the repo user). rgbmatrix has no PyPI package, so it lives in the
+    # venv alongside the lock-managed deps rather than being apt/pip-installed.
+    make build-python PYTHON="$venv_python"
+    make install-python PYTHON="$venv_python"
     popd
 }
 

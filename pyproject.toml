@@ -3,8 +3,6 @@ name = "pifi"
 version = "0.0.0"
 requires-python = "==3.13.*"
 dependencies = [
-    # numpy / requests / pillow are listed here so the dev environment and
-    # pyright resolve them, but on the Pi they come from apt (see [tool.pifi]).
     "numpy",
     "requests",
     "pillow",
@@ -28,13 +26,6 @@ ws2812b = ["rpi-ws281x"]
 [dependency-groups]
 # Dev tooling — never shipped to the Pi runtime.
 dev = ["pyright==1.1.409", "pytest"]
-
-[tool.pifi]
-# On the Pi these come from apt (prebuilt, distro BLAS), not pip. The Pi
-# installer apt-installs the values and excludes the keys from the uv install,
-# so each package name still appears exactly once in this single source. Keys
-# are the pip/PyPI names; values are the Debian/apt package names.
-apt-provided = { numpy = "python3-numpy", requests = "python3-requests", pillow = "python3-pil" }
 
 [tool.uv]
 # pifi is run in-place via the bin/ scripts (which add the repo root to

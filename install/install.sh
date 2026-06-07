@@ -9,6 +9,10 @@ old_config=$(cat $CONFIG)
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 HOSTNAME=''
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
+# The venv built by install_dependencies.sh (run first). The util scripts below
+# import pifi's deps, so they must run under the venv interpreter rather than
+# the installer shell's system python.
+VENV_PYTHON="$BASE_DIR/.venv/bin/python"
 
 usage() {
     local exit_code=$1
@@ -78,8 +82,8 @@ parseOpts(){
 
 generateLoadingScreens(){
     info "Generating loading screens"
-    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
-    "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --output-file "$BASE_DIR"/loading_screen --color-mode color
+    "$VENV_PYTHON" "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_monochrome.jpg --output-file "$BASE_DIR"/loading_screen --color-mode monochrome
+    "$VENV_PYTHON" "$BASE_DIR"/utils/img_to_led --image "$BASE_DIR"/utils/loading_screen_color.jpg --output-file "$BASE_DIR"/loading_screen --color-mode color
 }
 
 setTimezone(){
@@ -109,7 +113,7 @@ setupYtDlpUpdateCron(){
 
 updateDbSchema(){
     info "Updating DB schema (if necessary)..."
-    sudo "$BASE_DIR"/utils/make_db
+    sudo "$VENV_PYTHON" "$BASE_DIR"/utils/make_db
 }
 
 buildWebApp(){
@@ -201,7 +205,7 @@ setAvoidWarnings(){
 checkYoutubeApiKey(){
     info "Checking for youtube API key..."
     local youtube_api_key
-    youtube_api_key=$("$BASE_DIR"/utils/youtube_api_key)
+    youtube_api_key=$("$VENV_PYTHON" "$BASE_DIR"/utils/youtube_api_key)
     if [ -z "${youtube_api_key}" ]; then
         warn "WARNING: your youtube API key has not been set. See: https://github.com/dasl-/pifi/blob/main/docs/setting_your_youtube_api_key.adoc"
     else
