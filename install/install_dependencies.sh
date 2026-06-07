@@ -43,8 +43,10 @@ updateAndInstallPackages(){
     #     the venv — simpleaudio (git, links ALSA) and, for the ws2812b driver,
     #     rpi-ws281x (sdist). They build against the uv-managed Python's bundled
     #     headers (setupVenv), so the system python3-dev isn't needed. NOTE:
-    #     rgbmatrix's `make build-python` may additionally need cython3 — add it
-    #     (or python3-dev) here if a source build fails on a Pi.
+    #     rgbmatrix's `make build-python` may additionally need Cython. Since it
+    #     builds against the venv interpreter (not system python3), add Cython to
+    #     the venv (e.g. as a pyproject build dep) rather than apt cython3 if a
+    #     source build fails on a Pi.
     #   ffmpeg: video processing/playback. sqlite3: DB CLI. mbuffer: video
     #     streaming buffer. parallel: update_yt-dlp.sh.
     sudo apt -y install git python3-pip build-essential libasound2-dev \
