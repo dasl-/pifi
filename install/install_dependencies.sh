@@ -7,19 +7,21 @@ RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 # OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
 CONFIG='/boot/firmware/config.txt'
 
-# shellcheck source=_lib.sh
-source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/_lib.sh"
-
 main(){
     trap 'fail $? $LINENO' ERR
+
+    # Resolve the LED driver once: installPythonDeps needs it to pick the
+    # hardware extra, and installLedDriver needs it for the hardware setup.
+    local led_driver
+    led_driver=$("$BASE_DIR"/utils/get_config_value --keys leds.driver)
 
     updateAndInstallPackages
     installDeno
     setupUv
+    installPythonDeps "$led_driver"
     installYtDlp
-    installDevTools
     enableSpi
-    installLedDriver
+    installLedDriver "$led_driver"
     installNode
 
     if [ -f $RESTART_REQUIRED_FILE ]; then
@@ -43,31 +45,64 @@ updateAndInstallPackages(){
     # libsdl2-dev: needed for pygame
     #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
     # parallel: needed for update_yt-dlp.sh script
-    # python3-pil: needed for rgb-matrix LED driver. Also needed for processing album art in karaoke screensavers.
+    #
+    # The apt-provided Python packages (python3-numpy / python3-requests /
+    # python3-pil) come from [tool.pifi] apt-provided in pyproject.toml — the
+    # same single source the rest of the install reads. We use apt for these
+    # (prebuilt, distro BLAS) and exclude them from the uv install below.
+    # python3-pil is also needed for the rgb-matrix LED driver and karaoke
+    # album-art processing.
+    local apt_provided
+    mapfile -t apt_provided < <(aptProvided apt)
     sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev python3-numpy python3-requests python3-pil
+        libopenblas-dev "${apt_provided[@]}"
     sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
     sudo apt -y full-upgrade
+}
 
-    # --ignore-installed: Ensure pip doesn’t try to uninstall the apt-owned one. Without this flag, you may get an error:
-    #    https://gist.github.com/dasl-/77d8575765c4dca37604f5145e0b0192#file-gistfile1-txt-L141
-    #
-    # typing-extensions: used by syncedlyrics
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade --ignore-installed typing-extensions
+# Read the [tool.pifi] apt-provided table from pyproject.toml — our single
+# source for the "these come from apt, not pip" exception. With arg "pip" echo
+# the pip/PyPI names (keys); with "apt" echo the Debian package names (values),
+# one per line. tomllib is stdlib on the Pi's Python 3.13.
+aptProvided(){
+    python3 - "$BASE_DIR/pyproject.toml" "$1" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], 'rb') as f:
+    mapping = tomllib.load(f)['tool']['pifi']['apt-provided']
+print('\n'.join(mapping.keys() if sys.argv[2] == 'pip' else mapping.values()))
+PY
+}
 
-    # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
-    # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
-    #
-    # Core packages:
-    #   pytz, websockets, pygame, pyjson5, simpleaudio, uv
-    # Screensaver packages:
-    #   soco - Sonos speaker control (for SonosKaraoke)
-    #   syncedlyrics - Lyrics fetching with timestamps (for SonosKaraoke)
-    #   underground - MTA GTFS-realtime feed (for NycSubway)
-    #   requests - HTTP requests (for NycSubway, WFMU)
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
-        git+https://github.com/cexen/py-simple-audio.git uv \
-        soco syncedlyrics underground
+# Install pifi's Python dependencies into the system interpreter, pinned by
+# uv.lock (--frozen). Single-sourced from pyproject.toml:
+#   - runtime deps, minus the apt-provided ones (--no-emit-package), which are
+#     already installed by apt above and must stay the distro builds;
+#   - the dev group (pyright/pytest — invoked by humans over SSH, never by
+#     runtime code), so the Pi gets the same pinned tools as the dev box;
+#   - the LED-driver extra selected by leds.driver (apa102 / ws2812b). rgbmatrix
+#     has no pip package — it's a source build in installLedDriverRgbMatrix.
+# pifi runs in-place via the bin/ scripts under the system python3, so we
+# install there (PIP_BREAK_SYSTEM_PACKAGES) rather than into a venv.
+installPythonDeps(){
+    local led_driver=$1
+    info "\\nInstalling Python dependencies (pinned by uv.lock)..."
+
+    local export_args=(export --frozen --no-hashes --no-emit-project --group dev)
+    case $led_driver in
+        apa102)   export_args+=(--extra apa102) ;;
+        ws2812b)  export_args+=(--extra ws2812b) ;;
+    esac
+
+    local pkg
+    while IFS= read -r pkg; do
+        [ -n "$pkg" ] && export_args+=(--no-emit-package "$pkg")
+    done < <(aptProvided pip)
+
+    local reqs
+    reqs="$(mktemp)"
+    ( cd "$BASE_DIR" && uv "${export_args[@]}" -o "$reqs" )
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade -r "$reqs"
+    rm -f "$reqs"
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
@@ -93,6 +128,11 @@ installDeno(){
 setupUv(){
     info "\\nSetting up uv..."
 
+    # uv is an install-time tool (used just below and by installPythonDeps), not
+    # a pifi runtime dependency, so it's installed directly with pip rather than
+    # listed in pyproject.toml.
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade uv
+
     sudo mkdir --parents /opt/uv/python /opt/uv/python-bin /opt/uv/tools /opt/uv/tools-bin
 
     # Install a version of python that is supported by the latest version of yt-dlp
@@ -110,8 +150,6 @@ installYtDlp(){
     "$BASE_DIR"/utils/update_yt-dlp.sh
 }
 
-# installDevTools is defined in _lib.sh, sourced above.
-
 enableSpi(){
     if [ "$(sudo raspi-config nonint get_spi)" = "1" ]; then
         info "Enabling SPI..."
@@ -124,20 +162,17 @@ enableSpi(){
 }
 
 installLedDriver(){
+    local led_driver=$1
     info "Installing LED driver..."
-    local led_driver
-    led_driver=$("$BASE_DIR"/utils/get_config_value --keys leds.driver)
+    # The pip-installable drivers (apa102, ws2812b) are installed from their
+    # extra by installPythonDeps. What's left here is the hardware-side setup:
+    # rgbmatrix's source build, and ws2812b's SPI/clock tuning.
     case $led_driver in
-        apa102)     installLedDriverApa102 ;;
+        apa102)     info "apa102 driver installed from the apa102 extra (see installPythonDeps)." ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;
-        ws2812b)    installLedDriverWs2812b ;;
+        ws2812b)    configureLedDriverWs2812b ;;
         *)          die "Unsupported LED driver: $led_driver" ;;
     esac
-}
-
-installLedDriverApa102(){
-    info "Installing LED driver apa102..."
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade apa102-pi
 }
 
 # e.g. https://www.adafruit.com/product/2276
@@ -161,9 +196,8 @@ installLedDriverRgbMatrix(){
     popd
 }
 
-installLedDriverWs2812b(){
-    info "Installing LED driver ws2812b..."
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade rpi_ws281x
+configureLedDriverWs2812b(){
+    info "Configuring LED driver ws2812b... (the rpi-ws281x package is installed from the ws2812b extra)"
 
     # Set SPI buffer size.
     # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi

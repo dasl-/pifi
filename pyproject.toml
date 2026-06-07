@@ -31,10 +31,10 @@ dev = ["pyright==1.1.409", "pytest"]
 
 [tool.pifi]
 # On the Pi these come from apt (prebuilt, distro BLAS), not pip. The Pi
-# installer apt-installs them (python3-numpy / python3-requests / python3-pil)
-# and excludes them from the uv install. Listed here so the apt exception
-# lives in the same single source — each package name appears exactly once.
-apt-provided = ["numpy", "requests", "pillow"]
+# installer apt-installs the values and excludes the keys from the uv install,
+# so each package name still appears exactly once in this single source. Keys
+# are the pip/PyPI names; values are the Debian/apt package names.
+apt-provided = { numpy = "python3-numpy", requests = "python3-requests", pillow = "python3-pil" }
 
 [tool.uv]
 # pifi is run in-place via the bin/ scripts (which add the repo root to
