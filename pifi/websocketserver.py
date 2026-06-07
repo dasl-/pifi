@@ -2,7 +2,7 @@ import asyncio
 import subprocess
 import time  # pyright: ignore[reportUnusedImport]
 import traceback
-import websockets  # pyright: ignore[reportMissingImports]
+import websockets
 
 from pifi.logger import Logger
 from pifi.queue import Queue

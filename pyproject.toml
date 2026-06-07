@@ -13,6 +13,7 @@ dependencies = [
     "syncedlyrics",
     "underground",
     "typing-extensions",
+    "websockets",
     "simpleaudio @ git+https://github.com/cexen/py-simple-audio.git",
 ]
 
