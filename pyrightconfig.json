@@ -1,5 +1,7 @@
 {
     "include": ["pifi", "tests", "utils"],
+    "venvPath": ".",
+    "venv": ".venv",
     "typeCheckingMode": "standard",
     "reportUnusedVariable": "error",
     "reportUnusedImport": "error",

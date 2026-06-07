@@ -69,7 +69,7 @@ Options:
 print("trimming vgm...")
 vgm_trim_output = (subprocess
     .check_output(
-        DirectoryUtils().root_dir + '/utils/vgm_trim ' + shlex.quote(input_file) + ' 0 0 ' + str(loop_num_samples) + ' tmp_perfect_loop.vgm',  # pyright: ignore[reportOptionalOperand]
+        DirectoryUtils().root_dir + '/utils/vgm_trim ' + shlex.quote(input_file) + ' 0 0 ' + str(loop_num_samples) + ' tmp_perfect_loop.vgm',
         shell = True,
         executable = '/usr/bin/bash',
         stderr = subprocess.STDOUT
@@ -92,7 +92,7 @@ Options:
 print("converting vgm to wav ({})...".format(output_file))
 vgm2wav_output = (subprocess
     .check_output(
-        DirectoryUtils().root_dir + '/utils/vgm2wav --loop-count 1 tmp_perfect_loop.vgm ' + shlex.quote(output_file),  # pyright: ignore[reportOptionalOperand]
+        DirectoryUtils().root_dir + '/utils/vgm2wav --loop-count 1 tmp_perfect_loop.vgm ' + shlex.quote(output_file),
         shell = True,
         executable = '/usr/bin/bash',
         stderr = subprocess.STDOUT

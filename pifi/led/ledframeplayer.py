@@ -115,7 +115,7 @@ class LedFramePlayer(FramePlayerBase):
         filename = 'loading_screen_monochrome.npy'
         if VideoColorMode.is_color_mode_rgb(self.__video_color_mode):
             filename = 'loading_screen_color.npy'
-        loading_screen_path = DirectoryUtils().root_dir + '/' + filename  # pyright: ignore[reportOptionalOperand]
+        loading_screen_path = DirectoryUtils().root_dir + '/' + filename
         self.play_frame(np.load(loading_screen_path))
 
     def can_multiple_driver_instances_coexist(self):

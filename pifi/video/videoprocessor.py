@@ -123,7 +123,7 @@ class VideoProcessor:
         )
 
     def __get_data_directory(self):
-        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY  # pyright: ignore[reportOptionalOperand]
+        save_dir = DirectoryUtils().root_dir + '/' + self.__DATA_DIRECTORY
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
 
@@ -480,7 +480,7 @@ class VideoProcessor:
     def __update_yt_dlp(self):
         update_yt_dlp_output = (subprocess
             .check_output(
-                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',  # pyright: ignore[reportOperatorIssue]
+                'sudo ' + DirectoryUtils().root_dir + '/utils/update_yt-dlp.sh',
                 shell = True,
                 executable = '/usr/bin/bash',
                 stderr = subprocess.STDOUT

@@ -316,7 +316,7 @@ class PifiAPI():
 class PifiServerRequestHandler(BaseHTTPRequestHandler):
 
     def __init__(self, request, client_address, server):
-        self.__root_dir = DirectoryUtils().root_dir + "/app/build"  # pyright: ignore[reportOptionalOperand]
+        self.__root_dir = DirectoryUtils().root_dir + "/app/build"
         self.__api = PifiAPI()
         self.__logger = Logger().set_namespace(self.__class__.__name__)
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
@@ -430,13 +430,13 @@ class PifiServerRequestHandler(BaseHTTPRequestHandler):
             self.path = '/index.html'
 
         if self.path == '/snake' or self.path == '/snake/':
-            self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'  # pyright: ignore[reportOptionalOperand]
+            self.path = DirectoryUtils().root_dir + '/assets/snake/snake.html'
         elif self.path == '/pong' or self.path == '/pong/':
-            self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'  # pyright: ignore[reportOptionalOperand]
+            self.path = DirectoryUtils().root_dir + '/assets/pong/pong.html'
         elif self.path == '/settings' or self.path == '/settings/':
-            self.path = DirectoryUtils().root_dir + '/assets/settings/settings.html'  # pyright: ignore[reportOptionalOperand]
+            self.path = DirectoryUtils().root_dir + '/assets/settings/settings.html'
         elif self.path.startswith('/assets/'):
-            self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]  # pyright: ignore[reportOptionalOperand]
+            self.path = DirectoryUtils().root_dir + '/assets/' + self.path[len('/assets/'):]
         else:
             self.path = self.__root_dir + self.path
 

@@ -34,8 +34,8 @@ class Snake:
 
     __APPLE_COLOR_CHANGE_FREQ = 0.2
 
-    __VICTORY_SOUND_FILE = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
-    __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +  # pyright: ignore[reportOptionalOperand]
+    __VICTORY_SOUND_FILE = DirectoryUtils().root_dir + "/assets/snake/SFX_LEVEL_UP_40_pct_vol.wav"
+    __APPLE_SOUND = simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir +
         "/assets/snake/sfx_coin_double7_75_pct_vol.wav")
 
     # settings: dict shaped like return value of Snake.make_settings_from_playlist_item
@@ -66,7 +66,7 @@ class Snake:
             'radia_senki_reimei_hen_06_unknown_village_elfas.wav',
             'the_legend_of_zelda_links_awakening_04_mabe_village_loop.wav',
         ])
-        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))  # pyright: ignore[reportOptionalOperand]
+        self.__background_music = mixer.Sound(DirectoryUtils().root_dir + "/assets/snake/{}".format(background_music_file))
         self.__game_color_mode = GameColorHelper.determine_game_color_mode(Config.get('snake.game_color_mode'))
         self.__led_frame_player = LedFramePlayer()
 
@@ -234,7 +234,7 @@ class Snake:
         # Play snake death sound in multiplayer if any snakes were eliminated
         if len(eliminated_snakes) > 0 and self.__settings['num_players'] > 1:
             self.__last_eliminated_snake_sound = simpleaudio.WaveObject.from_wave_file(
-                DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()  # pyright: ignore[reportOptionalOperand]
+                DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav").play()
 
     def __is_game_over(self):
         if self.__settings['num_players'] > 1:
@@ -338,7 +338,7 @@ class Snake:
         self.__logger.info("game over. score: {}. Reason: {}".format(score, reason))
 
     def __do_scoring(self, score):
-        simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()  # pyright: ignore[reportOptionalOperand]
+        simpleaudio.WaveObject.from_wave_file(DirectoryUtils().root_dir + "/assets/snake/LOZ_Link_Die.wav").play()
         scores = Scores()
         is_high_score = scores.is_high_score(score, self.GAME_TITLE)
         score_id = scores.insert_score(score, self.GAME_TITLE)

@@ -22,13 +22,18 @@ class TestPyright(unittest.TestCase):
                 "pyright not installed — run install/install_dev_dependencies.sh"
             )
 
-        result = subprocess.run(
-            ['pyright'],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        try:
+            result = subprocess.run(
+                ['pyright'],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                # Generous: pyright is slow on a Pi's CPU (node startup + the
+                # whole tree), and we'd rather a slow run than a flaky timeout.
+                timeout=600,
+            )
+        except subprocess.TimeoutExpired:
+            self.fail("pyright timed out — it may just be slow on this machine; re-run or raise the timeout")
 
         if result.returncode != 0:
             self.fail(

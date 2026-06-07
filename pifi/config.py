@@ -8,8 +8,8 @@ from pifi.directoryutils import DirectoryUtils
 
 class Config:
 
-    CONFIG_PATH = DirectoryUtils().root_dir + '/config.json'  # pyright: ignore[reportOptionalOperand]
-    __DEFAULT_CONFIG_PATH = DirectoryUtils().root_dir + '/default_config.json'  # pyright: ignore[reportOptionalOperand]
+    CONFIG_PATH = DirectoryUtils().root_dir + '/config.json'
+    __DEFAULT_CONFIG_PATH = DirectoryUtils().root_dir + '/default_config.json'
 
     __is_loaded = False
     __config = {}
@@ -132,7 +132,7 @@ class Config:
     """
     @staticmethod
     def __merge_dicts(d1, d2):
-        for k, v in d2.items():  # pyright: ignore[reportUnusedVariable]
+        for k in d2:
             if (k in d1 and isinstance(d1[k], dict) and isinstance(d2[k], dict)):
                 Config.__merge_dicts(d1[k], d2[k])
             else:

@@ -241,12 +241,12 @@ class Queue:
             if self.__is_screensaver_enabled:
                 if should_play_sound:
                     simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"  # pyright: ignore[reportOptionalOperand]
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_HEAL_UP.wav"
                     ).play()
             else:
                 if should_play_sound:
                     simpleaudio.WaveObject.from_wave_file(
-                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"  # pyright: ignore[reportOptionalOperand]
+                        DirectoryUtils().root_dir + "/assets/pifi/SFX_TURN_OFF_PC.wav"
                     ).play()
                 if self.__is_screensaver_playing():
                     self.__stop_playback_if_playing()

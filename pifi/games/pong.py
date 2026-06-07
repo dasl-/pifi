@@ -64,10 +64,10 @@ class Pong:
         # Audio
         mixer.init(frequency=22050, buffer=512)
         self.__bounce_sound = simpleaudio.WaveObject.from_wave_file(
-            DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
+            DirectoryUtils().root_dir + "/assets/snake/sfx_coin_double7_75_pct_vol.wav"
         )
         self.__score_sound = simpleaudio.WaveObject.from_wave_file(
-            DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav"  # pyright: ignore[reportOptionalOperand]
+            DirectoryUtils().root_dir + "/assets/snake/sfx_sound_nagger1_50_pct_vol.wav"
         )
 
         self.__led_frame_player = LedFramePlayer()

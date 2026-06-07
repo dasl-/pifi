@@ -20,7 +20,7 @@ thread_local = threading.local()
 
 class Database:
 
-    __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'  # pyright: ignore[reportOptionalOperand]
+    __DB_PATH = DirectoryUtils().root_dir + '/pifi.db'
 
     # Zero indexed schema_version (first version is v0).
     __SCHEMA_VERSION = 4
