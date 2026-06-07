@@ -28,30 +28,26 @@ main(){
 updateAndInstallPackages(){
     info "Updating and installing packages..."
 
-    # Allow the command `sudo apt build-dep python3-pygame` to run.
-    sudo sed -i 's/^Types: deb\s*$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
-
     sudo apt update
 
-    # These are system libraries and build tooling, NOT Python packages —
-    # pifi's Python dependencies live in pyproject.toml / uv.lock and are
-    # installed into a venv by setupVenv. We deliberately no longer apt-install
-    # python3-numpy / python3-requests / python3-pil; those come from PyPI
-    # wheels in the venv now (prebuilt aarch64 wheels, no compilation).
-    #
-    # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
-    #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
-    # libsdl2-mixer / libsdl2-dev: historically for building pygame.
-    # libopenblas-dev: historically for building numpy.
-    #   (Both pygame and numpy now install as prebuilt wheels that bundle their
-    #   own SDL / OpenBLAS, so these may be removable — kept pending Pi testing.)
-    # parallel: needed for update_yt-dlp.sh script.
-    # build-dep python3-pygame: pulls the C toolchain + headers (gcc, python3-dev,
-    #   ALSA, etc.) that the source-built extensions still need — simpleaudio
-    #   (installed from git) and rpi-ws281x (sdist only) compile on the Pi.
-    sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev
-    sudo apt -y build-dep python3-pygame # toolchain/headers for the source-built python extensions
+    # System libraries + build tooling only — NOT Python packages. pifi's Python
+    # deps live in pyproject.toml / uv.lock and install into a venv (setupVenv).
+    # We no longer apt-install python3-numpy/requests/pil, and we dropped the SDL
+    # (libsdl2-*) and OpenBLAS (libopenblas-dev) dev libs plus the heavy
+    # `build-dep python3-pygame` (and the deb-src hack it needed): numpy/pillow/
+    # pygame now install as prebuilt aarch64 wheels that bundle their own
+    # SDL/OpenBLAS. What's left:
+    #   git: clone rpi-rgb-led-matrix; uv builds simpleaudio from a git URL.
+    #   python3-pip: bootstraps uv (setupUv).
+    #   build-essential, python3-dev, libasound2-dev: compile the source-built
+    #     extensions in the venv — simpleaudio (git, links ALSA) and, for the
+    #     ws2812b driver, rpi-ws281x (sdist). NOTE: rgbmatrix's `make
+    #     build-python` may additionally need cython3 — add it here if that
+    #     fails on a Pi.
+    #   ffmpeg: video processing/playback. sqlite3: DB CLI. mbuffer: video
+    #     streaming buffer. parallel: update_yt-dlp.sh.
+    sudo apt -y install git python3-pip build-essential python3-dev libasound2-dev \
+        ffmpeg sqlite3 mbuffer parallel
     sudo apt -y full-upgrade
 }
 
