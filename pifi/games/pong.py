@@ -1,10 +1,10 @@
 import json
 import math
 import numpy as np
-from pygame import mixer  # pyright: ignore[reportMissingImports]
+from pygame import mixer
 import random
 import signal
-import simpleaudio  # pyright: ignore[reportMissingImports]
+import simpleaudio
 import socket
 import sys
 import time

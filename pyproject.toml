@@ -1,0 +1,42 @@
+[project]
+name = "pifi"
+version = "0.0.0"
+requires-python = "==3.13.*"
+dependencies = [
+    # numpy / requests / pillow are listed here so the dev environment and
+    # pyright resolve them, but on the Pi they come from apt (see [tool.pifi]).
+    "numpy",
+    "requests",
+    "pillow",
+    "pygame",
+    "pyjson5",
+    "pytz",
+    "soco",
+    "syncedlyrics",
+    "underground",
+    "typing-extensions",
+    "simpleaudio @ git+https://github.com/cexen/py-simple-audio.git",
+]
+
+[project.optional-dependencies]
+# Hardware LED drivers — opt-in, Pi-only. Selected by leds.driver config at
+# install time. (rgbmatrix is a source build, handled separately in
+# install_dependencies.sh.)
+apa102 = ["apa102-pi"]
+ws2812b = ["rpi-ws281x"]
+
+[dependency-groups]
+# Dev tooling — never shipped to the Pi runtime.
+dev = ["pyright==1.1.409", "pytest"]
+
+[tool.pifi]
+# On the Pi these come from apt (prebuilt, distro BLAS), not pip. The Pi
+# installer apt-installs them (python3-numpy / python3-requests / python3-pil)
+# and excludes them from the uv install. Listed here so the apt exception
+# lives in the same single source — each package name appears exactly once.
+apt-provided = ["numpy", "requests", "pillow"]
+
+[tool.uv]
+# pifi is run in-place via the bin/ scripts (which add the repo root to
+# sys.path); it is not installed as a package. Manage deps only.
+package = false

@@ -102,7 +102,7 @@ class NycSubway(Screensaver):
             return True
 
         try:
-            import underground  # pyright: ignore[reportMissingImports]
+            import underground
             self.__underground = underground
             self.__logger.info("underground library loaded successfully")
 

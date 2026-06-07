@@ -103,7 +103,7 @@ print(vgm2wav_output)
 os.remove('tmp_perfect_loop.vgm')
 
 print("Success! Playing perfect loop on repeat. Press ctrl + c to exit...")
-from pygame import mixer  # pyright: ignore[reportMissingImports]
+from pygame import mixer
 mixer.init(frequency = 22050, buffer = 512)
 
 loop_test = mixer.Sound(output_file)

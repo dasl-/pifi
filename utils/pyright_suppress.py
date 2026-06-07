@@ -1,23 +1,57 @@
 #!/usr/bin/env python3
 """
-One-shot tool to add `# pyright: ignore[...]` comments for every existing
-pyright violation in the repo, so we can land pyright as a CI gate without
-a multi-day cleanup. The intent is "freeze current debt, prevent new debt."
+Reconcile the pyright suppression baseline with the current pyright output.
 
-To remove a suppression, delete the comment, run pyright on that file, and
-fix what comes up:
+Idempotent: each run both ADDS `# pyright: ignore[...]` comments for new
+violations and STRIPS rules that pyright reports as unnecessary
+(reportUnnecessaryTypeIgnoreComment) — so the committed baseline stays
+accurate as code and the environment change. Run it via the project venv so
+imports resolve consistently:
+
+    uv run utils/pyright_suppress.py
+
+The whole backlog is greppable:
 
     grep -rn "pyright: ignore" pifi/ tests/ utils/
 
-For file-level diagnostics (import cycles) we prepend a per-file header
-instead of a per-line comment, because the diagnostic has no specific line.
+To pay down debt by hand: delete a comment, run pyright on that file, fix
+what surfaces. File-level diagnostics (import cycles) get a per-file
+`# pyright: <rule>=false` header instead of a per-line comment.
 """
 
 import json
 import os
+import re
 import subprocess
 import sys
 from collections import defaultdict
+
+
+IGNORE_RE = re.compile(r' *# pyright: ignore\[([^\]]*)\]')
+UNNECESSARY_RULE_RE = re.compile(r'rule: "([^"]+)"')
+
+
+def apply_line_edit(line: str, add_rules: set[str], remove_rules: set[str]) -> str:
+    """Add/remove rules in a line's `# pyright: ignore[...]` comment.
+
+    Removing the last rule drops the whole comment. Returns the new line
+    (newline preserved).
+    """
+    ending = '\n' if line.endswith('\n') else ''
+    body = line[: -len(ending)] if ending else line
+
+    m = IGNORE_RE.search(body)
+    if m:
+        existing = [r.strip() for r in m.group(1).split(',') if r.strip()]
+        base = body[: m.start()]
+    else:
+        existing = []
+        base = body
+
+    rules = sorted((set(existing) | add_rules) - remove_rules)
+    if rules:
+        return f'{base}  # pyright: ignore[{", ".join(rules)}]{ending}'
+    return f'{base}{ending}'
 
 
 def main() -> int:
@@ -31,80 +65,62 @@ def main() -> int:
         print(result.stderr, file=sys.stderr)
         return 1
 
-    data = json.loads(result.stdout)
-    diags = data['generalDiagnostics']
-    print(f"  {len(diags)} diagnostics across {len(set(d['file'] for d in diags))} files")
+    diags = json.loads(result.stdout)['generalDiagnostics']
 
-    line_level: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
-    file_level: dict[str, set[str]] = defaultdict(set)
+    line_adds: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
+    line_removes: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
+    file_adds: dict[str, set[str]] = defaultdict(set)
 
     for diag in diags:
         rule = diag.get('rule')
         if not rule:
             continue
         path = diag['file']
-        if 'range' in diag:
-            # 0-based line in JSON; convert to 1-based for clarity
-            line = diag['range']['start']['line'] + 1
-            line_level[path][line].add(rule)
+        if 'range' not in diag:
+            file_adds[path].add(rule)
+            continue
+        line = diag['range']['start']['line'] + 1
+        if rule == 'reportUnnecessaryTypeIgnoreComment':
+            m = UNNECESSARY_RULE_RE.search(diag.get('message', ''))
+            if m:
+                line_removes[path][line].add(m.group(1))
         else:
-            file_level[path].add(rule)
+            line_adds[path][line].add(rule)
 
+    paths = set(line_adds) | set(line_removes) | set(file_adds)
     files_changed = 0
-    suppressions_added = 0
+    added = removed = 0
 
-    for path, line_rules in line_level.items():
-        with open(path, 'r') as f:
+    for path in paths:
+        with open(path) as f:
             lines = f.readlines()
 
-        for line_num, rules in line_rules.items():
+        # In-place line edits first (these never shift line numbers), so the
+        # 1-based line numbers from pyright stay valid across the loop.
+        touched = set(line_adds[path]) | set(line_removes[path])
+        for line_num in touched:
             idx = line_num - 1
             if idx >= len(lines):
                 print(f"  WARN: {path}:{line_num} out of range", file=sys.stderr)
                 continue
-            line = lines[idx]
-            stripped_nl = line.rstrip('\n')
-            ending = '\n' if line.endswith('\n') else ''
-            rule_list = ', '.join(sorted(rules))
-            comment = f'  # pyright: ignore[{rule_list}]'
+            adds = line_adds[path].get(line_num, set())
+            removes = line_removes[path].get(line_num, set())
+            lines[idx] = apply_line_edit(lines[idx], adds, removes)
+            added += len(adds)
+            removed += len(removes)
 
-            if 'pyright: ignore[' in stripped_nl:
-                print(f"  SKIP: {path}:{line_num} already has pyright: ignore", file=sys.stderr)
-                continue
-
-            lines[idx] = stripped_nl + comment + ending
-            suppressions_added += 1
-
-        if path in file_level:
-            file_rules = sorted(file_level[path])
-            header_lines = [f'# pyright: {r}=false\n' for r in file_rules]
-            insert_at = 0
-            if lines and lines[0].startswith('#!'):
-                insert_at = 1
-            for i, h in enumerate(header_lines):
-                lines.insert(insert_at + i, h)
-            suppressions_added += len(header_lines)
+        # File-level headers shift line numbers, so insert them last.
+        if path in file_adds:
+            insert_at = 1 if lines and lines[0].startswith('#!') else 0
+            for i, r in enumerate(sorted(file_adds[path])):
+                lines.insert(insert_at + i, f'# pyright: {r}=false\n')
+                added += 1
 
         with open(path, 'w') as f:
             f.writelines(lines)
         files_changed += 1
 
-    for path, file_rules in file_level.items():
-        if path in line_level:
-            continue
-        with open(path, 'r') as f:
-            lines = f.readlines()
-        rules_sorted = sorted(file_rules)
-        header_lines = [f'# pyright: {r}=false\n' for r in rules_sorted]
-        insert_at = 1 if lines and lines[0].startswith('#!') else 0
-        for i, h in enumerate(header_lines):
-            lines.insert(insert_at + i, h)
-        with open(path, 'w') as f:
-            f.writelines(lines)
-        files_changed += 1
-        suppressions_added += len(header_lines)
-
-    print(f"Added {suppressions_added} suppressions across {files_changed} files.")
+    print(f"Added {added}, removed {removed} suppressions across {files_changed} files.")
     return 0
 
 

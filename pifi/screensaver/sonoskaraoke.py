@@ -44,7 +44,7 @@ class SonosKaraoke(KaraokeBase):
         4. Fall back to any available speaker
         """
         try:
-            import soco  # pyright: ignore[reportMissingImports]
+            import soco
 
             speakers = soco.discover(timeout=5)
             if not speakers:

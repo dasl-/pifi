@@ -21,8 +21,8 @@
 # We keep the source file (input.wav) around in case we need to adjust it more in the future --
 # better to have the original file.
 import time
-import simpleaudio  # pyright: ignore[reportMissingImports]
-from pygame import mixer  # pyright: ignore[reportMissingImports]
+import simpleaudio
+from pygame import mixer
 import os
 import sys
 

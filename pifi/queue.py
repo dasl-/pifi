@@ -2,7 +2,7 @@ import os
 import time
 import shlex
 import signal
-import simpleaudio  # pyright: ignore[reportMissingImports]
+import simpleaudio
 import subprocess
 import traceback
 
