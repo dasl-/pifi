@@ -15,9 +15,6 @@ class Lenia(Screensaver):
     bell-curve growth functions.
     """
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__reset()
 

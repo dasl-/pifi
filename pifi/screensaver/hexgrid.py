@@ -28,9 +28,6 @@ class HexGrid(Screensaver):
         [(0.1, 0.7, 0.4), (0.1, 0.4, 0.7), (0.4, 0.1, 0.6), (0.2, 0.8, 0.6)],
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__time = 0.0
         w, h = self._width, self._height

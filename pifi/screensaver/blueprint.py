@@ -24,9 +24,6 @@ class Blueprint(Screensaver):
     # Crosshair color
     _MARK = np.array([200, 80, 60], dtype=np.float64)
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__time = 0.0
         w, h = self._width, self._height

@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.logger import Logger  # pyright: ignore[reportUnusedImport]
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -15,9 +14,6 @@ class DoublePendulum(Screensaver):
     traces a path that never repeats, fading over time into a
     beautiful chaotic trail.
     """
-
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
 
     def _setup(self):
         self.__time = 0.0

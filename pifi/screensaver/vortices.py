@@ -21,9 +21,6 @@ class Vortices(Screensaver):
         (0.50, 0.65, 0.80),  # Pale blue
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__time = 0.0
         w, h = self._width, self._height

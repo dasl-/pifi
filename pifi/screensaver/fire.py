@@ -13,9 +13,6 @@ class Fire(Screensaver):
     Simple, iconic, mesmerizing.
     """
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         # Heat buffer — extra row at bottom for the heat source
         self.__heat = np.zeros((self._height + 1, self._width), dtype=np.float64)

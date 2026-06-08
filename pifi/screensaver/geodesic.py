@@ -257,9 +257,6 @@ class Geodesic(Screensaver):
     _MODE_CYAN = 1
     _MODE_HUE_SHIFT = 2
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         # Build all shapes once
         self.__all_shapes = {}

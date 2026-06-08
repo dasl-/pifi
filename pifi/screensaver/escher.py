@@ -23,9 +23,6 @@ class Escher(Screensaver):
         [(0.60, 0.22, 0.10), (0.12, 0.22, 0.48)],  # Rust / cobalt
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__time = 0.0
         w, h = self._width, self._height

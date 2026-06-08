@@ -20,9 +20,6 @@ class Spirograph(Screensaver):
 
     VARIANTS = ['hypotrochoid', 'epitrochoid', 'compound', 'star_ring']
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
     def _setup(self):
         self.__time = 0.0
         self.__variant = random.choice(self.VARIANTS)
