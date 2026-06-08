@@ -13,9 +13,6 @@ Environment=HOME=/root
 # To avoid overhead and possible dependency resolution related network access, don't use `uv` here.
 ExecStart=/usr/bin/bash -c 'PATH=$BASE_DIR/.venv/bin:\$PATH exec $BASE_DIR/bin/websocket_server'
 Restart=on-failure
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=PIFI_WEBSOCKET_SERVER
 
 [Install]
 WantedBy=multi-user.target

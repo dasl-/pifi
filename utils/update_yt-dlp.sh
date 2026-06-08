@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-# Script that is run via cron to update yt-dlp.
+set -euo pipefail
+
+# Script that is run via a systemd timer (pifi_update_yt_dlp.timer) to update yt-dlp.
 # Youtube releases updates every once in a while that breaks yt-dlp. If we don't constantly update
 # to the latest yt-dlp version, the pifi will stop working.
 #
@@ -13,8 +15,10 @@ echo "starting update_yt-dlp at $(date -u)"
 # See: https://github.com/astral-sh/uv/issues/11360
 sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin /usr/local/bin/uv tool install --upgrade 'yt-dlp[default]@latest'
 
-# symlink yt-dlp to a place that's on our path by default
-sudo ln -sf "$(sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin /usr/local/bin/uv tool dir --bin)/yt-dlp" /usr/bin/yt-dlp
+# symlink yt-dlp to a place that's on our path by default. Capture the dir in its own step so a
+# failure here aborts the script (under set -e) instead of producing a bogus symlink.
+yt_dlp_bin_dir="$(sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin /usr/local/bin/uv tool dir --bin)"
+sudo ln -sf "$yt_dlp_bin_dir/yt-dlp" /usr/bin/yt-dlp
 
 # Just in case the yt-dlp cache got polluted, as it has before...
 # https://github.com/ytdl-org/youtube-dl/issues/24780
@@ -26,11 +30,13 @@ sudo ln -sf "$(sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/
 #
 # e.g.: sudo -u root yt-dlp --rm-cache-dir
 # shellcheck disable=SC1083
-parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi
+parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi \
+    || echo "warning: yt-dlp --rm-cache-dir had failures"
 
 # repopulate the cache that we just deleted? /shrug
 # e.g.: sudo -u root yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null
 # shellcheck disable=SC1083
-parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null ::: root pi
+parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --output - --restrict-filenames --format 'worst[ext=mp4]/worst' --newline 'https://www.youtube.com/watch?v=IB_2jkwxqh4' > /dev/null ::: root pi \
+    || echo "warning: yt-dlp cache repopulate had failures"
 
 echo "finished update_yt-dlp at $(date -u)"
