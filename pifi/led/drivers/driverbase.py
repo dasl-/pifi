@@ -33,5 +33,5 @@ class DriverBase(ABC):
     # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
     #      https://github.com/dasl-/pifi/pull/32
     #      https://github.com/dasl-/pifi/issues/33
-    def can_multiple_driver_instances_coexist(self):
+    def can_multiple_driver_instances_coexist(self) -> bool:
         return True

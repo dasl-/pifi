@@ -52,7 +52,7 @@ class GameOfLife(CellularAutomaton):
             seed = np.random.random_sample([x - 2 for x in shape]) < probability
             self._board[1:-1, 1:-1][seed] = 1
 
-    def _board_to_frame(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def _board_to_frame(self) -> np.ndarray:
         frame = np.zeros([self._height, self._width, 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self._num_ticks)
         frame[(self._board[1:-1, 1:-1] == 1)] = rgb  # pyright: ignore[reportArgumentType, reportCallIssue]

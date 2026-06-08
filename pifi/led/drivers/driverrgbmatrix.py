@@ -78,5 +78,5 @@ class DriverRgbMatrix(DriverBase):
     # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
     #      https://github.com/dasl-/pifi/pull/32
     #      https://github.com/dasl-/pifi/issues/33
-    def can_multiple_driver_instances_coexist(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def can_multiple_driver_instances_coexist(self) -> bool:
         return False
