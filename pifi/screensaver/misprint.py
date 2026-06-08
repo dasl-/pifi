@@ -53,7 +53,7 @@ class Misprint(Screensaver):
 
         # Per-pass registration offset drift parameters
         self.__offsets = []
-        for i in range(self.__num_passes):  # pyright: ignore[reportUnusedVariable]
+        for _ in range(self.__num_passes):
             self.__offsets.append({
                 'dx_phase': random.uniform(0, 2 * math.pi),
                 'dy_phase': random.uniform(0, 2 * math.pi),

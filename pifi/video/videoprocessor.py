@@ -195,7 +195,7 @@ class VideoProcessor:
     def __populate_frames(
         self, frames, ffmpeg_to_python_fifo, vid_start_time, bytes_per_frame, np_array_shape
     ):
-        is_ready_to_read, ignore1, ignore2 = select.select([ffmpeg_to_python_fifo], [], [], 0)  # pyright: ignore[reportUnusedVariable]
+        is_ready_to_read, _, _ = select.select([ffmpeg_to_python_fifo], [], [], 0)
         if not is_ready_to_read:
             return [False, vid_start_time]
 

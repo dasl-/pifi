@@ -51,7 +51,6 @@ class Blueprint(Screensaver):
     def _tick(self):
         self.__time += 0.02
         t = self.__time
-        w, h = self._width, self._height  # pyright: ignore[reportUnusedVariable]
 
         # Fade canvas toward background
         self.__canvas = self.__canvas * 0.97 + self._BG * 0.03

@@ -89,7 +89,6 @@ class ColorField(Screensaver):
         val = np.zeros(self._height, dtype=np.float64)
 
         # For each pixel row, blend between adjacent bands
-        boundaries = [0.0] + list(self.__boundaries) + [1.0]  # pyright: ignore[reportUnusedVariable]
 
         for row in range(self._height):
             yp = y[row]

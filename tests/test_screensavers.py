@@ -30,7 +30,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pifi.config import Config
 from pifi.directoryutils import DirectoryUtils
 from pifi.led.blackholeframeplayer import BlackHoleFramePlayer
-from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver.screensavermanager import ScreensaverManager
 from pifi.screensaver.videoscreensaver import VideoScreensaver
@@ -258,10 +257,6 @@ class TestSpecificScreensavers(unittest.TestCase):
             instance.play()
         except Exception as e:
             self.fail(f"VideoScreensaver.play() raised exception with empty video_list: {e}")
-
-    def test_cellular_automaton_hierarchy(self):
-        """Verify CellularAutomaton inherits from Screensaver."""
-        self.assertTrue(issubclass(CellularAutomaton, Screensaver))  # pyright: ignore[reportUnnecessaryIsInstance]
 
 
 class TestScreensaverPreviewIntegration(unittest.TestCase):

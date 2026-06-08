@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import math  # pyright: ignore[reportUnusedImport]
 
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver

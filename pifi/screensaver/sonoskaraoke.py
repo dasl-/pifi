@@ -69,7 +69,6 @@ class SonosKaraoke(KaraokeBase):
                     state = transport.get('current_transport_state', '')
                     track = speaker.get_current_track_info()
                     title = track.get('title', '')
-                    artist = track.get('artist', '')  # pyright: ignore[reportUnusedVariable]
                     position = track.get('position', '')
 
                     is_coordinator = speaker.is_coordinator

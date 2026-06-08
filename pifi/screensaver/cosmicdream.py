@@ -121,8 +121,6 @@ class CosmicDream(Screensaver):
 
         # Breathing radius
         base_radius = min(self._width, self._height) * 0.35
-        breath = math.sin(t * 0.8) * 0.3 + 1.0  # 0.7 to 1.3
-        radius = base_radius * breath  # pyright: ignore[reportUnusedVariable]
 
         # Multiple concentric rings at different phases
         for ring in range(3):
@@ -253,7 +251,6 @@ class CosmicDream(Screensaver):
         # Simple hue rotation approximation
         r = frame[:, :, 0]
         g = frame[:, :, 1]
-        b = frame[:, :, 2]  # pyright: ignore[reportUnusedVariable]
 
         # Rotate in RG plane slightly
         new_r = r * cos_a - g * sin_a * 0.3

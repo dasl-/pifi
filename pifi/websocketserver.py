@@ -1,6 +1,5 @@
 import asyncio
 import subprocess
-import time  # pyright: ignore[reportUnusedImport]
 import traceback
 import websockets
 
@@ -88,7 +87,7 @@ class WebSocketServer:
     def __get_local_ip(self):
         return (subprocess
             .check_output(
-                'sudo ifconfig | grep -Eo \'inet (addr:)?([0-9]*\.){3}[0-9]*\' | grep -Eo \'([0-9]*\.){3}[0-9]*\' | grep -v \'127.0.0.1\'',  # pyright: ignore[reportInvalidStringEscapeSequence]
+                r"sudo ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'",
                 stderr = subprocess.STDOUT, shell = True, executable = '/usr/bin/bash'
             )
             .decode("utf-8")

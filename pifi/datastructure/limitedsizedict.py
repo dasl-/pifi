@@ -1,9 +1,12 @@
 from collections import OrderedDict
+from typing import Any
 
-class LimitedSizeDict(OrderedDict):  # pyright: ignore[reportMissingTypeArgument]
+class LimitedSizeDict(OrderedDict[Any, Any]):
 
-    def __init__(self, items = [], capacity = 10):  # pyright: ignore[reportCallInDefaultInitializer]
+    def __init__(self, items = None, capacity = 10):
         self.__capacity = capacity
+        if items is None:
+            items = []
         super().__init__(items[-self.__capacity:])
 
     def __setitem__(self, key, value):
