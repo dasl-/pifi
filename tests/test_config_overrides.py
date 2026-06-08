@@ -39,7 +39,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config._Config__base_config = copy.deepcopy(self.BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
         Config._Config__applied_overrides = {}  # pyright: ignore[reportAttributeAccessIssue]
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_applies_overrides(self, MockSettingsDb):
         """Overrides from DB are applied to config."""
         overrides = {'screensavers': {'configs': {'boids': {'num_boids': 50}}}}
@@ -51,7 +51,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         # Non-overridden keys should be preserved
         self.assertEqual(Config.get('screensavers.configs.boids.tick_sleep'), 0.05)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_reset_restores_defaults(self, MockSettingsDb):
         """After overrides are removed from DB, config reverts to defaults."""
         mock_db = MockSettingsDb.return_value
@@ -66,7 +66,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config.reload_overrides(['screensaver_settings'])
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_reset_restores_all_keys(self, MockSettingsDb):
         """Reset restores all keys in a section, not just overridden ones."""
         mock_db = MockSettingsDb.return_value
@@ -85,7 +85,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
         self.assertEqual(Config.get('screensavers.configs.boids.tick_sleep'), 0.05)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_independent_screensavers(self, MockSettingsDb):
         """Overriding one screensaver does not affect another."""
         mock_db = MockSettingsDb.return_value
@@ -96,7 +96,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.04)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_reset_one_keeps_other(self, MockSettingsDb):
         """Resetting one screensaver's overrides preserves another's."""
         mock_db = MockSettingsDb.return_value
@@ -122,7 +122,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.1)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_override_new_screensaver_then_reset(self, MockSettingsDb):
         """Overriding a screensaver not in base config, then resetting, removes it."""
         mock_db = MockSettingsDb.return_value
@@ -138,7 +138,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertIsNone(Config.get('screensavers.configs.newss.foo'))
         self.assertIsNone(Config.get('screensavers.configs.newss'))
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_non_screensaver_config_untouched(self, MockSettingsDb):
         """Non-screensaver config sections are never modified by overrides."""
         mock_db = MockSettingsDb.return_value
@@ -149,7 +149,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('leds.driver'), 'apa102')
         self.assertEqual(Config.get('leds.display_width'), 32)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_no_overrides_in_db(self, MockSettingsDb):
         """No overrides in DB leaves config unchanged."""
         mock_db = MockSettingsDb.return_value
@@ -160,7 +160,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.04)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_invalid_json_in_db(self, MockSettingsDb):
         """Invalid JSON in DB is handled gracefully without crashing."""
         mock_db = MockSettingsDb.return_value
@@ -171,7 +171,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         # Config should remain unchanged
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_non_dict_override_replaces_value(self, MockSettingsDb):
         """Non-dict override replaces the existing value."""
         mock_db = MockSettingsDb.return_value
@@ -182,7 +182,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids'), 'a string')
 
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_multiple_db_keys(self, MockSettingsDb):
         """Overrides from multiple DB keys are all applied."""
         mock_db = MockSettingsDb.return_value
@@ -200,7 +200,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.1)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_partial_reload_preserves_other_keys(self, MockSettingsDb):
         """Reloading one DB key doesn't clobber overrides from another."""
         mock_db = MockSettingsDb.return_value
@@ -216,7 +216,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 50)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.1)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_partial_reload_reset_preserves_other_keys(self, MockSettingsDb):
         """Removing overrides from one DB key doesn't affect another's overrides."""
         mock_db = MockSettingsDb.return_value
@@ -235,7 +235,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 15)
         self.assertEqual(Config.get('screensavers.configs.aurora.tick_sleep'), 0.1)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_skips_rebuild_when_unchanged(self, MockSettingsDb):
         """Config is not rebuilt when DB values haven't changed."""
         mock_db = MockSettingsDb.return_value
@@ -251,7 +251,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config.reload_overrides(['screensaver_settings'])
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 999)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_rebuilds_when_changed(self, MockSettingsDb):
         """Config is rebuilt when DB values change."""
         mock_db = MockSettingsDb.return_value
@@ -268,7 +268,7 @@ class TestReloadScreensaverOverrides(unittest.TestCase):
         Config.reload_overrides(['screensaver_settings'])
         self.assertEqual(Config.get('screensavers.configs.boids.num_boids'), 75)
 
-    @patch('pifi.settingsdb.SettingsDb')
+    @patch('pifi.config.SettingsDb')
     def test_override_timeout_and_transitions(self, MockSettingsDb):
         """DB overrides can set timeout and transition settings."""
         mock_db = MockSettingsDb.return_value

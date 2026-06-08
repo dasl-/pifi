@@ -15,11 +15,15 @@ import os
 import subprocess
 from unittest.mock import MagicMock, patch  # pyright: ignore[reportUnusedImport]
 
+import pyjson5
+
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver.screensavermanager import ScreensaverManager
+from pifi.screensaver.videoscreensaver import VideoScreensaver
+from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 
@@ -141,8 +145,6 @@ class TestScreensaverInterface(unittest.TestCase):
         uses 'airplaykaraoke' but get_id() returns 'airplay_karaoke', overrides
         saved via the UI will be silently ignored.
         """
-        import pyjson5
-
         default_config_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             'default_config.json'
@@ -175,8 +177,6 @@ class TestScreensaverInterface(unittest.TestCase):
         Keeping a deterministic order makes diffs cleaner and makes a key
         easy to find when scanning default_config.json by hand.
         """
-        import pyjson5
-
         default_config_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             'default_config.json'
@@ -217,8 +217,6 @@ class TestSpecificScreensavers(unittest.TestCase):
 
     def test_video_screensaver_uses_config(self):
         """Verify VideoScreensaver gets video_list from Config, not constructor."""
-        from pifi.screensaver.videoscreensaver import VideoScreensaver
-
         # Should be able to instantiate without passing video_list
         instance = VideoScreensaver(led_frame_player=None)
         self.assertTrue(hasattr(instance, 'video_list'))
@@ -226,8 +224,6 @@ class TestSpecificScreensavers(unittest.TestCase):
 
     def test_video_screensaver_handles_empty_list(self):
         """Verify VideoScreensaver.play() handles empty video list gracefully."""
-        from pifi.screensaver.videoscreensaver import VideoScreensaver
-
         # Create instance with empty video list (from default config)
         instance = VideoScreensaver(led_frame_player=None)
 
@@ -242,8 +238,6 @@ class TestSpecificScreensavers(unittest.TestCase):
 
     def test_cellular_automaton_hierarchy(self):
         """Verify CellularAutomaton inherits from Screensaver."""
-        from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
-
         self.assertTrue(issubclass(CellularAutomaton, Screensaver))  # pyright: ignore[reportUnnecessaryIsInstance]
 
 

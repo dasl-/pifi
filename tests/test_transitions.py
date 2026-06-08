@@ -26,6 +26,7 @@ from pifi.config import Config
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver.transitionplayer import TransitionPlayer
+from pifi.screensaver.videoscreensaver import VideoScreensaver
 
 
 # --- Stub screensavers with controllable behavior ---
@@ -168,7 +169,6 @@ class TestSupportsLiveTransition(unittest.TestCase):
         Config._Config__config = copy.deepcopy(BASE_CONFIG)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_video_screensaver_returns_false(self):
-        from pifi.screensaver.videoscreensaver import VideoScreensaver
         ss = VideoScreensaver(led_frame_player=None)
         self.assertFalse(ss.supports_live_transition())
 

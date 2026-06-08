@@ -7,6 +7,8 @@ timestamp comparison.
 """
 
 import re
+import sys
+
 import syncedlyrics
 
 
@@ -170,8 +172,6 @@ TEST_CASES = [
 
 
 if __name__ == '__main__':
-    import sys
-
     # Run parsing tests first (no network needed)
     test_lrc_parsing()
 

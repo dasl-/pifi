@@ -10,6 +10,10 @@ import os
 import re
 import select
 import time
+from io import BytesIO
+
+import numpy as np
+from PIL import Image
 
 from pifi.config import Config
 from pifi.screensaver.karaokebase import KaraokeBase
@@ -225,10 +229,6 @@ class AirPlayKaraoke(KaraokeBase):
     def __process_album_art(self, raw_bytes):
         """Decode album art image and store as a dimmed background frame."""
         try:
-            from io import BytesIO
-            from PIL import Image
-            import numpy as np
-
             img = Image.open(BytesIO(raw_bytes))
             img = img.resize((self._width, self._height), Image.LANCZOS)  # pyright: ignore[reportAttributeAccessIssue]
             img = img.convert('RGB')

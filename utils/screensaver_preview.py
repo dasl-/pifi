@@ -2,16 +2,21 @@
 
 import argparse
 import os
+import random
 import sys
 import time
+import traceback
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Build registry dynamically from ScreensaverManager
+from pifi.config import Config
 from pifi.led.frameplayerbase import FramePlayerBase
+from pifi.logger import Logger
 from pifi.screensaver.screensavermanager import ScreensaverManager
+from pifi.screensaver.transitionplayer import TransitionPlayer
 
 SCREENSAVER_REGISTRY = []
 for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
@@ -179,10 +184,6 @@ def parse_config_options(config_args):
 
 def setup_mock_config(width, height, config_overrides=None):
     """Set up a mock configuration for testing."""
-    from pifi.config import Config
-    from pifi.logger import Logger
-    import traceback
-
     # Load actual config files using existing Config class
     # This reads and merges default_config.json and config.json
     try:
@@ -216,8 +217,6 @@ def setup_mock_config(width, height, config_overrides=None):
 
 def get_screensaver(name, frame_player):
     """Get a screensaver instance by name."""
-    from pifi.screensaver.screensavermanager import ScreensaverManager
-
     name = name.lower().replace('-', '_').replace(' ', '_')
 
     if name not in ScreensaverManager.SCREENSAVER_CLASSES:
@@ -347,11 +346,9 @@ Config values are auto-detected as int, float, bool, or string.
 
     # Apply duration as screensaver timeout if set
     if args.duration is not None:
-        from pifi.config import Config
         Config.set('screensavers.timeout', args.duration)
 
     # Apply transition config
-    from pifi.config import Config
     Config.set('screensavers.transitions.duration', args.transition_duration)
 
     # Build screensaver list
@@ -383,9 +380,6 @@ Config values are auto-detected as int, float, bool, or string.
 
 def run_sequence(screensaver_names, frame_player, args):
     """Run multiple screensavers in sequence with transitions, looping forever."""
-    import random
-    from pifi.screensaver.transitionplayer import TransitionPlayer
-
     use_transitions = not args.no_transitions
     transition_player = TransitionPlayer(frame_player) if use_transitions else None
 
