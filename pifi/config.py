@@ -62,6 +62,26 @@ class Config:
         Config.__is_loaded = True
 
     @staticmethod
+    def _load_for_test(config, base_config = None, applied_overrides = None):
+        """Test seam: inject config state directly, bypassing config-file loading.
+
+        Unit tests can't rely on config.json (gitignored, absent in CI), so they
+        seed the singleton here rather than going through load_config_if_not_loaded().
+        """
+        Config.__config = config
+        Config.__base_config = base_config if base_config is not None else {}
+        Config.__applied_overrides = applied_overrides if applied_overrides is not None else {}
+        Config.__is_loaded = True
+
+    @staticmethod
+    def _reset_for_test():
+        """Test seam: restore the singleton to its unloaded, empty default state."""
+        Config.__config = {}
+        Config.__base_config = {}
+        Config.__applied_overrides = {}
+        Config.__is_loaded = False
+
+    @staticmethod
     def get_default(key, default = None):
         """Get a key's value from the base config (before any runtime overrides)."""
         return Config.__get(key, default=default, config_dict=Config.__base_config)
