@@ -137,27 +137,18 @@ syncLedExtra(){
 installLedDriverRgbMatrix(){
     info "Installing LED driver RGB Matrix..."
 
-    local clone_dir venv_python
-    clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
+    # No PyPI release, so build from source into the venv. Upstream is pip-
+    # installable (scikit-build-core + Cython); build isolation pulls the build
+    # backend itself, so Cython/CMake aren't needed in the venv or via apt. No
+    # sudo: the venv is owned by the repo user (rgbmatrix only needs root at
+    # runtime, which systemd provides). Pinned to a commit for reproducible
+    # builds since upstream publishes no release tags.
+    local venv_python rgbmatrix_ref
     venv_python="$BASE_DIR/.venv/bin/python"
+    rgbmatrix_ref='41809e40e912b7f278ad34046f20abf5609b2b07'
 
-    pushd "$BASE_DIR"
-    uv sync --frozen --managed-python --group rgbmatrix-build
-    popd
-
-    if [ -d "$clone_dir" ]; then
-        info "Pulling repo in $clone_dir ..."
-        pushd "$clone_dir"
-        git pull
-    else
-        info "Cloning repo into $clone_dir ..."
-        git clone https://github.com/hzeller/rpi-rgb-led-matrix "$clone_dir"
-        pushd "$clone_dir"
-    fi
-
-    make build-python PYTHON="$venv_python"
-    sudo make install-python PYTHON="$venv_python"
-    popd
+    uv pip install --python "$venv_python" \
+        "git+https://github.com/hzeller/rpi-rgb-led-matrix@$rgbmatrix_ref"
 
     info "Verifying the rgbmatrix binding imports..."
     "$venv_python" -c 'import rgbmatrix'
