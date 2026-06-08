@@ -2,6 +2,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -72,7 +73,8 @@ class Kaleidoscope(Screensaver):
         sat = 0.6 + pattern * 0.2
         val = np.clip(0.1 + (pattern + 1) * 0.4 + (1 - r) * 0.15, 0, 1)
 
-        frame = _hsv_to_rgb_vec(hue, sat, val)
+        r, g, b = hsv_to_rgb(hue, sat, val)
+        frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
         self._led_frame_player.play_frame(frame)
 
     @classmethod
@@ -86,25 +88,3 @@ class Kaleidoscope(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Mirrored animated patterns'
-
-
-def _hsv_to_rgb_vec(h, s, v):
-    """Vectorized HSV to RGB. Returns [H, W, 3] uint8."""
-    i = (h * 6.0).astype(int) % 6
-    f = h * 6.0 - np.floor(h * 6.0)
-    p = v * (1.0 - s)
-    q = v * (1.0 - s * f)
-    t = v * (1.0 - s * (1.0 - f))
-
-    r = np.zeros_like(h)
-    g = np.zeros_like(h)
-    bl = np.zeros_like(h)
-
-    m0 = i == 0; r[m0] = v[m0]; g[m0] = t[m0]; bl[m0] = p[m0]
-    m1 = i == 1; r[m1] = q[m1]; g[m1] = v[m1]; bl[m1] = p[m1]
-    m2 = i == 2; r[m2] = p[m2]; g[m2] = v[m2]; bl[m2] = t[m2]
-    m3 = i == 3; r[m3] = p[m3]; g[m3] = q[m3]; bl[m3] = v[m3]
-    m4 = i == 4; r[m4] = t[m4]; g[m4] = p[m4]; bl[m4] = v[m4]
-    m5 = i == 5; r[m5] = v[m5]; g[m5] = p[m5]; bl[m5] = q[m5]
-
-    return np.stack([r * 255, g * 255, bl * 255], axis=-1).astype(np.uint8)

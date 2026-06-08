@@ -4,6 +4,7 @@ import random
 
 from pifi.config import Config
 from pifi.logger import Logger
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -144,7 +145,7 @@ class Spirograph(Screensaver):
         sy = self.__cy + pen_y * scale
 
         hue = (self.__time * self.__hue_speed) % 1.0
-        color = _hsv_to_rgb(hue, 0.85, 1.0)
+        color = hsv_to_rgb(hue, 0.85, 1.0)
 
         ix, iy = int(round(sx)), int(round(sy))
         if 0 <= ix < self.__width and 0 <= iy < self.__height:
@@ -250,7 +251,7 @@ class Spirograph(Screensaver):
         ring_color = np.array([0.1, 0.1, 0.15])
 
         hue = (self.__time * self.__hue_speed) % 1.0
-        pen_color = np.array(_hsv_to_rgb(hue, 0.7, 1.0))
+        pen_color = np.array(hsv_to_rgb(hue, 0.7, 1.0))
 
         if mech['type'] == 'ring_gear':
             # Fixed ring
@@ -357,19 +358,3 @@ class Spirograph(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Gear-drawn geometric patterns'
-
-
-def _hsv_to_rgb(h, s, v):
-    h = h % 1.0
-    i = int(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-    if i == 0: return (v, t, p)
-    elif i == 1: return (q, v, p)
-    elif i == 2: return (p, v, t)
-    elif i == 3: return (p, q, v)
-    elif i == 4: return (t, p, v)
-    else: return (v, p, q)

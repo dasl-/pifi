@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -382,7 +383,7 @@ class Purkinje(Screensaver):
 
         # Colour for this cycle -- slowly rotating hue
         hue = (t * 0.06) % 1.0
-        r, g, b = self.__hsv_to_rgb_float(hue, 0.8, 1.0)
+        r, g, b = hsv_to_rgb(hue, 0.8, 1.0)
 
         # Phase 0-0.5: shape is present (fading in then out)
         # Phase 0.5-1.0: afterimage (complement) appears
@@ -458,33 +459,6 @@ class Purkinje(Screensaver):
             return np.clip(1.0 - diamond_dist / max(base_size * 1.2, 1), 0, 1)
 
         return np.zeros((self.__height, self.__width), dtype=np.float32)
-
-    # ------------------------------------------------------------------ #
-    #  Colour helpers                                                      #
-    # ------------------------------------------------------------------ #
-
-    def __hsv_to_rgb_float(self, h, s, v):
-        """Single HSV to RGB, returns (r, g, b) floats in 0-1."""
-        if s == 0.0:
-            return (v, v, v)
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i %= 6
-        if i == 0:
-            return (v, t, p)
-        elif i == 1:
-            return (q, v, p)
-        elif i == 2:
-            return (p, v, t)
-        elif i == 3:
-            return (p, q, v)
-        elif i == 4:
-            return (t, p, v)
-        else:
-            return (v, p, q)
 
     # ------------------------------------------------------------------ #
     #  Class metadata                                                      #

@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -140,31 +141,6 @@ class PerlinWorms(Screensaver):
             while len(worm) > self.__worm_length:
                 worm.pop()
 
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert HSV to RGB."""
-        if s == 0:
-            return v, v, v
-
-        h = h % 1.0
-        i = int(h * 6)
-        f = h * 6 - i
-        p = v * (1 - s)
-        q = v * (1 - s * f)
-        t = v * (1 - s * (1 - f))
-
-        if i == 0:
-            return v, t, p
-        elif i == 1:
-            return q, v, p
-        elif i == 2:
-            return p, v, t
-        elif i == 3:
-            return p, q, v
-        elif i == 4:
-            return t, p, v
-        else:
-            return v, p, q
-
     def __draw_worms(self):
         """Draw worms with glowing effect."""
         # Fade existing canvas
@@ -182,7 +158,7 @@ class PerlinWorms(Screensaver):
                 brightness = brightness ** 0.5  # Softer falloff
 
                 # Get color
-                r, g, b = self.__hsv_to_rgb(hue, 0.8, brightness)
+                r, g, b = hsv_to_rgb(hue, 0.8, brightness)
 
                 # Draw with glow
                 self.__draw_glow(x, y, r, g, b)

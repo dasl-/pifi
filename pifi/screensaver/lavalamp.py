@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -144,43 +145,16 @@ class LavaLamp(Screensaver):
                     # Slight hue shift with heat
                     hue = (self.__base_hue + avg_heat * 0.1) % 1.0
 
-                    color = self.__hsv_to_rgb(hue, saturation, value)
+                    color = hsv_to_rgb_bytes(hue, saturation, value)
                     frame[y, x] = color
                 elif field > threshold * 0.7:
                     # Glow around blobs
                     glow = (field - threshold * 0.7) / (threshold * 0.3)
                     hue = self.__base_hue
-                    color = self.__hsv_to_rgb(hue, 0.9, glow * 0.3)
+                    color = hsv_to_rgb_bytes(hue, 0.9, glow * 0.3)
                     frame[y, x] = color
 
         self._led_frame_player.play_frame(frame)
-
-    def __hsv_to_rgb(self, h, s, v):
-        if s == 0.0:
-            val = int(v * 255)
-            return [val, val, val]
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [int(r * 255), int(g * 255), int(b * 255)]
 
     @classmethod
     def get_id(cls) -> str:

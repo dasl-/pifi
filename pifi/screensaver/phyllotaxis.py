@@ -3,6 +3,7 @@ import random
 import math
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -109,7 +110,7 @@ class Phyllotaxis(Screensaver):
                 pulse = 0.5 + 0.5 * math.sin(norm_r * 12 - t * 4)
                 val *= 0.5 + 0.5 * pulse
 
-                r_c, g_c, b_c = _hsv_to_rgb(hue, sat, val)
+                r_c, g_c, b_c = hsv_to_rgb(hue, sat, val)
                 # Additive — overlapping dots glow brighter
                 self.__canvas[iy, ix, 0] = min(1.0, self.__canvas[iy, ix, 0] + r_c)
                 self.__canvas[iy, ix, 1] = min(1.0, self.__canvas[iy, ix, 1] + g_c)
@@ -129,27 +130,3 @@ class Phyllotaxis(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Golden ratio sunflower spirals'
-
-
-def _hsv_to_rgb(h, s, v):
-    """Scalar HSV to RGB, returns floats 0-1."""
-    h = h % 1.0
-    i = int(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-
-    if i == 0:
-        return v, t, p
-    elif i == 1:
-        return q, v, p
-    elif i == 2:
-        return p, v, t
-    elif i == 3:
-        return p, q, v
-    elif i == 4:
-        return t, p, v
-    else:
-        return v, p, q

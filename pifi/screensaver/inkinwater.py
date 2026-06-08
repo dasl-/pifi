@@ -3,6 +3,7 @@ import random
 import math
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -61,7 +62,8 @@ class InkInWater(Screensaver):
 
         # Random vibrant color
         hue = random.random()
-        color = self.__hsv_to_rgb(hue, 0.9, 1.0)
+        r, g, b = hsv_to_rgb(hue, 0.9, 1.0)
+        color = [r, g, b]
 
         # Add ink as a larger blob for more visual impact
         radius = random.uniform(1.5, 3.0)
@@ -112,32 +114,6 @@ class InkInWater(Screensaver):
         # Clamp and convert to uint8
         frame = np.clip(self.__buffer * 255, 0, 255).astype(np.uint8)  # pyright: ignore[reportOptionalOperand]
         self._led_frame_player.play_frame(frame)
-
-    def __hsv_to_rgb(self, h, s, v):
-        if s == 0.0:
-            return [v, v, v]
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [r, g, b]
 
     @classmethod
     def get_id(cls) -> str:

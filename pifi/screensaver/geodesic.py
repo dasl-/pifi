@@ -11,6 +11,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -246,22 +247,6 @@ def _rot_axis(axis, angle):
     ], dtype=np.float64)
 
 
-def _hsv_to_rgb(h, s, v):
-    h = h % 1.0
-    i = int(h * 6.0)
-    f = h * 6.0 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-    if i == 0: return v, t, p
-    elif i == 1: return q, v, p
-    elif i == 2: return p, v, t
-    elif i == 3: return p, q, v
-    elif i == 4: return t, p, v
-    else: return v, p, q
-
-
 # ---------------------------------------------------------------------------
 # Screensaver
 # ---------------------------------------------------------------------------
@@ -464,7 +449,7 @@ class Geodesic(Screensaver):
             return (0.3, 1.0, 1.0)
         else:
             hue = (self.__hue_base + tick * self.__hue_speed) % 1.0
-            return _hsv_to_rgb(hue, 0.7, 1.0)
+            return hsv_to_rgb(hue, 0.7, 1.0)
 
     def __render_edges(self, proj_x, proj_y, z_vals, depth_brightness, base_color, edges, alpha=1.0):
         hw = self.__line_half_width

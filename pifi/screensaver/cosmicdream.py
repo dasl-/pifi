@@ -3,6 +3,7 @@ import numpy as np
 import time
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -141,7 +142,7 @@ class CosmicDream(Screensaver):
                 py = int(cy + math.sin(angle) * ring_radius)
 
                 if 0 <= px < self.__width and 0 <= py < self.__height:
-                    ring_color = self.__hsv_to_rgb(ring_hue, 1.0, 1.0)
+                    ring_color = hsv_to_rgb_bytes(ring_hue, 1.0, 1.0)
                     # Additive blend
                     for c in range(3):
                         frame[py, px, c] = min(255, frame[py, px, c] + ring_color[c] * 0.7)
@@ -149,7 +150,7 @@ class CosmicDream(Screensaver):
         # Central pulsing dot
         pulse_intensity = (math.sin(t * 2.0) + 1) / 2
         center_hue = (t * 0.15) % 1.0
-        center_color = self.__hsv_to_rgb(center_hue, 0.8, pulse_intensity)
+        center_color = hsv_to_rgb_bytes(center_hue, 0.8, pulse_intensity)
 
         for dy in range(-1, 2):
             for dx in range(-1, 2):
@@ -206,7 +207,7 @@ class CosmicDream(Screensaver):
 
                 # Slight hue shift along trail
                 hue = (base_hue + trail_idx * 0.02) % 1.0
-                color = self.__hsv_to_rgb(hue, 1.0, fade)
+                color = hsv_to_rgb_bytes(hue, 1.0, fade)
 
                 # Additive blend
                 for c in range(3):
@@ -307,33 +308,6 @@ class CosmicDream(Screensaver):
         frame[:, :, 2] = b * 255
 
         return frame
-
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert single HSV value to RGB list."""
-        if s == 0.0:
-            return [int(v * 255)] * 3
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [int(r * 255), int(g * 255), int(b * 255)]
 
     @classmethod
     def get_id(cls) -> str:

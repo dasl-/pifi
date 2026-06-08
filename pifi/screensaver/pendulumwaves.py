@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -56,31 +57,6 @@ class PendulumWaves(Screensaver):
 
         self.__canvas.fill(0)
 
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert HSV to RGB."""
-        if s == 0:
-            return v, v, v
-
-        h = h % 1.0
-        i = int(h * 6)
-        f = h * 6 - i
-        p = v * (1 - s)
-        q = v * (1 - s * f)
-        t = v * (1 - s * (1 - f))
-
-        if i == 0:
-            return v, t, p
-        elif i == 1:
-            return q, v, p
-        elif i == 2:
-            return p, v, t
-        elif i == 3:
-            return p, q, v
-        elif i == 4:
-            return t, p, v
-        else:
-            return v, p, q
-
     def __get_pendulum_color(self, index):
         """Get color for a pendulum based on its index."""
         if self.__color_mode == 'white':
@@ -91,7 +67,7 @@ class PendulumWaves(Screensaver):
             return (t, 0.2, 1.0 - t)
         else:  # rainbow
             hue = index / self.__num_pendulums
-            return self.__hsv_to_rgb(hue, 0.9, 1.0)
+            return hsv_to_rgb(hue, 0.9, 1.0)
 
     def __draw_bob(self, cx, cy, r, g, b, size):
         """Draw a glowing pendulum bob."""

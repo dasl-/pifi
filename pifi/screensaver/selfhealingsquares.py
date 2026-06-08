@@ -3,6 +3,7 @@ import random
 import math
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -94,7 +95,7 @@ class SelfHealingSquares(Screensaver):
                 dist = min(1.0, math.sqrt((x1 - self.__cx) ** 2 + (y1 - self.__cy) ** 2) / self.__max_dist)
                 brightness = 0.5 + 0.5 * (1.0 - dist * 0.4)
                 hue = (self.__hue + dist * 0.12) % 1.0
-                r, g, b = _hsv_to_rgb(hue, 0.55, brightness)
+                r, g, b = hsv_to_rgb(hue, 0.55, brightness)
                 color = (int(r * 255), int(g * 255), int(b * 255))
 
                 # Right neighbor
@@ -133,19 +134,3 @@ class SelfHealingSquares(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Kanai healing grid illusion'
-
-
-def _hsv_to_rgb(h, s, v):
-    h = h % 1.0
-    i = int(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-    if i == 0: return v, t, p
-    elif i == 1: return q, v, p
-    elif i == 2: return p, v, t
-    elif i == 3: return p, q, v
-    elif i == 4: return t, p, v
-    else: return v, p, q
