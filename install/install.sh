@@ -9,9 +9,6 @@ old_config=$(cat $CONFIG)
 BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )")"
 HOSTNAME=''
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
-# The venv built by install_dependencies.sh (run first). The util scripts below
-# import pifi's deps, so they must run under the venv interpreter rather than
-# the installer shell's system python.
 VENV_PYTHON="$BASE_DIR/.venv/bin/python"
 
 usage() {

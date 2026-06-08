@@ -6,14 +6,16 @@ BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 &&
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 # OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
 CONFIG='/boot/firmware/config.txt'
+# yt-dlp requires frequent updates. Allow its version of python to diverge from the version of python used by
+# the rest of the codebase.
+YT_DLP_PYTHON_VERSION='3.13'
 
 main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
     installDeno
-    setupUv
-    setupVenv
+    installUvAndVenv
     installYtDlp
     enableSpi
     installLedDriver
@@ -30,47 +32,36 @@ updateAndInstallPackages(){
 
     sudo apt update
 
-    # System libraries + build tooling only — NOT Python packages. pifi's Python
-    # deps live in pyproject.toml / uv.lock and install into a venv (setupVenv).
-    # We no longer apt-install python3-numpy/requests/pil, and we dropped the SDL
-    # (libsdl2-*) and OpenBLAS (libopenblas-dev) dev libs plus the heavy
-    # `build-dep python3-pygame` (and the deb-src hack it needed): numpy/pillow/
-    # pygame now install as prebuilt aarch64 wheels that bundle their own
-    # SDL/OpenBLAS. What's left:
-    #   git: clone rpi-rgb-led-matrix; uv builds simpleaudio from a git URL.
-    #   python3-pip: bootstraps uv (setupUv).
+    # System libraries + build tooling only — NOT Python packages. The pifi's Python
+    # dependencies live in pyproject.toml / uv.lock and install into a venv.
+    #
+    #   python3-pip: bootstraps uv
     #   build-essential, libasound2-dev: compile the source-built extensions in
-    #     the venv — simpleaudio (git, links ALSA) and, for the ws2812b driver,
-    #     rpi-ws281x (sdist). They build against the uv-managed Python's bundled
-    #     headers (setupVenv), so the system python3-dev isn't needed. NOTE:
-    #     rgbmatrix's `make build-python` may additionally need Cython. Since it
-    #     builds against the venv interpreter (not system python3), add Cython to
-    #     the venv (e.g. as a pyproject build dep) rather than apt cython3 if a
-    #     source build fails on a Pi.
-    #   ffmpeg: video processing/playback. sqlite3: DB CLI. mbuffer: video
-    #     streaming buffer. parallel: update_yt-dlp.sh.
+    #     the venv — simpleaudio and, for the ws2812b driver, rpi-ws281x (sdist).
+    #   ffmpeg: video processing/playback.
+    #   mbuffer: video streaming buffer.
+    #   parallel: needed for update_yt-dlp.sh script
     sudo apt -y install git python3-pip build-essential libasound2-dev \
         ffmpeg sqlite3 mbuffer parallel
     sudo apt -y full-upgrade
 }
 
-# Build the pifi virtualenv (.venv) from uv.lock — the same single source the
-# dev env uses. Pinned (--frozen). --managed-python makes uv use (downloading if
-# needed) its own CPython matching .python-version / requires-python (3.13),
-# independent of whatever python the base OS ships — so the install isn't tied
-# to the Pi running a particular system python. The source-built extensions
-# (simpleaudio, rpi-ws281x) compile against that managed python's bundled
-# headers, which is why the system python3-dev isn't needed.
-# Installs runtime deps + the dev group (pyright/pytest); the LED-driver extra
-# is added later by installLedDriver. pifi itself is not installed as a package
-# ([tool.uv] package = false) — the bin/ scripts run it in-place via sys.path.
-# Run unprivileged so .venv (and uv's managed python) are owned by the repo
-# user; the (root) systemd services just execute .venv/bin/python, which root
-# can read fine. Kept separate from the root-owned /opt/uv python that yt-dlp
-# uses (setupUv), per https://github.com/astral-sh/uv/issues/11360.
-setupVenv(){
-    info "\\nCreating the pifi virtualenv (.venv) from uv.lock..."
-    ( cd "$BASE_DIR" && uv sync --frozen --managed-python )
+installUvAndVenv(){
+    info "\\nInstalling uv and creating the pifi virtualenv (.venv) from uv.lock..."
+
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade uv
+
+    # Build the pifi virtualenv (.venv) from uv.lock.
+    #   --frozen: pin dependencyversions
+    #   --managed-python: makes uv use (downloading if needed) its own Python, separate
+    #     from the system installed one
+    #
+    # Run unprivileged so .venv (and uv's managed python) are owned by the repo
+    # user; the (root) systemd services just execute .venv/bin/python, which root
+    # can read fine.
+    pushd "$BASE_DIR"
+    uv sync --frozen --managed-python
+    popd
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
@@ -93,24 +84,15 @@ installDeno(){
     sudo rm -rf /tmp/deno
 }
 
-setupUv(){
-    info "\\nSetting up uv..."
-
-    # uv is an install-time tool (used just below, by setupVenv, and by the
-    # yt-dlp update cron), not a pifi runtime dependency, so it's installed
-    # directly with pip rather than listed in pyproject.toml.
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade uv
+installYtDlp(){
+    info "\\nInstalling yt-dlp..."
 
     sudo mkdir --parents /opt/uv/python /opt/uv/python-bin /opt/uv/tools /opt/uv/tools-bin
 
     # Install a version of python that is supported by the latest version of yt-dlp
-    # Install as root. Always invoke uv as root such that it uses a consistent set of working directories.
+    # Install as root. With respect to yt-dlp, always invoke uv as root such that it uses a consistent set of working directories.
     # See: https://github.com/astral-sh/uv/issues/11360
-    sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin uv python install 3.13
-}
-
-installYtDlp(){
-    info "\\nInstalling yt-dlp..."
+    sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin uv python install $YT_DLP_PYTHON_VERSION
 
     # Remove the pip installed yt-dlp in case it's present (we used to install yt-dlp with pip).
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp[default]'
@@ -131,8 +113,7 @@ enableSpi(){
 
 installLedDriver(){
     info "\\nInstalling LED driver..."
-    # Read the driver via the venv python (setupVenv has run, so pifi's config
-    # deps are available). apa102 / ws2812b ship as pip extras and just need
+    # apa102 / ws2812b ship as pip extras and just need
     # their package synced into the venv; ws2812b additionally needs SPI/clock
     # tuning. rgbmatrix has no pip package — it's a source build into the venv.
     local led_driver
@@ -146,12 +127,10 @@ installLedDriver(){
     esac
 }
 
-# Add an LED-driver extra (apa102 / ws2812b) from pyproject's optional
-# dependencies into the venv, pinned by the lock. uv sync keeps the base deps
-# and dev group; it just adds the extra's packages.
 syncLedExtra(){
-    info "Installing the '$1' LED-driver extra into the venv..."
-    ( cd "$BASE_DIR" && uv sync --frozen --managed-python --extra "$1" )
+    pushd "$BASE_DIR"
+    uv sync --frozen --managed-python --extra "$1"
+    popd
 }
 
 # e.g. https://www.adafruit.com/product/2276
@@ -162,13 +141,9 @@ installLedDriverRgbMatrix(){
     clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
     venv_python="$BASE_DIR/.venv/bin/python"
 
-    # The binding is built from .pyx (Cython) sources — upstream ships no
-    # generated C++ — so Cython must be importable by the venv interpreter we
-    # build against. Pull it into the venv from the lock-pinned rgbmatrix-build
-    # group (only the rgbmatrix path needs it). The system has python3-dev's job
-    # covered by the managed Python's bundled headers.
-    info "Adding the rgbmatrix build toolchain (Cython) to the venv..."
-    ( cd "$BASE_DIR" && uv sync --frozen --managed-python --group rgbmatrix-build )
+    pushd "$BASE_DIR"
+    uv sync --frozen --managed-python --group rgbmatrix-build
+    popd
 
     if [ -d "$clone_dir" ]; then
         info "Pulling repo in $clone_dir ..."
@@ -180,21 +155,16 @@ installLedDriverRgbMatrix(){
         pushd "$clone_dir"
     fi
 
-    # Build and install the python binding into the venv (no sudo — the venv is
-    # owned by the repo user). rgbmatrix has no PyPI package, so it lives in the
-    # venv alongside the lock-managed deps rather than being apt/pip-installed.
     make build-python PYTHON="$venv_python"
-    make install-python PYTHON="$venv_python"
+    sudo make install-python PYTHON="$venv_python"
     popd
 
-    # Fail loudly here if the binding didn't actually build/install, rather than
-    # only discovering it when the queue first tries to drive the matrix.
     info "Verifying the rgbmatrix binding imports..."
     "$venv_python" -c 'import rgbmatrix'
 }
 
 configureLedDriverWs2812b(){
-    info "Configuring LED driver ws2812b... (the rpi-ws281x package is installed from the ws2812b extra)"
+    info "Configuring LED driver ws2812b..."
 
     # Set SPI buffer size.
     # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi

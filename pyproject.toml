@@ -4,16 +4,19 @@ version = "0.0.0"
 requires-python = "==3.13.*"
 dependencies = [
     "numpy",
-    "requests",
+    "requests", # HTTP requests (for NycSubway, WFMU)
     "pillow",
-    "pygame",
+    "pygame", # sound effects
     "pyjson5",
     "pytz",
-    "soco",
-    "syncedlyrics",
-    "underground",
+    "soco", # Sonos speaker control (for SonosKaraoke)
+    "syncedlyrics", # Lyrics fetching with timestamps (for SonosKaraoke)
+    "underground", # MTA GTFS-realtime feed (for NycSubway)
     "typing-extensions",
-    "websockets",
+    "websockets", # games e.g. snake
+
+    # Sound effects
+    # RE installation via git, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
     "simpleaudio @ git+https://github.com/cexen/py-simple-audio.git",
 ]
 

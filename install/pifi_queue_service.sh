@@ -9,11 +9,8 @@ Wants=network-online.target
 
 [Service]
 Environment=HOME=/root
-# Prepend the pifi venv to PATH so '#!/usr/bin/env python3' (in bin/* and the
-# scripts they spawn) resolves to the venv interpreter, not system python.
-# A bash -c wrapper (rather than 'uv run', which adds overhead and may hit the
-# network for dep resolution) lets \$PATH pick up systemd's default service PATH
-# instead of hardcoding it; exec replaces bash so the service stays MainPID.
+# Add venv to path so shebangs and subprocess calls resolve to the venv interpreter, not system python.
+# To avoid overhead and possible dependency resolution related network access, don't use `uv` here.
 ExecStart=/usr/bin/bash -c 'PATH=$BASE_DIR/.venv/bin:\$PATH exec $BASE_DIR/bin/queue'
 Restart=on-failure
 
