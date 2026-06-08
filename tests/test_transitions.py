@@ -240,7 +240,7 @@ class TestRenderTick(unittest.TestCase):
         ss = _StubScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
+        ss.render_tick()
         player.play_frame.assert_not_called()
 
     def test_restores_frame_player_after_tick(self):
@@ -258,13 +258,13 @@ class TestRenderTick(unittest.TestCase):
 
     def test_returns_false_alive_when_tick_stops(self):
         ss = _FailingTickScreensaver(led_frame_player=None, fail_after=0)
-        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
+        _, alive = ss.render_tick()
         self.assertFalse(alive)
 
     def test_calls_setup_on_first_invocation(self):
         ss = _RenderingSetupScreensaver(led_frame_player=None)
         self.assertFalse(ss._Screensaver__is_set_up)  # pyright: ignore[reportAttributeAccessIssue]
-        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
+        ss.render_tick()
         self.assertTrue(ss._Screensaver__is_set_up)  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_setup_frame_captured_not_displayed(self):
@@ -275,7 +275,7 @@ class TestRenderTick(unittest.TestCase):
         ss = _RenderingSetupScreensaver(led_frame_player=player)
         player.play_frame.reset_mock()
 
-        frame, alive = ss.render_tick()  # pyright: ignore[reportUnusedVariable]
+        frame, _ = ss.render_tick()
         # The real player should NOT have received any frames
         player.play_frame.assert_not_called()
         # But we should have captured a frame

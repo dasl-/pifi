@@ -71,7 +71,7 @@ class UnixSocketHelper:
 
     # raises socket.timeout, SocketConnectionHandshakeException, and others
     def accept(self):
-        self.__connection_socket, unused_address = self.__server_socket.accept()  # pyright: ignore[reportOptionalMemberAccess, reportUnusedVariable]
+        self.__connection_socket, _ = self.__server_socket.accept()  # pyright: ignore[reportOptionalMemberAccess]
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_HANDSHAKE_TIMEOUT_S)
         self.__exchange_connection_handshake_messages()
         self.__connection_socket.settimeout(self.__CONNECTION_SOCKET_TIMEOUT_S)
@@ -88,7 +88,7 @@ class UnixSocketHelper:
         return self
 
     def is_ready_to_read(self):
-        is_ready_to_read, ignore1, ignore2 = select.select([self.__connection_socket], [], [], 0)  # pyright: ignore[reportUnusedVariable]
+        is_ready_to_read, _, _ = select.select([self.__connection_socket], [], [], 0)
         return bool(is_ready_to_read)
 
     # param: msg - string

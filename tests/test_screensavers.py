@@ -261,7 +261,7 @@ class TestSpecificScreensavers(unittest.TestCase):
 
     def test_cellular_automaton_hierarchy(self):
         """Verify CellularAutomaton inherits from Screensaver."""
-        self.assertTrue(issubclass(CellularAutomaton, Screensaver))  # pyright: ignore[reportUnnecessaryIsInstance]
+        self.assertIn(Screensaver, CellularAutomaton.__mro__)
 
 
 class TestScreensaverPreviewIntegration(unittest.TestCase):

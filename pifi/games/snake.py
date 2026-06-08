@@ -355,7 +355,7 @@ class Snake:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
-        for x in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board  # pyright: ignore[reportUnusedVariable]
+        for _ in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board
             time.sleep(0.1)
             self.__show_board()
             self.__increment_tick_counters()
@@ -375,7 +375,7 @@ class Snake:
         score_displayer = ScoreDisplayer(self.__led_frame_player, score)
         score_displayer.display_score(score_color)
 
-        for i in range(1, 100):  # pyright: ignore[reportUnusedVariable]
+        for _ in range(1, 100):
             # if someone clicks "New Game" while the score is being displayed, immediately start a new game
             # instead of waiting for the score to stop being displayed
             #

@@ -15,8 +15,6 @@ from pifi.logger import Logger
 from pifi.playlist import Playlist
 from pifi.led.ledframeplayer import LedFramePlayer
 from pifi.games.gamecolorhelper import GameColorHelper
-from pifi.games.scoredisplayer import ScoreDisplayer  # pyright: ignore[reportUnusedImport]
-from pifi.games.scores import Scores  # pyright: ignore[reportUnusedImport]
 from pifi.games.pongplayer import PongPlayer
 from pifi.games.unixsockethelper import UnixSocketHelper
 from pifi.directoryutils import DirectoryUtils
@@ -124,7 +122,7 @@ class Pong:
 
     def __countdown(self):
         """Show a brief countdown before the game starts."""
-        for i in range(3, 0, -1):  # pyright: ignore[reportUnusedVariable]
+        for _ in range(3, 0, -1):
             self.__show_board()
             time.sleep(0.5)
 

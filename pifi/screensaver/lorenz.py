@@ -85,11 +85,6 @@ class Lorenz(Screensaver):
             self._led_frame_player.play_frame(frame)
             return
 
-        # Find bounds for scaling
-        xs = [p[0] for p in self.__trail]  # pyright: ignore[reportUnusedVariable]
-        ys = [p[1] for p in self.__trail]  # pyright: ignore[reportUnusedVariable]
-        zs = [p[2] for p in self.__trail]  # pyright: ignore[reportUnusedVariable]
-
         # The Lorenz attractor typically spans roughly:
         # x: -20 to 20, y: -30 to 30, z: 0 to 50
         # Use fixed bounds for stable display

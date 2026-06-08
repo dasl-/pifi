@@ -356,7 +356,6 @@ class NycSubway(Screensaver):
             return (arrival['stop_id'], arrival['line'])
 
         new_keys = set(make_key(a) for a in new_arrivals[:max_rows])
-        current_keys = set(make_key(r['data']) for r in self.__display_rows if not r.get('exiting'))  # pyright: ignore[reportUnusedVariable]
 
         # Mark rows that should exit (slide off right)
         for row in self.__display_rows:

@@ -188,7 +188,7 @@ def setup_mock_config(width, height, config_overrides=None):
     # This reads and merges default_config.json and config.json
     try:
         Config.load_config_if_not_loaded(should_set_log_level=False)
-    except Exception as e:  # pyright: ignore[reportUnusedVariable]
+    except Exception:
         print("Error loading config files:", file=sys.stderr)
         print("", file=sys.stderr)
         traceback.print_exc()

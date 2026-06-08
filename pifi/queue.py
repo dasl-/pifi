@@ -97,7 +97,7 @@ class Queue:
                 pass_fds = (unix_socket_fd,)
             elif playlist_item["title"] == Pong.GAME_TITLE:
                 try:
-                    pong_settings = Pong.make_settings_from_playlist_item(playlist_item)  # pyright: ignore[reportUnusedVariable]
+                    Pong.make_settings_from_playlist_item(playlist_item)
                 except Exception:
                     self.__logger.error(f'Caught exception: {traceback.format_exc()}')
                     Logger.set_uuid('')
