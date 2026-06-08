@@ -9,11 +9,12 @@ Wants=network-online.target
 
 [Service]
 Environment=HOME=/root
-# Prepend the pifi venv so '#!/usr/bin/env python3' (in bin/* and the scripts
-# they spawn via bash) resolves to the venv interpreter, not system python.
-Environment=PATH=$BASE_DIR/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-# Command to execute when the service is started
-ExecStart=$BASE_DIR/bin/server
+# Prepend the pifi venv to PATH so '#!/usr/bin/env python3' (in bin/* and the
+# scripts they spawn) resolves to the venv interpreter, not system python.
+# A bash -c wrapper (rather than 'uv run', which adds overhead and may hit the
+# network for dep resolution) lets \$PATH pick up systemd's default service PATH
+# instead of hardcoding it; exec replaces bash so the service stays MainPID.
+ExecStart=/usr/bin/bash -c 'PATH=$BASE_DIR/.venv/bin:\$PATH exec $BASE_DIR/bin/server'
 Restart=on-failure
 
 [Install]
