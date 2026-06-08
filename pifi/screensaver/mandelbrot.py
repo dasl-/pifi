@@ -3,7 +3,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
@@ -38,10 +37,6 @@ class Mandelbrot(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
         # Current view parameters
         self.__center_x = -0.5
@@ -77,7 +72,7 @@ class Mandelbrot(Screensaver):
         if black_ratio == 1.0:
             self.__black_frame_count += 1
             if self.__black_frame_count >= 5:
-                self.__logger.info("Zoomed into black region, picking new target")
+                self._logger.info("Zoomed into black region, picking new target")
                 self.__reset()
         else:
             self.__black_frame_count = 0
@@ -99,7 +94,7 @@ class Mandelbrot(Screensaver):
         # Reset black frame counter
         self.__black_frame_count = 0
 
-        self.__logger.info(f"Zoom target: ({self.__target_x}, {self.__target_y})")
+        self._logger.info(f"Zoom target: ({self.__target_x}, {self.__target_y})")
 
     def __generate_palette(self):
         """Generate a vibrant color palette for the fractal."""
@@ -124,7 +119,7 @@ class Mandelbrot(Screensaver):
         max_iter = Config.get('screensavers.configs.mandelbrot.max_iterations', 50)
 
         # Calculate view bounds
-        aspect = self.__width / self.__height
+        aspect = self._width / self._height
         view_height = 3.0 / self.__zoom
         view_width = view_height * aspect
 
@@ -134,8 +129,8 @@ class Mandelbrot(Screensaver):
         y_max = self.__center_y + view_height / 2
 
         # Create coordinate grids using float32 for speed
-        x = np.linspace(x_min, x_max, self.__width, dtype=np.float32)
-        y = np.linspace(y_min, y_max, self.__height, dtype=np.float32)
+        x = np.linspace(x_min, x_max, self._width, dtype=np.float32)
+        y = np.linspace(y_min, y_max, self._height, dtype=np.float32)
         X, Y = np.meshgrid(x, y)
         C = X + 1j * Y
 
@@ -170,7 +165,7 @@ class Mandelbrot(Screensaver):
         self._led_frame_player.play_frame(frame)
 
         # Return ratio of black (interior) pixels
-        total_pixels = self.__width * self.__height
+        total_pixels = self._width * self._height
         black_pixels = np.sum(interior_mask)
         return black_pixels / total_pixels
 

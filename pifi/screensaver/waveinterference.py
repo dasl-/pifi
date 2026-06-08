@@ -18,16 +18,13 @@ class WaveInterference(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Wave sources: each is [x, y, phase_offset, vx, vy]
         self.__sources = []
         self.__time = 0.0
 
         # Precompute coordinate grids for efficiency
-        x = np.arange(self.__width)
-        y = np.arange(self.__height)
+        x = np.arange(self._width)
+        y = np.arange(self._height)
         self.__grid_x, self.__grid_y = np.meshgrid(x, y)
 
         # Color palette
@@ -55,8 +52,8 @@ class WaveInterference(Screensaver):
 
     def __add_random_source(self):
         """Add a new wave source at a random position with random velocity."""
-        x = random.uniform(0, self.__width)
-        y = random.uniform(0, self.__height)
+        x = random.uniform(0, self._width)
+        y = random.uniform(0, self._height)
         phase_offset = random.uniform(0, 2 * math.pi)
 
         # Slow drift velocity
@@ -75,19 +72,19 @@ class WaveInterference(Screensaver):
             source[1] += source[4]  # y += vy
 
             # Bounce off edges
-            if source[0] < 0 or source[0] >= self.__width:
+            if source[0] < 0 or source[0] >= self._width:
                 source[3] *= -1
-                source[0] = max(0, min(self.__width - 1, source[0]))
-            if source[1] < 0 or source[1] >= self.__height:
+                source[0] = max(0, min(self._width - 1, source[0]))
+            if source[1] < 0 or source[1] >= self._height:
                 source[4] *= -1
-                source[1] = max(0, min(self.__height - 1, source[1]))
+                source[1] = max(0, min(self._height - 1, source[1]))
 
     def __render(self):
         wave_frequency = Config.get('screensavers.configs.wave_interference.wave_frequency', 0.5)
         color_mode = Config.get('screensavers.configs.wave_interference.color_mode', 'rainbow')
 
         # Calculate combined wave amplitude at each pixel
-        amplitude = np.zeros((self.__height, self.__width), dtype=np.float64)
+        amplitude = np.zeros((self._height, self._width), dtype=np.float64)
 
         for source in self.__sources:
             sx, sy, phase_offset, _, _ = source
@@ -106,7 +103,7 @@ class WaveInterference(Screensaver):
         amplitude = amplitude / num_sources
 
         # Convert to frame
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
         if color_mode == 'rainbow':
             # Map amplitude to hue, with time-based offset for color cycling

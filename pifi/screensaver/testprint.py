@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -26,18 +25,12 @@ class TestPrint(Screensaver):
         (0, 0, 191),      # blue
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
 
         # Pre-compute coordinate grids
-        y = np.arange(self.__height, dtype=np.float64)
-        x = np.arange(self.__width, dtype=np.float64)
+        y = np.arange(self._height, dtype=np.float64)
+        x = np.arange(self._width, dtype=np.float64)
         self.__gx, self.__gy = np.meshgrid(x, y)
 
         # Randomize layout: which zones go where
@@ -48,16 +41,16 @@ class TestPrint(Screensaver):
         self.__gradient_speed = random.uniform(0.2, 0.5)
         self.__pulse_speed = random.uniform(1.0, 2.0)
         self.__crosshair_center = (
-            self.__width * random.uniform(0.3, 0.7),
-            self.__height * random.uniform(0.3, 0.7),
+            self._width * random.uniform(0.3, 0.7),
+            self._height * random.uniform(0.3, 0.7),
         )
 
     def _tick(self):
         self.__time += 0.015
         t = self.__time
 
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
-        w, h = self.__width, self.__height
+        frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
+        w, h = self._width, self._height
 
         if self.__layout == 'standard':
             # Top 60%: color bars, bottom 20%: gradient, bottom 20%: line test
@@ -204,7 +197,7 @@ class TestPrint(Screensaver):
     def __draw_crosshair(self, frame, t):
         """Pulsing crosshair / registration mark overlay."""
         cx, cy = self.__crosshair_center
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         # Slowly drift the center
         cx = cx + math.sin(t * 0.2) * w * 0.1

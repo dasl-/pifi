@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import hashlib
 import time
 
-from pifi.logger import Logger
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.screensaver.screensaver import Screensaver
 
@@ -14,7 +13,6 @@ class CellularAutomaton(Screensaver, ABC):
 
     def __init__(self, led_frame_player = None):
         super().__init__(led_frame_player)
-        self._logger = Logger().set_namespace(self.__class__.__name__)
         self._board = None
 
     def _setup(self):

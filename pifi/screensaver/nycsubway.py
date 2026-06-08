@@ -25,7 +25,6 @@ import requests
 import underground  # imported after the protobuf env var above is set
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver import textutils
 
@@ -77,10 +76,6 @@ class NycSubway(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
 
         # Configuration
         self.__stop_ids = Config.get('screensavers.configs.nyc_subway.stop_ids', ['127N', '127S'])
@@ -111,7 +106,7 @@ class NycSubway(Screensaver):
 
         try:
             self.__underground = underground
-            self.__logger.info("underground library loaded successfully")
+            self._logger.info("underground library loaded successfully")
 
             # Load station names on first init
             if not self.__station_names_loaded:
@@ -120,7 +115,7 @@ class NycSubway(Screensaver):
             return True
         except Exception as e:
             self.__error_message = "ERR"
-            self.__logger.error(f"Failed to load underground: {e}")
+            self._logger.error(f"Failed to load underground: {e}")
             return False
 
     def __load_station_names(self):
@@ -139,19 +134,19 @@ class NycSubway(Screensaver):
                 if cache_age < cache_max_age:
                     with open(cache_file, 'r') as f:
                         self.__station_names = json.load(f)
-                    self.__logger.info(f"Loaded {len(self.__station_names)} station names from cache")
+                    self._logger.info(f"Loaded {len(self.__station_names)} station names from cache")
                     return
                 else:
-                    self.__logger.info("Station cache expired, refreshing...")
+                    self._logger.info("Station cache expired, refreshing...")
         except Exception as e:
-            self.__logger.warning(f"Failed to load cache: {e}")
+            self._logger.warning(f"Failed to load cache: {e}")
 
         # Fetch from MTA
         try:
             # MTA's static GTFS feed URL
             gtfs_url = "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
 
-            self.__logger.info("Fetching MTA station names...")
+            self._logger.info("Fetching MTA station names...")
             response = requests.get(gtfs_url, timeout=30)
             response.raise_for_status()
 
@@ -179,19 +174,19 @@ class NycSubway(Screensaver):
                             short_name = short_name.replace('TIMES SQUARE', 'TIMES SQ')
                             self.__station_names[stop_id] = short_name
 
-            self.__logger.info(f"Loaded {len(self.__station_names)} station names from MTA")
+            self._logger.info(f"Loaded {len(self.__station_names)} station names from MTA")
 
             # Save to cache
             try:
                 cache_dir.mkdir(parents=True, exist_ok=True)
                 with open(cache_file, 'w') as f:
                     json.dump(self.__station_names, f)
-                self.__logger.info("Saved station names to cache")
+                self._logger.info("Saved station names to cache")
             except Exception as e:
-                self.__logger.warning(f"Failed to save cache: {e}")
+                self._logger.warning(f"Failed to save cache: {e}")
 
         except Exception as e:
-            self.__logger.warning(f"Failed to load station names: {e}")
+            self._logger.warning(f"Failed to load station names: {e}")
             # Continue without station names - will fall back to stop_id
 
     def __fetch_arrivals(self):
@@ -239,20 +234,20 @@ class NycSubway(Screensaver):
                                     })
 
                 except Exception as e:
-                    self.__logger.warning(f"Error fetching feed {feed_url}: {e}")
+                    self._logger.warning(f"Error fetching feed {feed_url}: {e}")
 
             # Sort by arrival time
             arrivals.sort(key=lambda x: x['minutes'])
             self.__arrivals = arrivals
             self.__error_message = None
-            self.__logger.info(f"Fetched {len(self.__arrivals)} arrivals")
+            self._logger.info(f"Fetched {len(self.__arrivals)} arrivals")
 
             # Group arrivals by stop_id
             self.__group_arrivals()
 
         except Exception as e:
             self.__error_message = "ERR"
-            self.__logger.error(f"Failed to fetch arrivals: {e}")
+            self._logger.error(f"Failed to fetch arrivals: {e}")
 
     def __group_arrivals(self):
         """Group arrivals by (stop_id, line) pair with multiple times."""
@@ -329,7 +324,7 @@ class NycSubway(Screensaver):
 
     def __render(self):
         """Render the current arrivals to the display."""
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
         # Thread-safe copy of arrivals
         with self.__fetch_lock:
@@ -354,7 +349,7 @@ class NycSubway(Screensaver):
 
     def __update_display_rows(self, new_arrivals):
         """Update display rows, triggering animations for changes."""
-        max_rows = self.__height // self.__row_height
+        max_rows = self._height // self.__row_height
 
         # Create keys for comparison
         def make_key(arrival):
@@ -376,7 +371,7 @@ class NycSubway(Screensaver):
         for row in self.__display_rows:
             if row.get('exiting'):
                 row['x_offset'] = row.get('x_offset', 0) + row.get('exit_speed', 4)
-                if row['x_offset'] > self.__width:
+                if row['x_offset'] > self._width:
                     rows_to_remove.append(row)
 
         for row in rows_to_remove:
@@ -441,9 +436,9 @@ class NycSubway(Screensaver):
         y = y_offset
 
         # Skip if completely off screen
-        if y < -self.__row_height or y >= self.__height:
+        if y < -self.__row_height or y >= self._height:
             return
-        if x_offset >= self.__width:
+        if x_offset >= self._width:
             return
 
         # Draw line bullet
@@ -472,14 +467,14 @@ class NycSubway(Screensaver):
         # Calculate total times width
         times_str = ','.join(t[0] for t in times_display)
         times_width = len(times_str) * 4
-        times_x = self.__width - times_width + x_offset
+        times_x = self._width - times_width + x_offset
 
         # Station name scrolls in the middle section
         name_start_x = after_bullet + 4
-        name_end_x = min(times_x - 1, self.__width)
+        name_end_x = min(times_x - 1, self._width)
         name_width = name_end_x - name_start_x
 
-        if name_width > 0 and name_start_x < self.__width:
+        if name_width > 0 and name_start_x < self._width:
             self.__draw_scrolling_text(
                 frame, station_name,
                 name_start_x, y + 1,
@@ -498,11 +493,11 @@ class NycSubway(Screensaver):
                     int(time_color[1] * (0.5 + 0.5 * pulse)),
                     int(time_color[2] * (0.5 + 0.5 * pulse))
                 )
-            if cursor_x < self.__width:
+            if cursor_x < self._width:
                 self.__draw_text(frame, time_text, cursor_x, y + 1, time_color)
             cursor_x += len(time_text) * 4
             if idx < len(times_display) - 1:
-                if cursor_x < self.__width:
+                if cursor_x < self._width:
                     self.__draw_char(frame, ',', cursor_x, y + 1, (100, 100, 100))
                 cursor_x += 4
 
@@ -510,7 +505,7 @@ class NycSubway(Screensaver):
         """Draw text that scrolls horizontally if too wide, with partial character clipping."""
         textutils.draw_scrolling_text(
             frame, text, x, y, max_width, color,
-            self.__scroll_offset, self.__width, self.__height
+            self.__scroll_offset, self._width, self._height
         )
 
     def __draw_bullet(self, frame, x, y, line, color):
@@ -531,7 +526,7 @@ class NycSubway(Screensaver):
             for dx in range(7):
                 if circle[dy][dx]:
                     px, py = x + dx, y + dy
-                    if 0 <= px < self.__width and 0 <= py < self.__height:
+                    if 0 <= px < self._width and 0 <= py < self._height:
                         frame[py, px] = color
 
         # Draw line letter/number centered (3x5 font centered in 7x7)
@@ -540,15 +535,15 @@ class NycSubway(Screensaver):
         brightness = (color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114)
         text_color = (0, 0, 0) if brightness > 128 else (255, 255, 255)
         # Center the 3x5 char in the 7x7 circle: x+2, y+1
-        textutils.draw_char(frame, char, x + 2, y + 1, text_color, self.__width, self.__height)
+        textutils.draw_char(frame, char, x + 2, y + 1, text_color, self._width, self._height)
 
     def __draw_char(self, frame, char, x, y, color):
         """Draw a single 3x5 character."""
-        textutils.draw_char(frame, char, x, y, color, self.__width, self.__height)
+        textutils.draw_char(frame, char, x, y, color, self._width, self._height)
 
     def __draw_text(self, frame, text, x, y, color):
         """Draw a text string."""
-        textutils.draw_text(frame, text, x, y, color, self.__width, self.__height)
+        textutils.draw_text(frame, text, x, y, color, self._width, self._height)
 
     @classmethod
     def get_id(cls) -> str:

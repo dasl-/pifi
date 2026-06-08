@@ -24,7 +24,7 @@ class CyclicAutomaton(CellularAutomaton):
     def _seed_hook(self):
         # Create the board with an extra edge cell on all sides to simplify the
         # neighborhood calculation and avoid edge checks.
-        shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
+        shape = [self._height + 2, self._width + 2]
         self._board = np.random.randint(0, self.__num_states, shape)
 
     def _board_to_frame(self):  # pyright: ignore[reportIncompatibleMethodOverride]

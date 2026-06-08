@@ -1,8 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -16,13 +14,6 @@ class Lenia(Screensaver):
     grow, and interact. Uses ring-shaped convolution kernels and
     bell-curve growth functions.
     """
-
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
     def _setup(self):
         self.__reset()
@@ -38,14 +29,14 @@ class Lenia(Screensaver):
         self.__render()
 
     def __reset(self):
-        self.__grid = np.zeros((self.__height, self.__width), dtype=np.float64)
+        self.__grid = np.zeros((self._height, self._width), dtype=np.float64)
         self.__prev_mean = None
         self.__stagnant_count = 0
 
         # Pick a random creature preset — these are (R, mu, sigma, dt) combos
         # known to produce dynamic behavior. R is kernel radius.
         # Smaller R values work better on small grids.
-        R_max = min(self.__width, self.__height) // 3
+        R_max = min(self._width, self._height) // 3
         self.__params = random.choice([
             # Orbium — classic glider, smooth and elegant
             {'R': min(7, R_max), 'mu': 0.15, 'sigma': 0.015, 'dt': 0.1, 'beta': [1]},
@@ -77,7 +68,7 @@ class Lenia(Screensaver):
         # Slowly rotating color palette
         self.__hue_base = random.random()
 
-        self.__logger.info(
+        self._logger.info(
             f"Lenia params: R={R}, mu={self.__mu}, sigma={self.__sigma}, " +
             f"dt={self.__dt}, beta={beta}"
         )
@@ -86,9 +77,9 @@ class Lenia(Screensaver):
         """Build ring kernel and return its FFT for convolution."""
         # Kernel is defined on the full grid with wrap-around
         # Create distance field from center
-        cy, cx = self.__height // 2, self.__width // 2
-        y = np.arange(self.__height) - cy
-        x = np.arange(self.__width) - cx
+        cy, cx = self._height // 2, self._width // 2
+        y = np.arange(self._height) - cy
+        x = np.arange(self._width) - cx
         yy, xx = np.meshgrid(y, x, indexing='ij')
         dist = np.sqrt(xx ** 2 + yy ** 2)
 
@@ -132,16 +123,16 @@ class Lenia(Screensaver):
         """Place random blob creatures on the grid."""
         R = self.__params['R']
         for _ in range(num_creatures):
-            cx = random.randint(R, self.__width - R - 1)  # pyright: ignore[reportArgumentType]
-            cy = random.randint(R, self.__height - R - 1)  # pyright: ignore[reportArgumentType]
+            cx = random.randint(R, self._width - R - 1)  # pyright: ignore[reportArgumentType]
+            cy = random.randint(R, self._height - R - 1)  # pyright: ignore[reportArgumentType]
             # Random organic blob
             size = random.randint(max(2, R // 2), R)  # pyright: ignore[reportArgumentType, reportOperatorIssue]
             for dy in range(-size, size + 1):
                 for dx in range(-size, size + 1):
                     dist = (dx ** 2 + dy ** 2) ** 0.5
                     if dist <= size:
-                        ny = (cy + dy) % self.__height
-                        nx = (cx + dx) % self.__width
+                        ny = (cy + dy) % self._height
+                        nx = (cx + dx) % self._width
                         # Smooth falloff from center
                         val = (1 - dist / size) * random.uniform(0.5, 1.0)
                         self.__grid[ny, nx] = max(self.__grid[ny, nx], val)
@@ -151,13 +142,13 @@ class Lenia(Screensaver):
         # 0.05 is the activity threshold — Lenia values stay close to 0
         # outside live regions, so > 0.05 reliably picks out "alive" cells.
         alive = (self.__grid > 0.05).sum()
-        total = self.__width * self.__height
+        total = self._width * self._height
         mean = float(self.__grid.mean())
 
         # Extinction: fewer than 2% of cells active means the pattern
         # has died out and won't recover on its own — re-seed.
         if alive < total * 0.02:
-            self.__logger.info("Lenia: extinction detected, re-seeding")
+            self._logger.info("Lenia: extinction detected, re-seeding")
             self.__seed_creatures(3)
             self.__stagnant_count = 0
             self.__prev_mean = None
@@ -172,7 +163,7 @@ class Lenia(Screensaver):
                 self.__stagnant_count = 0
 
             if self.__stagnant_count >= 3:
-                self.__logger.info("Lenia: stagnation detected, adding perturbation")
+                self._logger.info("Lenia: stagnation detected, adding perturbation")
                 # Add a new creature to disrupt the static pattern
                 self.__seed_creatures(2)
                 self.__stagnant_count = 0

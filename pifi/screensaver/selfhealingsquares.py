@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -17,29 +16,23 @@ class SelfHealingSquares(Screensaver):
     grid continuously breaks apart and heals back.
     """
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
 
         # Grid spacing
-        self.__spacing = max(3, min(self.__width, self.__height) // 8)
+        self.__spacing = max(3, min(self._width, self._height) // 8)
 
         # Number of grid nodes (one extra on each side for edge coverage)
-        self.__cols = int(self.__width / self.__spacing) + 3
-        self.__rows = int(self.__height / self.__spacing) + 3
+        self.__cols = int(self._width / self.__spacing) + 3
+        self.__rows = int(self._height / self.__spacing) + 3
 
         # Starting offset so grid is centered
-        self.__ox = (self.__width - (self.__cols - 1) * self.__spacing) / 2.0
-        self.__oy = (self.__height - (self.__rows - 1) * self.__spacing) / 2.0
+        self.__ox = (self._width - (self.__cols - 1) * self.__spacing) / 2.0
+        self.__oy = (self._height - (self.__rows - 1) * self.__spacing) / 2.0
 
         # Center of the display
-        self.__cx = self.__width / 2.0
-        self.__cy = self.__height / 2.0
+        self.__cx = self._width / 2.0
+        self.__cy = self._height / 2.0
 
         # Maximum distance from center (for normalizing distortion)
         self.__max_dist = math.sqrt(self.__cx ** 2 + self.__cy ** 2)
@@ -52,7 +45,7 @@ class SelfHealingSquares(Screensaver):
         self.__hue = random.random()
 
         # Frame buffer
-        self.__frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        self.__frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
     def _tick(self):
         self.__time += 0.015
@@ -120,7 +113,7 @@ class SelfHealingSquares(Screensaver):
             t = s / steps
             px = int(round(x1 + dx * t))
             py = int(round(y1 + dy * t))
-            if 0 <= px < self.__width and 0 <= py < self.__height:
+            if 0 <= px < self._width and 0 <= py < self._height:
                 self.__frame[py, px] = color
 
     @classmethod

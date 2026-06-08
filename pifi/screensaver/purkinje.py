@@ -2,7 +2,6 @@ import math
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -33,19 +32,16 @@ class Purkinje(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Pre-compute coordinate grids (done once, reused every tick)
-        y_coords, x_coords = np.mgrid[0:self.__height, 0:self.__width]
+        y_coords, x_coords = np.mgrid[0:self._height, 0:self._width]
         self.__x_grid = x_coords.astype(np.float32)
         self.__y_grid = y_coords.astype(np.float32)
-        self.__x_norm = self.__x_grid / max(self.__width, 1)
-        self.__y_norm = self.__y_grid / max(self.__height, 1)
+        self.__x_norm = self.__x_grid / max(self._width, 1)
+        self.__y_norm = self.__y_grid / max(self._height, 1)
 
         # Center coordinates
-        self.__cx = self.__width / 2.0
-        self.__cy = self.__height / 2.0
+        self.__cx = self._width / 2.0
+        self.__cy = self._height / 2.0
 
         # Distance from center (used by several modes)
         dx = self.__x_grid - self.__cx
@@ -71,7 +67,7 @@ class Purkinje(Screensaver):
         dt = 0.025
         self.__time += dt
 
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         if self.__mode == self.MODE_LATTICE:
             self.__tick_lattice(frame)
@@ -177,8 +173,8 @@ class Purkinje(Screensaver):
         self.__vasc_regrow_interval = random.uniform(12.0, 20.0)
         self.__vasc_last_regrow = 0.0
         # Current and target fields for smooth morphing
-        self.__vascular_field = np.zeros((self.__height, self.__width), dtype=np.float32)
-        self.__vasc_target_field = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__vascular_field = np.zeros((self._height, self._width), dtype=np.float32)
+        self.__vasc_target_field = np.zeros((self._height, self._width), dtype=np.float32)
         self.__vasc_morph_progress = 1.0  # start by generating first tree immediately
         self.__generate_vascular_tree()
         self.__vascular_field = self.__vasc_target_field.copy()
@@ -186,12 +182,12 @@ class Purkinje(Screensaver):
     def __generate_vascular_tree(self):
         """Generate a new random vascular tree and store as target field."""
         self.__branches = []
-        ox = self.__cx + random.uniform(-self.__width * 0.2, self.__width * 0.2)
-        oy = self.__cy + random.uniform(-self.__height * 0.2, self.__height * 0.2)
+        ox = self.__cx + random.uniform(-self._width * 0.2, self._width * 0.2)
+        oy = self.__cy + random.uniform(-self._height * 0.2, self._height * 0.2)
         n_main = random.randint(3, 5)
         for i in range(n_main):
             angle = (2 * math.pi * i / n_main) + random.uniform(-0.4, 0.4)
-            length = min(self.__width, self.__height) * random.uniform(0.3, 0.55)
+            length = min(self._width, self._height) * random.uniform(0.3, 0.55)
             self.__grow_branch(ox, oy, angle, length, thickness=1.8, depth=0, max_depth=4)
         self.__vasc_target_field = self.__compute_branch_field()
         self.__vasc_morph_progress = 0.0
@@ -220,7 +216,7 @@ class Purkinje(Screensaver):
         weighted by branch thickness. Returns a float32 array where higher
         values mean closer to a branch.
         """
-        field = np.zeros((self.__height, self.__width), dtype=np.float32)
+        field = np.zeros((self._height, self._width), dtype=np.float32)
 
         for (x1, y1, x2, y2, thickness) in self.__branches:
             # Vectorised point-to-segment distance
@@ -301,15 +297,15 @@ class Purkinje(Screensaver):
             self.__bf_particles.append({
                 'phase': random.uniform(0, 2 * math.pi),
                 'speed': random.uniform(0.8, 2.5),
-                'y_base': random.uniform(0, self.__height),
+                'y_base': random.uniform(0, self._height),
                 'x_freq': random.uniform(0.3, 1.0),
-                'x_amp': random.uniform(self.__width * 0.1, self.__width * 0.4),
-                'x_center': random.uniform(self.__width * 0.2, self.__width * 0.8),
+                'x_amp': random.uniform(self._width * 0.1, self._width * 0.4),
+                'x_center': random.uniform(self._width * 0.2, self._width * 0.8),
                 'brightness': random.uniform(0.7, 1.0),
                 'size': random.uniform(0.6, 1.2),
             })
         # Trail buffer: small 2D accumulation buffer that fades each frame
-        self.__bf_trail = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__bf_trail = np.zeros((self._height, self._width), dtype=np.float32)
 
     def __tick_bluefield(self, frame):
         t = self.__time
@@ -332,12 +328,12 @@ class Purkinje(Screensaver):
         for p in self.__bf_particles:
             # Curved path: x follows a sinusoidal course, y advances linearly
             progress = (t * p['speed'] + p['phase'])
-            py = (p['y_base'] + progress * 4.0) % self.__height
+            py = (p['y_base'] + progress * 4.0) % self._height
             px = p['x_center'] + math.sin(progress * p['x_freq']) * p['x_amp']
-            px = px % self.__width
+            px = px % self._width
 
-            ix = int(px) % self.__width
-            iy = int(py) % self.__height
+            ix = int(px) % self._width
+            iy = int(py) % self._height
 
             # Deposit into trail buffer (soft dot)
             bright = p['brightness'] * (0.7 + 0.3 * math.sin(t * 3.0 + p['phase']))
@@ -347,8 +343,8 @@ class Purkinje(Screensaver):
             r_int = int(math.ceil(radius)) + 1
             for dy in range(-r_int, r_int + 1):
                 for dx in range(-r_int, r_int + 1):
-                    nx = (ix + dx) % self.__width
-                    ny = (iy + dy) % self.__height
+                    nx = (ix + dx) % self._width
+                    ny = (iy + dy) % self._height
                     d = math.sqrt(dx * dx + dy * dy)
                     if d < radius + 0.5:
                         falloff = max(0, 1.0 - d / (radius + 0.5))
@@ -369,7 +365,7 @@ class Purkinje(Screensaver):
         self.__ai_shape_time = 0.0
         self.__ai_cycle_period = random.uniform(4.0, 7.0)
         # Accumulation buffer for the afterimage (RGB float)
-        self.__ai_ghost = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__ai_ghost = np.zeros((self._height, self._width, 3), dtype=np.float32)
         # Choose shape types
         self.__ai_shapes = ['circle', 'ring', 'bar', 'diamond']
 
@@ -426,7 +422,7 @@ class Purkinje(Screensaver):
         """Return a float32 mask (0-1) for the given shape type."""
         # Gentle pulsing size
         pulse = 0.8 + 0.2 * math.sin(t * 1.5)
-        base_size = min(self.__width, self.__height) * 0.3 * pulse
+        base_size = min(self._width, self._height) * 0.3 * pulse
 
         if shape == 'circle':
             return np.clip(1.0 - self.__dist_center / max(base_size, 1), 0, 1)
@@ -458,7 +454,7 @@ class Purkinje(Screensaver):
             diamond_dist = dx + dy
             return np.clip(1.0 - diamond_dist / max(base_size * 1.2, 1), 0, 1)
 
-        return np.zeros((self.__height, self.__width), dtype=np.float32)
+        return np.zeros((self._height, self._width), dtype=np.float32)
 
     # ------------------------------------------------------------------ #
     #  Class metadata                                                      #

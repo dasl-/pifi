@@ -1,6 +1,5 @@
 import numpy as np
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -22,14 +21,9 @@ class Vortices(Screensaver):
         (0.50, 0.65, 0.80),  # Pale blue
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         circles = self.__pack_circles(w, h)
         n = len(circles)
@@ -113,7 +107,7 @@ class Vortices(Screensaver):
     def _tick(self):
         self.__time += 0.02
         t = self.__time
-        h, w = self.__height, self.__width
+        h, w = self._height, self._width
 
         if self.__num_circles == 0:
             self._led_frame_player.play_frame(np.zeros((h, w, 3), dtype=np.uint8))

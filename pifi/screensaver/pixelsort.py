@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -20,8 +19,6 @@ class PixelSort(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -33,8 +30,8 @@ class PixelSort(Screensaver):
         self.__sort_axis = random.choice(['horizontal', 'vertical'])
 
         # Pre-compute coordinate grids
-        y = np.linspace(0, 1, self.__height, dtype=np.float64)
-        x = np.linspace(0, 1, self.__width, dtype=np.float64)
+        y = np.linspace(0, 1, self._height, dtype=np.float64)
+        x = np.linspace(0, 1, self._width, dtype=np.float64)
         self.__gx, self.__gy = np.meshgrid(x, y)
 
         # Random source pattern parameters
@@ -82,11 +79,11 @@ class PixelSort(Screensaver):
         result = frame.copy()
 
         if self.__sort_axis == 'horizontal':
-            for y in range(self.__height):
+            for y in range(self._height):
                 result[y] = self.__sort_row(frame[y], brightness[y], lo, hi)
         else:
             # Sort columns by transposing, sorting rows, transposing back
-            for x in range(self.__width):
+            for x in range(self._width):
                 result[:, x] = self.__sort_row(frame[:, x], brightness[:, x], lo, hi)
 
         return result

@@ -19,9 +19,6 @@ class PendulumWaves(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
-
         # Config
         self.__num_pendulums = Config.get('screensavers.configs.pendulumwaves.num_pendulums', 0)  # 0 = auto
         self.__base_period = Config.get('screensavers.configs.pendulumwaves.base_period', 60.0)  # frames for longest pendulum
@@ -32,10 +29,10 @@ class PendulumWaves(Screensaver):
 
         # Auto-calculate pendulum count if not specified
         if self.__num_pendulums <= 0:
-            self.__num_pendulums = self.__width
+            self.__num_pendulums = self._width
 
         # Canvas buffer
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
     def __init_pendulums(self):
         """Initialize pendulum parameters."""
@@ -79,7 +76,7 @@ class PendulumWaves(Screensaver):
                 py = int(cy + dy)
 
                 # Skip out of bounds
-                if px < 0 or px >= self.__width or py < 0 or py >= self.__height:
+                if px < 0 or px >= self._width or py < 0 or py >= self._height:
                     continue
 
                 # Distance from center
@@ -101,7 +98,7 @@ class PendulumWaves(Screensaver):
         self.__canvas *= self.__trail_fade
 
         # Calculate spacing
-        spacing = self.__width / self.__num_pendulums
+        spacing = self._width / self.__num_pendulums
         margin = spacing / 2
 
         # Draw each pendulum
@@ -116,8 +113,8 @@ class PendulumWaves(Screensaver):
 
             # Map to screen coordinates
             # Pendulum swings in the middle portion of the screen
-            amplitude = (self.__height - 2) / 2
-            center_y = self.__height / 2
+            amplitude = (self._height - 2) / 2
+            center_y = self._height / 2
             y = center_y + y_normalized * amplitude * 0.8
 
             # Get color and draw

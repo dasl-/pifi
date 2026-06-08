@@ -40,7 +40,7 @@ class GameOfLife(CellularAutomaton):
     def _seed_hook(self):
         # Create the board with an extra edge cell on all sides to simplify the
         # neighborhood calculation and avoid edge checks.
-        shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
+        shape = [self._height + 2, self._width + 2]
         self._board = np.zeros(shape, np.uint8)
         probability = Config.get('screensavers.configs.game_of_life.seed_liveness_probability')
         if self.__variant == self.__VARIANT_IMMIGRATION:
@@ -53,7 +53,7 @@ class GameOfLife(CellularAutomaton):
             self._board[1:-1, 1:-1][seed] = 1
 
     def _board_to_frame(self):  # pyright: ignore[reportIncompatibleMethodOverride]
-        frame = np.zeros([Config.get_or_throw('leds.display_height'), Config.get_or_throw('leds.display_width'), 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
         rgb = self.__game_color_helper.get_rgb(self.__game_color_mode, self.__COLOR_CHANGE_FREQ, self._num_ticks)
         frame[(self._board[1:-1, 1:-1] == 1)] = rgb  # pyright: ignore[reportArgumentType, reportCallIssue]
 

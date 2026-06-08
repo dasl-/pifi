@@ -21,9 +21,6 @@ class MatrixRain(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Each column has: [y_position, speed, length, active]
         self.__drops = []
 
@@ -52,17 +49,17 @@ class MatrixRain(Screensaver):
             head_y = int(drop['y'])
             tail_y = head_y - drop['length']
 
-            if tail_y < self.__height:
+            if tail_y < self._height:
                 new_drops.append(drop)
 
                 # Draw the drop head (brightest point)
-                if 0 <= head_y < self.__height:
+                if 0 <= head_y < self._height:
                     self.__trail_buffer[head_y, drop['x']] = 1.0
 
                 # Draw trail with gradient
                 for i in range(1, drop['length']):
                     trail_y = head_y - i
-                    if 0 <= trail_y < self.__height:
+                    if 0 <= trail_y < self._height:
                         # Brightness decreases along trail
                         brightness = 1.0 - (i / drop['length'])
                         brightness *= 0.7  # Trail is dimmer than head
@@ -74,7 +71,7 @@ class MatrixRain(Screensaver):
         self.__drops = new_drops
 
         # Spawn new drops in empty columns
-        for x in range(self.__width):
+        for x in range(self._width):
             if x not in active_columns and random.random() < spawn_rate:
                 self.__add_drop(x)
 
@@ -82,10 +79,10 @@ class MatrixRain(Screensaver):
 
     def __reset(self):
         self.__drops = []
-        self.__trail_buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__trail_buffer = np.zeros((self._height, self._width), dtype=np.float32)
 
         # Initialize some drops
-        for x in range(self.__width):
+        for x in range(self._width):
             if random.random() < 0.3:
                 self.__add_drop(x)
 
@@ -97,12 +94,12 @@ class MatrixRain(Screensaver):
         max_length = Config.get('screensavers.configs.matrix_rain.max_length', 12)
 
         speed = random.uniform(min_speed, max_speed)
-        length = random.randint(min_length, min(max_length, self.__height))
+        length = random.randint(min_length, min(max_length, self._height))
 
         if from_top:
             y = random.uniform(-length, 0)
         else:
-            y = random.uniform(-length, self.__height)
+            y = random.uniform(-length, self._height)
 
         self.__drops.append({
             'x': x,
@@ -113,15 +110,15 @@ class MatrixRain(Screensaver):
         })
 
     def __render(self):
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
         color_mode = Config.get('screensavers.configs.matrix_rain.color_mode', 'green')
 
         if color_mode == 'green':
             # Classic green matrix
             # Bright heads are white-green, trails are green
-            for y in range(self.__height):
-                for x in range(self.__width):
+            for y in range(self._height):
+                for x in range(self._width):
                     b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         if b > 0.9:
@@ -137,11 +134,11 @@ class MatrixRain(Screensaver):
 
         elif color_mode == 'rainbow':
             # Rainbow variation - each column has a different hue
-            for y in range(self.__height):
-                for x in range(self.__width):
+            for y in range(self._height):
+                for x in range(self._width):
                     b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
-                        hue = (x / self.__width) % 1.0
+                        hue = (x / self._width) % 1.0
                         if b > 0.9:
                             # Bright head
                             rgb = hsv_to_rgb_bytes(hue, 0.3, 1.0)
@@ -151,8 +148,8 @@ class MatrixRain(Screensaver):
 
         elif color_mode == 'blue':
             # Blue/cyan variation
-            for y in range(self.__height):
-                for x in range(self.__width):
+            for y in range(self._height):
+                for x in range(self._width):
                     b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         if b > 0.9:
@@ -165,8 +162,8 @@ class MatrixRain(Screensaver):
 
         else:  # 'white'
             # Monochrome white
-            for y in range(self.__height):
-                for x in range(self.__width):
+            for y in range(self._height):
+                for x in range(self._width):
                     b = self.__trail_buffer[y, x]  # pyright: ignore[reportOptionalSubscript]
                     if b > 0.01:
                         intensity = int(b * 255)

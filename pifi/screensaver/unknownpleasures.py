@@ -18,9 +18,6 @@ class UnknownPleasures(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
-
         # Config
         self.__num_lines = Config.get('screensavers.configs.unknownpleasures.num_lines', 0)  # 0 = auto
         self.__wave_speed = Config.get('screensavers.configs.unknownpleasures.wave_speed', 0.05)
@@ -32,12 +29,12 @@ class UnknownPleasures(Screensaver):
 
         # Auto-calculate line count
         if self.__num_lines <= 0:
-            self.__num_lines = max(6, self.__height // 2)
+            self.__num_lines = max(6, self._height // 2)
 
         # Pre-compute arrays for vectorized operations
-        self.__x_coords = np.arange(self.__width, dtype=np.float32)
-        self.__x_indices = np.arange(self.__width, dtype=np.int32)
-        self.__y_grid = np.arange(self.__height, dtype=np.int32)[:, np.newaxis]
+        self.__x_coords = np.arange(self._width, dtype=np.float32)
+        self.__x_indices = np.arange(self._width, dtype=np.int32)
+        self.__y_grid = np.arange(self._height, dtype=np.int32)[:, np.newaxis]
 
         # Perlin noise setup
         self.__perm = None
@@ -95,7 +92,7 @@ class UnknownPleasures(Screensaver):
         x = self.__x_coords
 
         # Multiple octaves of noise
-        value = np.zeros(self.__width, dtype=np.float32)
+        value = np.zeros(self._width, dtype=np.float32)
         freq = 1.0
         amp = 1.0
 
@@ -113,12 +110,12 @@ class UnknownPleasures(Screensaver):
 
     def __render(self):
         """Render the waveforms."""
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
-        line_spacing = self.__height / (self.__num_lines + 1)
+        line_spacing = self._height / (self.__num_lines + 1)
 
         # Pre-compute all wave heights as a 2D array (num_lines x width)
-        all_heights = np.zeros((self.__num_lines, self.__width), dtype=np.float32)
+        all_heights = np.zeros((self.__num_lines, self._width), dtype=np.float32)
         all_base_y = np.zeros(self.__num_lines, dtype=np.float32)
 
         for line_idx in range(self.__num_lines):
@@ -129,8 +126,8 @@ class UnknownPleasures(Screensaver):
 
         # Draw from back to front (top to bottom) for occlusion
         for line_idx in range(self.__num_lines):
-            pixel_heights = np.clip(all_heights[line_idx].astype(np.int32), 0, self.__height - 1)
-            fill_end = min(int(all_base_y[line_idx]), self.__height - 1)
+            pixel_heights = np.clip(all_heights[line_idx].astype(np.int32), 0, self._height - 1)
+            fill_end = min(int(all_base_y[line_idx]), self._height - 1)
             color = self.__line_colors[line_idx]  # pyright: ignore[reportOptionalSubscript]
 
             if self.__fill_below:

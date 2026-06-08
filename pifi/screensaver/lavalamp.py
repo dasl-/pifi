@@ -18,9 +18,6 @@ class LavaLamp(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         self.__blobs = []
 
     def _setup(self):
@@ -38,14 +35,14 @@ class LavaLamp(Screensaver):
         for i in range(num_blobs):
             # Start some at top (cold) and some at bottom (hot) for immediate motion
             if i % 2 == 0:
-                y = random.uniform(0, self.__height * 0.3)
+                y = random.uniform(0, self._height * 0.3)
                 heat = random.uniform(0.2, 0.4)
             else:
-                y = random.uniform(self.__height * 0.7, self.__height)
+                y = random.uniform(self._height * 0.7, self._height)
                 heat = random.uniform(0.7, 0.9)
 
             self.__blobs.append({
-                'x': random.uniform(1, self.__width - 1),
+                'x': random.uniform(1, self._width - 1),
                 'y': y,
                 'vx': random.uniform(-0.1, 0.1),
                 'vy': 0,
@@ -65,7 +62,7 @@ class LavaLamp(Screensaver):
         for blob in self.__blobs:
             # Heat from bottom, cool from top
             # Temperature gradient based on y position
-            ambient_temp = 1.0 - (blob['y'] / self.__height)
+            ambient_temp = 1.0 - (blob['y'] / self._height)
 
             if blob['heat'] < ambient_temp:
                 blob['heat'] += heat_rate
@@ -76,7 +73,7 @@ class LavaLamp(Screensaver):
 
             # Buoyancy force based on heat differential
             # Hot blobs rise, cool blobs sink
-            target_y = (1.0 - blob['heat']) * self.__height
+            target_y = (1.0 - blob['heat']) * self._height
             blob['vy'] += (target_y - blob['y']) * buoyancy * 0.15
 
             # Add wobble motion using sine waves for organic movement
@@ -97,24 +94,24 @@ class LavaLamp(Screensaver):
             if blob['x'] < blob['radius']:
                 blob['x'] = blob['radius']
                 blob['vx'] *= -0.5
-            elif blob['x'] > self.__width - blob['radius']:
-                blob['x'] = self.__width - blob['radius']
+            elif blob['x'] > self._width - blob['radius']:
+                blob['x'] = self._width - blob['radius']
                 blob['vx'] *= -0.5
 
             # Contain vertically
             if blob['y'] < 0:
                 blob['y'] = 0
                 blob['vy'] *= -0.3
-            elif blob['y'] > self.__height - 1:
-                blob['y'] = self.__height - 1
+            elif blob['y'] > self._height - 1:
+                blob['y'] = self._height - 1
                 blob['vy'] *= -0.3
 
     def __render(self):
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
         # For each pixel, calculate metaball field value
-        for y in range(self.__height):
-            for x in range(self.__width):
+        for y in range(self._height):
+            for x in range(self._width):
                 field = 0
                 avg_heat = 0
                 total_influence = 0

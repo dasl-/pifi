@@ -19,9 +19,6 @@ class Boids(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         self.__positions = None
         self.__velocities = None
 
@@ -38,8 +35,8 @@ class Boids(Screensaver):
 
         # Initialize random positions across the display
         self.__positions = np.random.rand(num_boids, 2)
-        self.__positions[:, 0] *= self.__width
-        self.__positions[:, 1] *= self.__height
+        self.__positions[:, 0] *= self._width
+        self.__positions[:, 1] *= self._height
 
         # Initialize random velocities
         max_speed = self.__get_max_speed()
@@ -55,7 +52,7 @@ class Boids(Screensaver):
         self.__hues = (base_hues + np.random.uniform(-0.05, 0.05, num_boids)) % 1.0
 
         # Trail canvas (float for smooth fading)
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
     def __update_velocities(self):
         separation = self.__calculate_separation()
@@ -146,16 +143,16 @@ class Boids(Screensaver):
         self.__positions += self.__velocities  # pyright: ignore[reportOperatorIssue]
 
         # Wrap around edges
-        self.__positions[:, 0] = self.__positions[:, 0] % self.__width
-        self.__positions[:, 1] = self.__positions[:, 1] % self.__height
+        self.__positions[:, 0] = self.__positions[:, 0] % self._width
+        self.__positions[:, 1] = self.__positions[:, 1] % self._height
 
     def __render(self):
         # Fade trail
         self.__canvas *= 0.82
 
         for i, pos in enumerate(self.__positions):  # pyright: ignore[reportArgumentType]
-            x = int(pos[0]) % self.__width
-            y = int(pos[1]) % self.__height
+            x = int(pos[0]) % self._width
+            y = int(pos[1]) % self._height
 
             color = np.array(hsv_to_rgb(self.__hues[i], 0.8, 1.0), dtype=np.float64)
 
@@ -165,16 +162,16 @@ class Boids(Screensaver):
             # Tail pixel — one pixel behind the direction of travel
             speed = math.sqrt(self.__velocities[i, 0] ** 2 + self.__velocities[i, 1] ** 2)  # pyright: ignore[reportOptionalSubscript]
             if speed > 0.01:
-                tx = int(round(pos[0] - self.__velocities[i, 0] / speed)) % self.__width  # pyright: ignore[reportOptionalSubscript]
-                ty = int(round(pos[1] - self.__velocities[i, 1] / speed)) % self.__height  # pyright: ignore[reportOptionalSubscript]
+                tx = int(round(pos[0] - self.__velocities[i, 0] / speed)) % self._width  # pyright: ignore[reportOptionalSubscript]
+                ty = int(round(pos[1] - self.__velocities[i, 1] / speed)) % self._height  # pyright: ignore[reportOptionalSubscript]
                 self.__canvas[ty, tx] = np.minimum(1.0, self.__canvas[ty, tx] + color * 0.15)
 
         # Composite: bright boid heads on top of the trail
         frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
 
         for i, pos in enumerate(self.__positions):  # pyright: ignore[reportArgumentType]
-            x = int(pos[0]) % self.__width
-            y = int(pos[1]) % self.__height
+            x = int(pos[0]) % self._width
+            y = int(pos[1]) % self._height
             frame[y, x] = hsv_to_rgb_bytes(self.__hues[i], 0.6, 1.0)
 
         self._led_frame_player.play_frame(frame)

@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -40,14 +39,9 @@ class Klee(Screensaver):
         [8, 9, 10, 11, 0],  # Blau → Rot (through violet)
     ])
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         y = np.arange(h, dtype=np.float64)
         x = np.arange(w, dtype=np.float64)
@@ -67,7 +61,7 @@ class Klee(Screensaver):
             self.__setup_grid()
 
     def __setup_diamond(self):
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         self.__diamond_size = max(2.5, min(w, h) / random.uniform(3, 5))
         ds = self.__diamond_size
         # Rotated coordinates give a natural diamond tiling
@@ -75,7 +69,7 @@ class Klee(Screensaver):
         self.__v_base = (self.__gx - self.__gy) / ds
 
     def __setup_wheel(self):
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         self.__cx = w / 2.0
         self.__cy = h / 2.0
         self.__radius = min(w, h) * 0.45
@@ -86,8 +80,8 @@ class Klee(Screensaver):
         self.__dist = np.sqrt(dx ** 2 + dy ** 2)
 
     def __setup_grid(self):
-        self.__grid_cols = random.randint(4, min(8, self.__width // 2))
-        self.__grid_rows = random.randint(3, min(6, self.__height // 2))
+        self.__grid_cols = random.randint(4, min(8, self._width // 2))
+        self.__grid_rows = random.randint(3, min(6, self._height // 2))
 
     def _tick(self):
         self.__time += 0.02
@@ -183,7 +177,7 @@ class Klee(Screensaver):
 
     def __tick_grid(self, t):
         """Rectangular grid: hue progression × tonal value steps."""
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         cols, rows = self.__grid_cols, self.__grid_rows
 
         cell_w = w / cols

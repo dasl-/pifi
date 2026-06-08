@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -29,15 +28,9 @@ class HexGrid(Screensaver):
         [(0.1, 0.7, 0.4), (0.1, 0.4, 0.7), (0.4, 0.1, 0.6), (0.2, 0.8, 0.6)],
     ]
 
-    def __init__(self, led_frame_player=None):
-        super().__init__(led_frame_player)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         # Hex cell size (pixels per cell radius)
         self.__cell_size = max(2.0, min(w, h) / random.uniform(4, 8))
@@ -118,7 +111,7 @@ class HexGrid(Screensaver):
     def _tick(self):
         self.__time += 0.015
         t = self.__time
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         cx = self.__cell_cx
         cy = self.__cell_cy

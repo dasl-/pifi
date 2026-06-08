@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -19,16 +18,14 @@ class Halftone(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
         self.__time = 0.0
 
         # Pre-compute coordinate grids
-        y = np.arange(self.__height, dtype=np.float64)
-        x = np.arange(self.__width, dtype=np.float64)
+        y = np.arange(self._height, dtype=np.float64)
+        x = np.arange(self._width, dtype=np.float64)
         self.__gx, self.__gy = np.meshgrid(x, y)
 
         # Screen angles for each color channel (classic CMYK-ish angles)
@@ -54,7 +51,7 @@ class Halftone(Screensaver):
         self.__pattern_phases = [random.uniform(0, 10) for _ in range(6)]
 
         # Reusable per-tick frame buffer (zeroed at the start of each tick)
-        self.__frame = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        self.__frame = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
     def _tick(self):
         self.__time += self.__pattern_speed
@@ -62,7 +59,7 @@ class Halftone(Screensaver):
 
         gx, gy = self.__gx, self.__gy
         p = self.__pattern_phases
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         frame = self.__frame
         frame.fill(0.0)

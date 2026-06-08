@@ -18,9 +18,6 @@ class FlowField(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Flow field and particles
         self.__particles = []
         self.__buffer = None
@@ -62,18 +59,18 @@ class FlowField(Screensaver):
 
             # Wrap around edges
             if particle['x'] < 0:
-                particle['x'] += self.__width
-            elif particle['x'] >= self.__width:
-                particle['x'] -= self.__width
+                particle['x'] += self._width
+            elif particle['x'] >= self._width:
+                particle['x'] -= self._width
             if particle['y'] < 0:
-                particle['y'] += self.__height
-            elif particle['y'] >= self.__height:
-                particle['y'] -= self.__height
+                particle['y'] += self._height
+            elif particle['y'] >= self._height:
+                particle['y'] -= self._height
 
             # Draw particle
             ix = int(particle['x'])
             iy = int(particle['y'])
-            if 0 <= ix < self.__width and 0 <= iy < self.__height:
+            if 0 <= ix < self._width and 0 <= iy < self._height:
                 # Color based on particle's hue + global palette
                 hue = (self.__hue_base + particle['hue'] * self.__hue_range) % 1.0
                 r, g, b = hsv_to_rgb(hue, 0.8, 1.0)
@@ -88,7 +85,7 @@ class FlowField(Screensaver):
         self.__time += 1
 
     def __reset(self):
-        self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__buffer = np.zeros((self._height, self._width, 3), dtype=np.float32)
         self.__time = 0
         self.__noise_z = random.random() * 100
 
@@ -104,8 +101,8 @@ class FlowField(Screensaver):
 
     def __create_particle(self):
         return {
-            'x': random.random() * self.__width,
-            'y': random.random() * self.__height,
+            'x': random.random() * self._width,
+            'y': random.random() * self._height,
             'hue': random.random(),
         }
 

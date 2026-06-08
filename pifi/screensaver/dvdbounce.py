@@ -2,7 +2,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
@@ -18,22 +17,18 @@ class DvdBounce(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
         # Logo dimensions (clamp to display size)
         requested_width = Config.get('screensavers.configs.dvd_bounce.logo_width', 8)
         requested_height = Config.get('screensavers.configs.dvd_bounce.logo_height', 4)
 
-        self.__logo_width = min(requested_width, self.__width - 1)
-        self.__logo_height = min(requested_height, self.__height - 1)
+        self.__logo_width = min(requested_width, self._width - 1)
+        self.__logo_height = min(requested_height, self._height - 1)
 
-        if requested_width >= self.__width or requested_height >= self.__height:
-            self.__logger.warning(
+        if requested_width >= self._width or requested_height >= self._height:
+            self._logger.warning(
                 f"Logo dimensions ({requested_width}x{requested_height}) too large for display " +
-                f"({self.__width}x{self.__height}). Clamped to {self.__logo_width}x{self.__logo_height}."
+                f"({self._width}x{self._height}). Clamped to {self.__logo_width}x{self.__logo_height}."
             )
 
         # Position (float for smooth movement)
@@ -68,8 +63,8 @@ class DvdBounce(Screensaver):
             self.__x = 0
             self.__vx = abs(self.__vx)
             bounced_x = True
-        elif self.__x >= self.__width - self.__logo_width:
-            self.__x = self.__width - self.__logo_width
+        elif self.__x >= self._width - self.__logo_width:
+            self.__x = self._width - self.__logo_width
             self.__vx = -abs(self.__vx)
             bounced_x = True
 
@@ -78,8 +73,8 @@ class DvdBounce(Screensaver):
             self.__y = 0
             self.__vy = abs(self.__vy)
             bounced_y = True
-        elif self.__y >= self.__height - self.__logo_height:
-            self.__y = self.__height - self.__logo_height
+        elif self.__y >= self._height - self.__logo_height:
+            self.__y = self._height - self.__logo_height
             self.__vy = -abs(self.__vy)
             bounced_y = True
 
@@ -90,15 +85,15 @@ class DvdBounce(Screensaver):
             # Check for corner hit!
             if bounced_x and bounced_y:
                 self.__corner_hits += 1
-                self.__logger.info(f"CORNER HIT! Total: {self.__corner_hits}")
+                self._logger.info(f"CORNER HIT! Total: {self.__corner_hits}")
 
         self.__render()
 
     def __reset(self):
         """Initialize the bouncing logo."""
         # Start at a random position
-        self.__x = random.uniform(0, self.__width - self.__logo_width)
-        self.__y = random.uniform(0, self.__height - self.__logo_height)
+        self.__x = random.uniform(0, self._width - self.__logo_width)
+        self.__y = random.uniform(0, self._height - self.__logo_height)
 
         # Random initial velocity
         speed = Config.get('screensavers.configs.dvd_bounce.speed', 0.5)
@@ -147,14 +142,14 @@ class DvdBounce(Screensaver):
 
     def __render(self):
         """Render the bouncing logo."""
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
         # Draw the logo as a filled rectangle
         # Clamp coordinates to prevent negative indices
         x_start = max(0, int(self.__x))
         y_start = max(0, int(self.__y))
-        x_end = min(x_start + self.__logo_width, self.__width)
-        y_end = min(y_start + self.__logo_height, self.__height)
+        x_end = min(x_start + self.__logo_width, self._width)
+        y_end = min(y_start + self.__logo_height, self._height)
 
         # Fill the rectangle
         show_border = Config.get('screensavers.configs.dvd_bounce.show_border', True)

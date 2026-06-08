@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,8 +18,6 @@ class Moire(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -29,8 +26,8 @@ class Moire(Screensaver):
         self.__speed = random.uniform(0.008, 0.015)
 
         # Pre-compute coordinate grid
-        y = np.arange(self.__height, dtype=np.float64)
-        x = np.arange(self.__width, dtype=np.float64)
+        y = np.arange(self._height, dtype=np.float64)
+        x = np.arange(self._width, dtype=np.float64)
         self.__gx, self.__gy = np.meshgrid(x, y)
 
         # 2-3 pattern layers, each with:
@@ -40,7 +37,7 @@ class Moire(Screensaver):
         # - drift speed and angle
         self.__num_layers = random.choice([2, 3])
         self.__layers = []
-        cx, cy = self.__width / 2, self.__height / 2
+        cx, cy = self._width / 2, self._height / 2
 
         for i in range(self.__num_layers):
             layer = {
