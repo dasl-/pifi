@@ -96,12 +96,6 @@ class Queue:
                     f"--server-unix-socket-fd {shlex.quote(str(unix_socket_fd))}")
                 pass_fds = (unix_socket_fd,)
             elif playlist_item["title"] == Pong.GAME_TITLE:
-                try:
-                    Pong.make_settings_from_playlist_item(playlist_item)
-                except Exception:
-                    self.__logger.error(f'Caught exception: {traceback.format_exc()}')
-                    Logger.set_uuid('')
-                    return
                 # Pong is always 2 players, so always waiting for players
                 is_waiting_for_players = True
                 if not self.__playlist.set_current_video(playlist_item["playlist_video_id"], is_waiting_for_players):
