@@ -103,20 +103,11 @@ setupSystemdServices(){
     sudo chown root:root /etc/systemd/system/pifi_*.{service,timer}
     sudo chmod 644 /etc/systemd/system/pifi_*.{service,timer}
 
-    # Enable the long-running services and the timer up front. enable only reads each unit's
-    # [Install] section off disk and creates symlinks, so it doesn't need the reloaded in-memory
-    # state. We enable the timer rather than the oneshot pifi_update_yt_dlp.service (the timer
-    # triggers it), and list the services explicitly so the glob doesn't also match that oneshot.
-    local services=(pifi_queue.service pifi_server.service pifi_websocket_server.service)
-    sudo systemctl enable "${services[@]}" pifi_update_yt_dlp.timer
-
-    # Reload so the manager picks up the new unit files (and the symlinks just created) before we
-    # start anything; restart/start act on the loaded definition, which is stale until the reload.
+    local enabled_units=(pifi_queue.service pifi_server.service pifi_websocket_server.service pifi_update_yt_dlp.timer)
+    sudo systemctl enable "${enabled_units[@]}"
     sudo systemctl daemon-reload
 
-    # (Re)start the services and start the timer using the now-current definitions.
-    sudo systemctl restart "${services[@]}"
-    sudo systemctl start pifi_update_yt_dlp.timer
+    sudo systemctl restart "${enabled_units[@]}"
 }
 
 updateDbSchema(){
