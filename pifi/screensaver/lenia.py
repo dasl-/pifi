@@ -77,7 +77,7 @@ class Lenia(Screensaver):
         self.__hue_base = random.random()
 
         self.__logger.info(
-            f"Lenia params: R={R}, mu={self.__mu}, sigma={self.__sigma}, "
+            f"Lenia params: R={R}, mu={self.__mu}, sigma={self.__sigma}, " +
             f"dt={self.__dt}, beta={beta}"
         )
 
@@ -116,7 +116,7 @@ class Lenia(Screensaver):
 
     def __growth(self, potential):
         """Bell-curve growth function centered at mu with width sigma."""
-        return 2 * np.exp(-((potential - self.__mu) ** 2) / (2 * self.__sigma ** 2)) - 1
+        return 2 * np.exp(-((potential - self.__mu) ** 2) / (2 * self.__sigma ** 2)) - 1  # pyright: ignore[reportOperatorIssue]
 
     def __step(self):
         """One Lenia simulation step."""
@@ -131,10 +131,10 @@ class Lenia(Screensaver):
         """Place random blob creatures on the grid."""
         R = self.__params['R']
         for _ in range(num_creatures):
-            cx = random.randint(R, self.__width - R - 1)
-            cy = random.randint(R, self.__height - R - 1)
+            cx = random.randint(R, self.__width - R - 1)  # pyright: ignore[reportArgumentType]
+            cy = random.randint(R, self.__height - R - 1)  # pyright: ignore[reportArgumentType]
             # Random organic blob
-            size = random.randint(max(2, R // 2), R)
+            size = random.randint(max(2, R // 2), R)  # pyright: ignore[reportArgumentType, reportOperatorIssue]
             for dy in range(-size, size + 1):
                 for dx in range(-size, size + 1):
                     dist = (dx ** 2 + dy ** 2) ** 0.5

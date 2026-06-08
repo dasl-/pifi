@@ -1,3 +1,4 @@
+# pyright: reportImportCycles=false
 import sqlite3
 import threading
 import time

@@ -48,12 +48,17 @@ Config uses dot notation for nested keys: `Config.get('leds.display_width')`
 
 ## Key Dependencies
 
+Python packages are managed with uv, pinned by `pyproject.toml` / `uv.lock`, and
+installed into a project venv (`.venv`). `yt-dlp` is installed separately as a
+`uv tool` so it can auto-update independently of the pinned deps. Key libraries:
+
 - `yt-dlp`: YouTube video downloading
 - `ffmpeg`/`ffplay`: Video processing and audio playback
 - `numpy`: Frame buffer manipulation
 - `sqlite3`: Database for playlist, scores, settings
 - `simpleaudio`/`pygame.mixer`: Sound effects and music
 - `pyjson5`: JSON5 config parsing
+- `websockets`: Real-time game controls (WebSocket server)
 - `mbuffer`: Video streaming buffer
 
 ## Running
@@ -62,6 +67,10 @@ The system runs two main processes:
 
 1. **Queue process** (`bin/queue`): Main playback loop
 2. **Server process** (`bin/server`): HTTP API on port 80/443
+
+On the Pi these run as root via systemd, executing the entrypoints from `.venv`.
+For local development, run them through the venv with `uv run` (e.g. `uv run
+./bin/server`). See `docs/development_setup.md`.
 
 ## API Endpoints
 

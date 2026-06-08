@@ -187,7 +187,7 @@ def setup_mock_config(width, height, config_overrides=None):
     # This reads and merges default_config.json and config.json
     try:
         Config.load_config_if_not_loaded(should_set_log_level=False)
-    except Exception as e:
+    except Exception as e:  # pyright: ignore[reportUnusedVariable]
         print("Error loading config files:", file=sys.stderr)
         print("", file=sys.stderr)
         traceback.print_exc()
@@ -430,12 +430,12 @@ def run_sequence(screensaver_names, frame_player, args):
                 and next_screensaver.supports_live_transition()
             )
             if can_live:
-                transition_player.play_transition(
+                transition_player.play_transition(  # pyright: ignore[reportOptionalMemberAccess]
                     from_screensaver=screensaver,
                     to_screensaver=next_screensaver,
                 )
             else:
-                transition_player.play_transition()
+                transition_player.play_transition()  # pyright: ignore[reportOptionalMemberAccess]
         finally:
             if use_transitions:
                 screensaver.teardown()

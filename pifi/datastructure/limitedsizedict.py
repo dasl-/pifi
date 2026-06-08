@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
-class LimitedSizeDict(OrderedDict):
+class LimitedSizeDict(OrderedDict):  # pyright: ignore[reportMissingTypeArgument]
 
-    def __init__(self, items = [], capacity = 10):
+    def __init__(self, items = [], capacity = 10):  # pyright: ignore[reportCallInDefaultInitializer]
         self.__capacity = capacity
         super().__init__(items[-self.__capacity:])
 

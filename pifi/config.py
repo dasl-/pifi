@@ -1,6 +1,7 @@
 import copy
 import os
 import json
+from typing import Any
 import pyjson5
 from pifi.logger import Logger
 from pifi.directoryutils import DirectoryUtils
@@ -19,11 +20,11 @@ class Config:
 
     # Get a key from config using dot notation: "foo.bar.baz"
     @staticmethod
-    def get(key, default = None):
+    def get(key, default = None) -> Any:
         return Config.__get(key, should_throw = False, default = default)
 
     @staticmethod
-    def get_or_throw(key):
+    def get_or_throw(key) -> Any:
         return Config.__get(key, should_throw = True, default = None)
 
     @staticmethod
@@ -131,7 +132,7 @@ class Config:
     """
     @staticmethod
     def __merge_dicts(d1, d2):
-        for k, v in d2.items():
+        for k in d2:
             if (k in d1 and isinstance(d1[k], dict) and isinstance(d2[k], dict)):
                 Config.__merge_dicts(d1[k], d2[k])
             else:

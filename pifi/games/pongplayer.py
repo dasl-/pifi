@@ -106,7 +106,7 @@ class PongPlayer:
         if self.__unix_socket_helper.is_ready_to_read():
             try:
                 msg = self.__unix_socket_helper.recv_msg()
-                move, client_send_time = msg.split()
+                move, client_send_time = msg.split()  # pyright: ignore[reportUnusedVariable]
                 self.__pending_move = move
             except (SocketClosedException, ConnectionResetError):
                 self.__logger.info("Socket closed for player")

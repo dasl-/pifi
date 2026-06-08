@@ -1,3 +1,4 @@
+# pyright: reportImportCycles=false
 import json
 import numpy as np
 from pygame import mixer
@@ -262,7 +263,7 @@ class Snake:
             apple_rgb = self.__game_color_helper.get_rgb(
                 GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__APPLE_COLOR_CHANGE_FREQ, self.__num_ticks
             )
-            frame[self.__apple[0], self.__apple[1]] = apple_rgb
+            frame[self.__apple[0], self.__apple[1]] = apple_rgb  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         self.__led_frame_player.play_frame(frame)
 
@@ -319,7 +320,7 @@ class Snake:
                     if (
                         (
                             did_play_victory_sound and
-                            not victory_sound.is_playing() and
+                            not victory_sound.is_playing() and  # pyright: ignore[reportOptionalMemberAccess]
                             while_counter > (2 * self.ELIMINATED_SNAKE_BLINK_TICK_COUNT)
                         ) or
                         (while_counter > max_loops)
@@ -354,7 +355,7 @@ class Snake:
                 self.__logger.error('Unable to send high score message: {}'.format(traceback.format_exc()))
 
         time.sleep(0.3)
-        for x in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board
+        for x in range(self.ELIMINATED_SNAKE_BLINK_TICK_COUNT + 1): # blink board  # pyright: ignore[reportUnusedVariable]
             time.sleep(0.1)
             self.__show_board()
             self.__increment_tick_counters()
@@ -374,7 +375,7 @@ class Snake:
         score_displayer = ScoreDisplayer(self.__led_frame_player, score)
         score_displayer.display_score(score_color)
 
-        for i in range(1, 100):
+        for i in range(1, 100):  # pyright: ignore[reportUnusedVariable]
             # if someone clicks "New Game" while the score is being displayed, immediately start a new game
             # instead of waiting for the score to stop being displayed
             #

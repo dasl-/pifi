@@ -111,14 +111,14 @@ class Shadebobs(Screensaver):
                     brightness = intensity * falloff
 
                     # Additive blend
-                    self.__buffer[y, x, 0] += color[0] * brightness
-                    self.__buffer[y, x, 1] += color[1] * brightness
-                    self.__buffer[y, x, 2] += color[2] * brightness
+                    self.__buffer[y, x, 0] += color[0] * brightness  # pyright: ignore[reportOptionalSubscript]
+                    self.__buffer[y, x, 1] += color[1] * brightness  # pyright: ignore[reportOptionalSubscript]
+                    self.__buffer[y, x, 2] += color[2] * brightness  # pyright: ignore[reportOptionalSubscript]
 
     def __render(self):
         """Convert float buffer to uint8 and display."""
         # Clamp to 255 and convert
-        frame = np.clip(self.__buffer, 0, 255).astype(np.uint8)
+        frame = np.clip(self.__buffer, 0, 255).astype(np.uint8)  # pyright: ignore[reportArgumentType, reportCallIssue]
         self._led_frame_player.play_frame(frame)
 
     def __hsv_to_rgb(self, h, s, v):

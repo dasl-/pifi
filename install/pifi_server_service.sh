@@ -9,8 +9,9 @@ Wants=network-online.target
 
 [Service]
 Environment=HOME=/root
-# Command to execute when the service is started
-ExecStart=$BASE_DIR/bin/server
+# Add venv to path so shebangs and subprocess calls resolve to the venv interpreter, not system python.
+# To avoid overhead and possible dependency resolution related network access, don't use `uv` here.
+ExecStart=/usr/bin/bash -c 'PATH=$BASE_DIR/.venv/bin:\$PATH exec $BASE_DIR/bin/server'
 Restart=on-failure
 
 [Install]

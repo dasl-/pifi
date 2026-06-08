@@ -80,13 +80,13 @@ class Boids(Screensaver):
 
     def __calculate_separation(self):
         """Steer away from nearby boids to avoid crowding."""
-        num_boids = len(self.__positions)
+        num_boids = len(self.__positions)  # pyright: ignore[reportArgumentType]
         separation = np.zeros_like(self.__velocities)
 
         min_distance = Config.get('screensavers.configs.boids.min_distance', 2.0)
 
         for i in range(num_boids):
-            diff = self.__positions[i] - self.__positions
+            diff = self.__positions[i] - self.__positions  # pyright: ignore[reportOptionalSubscript]
             distances = np.linalg.norm(diff, axis=1)
 
             # Find boids that are too close (excluding self)
@@ -101,13 +101,13 @@ class Boids(Screensaver):
 
     def __calculate_alignment(self):
         """Steer towards the average heading of nearby boids."""
-        num_boids = len(self.__positions)
+        num_boids = len(self.__positions)  # pyright: ignore[reportArgumentType]
         alignment = np.zeros_like(self.__velocities)
 
         perception = self.__get_perception_radius()
 
         for i in range(num_boids):
-            diff = self.__positions - self.__positions[i]
+            diff = self.__positions - self.__positions[i]  # pyright: ignore[reportOptionalSubscript]
             distances = np.linalg.norm(diff, axis=1)
 
             # Find neighbors within perception radius (excluding self)
@@ -115,20 +115,20 @@ class Boids(Screensaver):
 
             if np.any(mask):
                 # Average velocity of neighbors
-                avg_velocity = np.mean(self.__velocities[mask], axis=0)
-                alignment[i] = avg_velocity - self.__velocities[i]
+                avg_velocity = np.mean(self.__velocities[mask], axis=0)  # pyright: ignore[reportOptionalSubscript]
+                alignment[i] = avg_velocity - self.__velocities[i]  # pyright: ignore[reportOptionalSubscript]
 
         return alignment * 0.05
 
     def __calculate_cohesion(self):
         """Steer towards the average position of nearby boids."""
-        num_boids = len(self.__positions)
+        num_boids = len(self.__positions)  # pyright: ignore[reportArgumentType]
         cohesion = np.zeros_like(self.__velocities)
 
         perception = self.__get_perception_radius()
 
         for i in range(num_boids):
-            diff = self.__positions - self.__positions[i]
+            diff = self.__positions - self.__positions[i]  # pyright: ignore[reportOptionalSubscript]
             distances = np.linalg.norm(diff, axis=1)
 
             # Find neighbors within perception radius (excluding self)
@@ -136,13 +136,13 @@ class Boids(Screensaver):
 
             if np.any(mask):
                 # Steer towards center of mass of neighbors
-                center = np.mean(self.__positions[mask], axis=0)
-                cohesion[i] = center - self.__positions[i]
+                center = np.mean(self.__positions[mask], axis=0)  # pyright: ignore[reportOptionalSubscript]
+                cohesion[i] = center - self.__positions[i]  # pyright: ignore[reportOptionalSubscript]
 
         return cohesion * 0.02
 
     def __update_positions(self):
-        self.__positions += self.__velocities
+        self.__positions += self.__velocities  # pyright: ignore[reportOperatorIssue]
 
         # Wrap around edges
         self.__positions[:, 0] = self.__positions[:, 0] % self.__width
@@ -152,7 +152,7 @@ class Boids(Screensaver):
         # Fade trail
         self.__canvas *= 0.82
 
-        for i, pos in enumerate(self.__positions):
+        for i, pos in enumerate(self.__positions):  # pyright: ignore[reportArgumentType]
             x = int(pos[0]) % self.__width
             y = int(pos[1]) % self.__height
 
@@ -163,16 +163,16 @@ class Boids(Screensaver):
             self.__canvas[y, x] = np.minimum(1.0, self.__canvas[y, x] + color * 0.35)
 
             # Tail pixel — one pixel behind the direction of travel
-            speed = math.sqrt(self.__velocities[i, 0] ** 2 + self.__velocities[i, 1] ** 2)
+            speed = math.sqrt(self.__velocities[i, 0] ** 2 + self.__velocities[i, 1] ** 2)  # pyright: ignore[reportOptionalSubscript]
             if speed > 0.01:
-                tx = int(round(pos[0] - self.__velocities[i, 0] / speed)) % self.__width
-                ty = int(round(pos[1] - self.__velocities[i, 1] / speed)) % self.__height
+                tx = int(round(pos[0] - self.__velocities[i, 0] / speed)) % self.__width  # pyright: ignore[reportOptionalSubscript]
+                ty = int(round(pos[1] - self.__velocities[i, 1] / speed)) % self.__height  # pyright: ignore[reportOptionalSubscript]
                 self.__canvas[ty, tx] = np.minimum(1.0, self.__canvas[ty, tx] + color * 0.15)
 
         # Composite: bright boid heads on top of the trail
         frame = (np.clip(self.__canvas, 0, 1) * 255).astype(np.uint8)
 
-        for i, pos in enumerate(self.__positions):
+        for i, pos in enumerate(self.__positions):  # pyright: ignore[reportArgumentType]
             x = int(pos[0]) % self.__width
             y = int(pos[1]) % self.__height
             rgb = self.__hsv_to_rgb(self.__hues[i], 0.6, 1.0)

@@ -79,8 +79,8 @@ class UnknownPleasures(Screensaver):
         u = xf * xf * xf * (xf * (xf * 6 - 15) + 10)
 
         # Hash and gradient
-        a = self.__perm[xi]
-        b = self.__perm[xi + 1]
+        a = self.__perm[xi]  # pyright: ignore[reportOptionalSubscript]
+        b = self.__perm[xi + 1]  # pyright: ignore[reportOptionalSubscript]
 
         # Gradient values (-1 or 1)
         ga = (a & 1) * 2 - 1
@@ -158,7 +158,7 @@ class UnknownPleasures(Screensaver):
         for line_idx in range(self.__num_lines):
             pixel_heights = np.clip(all_heights[line_idx].astype(np.int32), 0, self.__height - 1)
             fill_end = min(int(all_base_y[line_idx]), self.__height - 1)
-            color = self.__line_colors[line_idx]
+            color = self.__line_colors[line_idx]  # pyright: ignore[reportOptionalSubscript]
 
             if self.__fill_below:
                 # Vectorized: create mask where y > pixel_height and y <= fill_end

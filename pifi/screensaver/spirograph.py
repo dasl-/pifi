@@ -76,7 +76,7 @@ class Spirograph(Screensaver):
 
         max_extent = R + r + d
         self.__scale = min(self.__width, self.__height) / 2.0 * 0.92 / max_extent
-        self.__R, self.__r, self.__d = R, r, d
+        self.__R, self.__r, self.__d = R, r, d  # pyright: ignore[reportConstantRedefinition]
 
         self.__logger.info(
             f"Spirograph epitrochoid: R={R:.3f}, r={r:.3f}, d={d:.3f}")
@@ -103,7 +103,7 @@ class Spirograph(Screensaver):
         self.__f1, self.__f2 = f1, f2
 
         self.__logger.info(
-            f"Spirograph compound: a1={a1:.3f}, a2={a2:.3f}, "
+            f"Spirograph compound: a1={a1:.3f}, a2={a2:.3f}, " +
             f"f1={f1:.3f}, f2={f2:.3f}")
 
     def __setup_star_ring(self):
@@ -119,12 +119,12 @@ class Spirograph(Screensaver):
 
         max_extent = R * (1 + amplitude)
         self.__scale = min(self.__width, self.__height) / 2.0 * 0.90 / max_extent
-        self.__R, self.__r, self.__d = R, r, d
+        self.__R, self.__r, self.__d = R, r, d  # pyright: ignore[reportConstantRedefinition]
         self.__n_points = n_points
         self.__amplitude = amplitude
 
         self.__logger.info(
-            f"Spirograph star_ring: R={R:.3f}, r={r:.3f}, d={d:.3f}, "
+            f"Spirograph star_ring: R={R:.3f}, r={r:.3f}, d={d:.3f}, " +
             f"n={n_points}, amp={amplitude:.3f}")
 
     # ------------------------------------------------------------------

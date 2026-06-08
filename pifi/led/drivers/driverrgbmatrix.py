@@ -1,6 +1,6 @@
 import gc
 from PIL import Image
-from rgbmatrix import RGBMatrix, RGBMatrixOptions
+from rgbmatrix import RGBMatrix, RGBMatrixOptions  # pyright: ignore[reportMissingImports]
 
 from pifi.config import Config
 from pifi.led.drivers.driverbase import DriverBase
@@ -78,5 +78,5 @@ class DriverRgbMatrix(DriverBase):
     # See: https://github.com/hzeller/rpi-rgb-led-matrix/issues/640
     #      https://github.com/dasl-/pifi/pull/32
     #      https://github.com/dasl-/pifi/issues/33
-    def can_multiple_driver_instances_coexist(self):
+    def can_multiple_driver_instances_coexist(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return False

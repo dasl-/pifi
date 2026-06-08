@@ -157,7 +157,7 @@ class AirPlayKaraoke(KaraokeBase):
                         if new_title != KaraokeBase._current_track:
                             # New song — apply pending album art (clears if
                             # no PICT arrived for this song).
-                            KaraokeBase._album_art_frame = self.__pending_album_art
+                            KaraokeBase._album_art_frame = self.__pending_album_art  # pyright: ignore[reportAttributeAccessIssue]
                         KaraokeBase._current_track = new_title
                     # Always clear pending art. During pause/resume, PICT
                     # events set __pending for the SAME song; without this
@@ -189,7 +189,7 @@ class AirPlayKaraoke(KaraokeBase):
                 self._logger.info("Received prsm (resume), setting _is_playing=True")
                 with self._poll_lock:
                     KaraokeBase._is_playing = True
-                    KaraokeBase._last_poll_time = time.time()
+                    KaraokeBase._last_poll_time = time.time()  # pyright: ignore[reportAttributeAccessIssue]
                 return
             elif item_code == 'pend':
                 # Playback genuinely ended — clear state so the display
@@ -230,7 +230,7 @@ class AirPlayKaraoke(KaraokeBase):
             import numpy as np
 
             img = Image.open(BytesIO(raw_bytes))
-            img = img.resize((self._width, self._height), Image.LANCZOS)
+            img = img.resize((self._width, self._height), Image.LANCZOS)  # pyright: ignore[reportAttributeAccessIssue]
             img = img.convert('RGB')
             art_frame = np.array(img, dtype=np.float64)
             art_frame = (art_frame * 0.5).astype(np.uint8)
@@ -238,9 +238,9 @@ class AirPlayKaraoke(KaraokeBase):
             # Also apply directly — PICT can arrive after the title-change
             # mden (e.g. consecutive songs on the same album), so the
             # pending mechanism alone won't cover that case.
-            KaraokeBase._album_art_frame = art_frame
+            KaraokeBase._album_art_frame = art_frame  # pyright: ignore[reportAttributeAccessIssue]
             self._logger.info(
-                f"Album art loaded ({len(raw_bytes)} bytes) "
+                f"Album art loaded ({len(raw_bytes)} bytes) " +
                 f"shape={art_frame.shape} max={art_frame.max()}"
             )
         except Exception as e:
@@ -261,9 +261,9 @@ class AirPlayKaraoke(KaraokeBase):
             duration_seconds = (end_rtp - start_rtp) / 44100.0
 
             with self._poll_lock:
-                KaraokeBase._position_seconds = max(0, position_seconds)
-                KaraokeBase._song_duration = max(0, duration_seconds)
-                KaraokeBase._last_poll_time = time.time()
+                KaraokeBase._position_seconds = max(0, position_seconds)  # pyright: ignore[reportAttributeAccessIssue]
+                KaraokeBase._song_duration = max(0, duration_seconds)  # pyright: ignore[reportAttributeAccessIssue]
+                KaraokeBase._last_poll_time = time.time()  # pyright: ignore[reportAttributeAccessIssue]
                 KaraokeBase._is_playing = True
         except (ValueError, ZeroDivisionError):
             pass

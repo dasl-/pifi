@@ -75,9 +75,9 @@ class InkInWater(Screensaver):
                     if dist < radius:
                         falloff = 1.0 - (dist / radius)
                         falloff = falloff ** 0.5  # Softer falloff
-                        self.__buffer[ny, nx, 0] += color[0] * falloff * intensity / 255
-                        self.__buffer[ny, nx, 1] += color[1] * falloff * intensity / 255
-                        self.__buffer[ny, nx, 2] += color[2] * falloff * intensity / 255
+                        self.__buffer[ny, nx, 0] += color[0] * falloff * intensity / 255  # pyright: ignore[reportOptionalSubscript]
+                        self.__buffer[ny, nx, 1] += color[1] * falloff * intensity / 255  # pyright: ignore[reportOptionalSubscript]
+                        self.__buffer[ny, nx, 2] += color[2] * falloff * intensity / 255  # pyright: ignore[reportOptionalSubscript]
 
     def __apply_flow(self):
         """Apply subtle upward flow like ink rising in water."""
@@ -86,7 +86,7 @@ class InkInWater(Screensaver):
             return
 
         # Shift buffer slightly upward with wrapping
-        shifted = np.roll(self.__buffer, -1, axis=0)
+        shifted = np.roll(self.__buffer, -1, axis=0)  # pyright: ignore[reportArgumentType, reportCallIssue]
         # Blend original with shifted version for subtle movement
         self.__buffer = self.__buffer * (1 - flow_strength) + shifted * flow_strength
 
@@ -95,7 +95,7 @@ class InkInWater(Screensaver):
         diffusion_rate = Config.get('screensavers.configs.inkinwater.diffusion_rate', 0.15)
 
         # Pad for edge handling
-        padded = np.pad(self.__buffer, ((1, 1), (1, 1), (0, 0)), mode='edge')
+        padded = np.pad(self.__buffer, ((1, 1), (1, 1), (0, 0)), mode='edge')  # pyright: ignore[reportArgumentType, reportCallIssue]
 
         # Average of neighbors
         neighbors = (
@@ -110,7 +110,7 @@ class InkInWater(Screensaver):
 
     def __render(self):
         # Clamp and convert to uint8
-        frame = np.clip(self.__buffer * 255, 0, 255).astype(np.uint8)
+        frame = np.clip(self.__buffer * 255, 0, 255).astype(np.uint8)  # pyright: ignore[reportOptionalOperand]
         self._led_frame_player.play_frame(frame)
 
     def __hsv_to_rgb(self, h, s, v):

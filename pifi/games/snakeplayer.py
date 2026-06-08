@@ -139,17 +139,17 @@ class SnakePlayer:
         elif self.__direction == self.RIGHT:
             new_head = (old_head_y, (old_head_x + 1) % display_width)
 
-        self.__snake_linked_list.insert(0, new_head)
+        self.__snake_linked_list.insert(0, new_head)  # pyright: ignore[reportPossiblyUnboundVariable]
 
         # Must call this before placing the apple to ensure the apple is not placed on the new head
-        self.__snake_set.add(new_head)
+        self.__snake_set.add(new_head)  # pyright: ignore[reportPossiblyUnboundVariable]
 
-        if new_head == self.__snake_game.get_apple():
+        if new_head == self.__snake_game.get_apple():  # pyright: ignore[reportOptionalMemberAccess, reportPossiblyUnboundVariable]
             was_apple_eaten = True
         else:
             old_tail = self.__snake_linked_list[-1]
             del self.__snake_linked_list[-1]
-            if old_tail != new_head:
+            if old_tail != new_head:  # pyright: ignore[reportPossiblyUnboundVariable]
                 # Prevent edge case when the head is "following" the tail.
                 # If the old_tail is the same as the new_head, we don't want to remove the old_tail from the set
                 # because  the call to `self.__snake_set.add(new_head)` would have been a no-op above.
@@ -171,33 +171,33 @@ class SnakePlayer:
 
     def get_snake_rgb(self):
         if self.__settings['num_players'] <= 1:
-            return self.__snake_game.get_game_color_helper().get_rgb(
-                self.__snake_game.get_game_color_mode(), self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+            return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                self.__snake_game.get_game_color_mode(), self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
             )
         else:
             if self.__is_multiplayer_winner:
-                return self.__snake_game.get_game_color_helper().get_rgb(
-                    GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+                return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                    GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__MULTIPLAYER_SNAKE_WINNER_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
                 )
 
             if self.__player_index == 0:
-                return self.__snake_game.get_game_color_helper().get_rgb(
-                    GameColorHelper.GAME_COLOR_MODE_GREEN, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+                return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                    GameColorHelper.GAME_COLOR_MODE_GREEN, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
                 )
             if self.__player_index == 1:
-                return self.__snake_game.get_game_color_helper().get_rgb(
-                    GameColorHelper.GAME_COLOR_MODE_BLUE, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+                return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                    GameColorHelper.GAME_COLOR_MODE_BLUE, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
                 )
             if self.__player_index == 2:
-                return self.__snake_game.get_game_color_helper().get_rgb(
-                    GameColorHelper.GAME_COLOR_MODE_RED, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+                return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                    GameColorHelper.GAME_COLOR_MODE_RED, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
                 )
             if self.__player_index == 3:
-                return self.__snake_game.get_game_color_helper().get_rgb(
-                    GameColorHelper.GAME_COLOR_MODE_BW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+                return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                    GameColorHelper.GAME_COLOR_MODE_BW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
                 )
-            return self.__snake_game.get_game_color_helper().get_rgb(
-                GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()
+            return self.__snake_game.get_game_color_helper().get_rgb(  # pyright: ignore[reportOptionalMemberAccess]
+                GameColorHelper.GAME_COLOR_MODE_RAINBOW, self.__SNAKE_COLOR_CHANGE_FREQ, self.__snake_game.get_num_ticks()  # pyright: ignore[reportOptionalMemberAccess]
             )
 
     # If one snake, place it's head in the center pixel, with it's body going to the left.

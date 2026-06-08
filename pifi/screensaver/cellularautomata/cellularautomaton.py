@@ -44,7 +44,7 @@ class CellularAutomaton(Screensaver, ABC):
             self._led_frame_player.play_frame(frame)
 
     def __get_board_hash(self):
-        return hashlib.md5(self._board).hexdigest()
+        return hashlib.md5(self._board).hexdigest()  # pyright: ignore[reportArgumentType]
 
     def __should_reset_game(self):
         if self._get_max_game_length_seconds() > 0 and (time.time() - self.__game_start_time) > self._get_max_game_length_seconds():
@@ -61,7 +61,7 @@ class CellularAutomaton(Screensaver, ABC):
         self._logger.info("Starting new game.")
         self.__game_start_time = time.time()
         self._num_ticks = 0
-        self.__prev_board_state_counts = LimitedSizeDict(capacity = self._get_game_over_detection_lookback_amount())
+        self.__prev_board_state_counts = LimitedSizeDict(capacity = self._get_game_over_detection_lookback_amount())  # pyright: ignore[reportArgumentType]
 
         self._reset_hook()
 

@@ -19,6 +19,9 @@ app/src/css/custom-theme.css
 app/src/css/themes/*.css
 app/src/css/**/*.css.map
 
+# uv / Python dev environment
+.venv/
+
 # Claude Code
 CLAUDE.local.md
 pifi/settings.json

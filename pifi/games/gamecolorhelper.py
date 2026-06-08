@@ -44,7 +44,7 @@ class GameColorHelper:
         if game_color_mode == self.GAME_COLOR_MODE_BW:
             return [255, 255, 255]
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
-            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset)
+            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset)  # pyright: ignore[reportArgumentType]
 
     def get_rgb2(self, game_color_mode, color_change_freq, num_ticks):
         if game_color_mode == self.GAME_COLOR_MODE_RED:
@@ -56,7 +56,7 @@ class GameColorHelper:
         if game_color_mode == self.GAME_COLOR_MODE_BW:
             return [150, 150, 150]
         if game_color_mode == self.GAME_COLOR_MODE_RAINBOW:
-            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset2)
+            return self.__make_color_gradient(color_change_freq, num_ticks, offset = self.__color_gradient_offset2)  # pyright: ignore[reportArgumentType]
 
     def get_help_string(self):
         game_color_mode_help_str = 'One of '

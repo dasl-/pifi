@@ -1,3 +1,31 @@
+## Python development environment
+
+pifi's Python dependencies are managed with [uv](https://docs.astral.sh/uv/),
+pinned by `pyproject.toml` / `uv.lock`. Set up a local dev environment once:
+
+1. Install uv: https://docs.astral.sh/uv/getting-started/installation/
+2. Create the virtualenv (`.venv`) with all runtime + dev dependencies:
+   `./install/install_dev_dependencies.sh`
+
+Then run pifi commands and tooling through the venv with `uv run`:
+
+```
+uv run ./bin/server      # run a pifi entrypoint
+uv run pytest tests/     # run the test suite (see ../tests/README.md)
+uv run pyright           # type-check; enforced by tests/test_pyright.py
+```
+
+`uv run` puts `.venv` first on PATH, so scripts that shell out to `python3`
+use the venv interpreter too.
+
+## Starting the development server
+From your local checkout directory:
+```
+$ npm start --prefix app
+```
+
+## Sublime
+
 ### Setting up sublime via rmate:
 1. `sudo wget -O /usr/local/bin/subl https://raw.github.com/aurora/rmate/master/rmate`
 1. `sudo chmod a+x /usr/local/bin/subl`
@@ -13,10 +41,4 @@ rsync -avz --delete --exclude '*.swp' --exclude '.git' --exclude '.tags' --exclu
   --exclude '*.rpm' --exclude '*.sqlite' --exclude '*.tsv' --exclude 'node_modules/' --exclude 'build/' \
   --exclude 'data/' --exclude '__pycache__/' --exclude '*.npy' \
   pi@192.168.1.100:~/development/ ~/pi/development
-```
-
-### Starting the development server
-From your local checkout directory:
-```
-$ npm start --prefix app
 ```

@@ -6,13 +6,16 @@ BASE_DIR="$(dirname "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 &&
 RESTART_REQUIRED_FILE='/tmp/pifi_install_restart_required'
 # OS_VERSION=$(grep '^VERSION_ID=' /etc/os-release | sed 's/[^0-9]*//g')
 CONFIG='/boot/firmware/config.txt'
+# yt-dlp requires frequent updates. Allow its version of python to diverge from the version of python used by
+# the rest of the codebase.
+YT_DLP_PYTHON_VERSION='3.13'
 
 main(){
     trap 'fail $? $LINENO' ERR
 
     updateAndInstallPackages
     installDeno
-    setupUv
+    installUvAndVenv
     installYtDlp
     enableSpi
     installLedDriver
@@ -27,43 +30,38 @@ main(){
 updateAndInstallPackages(){
     info "Updating and installing packages..."
 
-    # Allow the command `sudo apt build-dep python3-pygame` to run.
-    sudo sed -i 's/^Types: deb\s*$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources
-
     sudo apt update
 
-    # python3-pip: needed to ensure we have the pip module. Else we'd get errors like this:
-    #   https://askubuntu.com/questions/1388144/usr-bin-python3-no-module-named-pip
-    # libsdl2-mixer: needed for pygame
-    #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
-    # libsdl2-dev: needed for pygame
-    #   (maybe it's no longer necessary to explicitly install it since we have `sudo apt -y build-dep python3-pygame` below?`)
-    # parallel: needed for update_yt-dlp.sh script
-    # python3-pil: needed for rgb-matrix LED driver. Also needed for processing album art in karaoke screensavers.
-    sudo apt -y install git python3-pip ffmpeg sqlite3 mbuffer libsdl2-mixer-2.0-0 libsdl2-dev parallel \
-        libopenblas-dev python3-numpy python3-requests python3-pil
-    sudo apt -y build-dep python3-pygame # other dependencies needed for pygame
+    # System libraries + build tooling only — NOT Python packages. The pifi's Python
+    # dependencies live in pyproject.toml / uv.lock and install into a venv.
+    #
+    #   python3-pip: bootstraps uv
+    #   build-essential, libasound2-dev: compile the source-built extensions in
+    #     the venv — simpleaudio and, for the ws2812b driver, rpi-ws281x (sdist).
+    #   ffmpeg: video processing/playback.
+    #   mbuffer: video streaming buffer.
+    #   parallel: needed for update_yt-dlp.sh script
+    sudo apt -y install git python3-pip build-essential libasound2-dev \
+        ffmpeg sqlite3 mbuffer parallel
     sudo apt -y full-upgrade
+}
 
-    # --ignore-installed: Ensure pip doesn’t try to uninstall the apt-owned one. Without this flag, you may get an error:
-    #    https://gist.github.com/dasl-/77d8575765c4dca37604f5145e0b0192#file-gistfile1-txt-L141
-    #
-    # typing-extensions: used by syncedlyrics
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade --ignore-installed typing-extensions
+installUvAndVenv(){
+    info "\\nInstalling uv and creating the pifi virtualenv (.venv) from uv.lock..."
 
-    # RE simpleaudio, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
-    # Install Python packages with pip (yt-dlp is installed separately via uv tool install)
+    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade uv
+
+    # Build the pifi virtualenv (.venv) from uv.lock.
+    #   --frozen: pin dependencyversions
+    #   --managed-python: makes uv use (downloading if needed) its own Python, separate
+    #     from the system installed one
     #
-    # Core packages:
-    #   pytz, websockets, pygame, pyjson5, simpleaudio, uv
-    # Screensaver packages:
-    #   soco - Sonos speaker control (for SonosKaraoke)
-    #   syncedlyrics - Lyrics fetching with timestamps (for SonosKaraoke)
-    #   underground - MTA GTFS-realtime feed (for NycSubway)
-    #   requests - HTTP requests (for NycSubway, WFMU)
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade pytz websockets pygame pyjson5 \
-        git+https://github.com/cexen/py-simple-audio.git uv \
-        soco syncedlyrics underground
+    # Run unprivileged so .venv (and uv's managed python) are owned by the repo
+    # user; the (root) systemd services just execute .venv/bin/python, which root
+    # can read fine.
+    pushd "$BASE_DIR"
+    uv sync --frozen --managed-python
+    popd
 }
 
 # yt-dlp now requires a JS interpreter. They recommend Deno:
@@ -86,19 +84,15 @@ installDeno(){
     sudo rm -rf /tmp/deno
 }
 
-setupUv(){
-    info "\\nSetting up uv..."
+installYtDlp(){
+    info "\\nInstalling yt-dlp..."
 
     sudo mkdir --parents /opt/uv/python /opt/uv/python-bin /opt/uv/tools /opt/uv/tools-bin
 
     # Install a version of python that is supported by the latest version of yt-dlp
-    # Install as root. Always invoke uv as root such that it uses a consistent set of working directories.
+    # Install as root. With respect to yt-dlp, always invoke uv as root such that it uses a consistent set of working directories.
     # See: https://github.com/astral-sh/uv/issues/11360
-    sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin uv python install 3.13
-}
-
-installYtDlp(){
-    info "\\nInstalling yt-dlp..."
+    sudo UV_PYTHON_INSTALL_DIR=/opt/uv/python UV_PYTHON_BIN_DIR=/opt/uv/python-bin UV_TOOL_DIR=/opt/uv/tools UV_TOOL_BIN_DIR=/opt/uv/tools-bin uv python install $YT_DLP_PYTHON_VERSION
 
     # Remove the pip installed yt-dlp in case it's present (we used to install yt-dlp with pip).
     sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip uninstall -y 'yt-dlp[default]'
@@ -118,46 +112,50 @@ enableSpi(){
 }
 
 installLedDriver(){
-    info "Installing LED driver..."
+    info "\\nInstalling LED driver..."
+    # apa102 / ws2812b ship as pip extras and just need
+    # their package synced into the venv; ws2812b additionally needs SPI/clock
+    # tuning. rgbmatrix has no pip package — it's a source build into the venv.
     local led_driver
-    led_driver=$("$BASE_DIR"/utils/get_config_value --keys leds.driver)
+    led_driver=$("$BASE_DIR"/.venv/bin/python "$BASE_DIR"/utils/get_config_value --keys leds.driver)
+    info "Configured LED driver: $led_driver"
     case $led_driver in
-        apa102)     installLedDriverApa102 ;;
+        apa102)     syncLedExtra apa102 ;;
+        ws2812b)    syncLedExtra ws2812b; configureLedDriverWs2812b ;;
         rgbmatrix)  installLedDriverRgbMatrix ;;
-        ws2812b)    installLedDriverWs2812b ;;
         *)          die "Unsupported LED driver: $led_driver" ;;
     esac
 }
 
-installLedDriverApa102(){
-    info "Installing LED driver apa102..."
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade apa102-pi
+syncLedExtra(){
+    pushd "$BASE_DIR"
+    uv sync --frozen --managed-python --extra "$1"
+    popd
 }
 
 # e.g. https://www.adafruit.com/product/2276
 installLedDriverRgbMatrix(){
     info "Installing LED driver RGB Matrix..."
 
-    local clone_dir
-    clone_dir="$BASE_DIR/../rpi-rgb-led-matrix"
-    if [ -d "$clone_dir" ]; then
-        info "Pulling repo in $clone_dir ..."
-        pushd "$clone_dir"
-        git pull
-    else
-        info "Cloning repo into $clone_dir ..."
-        git clone https://github.com/hzeller/rpi-rgb-led-matrix "$clone_dir"
-        pushd "$clone_dir"
-    fi
+    # No PyPI release, so build from source into the venv. Upstream is pip-
+    # installable (scikit-build-core + Cython); build isolation pulls the build
+    # backend itself, so Cython/CMake aren't needed in the venv or via apt. No
+    # sudo: the venv is owned by the repo user (rgbmatrix only needs root at
+    # runtime, which systemd provides). Pinned to a commit for reproducible
+    # builds since upstream publishes no release tags.
+    local venv_python rgbmatrix_ref
+    venv_python="$BASE_DIR/.venv/bin/python"
+    rgbmatrix_ref='41809e40e912b7f278ad34046f20abf5609b2b07'
 
-    make build-python PYTHON="$(command -v python3)"
-    sudo make install-python PYTHON="$(command -v python3)"
-    popd
+    uv pip install --python "$venv_python" \
+        "git+https://github.com/hzeller/rpi-rgb-led-matrix@$rgbmatrix_ref"
+
+    info "Verifying the rgbmatrix binding imports..."
+    "$venv_python" -c 'import rgbmatrix'
 }
 
-installLedDriverWs2812b(){
-    info "Installing LED driver ws2812b..."
-    sudo PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --upgrade rpi_ws281x
+configureLedDriverWs2812b(){
+    info "Configuring LED driver ws2812b..."
 
     # Set SPI buffer size.
     # See: https://github.com/rpi-ws281x/rpi-ws281x-python/tree/master/library#spi

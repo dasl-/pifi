@@ -1,0 +1,37 @@
+[project]
+name = "pifi"
+version = "0.0.0"
+requires-python = "==3.13.*"
+dependencies = [
+    "numpy",
+    "requests", # HTTP requests (for NycSubway, WFMU)
+    "pillow",
+    "pygame", # sound effects
+    "pyjson5",
+    "pytz",
+    "soco", # Sonos speaker control (for SonosKaraoke)
+    "syncedlyrics", # Lyrics fetching with timestamps (for SonosKaraoke)
+    "underground", # MTA GTFS-realtime feed (for NycSubway)
+    "typing-extensions",
+    "websockets", # games e.g. snake
+
+    # Sound effects
+    # RE installation via git, see: https://github.com/hamiltron/py-simple-audio/issues/72#issuecomment-1902610214
+    "simpleaudio @ git+https://github.com/cexen/py-simple-audio.git",
+]
+
+[project.optional-dependencies]
+# Hardware LED drivers — opt-in, Pi-only. Selected by leds.driver config at
+# install time. (rgbmatrix is a source build, handled separately in
+# install_dependencies.sh.)
+apa102 = ["apa102-pi"]
+ws2812b = ["rpi-ws281x"]
+
+[dependency-groups]
+# Dev tooling — never shipped to the Pi runtime.
+dev = ["pyright==1.1.409", "pytest"]
+
+[tool.uv]
+# pifi is run in-place via the bin/ scripts (which add the repo root to
+# sys.path); it is not installed as a package. Manage deps only.
+package = false

@@ -159,7 +159,7 @@ class Screensaver(ABC):
         pass
 
     @abstractmethod
-    def _tick(self) -> None:
+    def _tick(self) -> bool | None:
         """Called each iteration of the tick loop.
 
         Return False to stop the loop early. Any other return value

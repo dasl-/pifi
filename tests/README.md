@@ -4,51 +4,24 @@ This directory contains unit tests for the pifi project.
 
 ## Running Tests
 
-### Option 1: Run directly with Python (recommended)
+First set up the dev environment once (`install/install_dev_dependencies.sh`),
+then run the suite through the uv-managed venv so dependencies and pyright
+resolve consistently:
 
 ```bash
-# Run all tests
-python3 tests/test_screensaver_interface.py
+uv run pytest tests/
 
-# Run with verbose output
-python3 tests/test_screensaver_interface.py -v
+# Verbose
+uv run pytest tests/ -v
+
+# A single file
+uv run pytest tests/test_screensaver_interface.py -v
 ```
 
-### Option 2: Run all tests in the directory
-
-```bash
-# Run all test files
-python3 -m unittest discover -s tests -p 'test_*.py'
-
-# Run with verbose output
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-```
-
-### Option 3: Run specific test classes or methods
-
-```bash
-# Run a specific test class
-python3 -m unittest tests.test_screensaver_interface.TestScreensaverInterface
-
-# Run a specific test method
-python3 -m unittest tests.test_screensaver_interface.TestScreensaverInterface.test_all_screensavers_inherit_from_screensaver
-```
-
-### Option 4: Using pytest (if installed)
-
-```bash
-# Install pytest (optional)
-pip3 install pytest
-
-# Run all tests
-python3 -m pytest tests/
-
-# Run with verbose output
-python3 -m pytest tests/ -v
-
-# Run a specific test file
-python3 -m pytest tests/test_screensaver_interface.py -v
-```
+`uv run` puts the venv first on PATH, so the subprocess-based tests (which
+shell out to `python3 …`) and `test_pyright.py` use the venv interpreter too.
+Running a bare `pytest`/`python3` instead uses whatever python is on your PATH,
+which may be missing pifi's dependencies.
 
 ## Writing New Tests
 

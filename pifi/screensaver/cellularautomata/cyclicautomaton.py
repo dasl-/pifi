@@ -14,7 +14,7 @@ class CyclicAutomaton(CellularAutomaton):
     def _should_fade_to_frame(self):
         return Config.get('screensavers.configs.cyclic_automaton.fade')
 
-    def _get_max_game_length_seconds(self):
+    def _get_max_game_length_seconds(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return 60
 
     def _reset_hook(self):
@@ -27,7 +27,7 @@ class CyclicAutomaton(CellularAutomaton):
         shape = [Config.get_or_throw('leds.display_height') + 2, Config.get_or_throw('leds.display_width') + 2]
         self._board = np.random.randint(0, self.__num_states, shape)
 
-    def _board_to_frame(self):
+    def _board_to_frame(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         board_shape = self._board.shape + (3,)
         foo = self.__palette[self._board.ravel()].reshape(board_shape)
         return foo[1:-1, 1:-1]

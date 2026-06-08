@@ -97,7 +97,7 @@ class Queue:
                 pass_fds = (unix_socket_fd,)
             elif playlist_item["title"] == Pong.GAME_TITLE:
                 try:
-                    pong_settings = Pong.make_settings_from_playlist_item(playlist_item)
+                    pong_settings = Pong.make_settings_from_playlist_item(playlist_item)  # pyright: ignore[reportUnusedVariable]
                 except Exception:
                     self.__logger.error(f'Caught exception: {traceback.format_exc()}')
                     Logger.set_uuid('')
@@ -216,7 +216,7 @@ class Queue:
     reenqueue the video so as not to deplete the queue when a lot of snake games are being played.
     """
     def __should_reenqueue_current_playlist_item(self, was_current_playlist_item_skipped):
-        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:
+        if self.__playlist_item["type"] != Playlist.TYPE_VIDEO:  # pyright: ignore[reportOptionalSubscript]
             return False
 
         if not was_current_playlist_item_skipped:
