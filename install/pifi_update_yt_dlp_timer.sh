@@ -13,7 +13,6 @@ Wants=network-online.target
 Type=oneshot
 Environment=HOME=/root
 ExecStart=$BASE_DIR/utils/update_yt-dlp.sh
-SyslogIdentifier=update_yt_dlp
 EOF
 
 cat <<-EOF | sudo tee /etc/systemd/system/pifi_update_yt_dlp.timer >/dev/null

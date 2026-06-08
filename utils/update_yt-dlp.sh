@@ -29,10 +29,6 @@ sudo ln -sf "$yt_dlp_bin_dir/yt-dlp" /usr/bin/yt-dlp
 # combinations (1,a) (1,b) (1,c) (2,a) (2,b) (2,c). This is useful for replacing nested for-loops.
 #
 # e.g.: sudo -u root yt-dlp --rm-cache-dir
-#
-# The cache steps below are best-effort: don't let a hiccup here fail the unit, since the upgrade
-# above is what actually matters. (parallel exits non-zero if any job fails, which set -e would
-# otherwise treat as fatal.)
 # shellcheck disable=SC1083
 parallel --will-cite --max-procs 0 --halt never sudo -u {1} yt-dlp --rm-cache-dir ::: root pi \
     || echo "warning: yt-dlp --rm-cache-dir had failures"
