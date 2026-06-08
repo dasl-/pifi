@@ -21,9 +21,6 @@ class Aurora(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Curtains: each has properties defining its behavior
         self.__curtains = []
 
@@ -81,8 +78,8 @@ class Aurora(Screensaver):
             self.__stars = []
             for _ in range(num_stars):
                 self.__stars.append({
-                    'x': random.randint(0, self.__width - 1),
-                    'y': random.randint(0, self.__height // 2),  # Stars in upper half
+                    'x': random.randint(0, self._width - 1),
+                    'y': random.randint(0, self._height // 2),  # Stars in upper half
                     'brightness': random.uniform(0.3, 1.0),
                     'twinkle_speed': random.uniform(0.05, 0.15),
                     'twinkle_phase': random.uniform(0, 2 * math.pi),
@@ -124,7 +121,7 @@ class Aurora(Screensaver):
         }
 
     def __render(self):
-        frame = np.zeros([self.__height, self.__width, 3], dtype=np.float32)
+        frame = np.zeros([self._height, self._width, 3], dtype=np.float32)
 
         # Draw background stars first
         if Config.get('screensavers.configs.aurora.show_stars', True):
@@ -134,7 +131,7 @@ class Aurora(Screensaver):
                 brightness = star['brightness'] * twinkle * 0.6
 
                 x, y = star['x'], star['y']
-                if 0 <= x < self.__width and 0 <= y < self.__height:
+                if 0 <= x < self._width and 0 <= y < self._height:
                     # Dim white/blue for stars
                     frame[y, x, 0] = brightness * 200
                     frame[y, x, 1] = brightness * 200
@@ -152,16 +149,16 @@ class Aurora(Screensaver):
 
     def __draw_curtain(self, frame, curtain):
         """Draw a single aurora curtain onto the frame."""
-        base_x = curtain['base_x'] * self.__width
-        width = curtain['width'] * self.__width
+        base_x = curtain['base_x'] * self._width
+        width = curtain['width'] * self._width
         intensity = curtain['intensity'] * self.__activity
 
         # Depth affects brightness (farther = dimmer)
         depth_factor = 0.4 + 0.6 * (1 - curtain['depth'])
 
-        for y in range(self.__height):
+        for y in range(self._height):
             # Normalized y position (0 = top, 1 = bottom)
-            y_norm = y / max(1, self.__height - 1)
+            y_norm = y / max(1, self._height - 1)
 
             # Vertical brightness gradient (brighter at bottom, representing horizon)
             # Aurora is typically brighter lower in the sky
@@ -171,7 +168,7 @@ class Aurora(Screensaver):
             wave1 = math.sin(y_norm * curtain['wave_freq'] * 10 + self.__time * curtain['wave_speed'])
             wave2 = math.sin(y_norm * curtain['wave2_freq'] * 15 + self.__time * curtain['wave2_speed'] + 1.5)
 
-            x_offset = (wave1 * curtain['wave_amp'] + wave2 * curtain['wave2_amp']) * self.__width
+            x_offset = (wave1 * curtain['wave_amp'] + wave2 * curtain['wave2_amp']) * self._width
             center_x = base_x + x_offset
 
             # Shimmer effect (rapid brightness fluctuation)
@@ -180,7 +177,7 @@ class Aurora(Screensaver):
             )
 
             # Draw the curtain width at this y level
-            for x in range(self.__width):
+            for x in range(self._width):
                 # Distance from curtain center
                 dist = abs(x - center_x)
 

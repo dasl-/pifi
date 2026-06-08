@@ -14,7 +14,6 @@ import numpy as np
 import requests
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver import textutils
 
@@ -40,10 +39,6 @@ class Wfmu(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
 
         # Configuration
         channel_name = Config.get('screensavers.configs.wfmu.channel', 'wfmu')
@@ -114,10 +109,10 @@ class Wfmu(Screensaver):
                 self.__show_name = show
                 self.__error_message = None
 
-            self.__logger.info(f"Now playing: {artist} - {title} on {show}")
+            self._logger.info(f"Now playing: {artist} - {title} on {show}")
 
         except Exception as e:
-            self.__logger.error(f"Failed to fetch now playing: {e}")
+            self._logger.error(f"Failed to fetch now playing: {e}")
             with self.__fetch_lock:
                 self.__error_message = "NO SIGNAL"
 
@@ -152,7 +147,7 @@ class Wfmu(Screensaver):
 
     def __render(self):
         """Render the current track info."""
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.uint8)
 
         # Thread-safe copy
         with self.__fetch_lock:
@@ -166,7 +161,7 @@ class Wfmu(Screensaver):
                 self.__current_display = target
 
         if error:
-            self.__draw_text(frame, error, 2, self.__height // 2 - 2, (255, 100, 100))
+            self.__draw_text(frame, error, 2, self._height // 2 - 2, (255, 100, 100))
         elif not self.__current_display['title'] and not self.__current_display['artist']:
             # Waiting for data
             self.__draw_text(frame, "WFMU", 2, 2, self.COLORS['logo'])
@@ -197,14 +192,14 @@ class Wfmu(Screensaver):
         if show:
             show_y = 1
             show_width = len(show) * 4
-            if show_width <= self.__width:
+            if show_width <= self._width:
                 self.__draw_text(frame, show, 1, show_y, self.COLORS['show'])
             else:
-                self.__draw_scrolling_text(frame, show, 1, show_y, self.__width - 2, self.COLORS['show'])
+                self.__draw_scrolling_text(frame, show, 1, show_y, self._width - 2, self.COLORS['show'])
 
         # Divider line
         divider_y = 8
-        for x in range(self.__width):
+        for x in range(self._width):
             if x % 2 == 0:  # Dashed line
                 frame[divider_y, x] = self.COLORS['divider']
 
@@ -212,22 +207,22 @@ class Wfmu(Screensaver):
         if title:
             title_y = 11
             title_width = len(title) * 4
-            if title_width <= self.__width:
+            if title_width <= self._width:
                 # Center if it fits
-                x_offset = max(0, (self.__width - title_width) // 2)
+                x_offset = max(0, (self._width - title_width) // 2)
                 self.__draw_text(frame, title, x_offset, title_y, self.COLORS['track'])
             else:
-                self.__draw_scrolling_text(frame, title, 0, title_y, self.__width, self.COLORS['track'])
+                self.__draw_scrolling_text(frame, title, 0, title_y, self._width, self.COLORS['track'])
 
         # Artist name
         if artist:
             artist_y = 19
             artist_width = len(artist) * 4
-            if artist_width <= self.__width:
-                x_offset = max(0, (self.__width - artist_width) // 2)
+            if artist_width <= self._width:
+                x_offset = max(0, (self._width - artist_width) // 2)
                 self.__draw_text(frame, artist, x_offset, artist_y, self.COLORS['artist'])
             else:
-                self.__draw_scrolling_text(frame, artist, 0, artist_y, self.__width, self.COLORS['artist'])
+                self.__draw_scrolling_text(frame, artist, 0, artist_y, self._width, self.COLORS['artist'])
 
         # Audio visualization bars at bottom
         self.__draw_audio_bars(frame, 26)
@@ -236,7 +231,7 @@ class Wfmu(Screensaver):
         """Draw animated audio visualization bars."""
         bar_width = 3
         bar_gap = 1
-        num_bars = self.__width // (bar_width + bar_gap)
+        num_bars = self._width // (bar_width + bar_gap)
 
         for i in range(num_bars):
             # Create pseudo-random but smooth animation
@@ -245,7 +240,7 @@ class Wfmu(Screensaver):
 
             x = i * (bar_width + bar_gap)
             for dy in range(height):
-                bar_y = self.__height - 1 - dy
+                bar_y = self._height - 1 - dy
                 if bar_y >= y:
                     # Gradient from orange at bottom to yellow at top
                     intensity = 1.0 - (dy / 6.0)
@@ -255,19 +250,19 @@ class Wfmu(Screensaver):
                         int(50 * intensity)
                     )
                     for dx in range(bar_width):
-                        if x + dx < self.__width:
+                        if x + dx < self._width:
                             frame[bar_y, x + dx] = color
 
     def __draw_scrolling_text(self, frame, text, x, y, max_width, color):
         """Draw scrolling text with easing."""
         textutils.draw_scrolling_text(
             frame, text, x, y, max_width, color,
-            self.__scroll_offset, self.__width, self.__height
+            self.__scroll_offset, self._width, self._height
         )
 
     def __draw_text(self, frame, text, x, y, color):
         """Draw a text string."""
-        textutils.draw_text(frame, text, x, y, color, self.__width, self.__height)
+        textutils.draw_text(frame, text, x, y, color, self._width, self._height)
 
     @classmethod
     def get_id(cls) -> str:

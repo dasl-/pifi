@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -17,12 +16,9 @@ class Fire(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         # Heat buffer — extra row at bottom for the heat source
-        self.__heat = np.zeros((self.__height + 1, self.__width), dtype=np.float64)
+        self.__heat = np.zeros((self._height + 1, self._width), dtype=np.float64)
 
         # Build the fire palette (256 entries)
         self.__palette = self.__build_palette()
@@ -34,10 +30,10 @@ class Fire(Screensaver):
         self.__wind = random.uniform(-0.15, 0.15)
 
         # Persistent heat source that evolves smoothly
-        self.__base_heat = np.random.uniform(0.4, 0.9, self.__width)
+        self.__base_heat = np.random.uniform(0.4, 0.9, self._width)
 
     def _tick(self):
-        h, w = self.__height, self.__width
+        h, w = self._height, self._width
         heat = self.__heat
 
         # Smoothly evolve the persistent heat source rather than

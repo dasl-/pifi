@@ -19,8 +19,6 @@ class Screensaver(ABC):
     - _tick() returns False (for subclass-specific stop conditions)
     """
 
-    _screensaver_logger = Logger().set_namespace('Screensaver')
-
     def __init__(self, led_frame_player=None):
         """
         Standard constructor signature for all screensavers.
@@ -34,6 +32,12 @@ class Screensaver(ABC):
         """
         # Flag to verify subclasses call super().__init__()
         self.__screensaver_base_init_called = True
+
+        # Logger namespaced to the concrete subclass (e.g. 'Boids'), and the
+        # display dimensions — all available to every screensaver by default.
+        self._logger = Logger().set_namespace(self.__class__.__name__)
+        self._width = Config.get_or_throw('leds.display_width')
+        self._height = Config.get_or_throw('leds.display_height')
 
         if led_frame_player is None:
             led_frame_player = LedFramePlayer()
@@ -133,7 +137,7 @@ class Screensaver(ABC):
                 loop ends. Set to False to keep the screensaver alive for
                 transitions — the caller must call teardown() manually.
         """
-        self._screensaver_logger.info(f"Starting {self.get_name()} screensaver")
+        self._logger.info(f"Starting {self.get_name()} screensaver")
         self.__start_time = time.time()
         self.setup()
 
@@ -148,7 +152,7 @@ class Screensaver(ABC):
             raise
         if auto_teardown:
             self.teardown()
-        self._screensaver_logger.info(f"{self.get_name()} screensaver ended")
+        self._logger.info(f"{self.get_name()} screensaver ended")
 
     def _setup(self):
         """Called once before the tick loop. Override for initialization."""

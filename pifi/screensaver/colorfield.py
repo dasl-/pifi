@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -19,8 +18,6 @@ class ColorField(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -58,7 +55,7 @@ class ColorField(Screensaver):
         self.__boundary_drifts = [random.uniform(-0.0005, 0.0005) for _ in self.__boundaries]
 
         # Pre-compute y coordinates normalized to 0-1
-        self.__y_norm = np.linspace(0, 1, self.__height, dtype=np.float64)
+        self.__y_norm = np.linspace(0, 1, self._height, dtype=np.float64)
 
         # Breathing phase offsets per band
         self.__breath_phases = [random.uniform(0, 2 * math.pi) for _ in range(self.__num_bands)]
@@ -87,14 +84,14 @@ class ColorField(Screensaver):
 
         # Build per-pixel color
         y = self.__y_norm
-        hue = np.zeros(self.__height, dtype=np.float64)
-        sat = np.zeros(self.__height, dtype=np.float64)
-        val = np.zeros(self.__height, dtype=np.float64)
+        hue = np.zeros(self._height, dtype=np.float64)
+        sat = np.zeros(self._height, dtype=np.float64)
+        val = np.zeros(self._height, dtype=np.float64)
 
         # For each pixel row, blend between adjacent bands
         boundaries = [0.0] + list(self.__boundaries) + [1.0]  # pyright: ignore[reportUnusedVariable]
 
-        for row in range(self.__height):
+        for row in range(self._height):
             yp = y[row]
 
             # Find which two bands this pixel is between
@@ -132,12 +129,12 @@ class ColorField(Screensaver):
             val[row] = band['val'] * breath
 
         # Broadcast to full width (uniform horizontally with very subtle noise)
-        hue_2d = np.tile(hue[:, np.newaxis], (1, self.__width))
-        sat_2d = np.tile(sat[:, np.newaxis], (1, self.__width))
-        val_2d = np.tile(val[:, np.newaxis], (1, self.__width))
+        hue_2d = np.tile(hue[:, np.newaxis], (1, self._width))
+        sat_2d = np.tile(sat[:, np.newaxis], (1, self._width))
+        val_2d = np.tile(val[:, np.newaxis], (1, self._width))
 
         # Very subtle luminance noise for texture
-        noise = np.random.uniform(-0.02, 0.02, (self.__height, self.__width))
+        noise = np.random.uniform(-0.02, 0.02, (self._height, self._width))
         val_2d = np.clip(val_2d + noise, 0, 1)
 
         frame = hsv_to_rgb_uint8_frame(hue_2d, sat_2d, val_2d)

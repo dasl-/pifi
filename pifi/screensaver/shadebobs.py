@@ -3,7 +3,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -18,10 +17,6 @@ class Shadebobs(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
         # Frame buffer as float for smooth accumulation
         self.__buffer = None
@@ -48,8 +43,8 @@ class Shadebobs(Screensaver):
             y = math.sin(bob['freq_y'] * t + bob['phase_y'])
 
             # Map from [-1, 1] to screen coordinates
-            screen_x = (x + 1) / 2 * (self.__width - 1)
-            screen_y = (y + 1) / 2 * (self.__height - 1)
+            screen_x = (x + 1) / 2 * (self._width - 1)
+            screen_y = (y + 1) / 2 * (self._height - 1)
 
             # Draw the bob with additive blending
             self.__draw_bob(screen_x, screen_y, bob)
@@ -59,7 +54,7 @@ class Shadebobs(Screensaver):
 
     def __reset(self):
         # Float buffer for smooth color accumulation
-        self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__buffer = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         # Create bobs with different Lissajous parameters
         num_bobs = Config.get('screensavers.configs.shadebobs.num_bobs', 5)
@@ -84,7 +79,7 @@ class Shadebobs(Screensaver):
             }
             self.__bobs.append(bob)
 
-        self.__logger.info(f"Created {num_bobs} shadebobs")
+        self._logger.info(f"Created {num_bobs} shadebobs")
 
     def __draw_bob(self, cx, cy, bob):
         """Draw a glowing bob at the given position with additive blending."""
@@ -95,9 +90,9 @@ class Shadebobs(Screensaver):
 
         # Calculate bounding box
         x_min = max(0, int(cx - radius - 1))
-        x_max = min(self.__width, int(cx + radius + 2))
+        x_max = min(self._width, int(cx + radius + 2))
         y_min = max(0, int(cy - radius - 1))
-        y_max = min(self.__height, int(cy + radius + 2))
+        y_max = min(self._height, int(cy + radius + 2))
 
         for y in range(y_min, y_max):
             for x in range(x_min, x_max):

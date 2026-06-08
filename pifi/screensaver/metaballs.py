@@ -19,16 +19,13 @@ class Metaballs(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Metaballs: each is [x, y, radius, vx, vy, hue]
         self.__balls = []
         self.__time = 0.0
 
         # Precompute coordinate grids
-        x = np.arange(self.__width)
-        y = np.arange(self.__height)
+        x = np.arange(self._width)
+        y = np.arange(self._height)
         self.__grid_x, self.__grid_y = np.meshgrid(x, y)
 
     def _setup(self):
@@ -50,12 +47,12 @@ class Metaballs(Screensaver):
 
     def __create_ball(self, index, total):
         """Create a metaball with random properties."""
-        x = random.uniform(0, self.__width)
-        y = random.uniform(0, self.__height)
+        x = random.uniform(0, self._width)
+        y = random.uniform(0, self._height)
 
         # Radius affects the "strength" of the metaball
-        min_radius = min(self.__width, self.__height) * 0.15
-        max_radius = min(self.__width, self.__height) * 0.35
+        min_radius = min(self._width, self._height) * 0.15
+        max_radius = min(self._width, self._height) * 0.35
         radius = random.uniform(min_radius, max_radius)
 
         # Random velocity
@@ -81,20 +78,20 @@ class Metaballs(Screensaver):
 
             # Bounce off edges with some padding
             padding = ball[2] * 0.3
-            if ball[0] < padding or ball[0] >= self.__width - padding:
+            if ball[0] < padding or ball[0] >= self._width - padding:
                 ball[3] *= -1
-                ball[0] = max(padding, min(self.__width - padding - 1, ball[0]))
-            if ball[1] < padding or ball[1] >= self.__height - padding:
+                ball[0] = max(padding, min(self._width - padding - 1, ball[0]))
+            if ball[1] < padding or ball[1] >= self._height - padding:
                 ball[4] *= -1
-                ball[1] = max(padding, min(self.__height - padding - 1, ball[1]))
+                ball[1] = max(padding, min(self._height - padding - 1, ball[1]))
 
     def __render(self):
         # Calculate metaball field
         # For each pixel, sum the contribution from each ball
         # Contribution = radius^2 / distance^2 (inverse square falloff)
 
-        field = np.zeros((self.__height, self.__width), dtype=np.float64)
-        color_field = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        field = np.zeros((self._height, self._width), dtype=np.float64)
+        color_field = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
         for ball in self.__balls:
             bx, by, radius, _, _, hue = ball
@@ -129,7 +126,7 @@ class Metaballs(Screensaver):
         intensity = np.clip((field - threshold * 0.5) / (threshold * 0.5), 0, 1)
 
         # Create frame
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
         for c in range(3):
             frame[:, :, c] = (color_field[:, :, c] * intensity * 255).astype(np.uint8)

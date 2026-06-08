@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -26,12 +25,10 @@ class Escher(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
     def _setup(self):
         self.__time = 0.0
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         # Tile size
         self.__tile_size = max(3.0, min(w, h) / random.uniform(2.5, 4.5))

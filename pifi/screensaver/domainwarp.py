@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -18,8 +17,6 @@ class DomainWarp(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -27,8 +24,8 @@ class DomainWarp(Screensaver):
         self.__hue_base = random.random()
 
         # Pre-compute coordinate grids (normalized 0-1)
-        y = np.linspace(0, 1, self.__height, dtype=np.float64)
-        x = np.linspace(0, 1, self.__width, dtype=np.float64)
+        y = np.linspace(0, 1, self._height, dtype=np.float64)
+        x = np.linspace(0, 1, self._width, dtype=np.float64)
         self.__gx, self.__gy = np.meshgrid(x, y)
 
         # Random parameters for variety

@@ -56,7 +56,11 @@ class TestTimeoutResolution(unittest.TestCase):
         Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
 
     def _make(self, config):
-        Config._Config__config = copy.deepcopy(config)  # pyright: ignore[reportAttributeAccessIssue]
+        config = copy.deepcopy(config)
+        # The base Screensaver reads display dimensions on construction.
+        config.setdefault('leds', {}).setdefault('display_width', 64)
+        config['leds'].setdefault('display_height', 32)
+        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
         return _StubScreensaver(led_frame_player=None)
 
     def test_default_timeout_is_120(self):
@@ -150,7 +154,11 @@ class TestTickSleepResolution(unittest.TestCase):
         Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
 
     def _make(self, config):
-        Config._Config__config = copy.deepcopy(config)  # pyright: ignore[reportAttributeAccessIssue]
+        config = copy.deepcopy(config)
+        # The base Screensaver reads display dimensions on construction.
+        config.setdefault('leds', {}).setdefault('display_width', 64)
+        config['leds'].setdefault('display_height', 32)
+        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
         return _StubScreensaver(led_frame_player=None)
 
     def test_default_tick_sleep(self):

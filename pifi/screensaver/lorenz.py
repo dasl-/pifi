@@ -19,9 +19,6 @@ class Lorenz(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Lorenz system state
         self.__x = 0.0
         self.__y = 0.0
@@ -82,7 +79,7 @@ class Lorenz(Screensaver):
         self.__rotation = random.uniform(0, 2 * math.pi)
 
     def __render(self):
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
         if not self.__trail:
             self._led_frame_player.play_frame(frame)
@@ -100,9 +97,9 @@ class Lorenz(Screensaver):
         y_range = 50
         z_min, z_max = 0, 50
 
-        cx = self.__width / 2
-        cy = self.__height / 2
-        scale = min(self.__width / x_range, self.__height / y_range) * 0.9
+        cx = self._width / 2
+        cy = self._height / 2
+        scale = min(self._width / x_range, self._height / y_range) * 0.9
 
         # Render trail with 3D rotation
         cos_r = math.cos(self.__rotation)
@@ -117,7 +114,7 @@ class Lorenz(Screensaver):
             screen_x = int(cx + rx * scale)
             screen_y = int(cy - (ry * 0.7 + (z - 25) * 0.3) * scale)
 
-            if 0 <= screen_x < self.__width and 0 <= screen_y < self.__height:
+            if 0 <= screen_x < self._width and 0 <= screen_y < self._height:
                 # Color based on z-height (blue at bottom, red at top)
                 z_norm = (z - z_min) / (z_max - z_min)
                 z_norm = max(0, min(1, z_norm))

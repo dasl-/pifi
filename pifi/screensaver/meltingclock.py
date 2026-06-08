@@ -4,7 +4,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
@@ -105,19 +104,15 @@ class MeltingClock(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
         # Get timezone configuration
         timezone_str = Config.get('screensavers.configs.melting_clock.timezone', None)
         if timezone_str:
             try:
                 self.__timezone = ZoneInfo(timezone_str)
-                self.__logger.info(f"Using timezone: {timezone_str}")
+                self._logger.info(f"Using timezone: {timezone_str}")
             except Exception as e:
-                self.__logger.warning(f"Invalid timezone '{timezone_str}': {e}. Using local time.")
+                self._logger.warning(f"Invalid timezone '{timezone_str}': {e}. Using local time.")
                 self.__timezone = None
         else:
             self.__timezone = None
@@ -168,7 +163,7 @@ class MeltingClock(Screensaver):
     def __reset(self):
         self.__current_time = ""
         self.__char_states = []
-        self.__buffer = np.zeros((self.__height, self.__width), dtype=np.float32)
+        self.__buffer = np.zeros((self._height, self._width), dtype=np.float32)
         self.__hue = random.random()
 
     def __handle_time_change(self, new_time):
@@ -250,7 +245,7 @@ class MeltingClock(Screensaver):
                     drop['brightness'] -= 0.02  # Fade out
 
                     # Keep drop if still visible
-                    if drop['y'] < self.__height and drop['brightness'] > 0:
+                    if drop['y'] < self._height and drop['brightness'] > 0:
                         new_drops.append(drop)
 
             state['drops'] = new_drops
@@ -270,7 +265,7 @@ class MeltingClock(Screensaver):
             # HH:MM = 5 chars
             total_width = 4 * self.DIGIT_WIDTH + 1 * 3 + 4  # 4 digits + 1 colon + spacing
 
-        start_x = (self.__width - total_width) // 2
+        start_x = (self._width - total_width) // 2
 
         # Position based on character index
         x = start_x
@@ -281,14 +276,14 @@ class MeltingClock(Screensaver):
 
     def __get_char_y(self):
         """Get y position for characters (centered vertically)."""
-        return (self.__height - self.DIGIT_HEIGHT) // 2
+        return (self._height - self.DIGIT_HEIGHT) // 2
 
     def __render(self):
         # Fade existing buffer (creates trails)
         fade = Config.get('screensavers.configs.melting_clock.trail_fade', 0.85)
         self.__buffer *= fade
 
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
         y_offset = self.__get_char_y()
 
         # Draw each character
@@ -305,7 +300,7 @@ class MeltingClock(Screensaver):
                         if font_data[row][col]:
                             px = x_offset + col
                             py = y_offset + row
-                            if 0 <= px < self.__width and 0 <= py < self.__height:
+                            if 0 <= px < self._width and 0 <= py < self._height:
                                 # Fade in from top
                                 row_progress = (forming * self.DIGIT_HEIGHT - (self.DIGIT_HEIGHT - 1 - row))
                                 pixel_brightness = max(0, min(1, row_progress))
@@ -315,19 +310,19 @@ class MeltingClock(Screensaver):
             for drop in state['drops']:
                 px = int(drop['x'])
                 py = int(drop['y'])
-                if 0 <= px < self.__width and 0 <= py < self.__height:
+                if 0 <= px < self._width and 0 <= py < self._height:
                     self.__buffer[py, px] = max(self.__buffer[py, px], drop['brightness'])
 
                 # Draw trail
                 trail_y = int(drop['y'] - drop['vy'] * 0.5)
-                if 0 <= px < self.__width and 0 <= trail_y < self.__height:
+                if 0 <= px < self._width and 0 <= trail_y < self._height:
                     self.__buffer[trail_y, px] = max(self.__buffer[trail_y, px], drop['brightness'] * 0.5)
 
         # Convert buffer to colored frame
         color_mode = Config.get('screensavers.configs.melting_clock.color_mode', 'rainbow')
 
-        for y in range(self.__height):
-            for x in range(self.__width):
+        for y in range(self._height):
+            for x in range(self._width):
                 b = self.__buffer[y, x]
                 if b > 0.01:
                     if color_mode == 'rainbow':

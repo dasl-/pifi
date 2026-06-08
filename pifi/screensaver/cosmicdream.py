@@ -23,16 +23,13 @@ class CosmicDream(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Pre-compute coordinate grids for plasma
         self.__x_grid, self.__y_grid = np.meshgrid(
-            np.arange(self.__width),
-            np.arange(self.__height)
+            np.arange(self._width),
+            np.arange(self._height)
         )
-        self.__x_norm = self.__x_grid / max(self.__width, 1)
-        self.__y_norm = self.__y_grid / max(self.__height, 1)
+        self.__x_norm = self.__x_grid / max(self._width, 1)
+        self.__y_norm = self.__y_grid / max(self._height, 1)
 
         # Particle system state
         self.__particles = None
@@ -66,8 +63,8 @@ class CosmicDream(Screensaver):
         # Initialize particles for flow field
         num_particles = Config.get('screensavers.configs.cosmic_dream.num_particles', 20)
         self.__particles = np.random.rand(num_particles, 2)
-        self.__particles[:, 0] *= self.__width
-        self.__particles[:, 1] *= self.__height
+        self.__particles[:, 0] *= self._width
+        self.__particles[:, 1] *= self._height
 
         # Trail buffer: stores previous positions for motion blur
         trail_length = Config.get('screensavers.configs.cosmic_dream.trail_length', 8)
@@ -83,7 +80,7 @@ class CosmicDream(Screensaver):
         Classic plasma effect using interference of sine waves.
         Multiple frequencies create organic, flowing patterns.
         """
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         # Time-varying frequencies for morphing effect
         freq1 = 3.0 + math.sin(t * 0.3) * 1.5
@@ -96,7 +93,7 @@ class CosmicDream(Screensaver):
         plasma3 = np.sin((self.__x_norm + self.__y_norm) * freq3 * math.pi + t * 0.9)
 
         # Radial wave from center
-        cx, cy = self.__width / 2, self.__height / 2
+        cx, cy = self._width / 2, self._height / 2
         dist = np.sqrt((self.__x_grid - cx)**2 + (self.__y_grid - cy)**2)
         max_dist = math.sqrt(cx**2 + cy**2)
         plasma4 = np.sin(dist / max_dist * 6 * math.pi - t * 1.2)
@@ -120,10 +117,10 @@ class CosmicDream(Screensaver):
         Breathing sacred geometry - pulsing circles, rotating polygons.
         Creates a hypnotic focal point.
         """
-        cx, cy = self.__width / 2, self.__height / 2
+        cx, cy = self._width / 2, self._height / 2
 
         # Breathing radius
-        base_radius = min(self.__width, self.__height) * 0.35
+        base_radius = min(self._width, self._height) * 0.35
         breath = math.sin(t * 0.8) * 0.3 + 1.0  # 0.7 to 1.3
         radius = base_radius * breath  # pyright: ignore[reportUnusedVariable]
 
@@ -141,7 +138,7 @@ class CosmicDream(Screensaver):
                 px = int(cx + math.cos(angle) * ring_radius)
                 py = int(cy + math.sin(angle) * ring_radius)
 
-                if 0 <= px < self.__width and 0 <= py < self.__height:
+                if 0 <= px < self._width and 0 <= py < self._height:
                     ring_color = hsv_to_rgb_bytes(ring_hue, 1.0, 1.0)
                     # Additive blend
                     for c in range(3):
@@ -155,7 +152,7 @@ class CosmicDream(Screensaver):
         for dy in range(-1, 2):
             for dx in range(-1, 2):
                 px, py = int(cx) + dx, int(cy) + dy
-                if 0 <= px < self.__width and 0 <= py < self.__height:
+                if 0 <= px < self._width and 0 <= py < self._height:
                     dist = math.sqrt(dx*dx + dy*dy)
                     falloff = max(0, 1 - dist / 1.5)
                     for c in range(3):
@@ -185,8 +182,8 @@ class CosmicDream(Screensaver):
             self.__particles[i, 1] += math.sin(angle) * speed  # pyright: ignore[reportOptionalSubscript]
 
             # Wrap around edges
-            self.__particles[i, 0] %= self.__width  # pyright: ignore[reportOptionalSubscript]
-            self.__particles[i, 1] %= self.__height  # pyright: ignore[reportOptionalSubscript]
+            self.__particles[i, 0] %= self._width  # pyright: ignore[reportOptionalSubscript]
+            self.__particles[i, 1] %= self._height  # pyright: ignore[reportOptionalSubscript]
 
         # Shift trail buffer and add new position
         self.__particle_trails[:, 1:, :] = self.__particle_trails[:, :-1, :]  # pyright: ignore[reportOptionalSubscript]
@@ -195,11 +192,11 @@ class CosmicDream(Screensaver):
         # Render trails with fading
         for i in range(num_particles):
             # Particle hue based on position and time
-            base_hue = (self.__particles[i, 0] / self.__width + t * 0.05) % 1.0  # pyright: ignore[reportOptionalSubscript]
+            base_hue = (self.__particles[i, 0] / self._width + t * 0.05) % 1.0  # pyright: ignore[reportOptionalSubscript]
 
             for trail_idx in range(trail_length):
                 tx, ty = self.__particle_trails[i, trail_idx]  # pyright: ignore[reportOptionalSubscript]
-                px, py = int(tx) % self.__width, int(ty) % self.__height
+                px, py = int(tx) % self._width, int(ty) % self._height
 
                 # Fade based on trail position (newer = brighter)
                 fade = 1.0 - (trail_idx / trail_length)
@@ -221,8 +218,8 @@ class CosmicDream(Screensaver):
         Creates organic, flowing patterns without requiring a noise library.
         """
         # Normalize coordinates
-        nx = x / self.__width * 4
-        ny = y / self.__height * 4
+        nx = x / self._width * 4
+        ny = y / self._height * 4
 
         # Multiple octaves of sine waves at different frequencies
         o = self.__noise_offsets
@@ -302,7 +299,7 @@ class CosmicDream(Screensaver):
         r[mask4], g[mask4], b[mask4] = t[mask4], p, v
         r[mask5], g[mask5], b[mask5] = v, p, q[mask5]
 
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.float32)
         frame[:, :, 0] = r * 255
         frame[:, :, 1] = g * 255
         frame[:, :, 2] = b * 255

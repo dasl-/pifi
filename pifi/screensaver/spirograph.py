@@ -3,7 +3,6 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -23,10 +22,6 @@ class Spirograph(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__logger = Logger().set_namespace(self.__class__.__name__)
-
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
     def _setup(self):
         self.__time = 0.0
@@ -34,11 +29,11 @@ class Spirograph(Screensaver):
 
         self.__speed = random.uniform(0.04, 0.08)
         self.__hue_speed = random.uniform(0.001, 0.003)
-        self.__cx = self.__width / 2.0
-        self.__cy = self.__height / 2.0
+        self.__cx = self._width / 2.0
+        self.__cy = self._height / 2.0
 
         # Trail canvas (persistent, fading)
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
         setup_fn, self.__compute_fn = {
             'hypotrochoid': (self.__setup_hypotrochoid, self.__compute_hypotrochoid),
@@ -60,10 +55,10 @@ class Spirograph(Screensaver):
 
         # Hypotrochoid stays within R, but d > r creates loops outside (R-r)+d
         max_extent = max(R, (R - r) + d)
-        self.__scale = min(self.__width, self.__height) / 2.0 * 0.92 / max_extent
+        self.__scale = min(self._width, self._height) / 2.0 * 0.92 / max_extent
         self.__R, self.__r, self.__d = R, r, d
 
-        self.__logger.info(
+        self._logger.info(
             f"Spirograph hypotrochoid: R={R:.3f}, r={r:.3f}, d={d:.3f}")
 
     def __setup_epitrochoid(self):
@@ -76,10 +71,10 @@ class Spirograph(Screensaver):
             r *= 1.1
 
         max_extent = R + r + d
-        self.__scale = min(self.__width, self.__height) / 2.0 * 0.92 / max_extent
+        self.__scale = min(self._width, self._height) / 2.0 * 0.92 / max_extent
         self.__R, self.__r, self.__d = R, r, d  # pyright: ignore[reportConstantRedefinition]
 
-        self.__logger.info(
+        self._logger.info(
             f"Spirograph epitrochoid: R={R:.3f}, r={r:.3f}, d={d:.3f}")
 
     def __setup_compound(self):
@@ -99,11 +94,11 @@ class Spirograph(Screensaver):
             f2 = -f2
 
         max_extent = a1 + a2
-        self.__scale = min(self.__width, self.__height) / 2.0 * 0.90 / max_extent
+        self.__scale = min(self._width, self._height) / 2.0 * 0.90 / max_extent
         self.__a1, self.__a2 = a1, a2
         self.__f1, self.__f2 = f1, f2
 
-        self.__logger.info(
+        self._logger.info(
             f"Spirograph compound: a1={a1:.3f}, a2={a2:.3f}, " +
             f"f1={f1:.3f}, f2={f2:.3f}")
 
@@ -119,12 +114,12 @@ class Spirograph(Screensaver):
             r *= 1.1
 
         max_extent = R * (1 + amplitude)
-        self.__scale = min(self.__width, self.__height) / 2.0 * 0.90 / max_extent
+        self.__scale = min(self._width, self._height) / 2.0 * 0.90 / max_extent
         self.__R, self.__r, self.__d = R, r, d  # pyright: ignore[reportConstantRedefinition]
         self.__n_points = n_points
         self.__amplitude = amplitude
 
-        self.__logger.info(
+        self._logger.info(
             f"Spirograph star_ring: R={R:.3f}, r={r:.3f}, d={d:.3f}, " +
             f"n={n_points}, amp={amplitude:.3f}")
 
@@ -148,7 +143,7 @@ class Spirograph(Screensaver):
         color = hsv_to_rgb(hue, 0.85, 1.0)
 
         ix, iy = int(round(sx)), int(round(sy))
-        if 0 <= ix < self.__width and 0 <= iy < self.__height:
+        if 0 <= ix < self._width and 0 <= iy < self._height:
             self.__canvas[iy, ix] = np.minimum(
                 1.0, self.__canvas[iy, ix] + np.array(color) * 0.5
             )
@@ -300,7 +295,7 @@ class Spirograph(Screensaver):
                 R_eff = R_base * (1 + amp * math.cos(n * angle))
                 px = int(round(cx + R_eff * math.cos(angle)))
                 py = int(round(cy + R_eff * math.sin(angle)))
-                if 0 <= px < self.__width and 0 <= py < self.__height:
+                if 0 <= px < self._width and 0 <= py < self._height:
                     canvas[py, px] = np.maximum(canvas[py, px], ring_color)
 
             # Rolling gear
@@ -323,7 +318,7 @@ class Spirograph(Screensaver):
 
     def __draw_dot(self, canvas, x, y, color):
         ix, iy = int(round(x)), int(round(y))
-        if 0 <= ix < self.__width and 0 <= iy < self.__height:
+        if 0 <= ix < self._width and 0 <= iy < self._height:
             canvas[iy, ix] = np.maximum(canvas[iy, ix], color)
 
     def __draw_circle(self, canvas, cx, cy, radius, color):
@@ -333,7 +328,7 @@ class Spirograph(Screensaver):
             angle = 2 * math.pi * i / circumference
             px = int(round(cx + radius * math.cos(angle)))
             py = int(round(cy + radius * math.sin(angle)))
-            if 0 <= px < self.__width and 0 <= py < self.__height:
+            if 0 <= px < self._width and 0 <= py < self._height:
                 canvas[py, px] = np.maximum(canvas[py, px], color)
 
     def __draw_line(self, canvas, x1, y1, x2, y2, color):
@@ -344,7 +339,7 @@ class Spirograph(Screensaver):
             frac = s / steps
             px = int(round(x1 + dx * frac))
             py = int(round(y1 + dy * frac))
-            if 0 <= px < self.__width and 0 <= py < self.__height:
+            if 0 <= px < self._width and 0 <= py < self._height:
                 canvas[py, px] = np.maximum(canvas[py, px], color)
 
     @classmethod

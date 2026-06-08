@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -28,12 +27,9 @@ class Blueprint(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
 
         # Pre-compute coordinates
         y = np.arange(h, dtype=np.float64)
@@ -58,7 +54,7 @@ class Blueprint(Screensaver):
     def _tick(self):
         self.__time += 0.02
         t = self.__time
-        w, h = self.__width, self.__height  # pyright: ignore[reportUnusedVariable]
+        w, h = self._width, self._height  # pyright: ignore[reportUnusedVariable]
 
         # Fade canvas toward background
         self.__canvas = self.__canvas * 0.97 + self._BG * 0.03
@@ -110,7 +106,7 @@ class Blueprint(Screensaver):
 
     def __spawn_element(self):
         """Spawn a new drawing element."""
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         kind = random.choices(
             ['arc', 'line', 'perspective', 'dimension', 'crosshair', 'circle'],
             weights=[3, 2, 2, 2, 1, 2],
@@ -267,7 +263,7 @@ class Blueprint(Screensaver):
     def __render_perspective(self, elem, progress, brightness):
         """Render lines converging to a vanishing point."""
         vx, vy = elem['vp_x'], elem['vp_y']
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         n = elem['num_lines']
         color = elem['color']
 
@@ -288,12 +284,12 @@ class Blueprint(Screensaver):
         if progress > 0.3:
             cap_brightness = brightness * min(1, (progress - 0.3) / 0.3)
             if abs(y2 - y1) < 0.1:  # horizontal
-                cap_len = min(2, self.__height * 0.15)
+                cap_len = min(2, self._height * 0.15)
                 self.__render_line(x1, y1 - cap_len, x1, y1 + cap_len, color, 1.0, cap_brightness)
                 ex = x1 + (x2 - x1) * progress
                 self.__render_line(ex, y2 - cap_len, ex, y2 + cap_len, color, 1.0, cap_brightness)
             else:  # vertical
-                cap_len = min(2, self.__width * 0.15)
+                cap_len = min(2, self._width * 0.15)
                 self.__render_line(x1 - cap_len, y1, x1 + cap_len, y1, color, 1.0, cap_brightness)
                 ey = y1 + (y2 - y1) * progress
                 self.__render_line(x2 - cap_len, ey, x2 + cap_len, ey, color, 1.0, cap_brightness)

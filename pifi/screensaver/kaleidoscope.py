@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
@@ -18,8 +17,6 @@ class Kaleidoscope(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -31,9 +28,9 @@ class Kaleidoscope(Screensaver):
         self.__num_axes = random.choice([3, 4, 5, 6, 8])
 
         # Pre-compute polar coordinates from center
-        cy, cx = self.__height / 2, self.__width / 2
-        y = np.arange(self.__height, dtype=np.float64) - cy
-        x = np.arange(self.__width, dtype=np.float64) - cx
+        cy, cx = self._height / 2, self._width / 2
+        y = np.arange(self._height, dtype=np.float64) - cy
+        x = np.arange(self._width, dtype=np.float64) - cx
         gx, gy = np.meshgrid(x, y)
 
         self.__radius = np.sqrt(gx ** 2 + gy ** 2)

@@ -16,8 +16,6 @@ import numpy as np
 import requests
 import syncedlyrics
 
-from pifi.config import Config
-from pifi.logger import Logger
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver import textutils
 
@@ -64,10 +62,6 @@ class KaraokeBase(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self._logger = Logger().set_namespace(self.__class__.__name__)
-
-        self._width = Config.get('leds.display_width', 64)
-        self._height = Config.get('leds.display_height', 32)
 
         self._pulse_lyrics = True
 

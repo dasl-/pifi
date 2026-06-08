@@ -18,9 +18,6 @@ class InkInWater(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # RGB buffer for diffusion
         self.__buffer = None
         self.__time = 0
@@ -49,7 +46,7 @@ class InkInWater(Screensaver):
 
     def __reset(self):
         self.__time = 0
-        self.__buffer = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__buffer = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         # Add several initial drops for immediate visual interest
         for _ in range(6):
@@ -57,8 +54,8 @@ class InkInWater(Screensaver):
 
     def __add_drop(self):
         """Add a new ink drop at a random location."""
-        x = random.randint(3, self.__width - 4)
-        y = random.randint(3, self.__height - 4)
+        x = random.randint(3, self._width - 4)
+        y = random.randint(3, self._height - 4)
 
         # Random vibrant color
         hue = random.random()
@@ -72,7 +69,7 @@ class InkInWater(Screensaver):
         for dy in range(-3, 4):
             for dx in range(-3, 4):
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < self.__width and 0 <= ny < self.__height:
+                if 0 <= nx < self._width and 0 <= ny < self._height:
                     dist = math.sqrt(dx * dx + dy * dy)
                     if dist < radius:
                         falloff = 1.0 - (dist / radius)

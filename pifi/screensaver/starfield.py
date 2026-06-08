@@ -18,9 +18,6 @@ class Starfield(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
         # Stars: each is [x, y, z] where z is depth (0 = closest, 1 = farthest)
         self.__stars = []
 
@@ -76,10 +73,10 @@ class Starfield(Screensaver):
         self.__stars.append([x, y, z])
 
     def __render(self):
-        frame = np.zeros([self.__height, self.__width, 3], np.uint8)
+        frame = np.zeros([self._height, self._width, 3], np.uint8)
 
-        cx = self.__width / 2
-        cy = self.__height / 2
+        cx = self._width / 2
+        cy = self._height / 2
 
         show_trails = Config.get('screensavers.configs.starfield.show_trails', True)
         trail_length = Config.get('screensavers.configs.starfield.trail_length', 3)
@@ -114,7 +111,7 @@ class Starfield(Screensaver):
             ix = int(screen_x)
             iy = int(screen_y)
 
-            if 0 <= ix < self.__width and 0 <= iy < self.__height:
+            if 0 <= ix < self._width and 0 <= iy < self._height:
                 # Draw the star
                 frame[iy, ix] = np.maximum(frame[iy, ix], color)
 
@@ -131,7 +128,7 @@ class Starfield(Screensaver):
                         tix = int(trail_x)
                         tiy = int(trail_y)
 
-                        if 0 <= tix < self.__width and 0 <= tiy < self.__height:
+                        if 0 <= tix < self._width and 0 <= tiy < self._height:
                             trail_int = int(trail_brightness * 255 * (1 - t / (trail_length + 1)))
                             trail_color = [trail_int, trail_int, trail_int]
                             frame[tiy, tix] = np.maximum(frame[tiy, tix], trail_color)

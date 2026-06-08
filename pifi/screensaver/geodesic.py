@@ -10,7 +10,6 @@ import math
 import numpy as np
 import random
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -260,8 +259,6 @@ class Geodesic(Screensaver):
 
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
 
     def _setup(self):
         # Build all shapes once
@@ -297,7 +294,7 @@ class Geodesic(Screensaver):
         self.__morph_duration = random.uniform(2.0, 4.0)
 
         # Sphere radius in pixels
-        self.__radius = min(self.__width, self.__height) * 0.38
+        self.__radius = min(self._width, self._height) * 0.38
 
         # Perspective camera
         self.__cam_dist = 4.0
@@ -322,15 +319,15 @@ class Geodesic(Screensaver):
         self.__hue_speed = random.uniform(0.0008, 0.003)
 
         # Canvas
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float32)
         self.__decay = 0.82
 
         # Pixel grids
-        ys = np.arange(self.__height, dtype=np.float32)
-        xs = np.arange(self.__width, dtype=np.float32)
+        ys = np.arange(self._height, dtype=np.float32)
+        xs = np.arange(self._width, dtype=np.float32)
         self.__grid_x, self.__grid_y = np.meshgrid(xs, ys)
 
-        min_dim = min(self.__width, self.__height)
+        min_dim = min(self._width, self._height)
         self.__line_half_width = max(0.6, min_dim / 50.0)
         self.__vertex_radius = max(1.0, min_dim / 30.0)
 
@@ -395,8 +392,8 @@ class Geodesic(Screensaver):
         # Perspective projection
         z_vals = rotated[:, 2]
         depth_factor = self.__cam_dist / (self.__cam_dist - z_vals)
-        proj_x = rotated[:, 0] * depth_factor * self.__radius + self.__width / 2.0
-        proj_y = rotated[:, 1] * depth_factor * self.__radius + self.__height / 2.0
+        proj_x = rotated[:, 0] * depth_factor * self.__radius + self._width / 2.0
+        proj_y = rotated[:, 1] * depth_factor * self.__radius + self._height / 2.0
         depth_brightness = 0.25 + 0.75 * (z_vals + 1) / 2.0
 
         base_color = self.__get_base_color(tick)
@@ -467,9 +464,9 @@ class Geodesic(Screensaver):
 
             pad = hw + 1.5
             min_x = max(0, int(min(x0, x1) - pad))
-            max_x = min(self.__width, int(max(x0, x1) + pad) + 1)
+            max_x = min(self._width, int(max(x0, x1) + pad) + 1)
             min_y = max(0, int(min(y0, y1) - pad))
-            max_y = min(self.__height, int(max(y0, y1) + pad) + 1)
+            max_y = min(self._height, int(max(y0, y1) + pad) + 1)
             if max_x <= min_x or max_y <= min_y:
                 continue
 
@@ -506,9 +503,9 @@ class Geodesic(Screensaver):
 
             pad = vr + 1.0
             min_x = max(0, int(vx - pad))
-            max_x = min(self.__width, int(vx + pad) + 1)
+            max_x = min(self._width, int(vx + pad) + 1)
             min_y = max(0, int(vy - pad))
-            max_y = min(self.__height, int(vy + pad) + 1)
+            max_y = min(self._height, int(vy + pad) + 1)
             if max_x <= min_x or max_y <= min_y:
                 continue
 

@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -27,8 +26,6 @@ class Misprint(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -38,9 +35,9 @@ class Misprint(Screensaver):
         self.__num_passes = len(self.__colors)
 
         # Pre-compute coordinates
-        cy, cx = self.__height / 2, self.__width / 2
-        y = np.arange(self.__height, dtype=np.float64) - cy
-        x = np.arange(self.__width, dtype=np.float64) - cx
+        cy, cx = self._height / 2, self._width / 2
+        y = np.arange(self._height, dtype=np.float64) - cy
+        x = np.arange(self._width, dtype=np.float64) - cx
         self.__gx, self.__gy = np.meshgrid(x, y)
         self.__dist = np.sqrt(self.__gx ** 2 + self.__gy ** 2)
         self.__angle = np.arctan2(self.__gy, self.__gx)
@@ -80,7 +77,7 @@ class Misprint(Screensaver):
         self.__time += 0.012
         t = self.__time
 
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        frame = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
         for i in range(self.__num_passes):
             color = np.array(self.__colors[i])
@@ -114,7 +111,7 @@ class Misprint(Screensaver):
 
     def __render_composition(self, gx, gy, t):
         """Render the composition shapes as a 0-1 mask."""
-        w, h = self.__width, self.__height
+        w, h = self._width, self._height
         scale = min(w, h)
 
         if self.__composition == 'circles':

@@ -19,9 +19,6 @@ class PerlinWorms(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
-
         # Config
         self.__num_worms = Config.get('screensavers.configs.perlinworms.num_worms', 8)
         self.__worm_length = Config.get('screensavers.configs.perlinworms.worm_length', 12)
@@ -39,7 +36,7 @@ class PerlinWorms(Screensaver):
         self.__worm_hues = []
 
         # Canvas buffer (float for smooth accumulation)
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         self.__time = 0.0
 
@@ -96,8 +93,8 @@ class PerlinWorms(Screensaver):
 
         for i in range(self.__num_worms):
             # Start at random position
-            x = np.random.uniform(0, self.__width)
-            y = np.random.uniform(0, self.__height)
+            x = np.random.uniform(0, self._width)
+            y = np.random.uniform(0, self._height)
 
             # Initialize with single position (will grow)
             self.__worms.append([(x, y)])
@@ -131,8 +128,8 @@ class PerlinWorms(Screensaver):
             new_y = hy + math.sin(angle) * self.__speed
 
             # Wrap around edges
-            new_x = new_x % self.__width
-            new_y = new_y % self.__height
+            new_x = new_x % self._width
+            new_y = new_y % self._height
 
             # Add new head position
             worm.insert(0, (new_x, new_y))
@@ -169,8 +166,8 @@ class PerlinWorms(Screensaver):
 
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
-                px = int(cx + dx) % self.__width
-                py = int(cy + dy) % self.__height
+                px = int(cx + dx) % self._width
+                py = int(cy + dy) % self._height
 
                 # Distance from center
                 dist = math.sqrt((cx - int(cx) - dx) ** 2 + (cy - int(cy) - dy) ** 2)

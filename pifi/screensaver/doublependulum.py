@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.logger import Logger  # pyright: ignore[reportUnusedImport]
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
@@ -20,22 +19,19 @@ class DoublePendulum(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
-
     def _setup(self):
         self.__time = 0.0
         self.__hue_base = random.random()
 
         # Canvas for trail (float for smooth fading)
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
         # Pendulum parameters — scale to use most of the screen.
         # Total arm length is constrained by horizontal half-width,
         # then the pivot is placed so the fully extended pendulum
         # just touches the bottom of the screen.
         bob_radius = 2  # must match the radius used in __draw_arms
-        max_reach = (self.__width / 2 - 1 - bob_radius) * 0.85
+        max_reach = (self._width / 2 - 1 - bob_radius) * 0.85
         self.__l1 = max_reach * random.uniform(0.45, 0.55)
         self.__l2 = max_reach - self.__l1
         self.__m1 = random.uniform(0.8, 1.2)
@@ -50,8 +46,8 @@ class DoublePendulum(Screensaver):
 
         # Center point (pivot) — placed so fully extended pendulum
         # reaches the bottom row of the screen.
-        self.__cx = self.__width / 2
-        self.__cy = self.__height - 1 - bob_radius - (self.__l1 + self.__l2)
+        self.__cx = self._width / 2
+        self.__cy = self._height - 1 - bob_radius - (self.__l1 + self.__l2)
 
         # Previous tip position for line drawing
         self.__prev_x = None
@@ -163,7 +159,7 @@ class DoublePendulum(Screensaver):
             ix = int(round(px))
             iy = int(round(py))
 
-            if 0 <= ix < self.__width and 0 <= iy < self.__height:
+            if 0 <= ix < self._width and 0 <= iy < self._height:
                 self.__canvas[iy, ix, 0] = min(1.0, self.__canvas[iy, ix, 0] + r * 0.4)
                 self.__canvas[iy, ix, 1] = min(1.0, self.__canvas[iy, ix, 1] + g * 0.4)
                 self.__canvas[iy, ix, 2] = min(1.0, self.__canvas[iy, ix, 2] + b * 0.4)
@@ -186,7 +182,7 @@ class DoublePendulum(Screensaver):
                 px = ax1 + (ax2 - ax1) * t
                 py = ay1 + (ay2 - ay1) * t
                 ix, iy = int(round(px)), int(round(py))
-                if 0 <= ix < self.__width and 0 <= iy < self.__height:
+                if 0 <= ix < self._width and 0 <= iy < self._height:
                     canvas[iy, ix] = np.maximum(canvas[iy, ix], arm_color)
 
         # Draw bobs as bright discs — pivot, joint, and tip
@@ -203,7 +199,7 @@ class DoublePendulum(Screensaver):
                     if dx * dx + dy * dy <= radius * radius:
                         ix = int(round(bx)) + dx
                         iy = int(round(by)) + dy
-                        if 0 <= ix < self.__width and 0 <= iy < self.__height:
+                        if 0 <= ix < self._width and 0 <= iy < self._height:
                             canvas[iy, ix] = np.maximum(canvas[iy, ix], color)
 
     @classmethod

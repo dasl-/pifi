@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -21,8 +20,6 @@ class Phyllotaxis(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -31,12 +28,12 @@ class Phyllotaxis(Screensaver):
         self.__speed = random.uniform(0.015, 0.025)
         self.__rotation_speed = random.uniform(0.005, 0.015) * random.choice([-1, 1])
 
-        self.__cx = self.__width / 2
-        self.__cy = self.__height / 2
-        self.__max_radius = min(self.__width, self.__height) / 2 * 0.95
+        self.__cx = self._width / 2
+        self.__cy = self._height / 2
+        self.__max_radius = min(self._width, self._height) / 2 * 0.95
 
         # How many dots fill the display nicely
-        area = self.__width * self.__height
+        area = self._width * self._height
         self.__max_dots = int(area * 0.6)
 
         # Color scheme — controls how hue varies across the spiral
@@ -57,7 +54,7 @@ class Phyllotaxis(Screensaver):
             self.__hue_spread = 1.0
 
         # Pre-allocate canvas
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float64)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float64)
 
     def _tick(self):
         self.__time += self.__speed
@@ -86,7 +83,7 @@ class Phyllotaxis(Screensaver):
             ix = int(round(px))
             iy = int(round(py))
 
-            if 0 <= ix < self.__width and 0 <= iy < self.__height:
+            if 0 <= ix < self._width and 0 <= iy < self._height:
                 norm_r = r / self.__max_radius
 
                 # Color depends on scheme

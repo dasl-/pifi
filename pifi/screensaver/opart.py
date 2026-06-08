@@ -2,7 +2,6 @@ import numpy as np
 import random
 import math  # pyright: ignore[reportUnusedImport]
 
-from pifi.config import Config
 from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
@@ -20,8 +19,6 @@ class OpArt(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get_or_throw('leds.display_width')
-        self.__height = Config.get_or_throw('leds.display_height')
         self.__time = 0.0
 
     def _setup(self):
@@ -29,9 +26,9 @@ class OpArt(Screensaver):
         self.__speed = random.uniform(0.008, 0.015)
 
         # Pre-compute coordinate grids
-        cy, cx = self.__height / 2, self.__width / 2
-        y = np.arange(self.__height, dtype=np.float64) - cy
-        x = np.arange(self.__width, dtype=np.float64) - cx
+        cy, cx = self._height / 2, self._width / 2
+        y = np.arange(self._height, dtype=np.float64) - cy
+        x = np.arange(self._width, dtype=np.float64) - cx
         self.__gx, self.__gy = np.meshgrid(x, y)
         self.__dist = np.sqrt(self.__gx ** 2 + self.__gy ** 2)
         self.__angle = np.arctan2(self.__gy, self.__gx)

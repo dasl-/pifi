@@ -19,9 +19,6 @@ class StringArt(Screensaver):
     def __init__(self, led_frame_player=None):
         super().__init__(led_frame_player)
 
-        self.__width = Config.get('leds.display_width')
-        self.__height = Config.get('leds.display_height')
-
         # Config
         self.__num_points = Config.get('screensavers.configs.stringart.num_points', 64)
         self.__num_strings = Config.get('screensavers.configs.stringart.num_strings', 32)
@@ -31,7 +28,7 @@ class StringArt(Screensaver):
         self.__line_brightness = Config.get('screensavers.configs.stringart.line_brightness', 0.4)
 
         # Canvas buffer
-        self.__canvas = np.zeros((self.__height, self.__width, 3), dtype=np.float32)
+        self.__canvas = np.zeros((self._height, self._width, 3), dtype=np.float32)
 
         # Animation state
         self.__multiplier = 2.0  # Connection multiplier (creates different patterns)
@@ -59,10 +56,10 @@ class StringArt(Screensaver):
         x1, y1 = int(x1), int(y1)
 
         # Clip to bounds
-        x0 = max(0, min(self.__width - 1, x0))
-        y0 = max(0, min(self.__height - 1, y0))
-        x1 = max(0, min(self.__width - 1, x1))
-        y1 = max(0, min(self.__height - 1, y1))
+        x0 = max(0, min(self._width - 1, x0))
+        y0 = max(0, min(self._height - 1, y0))
+        x1 = max(0, min(self._width - 1, x1))
+        y1 = max(0, min(self._height - 1, y1))
 
         dx = abs(x1 - x0)
         dy = abs(y1 - y0)
@@ -73,7 +70,7 @@ class StringArt(Screensaver):
         x, y = x0, y0
 
         for _ in range(max(dx, dy) + 1):  # Safeguard against infinite loop
-            if 0 <= x < self.__width and 0 <= y < self.__height:
+            if 0 <= x < self._width and 0 <= y < self._height:
                 self.__canvas[y, x, 0] = min(1.0, self.__canvas[y, x, 0] + r * self.__line_brightness)
                 self.__canvas[y, x, 1] = min(1.0, self.__canvas[y, x, 1] + g * self.__line_brightness)
                 self.__canvas[y, x, 2] = min(1.0, self.__canvas[y, x, 2] + b * self.__line_brightness)
@@ -95,9 +92,9 @@ class StringArt(Screensaver):
         self.__canvas *= (1.0 - self.__fade)
 
         # Calculate circle parameters
-        center_x = self.__width / 2
-        center_y = self.__height / 2
-        radius = min(self.__width, self.__height) / 2 - 1
+        center_x = self._width / 2
+        center_y = self._height / 2
+        radius = min(self._width, self._height) / 2 - 1
 
         # Draw strings
         for i in range(self.__num_strings):
