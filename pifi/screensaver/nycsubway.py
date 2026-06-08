@@ -11,10 +11,18 @@ Uses the MTA's GTFS-realtime feed via the underground library.
 import os
 os.environ.setdefault('PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION', 'python')
 
-import numpy as np
-import time
+import csv
+import io
+import json
 import threading
+import time
+import zipfile
 from datetime import datetime, timezone
+from pathlib import Path
+
+import numpy as np
+import requests
+import underground  # imported after the protobuf env var above is set
 
 from pifi.config import Config
 from pifi.logger import Logger
@@ -102,7 +110,6 @@ class NycSubway(Screensaver):
             return True
 
         try:
-            import underground
             self.__underground = underground
             self.__logger.info("underground library loaded successfully")
 
@@ -111,10 +118,6 @@ class NycSubway(Screensaver):
                 self.__load_station_names()
 
             return True
-        except ImportError:
-            self.__error_message = "NO LIB"
-            self.__logger.error("underground not installed. Run: pip install underground")
-            return False
         except Exception as e:
             self.__error_message = "ERR"
             self.__logger.error(f"Failed to load underground: {e}")
@@ -123,9 +126,6 @@ class NycSubway(Screensaver):
     def __load_station_names(self):
         """Load station names from cache or MTA's GTFS static data."""
         self.__station_names_loaded = True
-
-        import json
-        from pathlib import Path
 
         # Cache file location
         cache_dir = Path.home() / '.cache' / 'pifi'
@@ -148,11 +148,6 @@ class NycSubway(Screensaver):
 
         # Fetch from MTA
         try:
-            import requests
-            import csv
-            import io
-            import zipfile
-
             # MTA's static GTFS feed URL
             gtfs_url = "http://web.mta.info/developers/data/nyct/subway/google_transit.zip"
 

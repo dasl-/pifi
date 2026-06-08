@@ -5,6 +5,7 @@ from typing import Any
 import pyjson5
 from pifi.logger import Logger
 from pifi.directoryutils import DirectoryUtils
+from pifi.settingsdb import SettingsDb
 
 class Config:
 
@@ -164,9 +165,6 @@ class Config:
             db_keys: list of SettingsDb key constants to read overrides from.
         """
         Config.load_config_if_not_loaded()
-
-        # Import here to avoid circular dependency
-        from pifi.settingsdb import SettingsDb
 
         settings_db = SettingsDb()
 

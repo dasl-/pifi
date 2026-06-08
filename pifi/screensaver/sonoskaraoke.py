@@ -9,6 +9,7 @@ import numpy as np
 import time
 
 import requests
+import soco
 from io import BytesIO
 from PIL import Image
 
@@ -44,8 +45,6 @@ class SonosKaraoke(KaraokeBase):
         4. Fall back to any available speaker
         """
         try:
-            import soco
-
             speakers = soco.discover(timeout=5)
             if not speakers:
                 return False
@@ -118,8 +117,6 @@ class SonosKaraoke(KaraokeBase):
             self._logger.info(f"Fallback to: {self.__speaker.player_name}")
             return True
 
-        except ImportError:
-            self._logger.error("soco library not installed. Run: pip install soco")
         except Exception as e:
             self._logger.error(f"Error connecting to Sonos: {e}")
 

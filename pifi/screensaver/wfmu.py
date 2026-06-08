@@ -5,10 +5,13 @@ Displays the current track and artist from WFMU radio streams.
 Uses WFMU's XML API to fetch now-playing information.
 """
 
-import numpy as np
-import time
+import math
 import threading
+import time
 import xml.etree.ElementTree as ET
+
+import numpy as np
+import requests
 
 from pifi.config import Config
 from pifi.logger import Logger
@@ -66,8 +69,6 @@ class Wfmu(Screensaver):
     def __fetch_now_playing(self):
         """Fetch current track info from WFMU API."""
         try:
-            import requests
-
             url = f"https://wfmu.org/currentliveshows.php?xml=1&c={self.__channel}"
             response = requests.get(url, timeout=10)
             response.raise_for_status()
@@ -233,7 +234,6 @@ class Wfmu(Screensaver):
 
     def __draw_audio_bars(self, frame, y):
         """Draw animated audio visualization bars."""
-        import math
         bar_width = 3
         bar_gap = 1
         num_bars = self.__width // (bar_width + bar_gap)

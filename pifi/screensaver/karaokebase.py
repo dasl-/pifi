@@ -5,11 +5,16 @@ Shared rendering, lyrics fetching, and state management for karaoke screensavers
 Subclasses provide the music source (Sonos, AirPlay, etc.).
 """
 
-import numpy as np
+import json
 import re
 import threading
 import time
+import traceback
 from abc import abstractmethod
+
+import numpy as np
+import requests
+import syncedlyrics
 
 from pifi.config import Config
 from pifi.logger import Logger
@@ -283,30 +288,26 @@ class KaraokeBase(Screensaver):
 
             # Fall back to syncedlyrics text search for remaining providers
             if not lrc:
-                try:
-                    import syncedlyrics
-                    search_query = f"{title} {artist}"
-                    for provider in ['NetEase', 'Megalobiz']:
-                        try:
-                            result = syncedlyrics.search(
-                                search_query, synced_only=True,
-                                providers=[provider]
+                search_query = f"{title} {artist}"
+                for provider in ['NetEase', 'Megalobiz']:
+                    try:
+                        result = syncedlyrics.search(
+                            search_query, synced_only=True,
+                            providers=[provider]
+                        )
+                        if result:
+                            lrc = result
+                            source_provider = provider
+                            self._logger.info(f"Found lyrics via {provider}")
+                            self._logger.debug(
+                                f"{provider} response ({len(result)} bytes): " +
+                                f"{result[:500]}"
                             )
-                            if result:
-                                lrc = result
-                                source_provider = provider
-                                self._logger.info(f"Found lyrics via {provider}")
-                                self._logger.debug(
-                                    f"{provider} response ({len(result)} bytes): " +
-                                    f"{result[:500]}"
-                                )
-                                break
-                            else:
-                                self._logger.debug(f"{provider}: no results")
-                        except Exception as e:
-                            self._logger.debug(f"{provider} failed: {e}")
-                except ImportError:
-                    self._logger.debug("syncedlyrics not installed, skipping fallback providers")
+                            break
+                        else:
+                            self._logger.debug(f"{provider}: no results")
+                    except Exception as e:
+                        self._logger.debug(f"{provider} failed: {e}")
 
             if lrc:
                 is_enhanced = '<' in lrc and '>' in lrc
@@ -340,7 +341,6 @@ class KaraokeBase(Screensaver):
                     self.__lyrics_available = False
         except Exception as e:
             self._logger.error(f"Error fetching lyrics: {e}")
-            import traceback
             self._logger.debug(traceback.format_exc())
         finally:
             self.__fetch_in_progress = False
@@ -368,7 +368,6 @@ class KaraokeBase(Screensaver):
 
     def __mm_get_token(self):
         """Fetch a fresh Musixmatch API token. Returns token or None."""
-        import requests
         r = requests.get(KaraokeBase.__MM_URL + 'token.get', params={
             'app_id': 'web-desktop-app-v1.0',
             'user_language': 'en',
@@ -389,8 +388,6 @@ class KaraokeBase(Screensaver):
 
     def __mm_api(self, endpoint, params):
         """Make a Musixmatch API request. Retries with a fresh token on 401."""
-        import requests
-
         if not KaraokeBase.__mm_token:
             if not self.__mm_get_token():
                 self._logger.debug("Musixmatch: could not get token")
@@ -505,8 +502,7 @@ class KaraokeBase(Screensaver):
         rich_body = self.__mm_api('track.richsync.get', {'track_id': track_id})
         if rich_body and 'richsync' in rich_body:
             try:
-                import json as json_mod
-                richsync = json_mod.loads(rich_body['richsync']['richsync_body'])
+                richsync = json.loads(rich_body['richsync']['richsync_body'])
                 lrc_lines = []
                 for line in richsync:
                     ts = line['ts']
@@ -540,7 +536,6 @@ class KaraokeBase(Screensaver):
 
     def __fetch_lrclib(self, title, artist, duration):
         """Fetch lyrics from LRCLIB using structured metadata for version-accurate results."""
-        import requests
         params = {'track_name': title, 'artist_name': artist}
         if duration:
             params['duration'] = duration
