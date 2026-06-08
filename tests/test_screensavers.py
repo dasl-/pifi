@@ -177,44 +177,42 @@ class TestScreensaverInterface(unittest.TestCase):
 
 
 class TestScreensaverRendering(unittest.TestCase):
-    """Construct, interface-check, and render every screensaver."""
+    """Construct, interface-check, and render every screensaver.
 
-    def test_all_screensavers_construct_and_call_super_init(self):
-        """Every screensaver constructs with the standard led_frame_player kwarg,
-        is a Screensaver with a play() method, and calls super().__init__()
-        (verified via the base-init flag). Covers all screensavers, including the
-        external-resource ones whose render loop is skipped below."""
-        for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
-            with self.subTest(screensaver=screensaver_id):
-                instance = cls(led_frame_player=BlackHoleFramePlayer())
-                self.assertIsInstance(
-                    instance, Screensaver,
-                    f"{screensaver_id} instance is not a Screensaver"
-                )
-                self.assertTrue(
-                    hasattr(instance, 'play'),
-                    f"{screensaver_id} instance missing play method"
-                )
-                # __screensaver_base_init_called is set only by Screensaver.__init__,
-                # so its presence proves the subclass called super().__init__().
-                self.assertTrue(
-                    getattr(instance, '_Screensaver__screensaver_base_init_called', False),
-                    f"{screensaver_id} does not call super().__init__()"
-                )
+    One pass over all screensavers, constructing each exactly once: every one is
+    interface-checked (is a Screensaver with play(), called super().__init__());
+    those that don't need external resources are then ticked 100 times and their
+    output frame validated. The external-resource screensavers (SKIP_TICK) are
+    still constructed and interface-checked — only their render loop is skipped.
+    """
 
-    def test_each_screensaver_runs_100_ticks(self):
-        """Every non-external screensaver advances 100 ticks without raising and
-        produces a well-formed final frame."""
+    def test_each_screensaver_constructs_and_renders(self):
         h = Config.get_or_throw('leds.display_height')
         w = Config.get_or_throw('leds.display_width')
         for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
-            if screensaver_id in SKIP_TICK:
-                continue
             with self.subTest(screensaver=screensaver_id):
-                # render_tick() swaps in its own BlackHoleFramePlayer during the
-                # tick regardless; the one we pass keeps __init__ off the hardware
-                # path. Screensavers only ever call play_frame/fade_to_frame.
+                # Inject a BlackHoleFramePlayer so __init__ never builds a real
+                # LedFramePlayer (which would touch hardware). render_tick() swaps
+                # in its own BlackHoleFramePlayer during the tick regardless;
+                # screensavers only ever call play_frame/fade_to_frame.
                 ss = cls(led_frame_player=BlackHoleFramePlayer())
+
+                # Interface contract (all screensavers, including SKIP_TICK ones).
+                self.assertIsInstance(
+                    ss, Screensaver, f"{screensaver_id} instance is not a Screensaver")
+                self.assertTrue(
+                    hasattr(ss, 'play'), f"{screensaver_id} instance missing play method")
+                # __screensaver_base_init_called is set only by Screensaver.__init__,
+                # so its presence proves the subclass called super().__init__().
+                self.assertTrue(
+                    getattr(ss, '_Screensaver__screensaver_base_init_called', False),
+                    f"{screensaver_id} does not call super().__init__()")
+
+                # Ticking needs external resources for these; construction above
+                # is enough to cover them.
+                if screensaver_id in SKIP_TICK:
+                    continue
+
                 try:
                     last_frame = None
                     for _ in range(100):
