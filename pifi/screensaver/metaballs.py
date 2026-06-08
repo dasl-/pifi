@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -111,9 +112,9 @@ class Metaballs(Screensaver):
             field += contribution
 
             # Weighted color contribution (0-1 range)
-            rgb = self.__hsv_to_rgb(hue, 0.8, 1.0)
+            rgb = hsv_to_rgb(hue, 0.8, 1.0)
             for c in range(3):
-                color_field[:, :, c] += contribution * (rgb[c] / 255.0)
+                color_field[:, :, c] += contribution * rgb[c]
 
         # Threshold the field to create blob shapes
         threshold = Config.get('screensavers.configs.metaballs.threshold', 1.0)
@@ -143,33 +144,6 @@ class Metaballs(Screensaver):
                 frame[:, :, c] = np.minimum(255, frame[:, :, c].astype(np.int16) + glow_add).astype(np.uint8)
 
         self._led_frame_player.play_frame(frame)
-
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert HSV color to RGB."""
-        if s == 0.0:
-            return [int(v * 255)] * 3
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [int(r * 255), int(g * 255), int(b * 255)]
 
     @classmethod
     def get_id(cls) -> str:

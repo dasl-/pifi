@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -75,7 +76,8 @@ class FlowField(Screensaver):
             if 0 <= ix < self.__width and 0 <= iy < self.__height:
                 # Color based on particle's hue + global palette
                 hue = (self.__hue_base + particle['hue'] * self.__hue_range) % 1.0
-                color = self.__hsv_to_rgb(hue, 0.8, 1.0)
+                r, g, b = hsv_to_rgb(hue, 0.8, 1.0)
+                color = [r * 255, g * 255, b * 255]
 
                 # Additive blend
                 self.__buffer[iy, ix, 0] += color[0] * 0.3
@@ -161,33 +163,6 @@ class FlowField(Screensaver):
         u = x if h < 8 else y
         v = y if h < 4 else (x if h == 12 or h == 14 else z)
         return (u if (h & 1) == 0 else -u) + (v if (h & 2) == 0 else -v)
-
-    def __hsv_to_rgb(self, h, s, v):
-        if s == 0.0:
-            val = int(v * 255)
-            return [val, val, val]
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [r * 255, g * 255, b * 255]
 
     @classmethod
     def get_id(cls) -> str:

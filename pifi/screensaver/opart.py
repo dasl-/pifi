@@ -3,6 +3,7 @@ import random
 import math  # pyright: ignore[reportUnusedImport]
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -107,15 +108,15 @@ class OpArt(Screensaver):
         elif self.__color_mode == 'tinted':
             h = self.__tint_hue
             # White areas get the tint, black stays black
-            r, g, b = _hsv_to_rgb_scalar(h, 0.6, 1.0)
+            r, g, b = hsv_to_rgb(h, 0.6, 1.0)
             frame = np.stack([
                 (sharp * r * 255).astype(np.uint8),
                 (sharp * g * 255).astype(np.uint8),
                 (sharp * b * 255).astype(np.uint8),
             ], axis=-1)
         else:  # duo
-            r_a, g_a, b_a = _hsv_to_rgb_scalar(self.__hue_a, 0.7, 0.9)
-            r_b, g_b, b_b = _hsv_to_rgb_scalar(self.__hue_b, 0.7, 0.9)
+            r_a, g_a, b_a = hsv_to_rgb(self.__hue_a, 0.7, 0.9)
+            r_b, g_b, b_b = hsv_to_rgb(self.__hue_b, 0.7, 0.9)
             frame = np.stack([
                 (sharp * r_a * 255 + (1 - sharp) * r_b * 255).astype(np.uint8),
                 (sharp * g_a * 255 + (1 - sharp) * g_b * 255).astype(np.uint8),
@@ -135,19 +136,3 @@ class OpArt(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Optical illusion patterns'
-
-
-def _hsv_to_rgb_scalar(h, s, v):
-    h = h % 1.0
-    i = int(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-    if i == 0: return v, t, p
-    elif i == 1: return q, v, p
-    elif i == 2: return p, v, t
-    elif i == 3: return p, q, v
-    elif i == 4: return t, p, v
-    else: return v, p, q

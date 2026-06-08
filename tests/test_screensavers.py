@@ -1,79 +1,83 @@
 #!/usr/bin/env python3
 """
-Unit tests for the Screensaver interface.
+Tests covering every screensaver.
 
-Verifies that all screensavers:
-1. Inherit from the Screensaver ABC
-2. Implement required abstract methods (play, get_id, get_name, get_description)
-3. Use the standard constructor signature
-4. Return correct metadata types
+Two layers:
+1. Interface/metadata contract — inheritance, the data returned by
+   ScreensaverManager.get_all_screensavers(), and config-key hygiene in
+   default_config.json.
+2. End-to-end exercise — every screensaver is constructed and verified to call
+   super().__init__(); every one that doesn't need external resources is then
+   ticked 100 times via render_tick() and its output frame validated.
+
+render_tick() captures frames into a BlackHoleFramePlayer instead of touching
+LED hardware. We inject a BlackHoleFramePlayer at construction so no real
+LedFramePlayer is ever built (it would initialize LED drivers and fail off-Pi)
+— this matches how ScreensaverManager builds screensavers in production, which
+always passes in a frame player rather than relying on the None default.
 """
 
-import unittest
-import sys
 import os
 import subprocess
-from unittest.mock import MagicMock, patch  # pyright: ignore[reportUnusedImport]
+import sys
+import unittest
 
+import numpy as np
 import pyjson5
 
-# Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from pifi.config import Config
+from pifi.directoryutils import DirectoryUtils
+from pifi.led.blackholeframeplayer import BlackHoleFramePlayer
+from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
 from pifi.screensaver.screensaver import Screensaver
 from pifi.screensaver.screensavermanager import ScreensaverManager
 from pifi.screensaver.videoscreensaver import VideoScreensaver
-from pifi.screensaver.cellularautomata.cellularautomaton import CellularAutomaton
-from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
 
 
 def setUpModule():
-    """Set up mock config for all tests."""
-    # Mock the Config to avoid needing a real config file
+    # Load the real default_config.json (tracked, and the source of every
+    # per-screensaver default) straight into the Config singleton. We set the
+    # private state directly rather than going through Config.load_config_if_not_loaded()
+    # because config.json is gitignored (absent in CI) and because other test
+    # modules leave a partial mock Config in the global singleton — seizing
+    # control here keeps this suite deterministic regardless of run order.
+    default_config_path = DirectoryUtils().root_dir + '/default_config.json'
+    with open(default_config_path) as f:
+        Config._Config__config = pyjson5.decode(f.read())  # pyright: ignore[reportAttributeAccessIssue]
     Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
-    Config._Config__config = {  # pyright: ignore[reportAttributeAccessIssue]
-        'leds': {
-            'driver': 'apa102',
-            'display_width': 32,
-            'display_height': 16,
-        },
-        'screensavers': {
-            'saved_videos': [],
-        },
-        # Add minimal config for each screensaver
-        'boids': {'tick_sleep': 0.05},
-        'aurora': {'tick_sleep': 0.04},
-        'game_of_life': {
-            'tick_sleep': 0.1,
-            'game_over_detection_lookback': 100,
-            'fade': False,
-            'game_color_mode': 'color',
-            'variant': 'normal',
-            'seed_liveness_probability': 0.3,
-        },
-        'cyclic_automaton': {
-            'tick_sleep': 0.1,
-            'game_over_detection_lookback': 100,
-            'fade': False,
-        },
-    }
 
-    # Mock LedFramePlayer.__init__ to avoid hardware initialization
-    original_init = LedFramePlayer.__init__  # pyright: ignore[reportUnusedVariable]
+    # default_config.json ships display dimensions of 0 (real values come from
+    # config.json on a device); set real ones so frames aren't empty.
+    Config.set('leds.display_width', 32)
+    Config.set('leds.display_height', 16)
+    Config.set('screensavers.tick_sleep', 0)   # no sleep between ticks
+    Config.set('screensavers.timeout', 0)      # unlimited
 
-    def mock_init(self):
-        # Just set the basic attributes without initializing hardware
-        self.__led_driver = MagicMock()
-        self.__gamma = MagicMock()
 
-    LedFramePlayer.__init__ = mock_init  # pyright: ignore[reportAttributeAccessIssue]
-    LedFramePlayer.play_frame = MagicMock()
-    LedFramePlayer.fade_to_frame = MagicMock()
+def tearDownModule():
+    # Undo the singleton mutation from setUpModule so any test module that runs
+    # after this one starts from a clean, unloaded Config rather than inheriting
+    # our screensaver config. Reset all four mutable class attributes back to
+    # their declared defaults (see Config in pifi/config.py).
+    Config._Config__is_loaded = False  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__config = {}  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__base_config = {}  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__applied_overrides = {}  # pyright: ignore[reportAttributeAccessIssue]
+
+
+# Screensavers that need external resources (video files, network, audio
+# sources) to *tick*. They are still constructed and interface-checked; only
+# the 100-tick render loop is skipped for them.
+SKIP_TICK = {
+    'video_screensaver', 'nyc_subway', 'wfmu',
+    'sonos_karaoke', 'airplay_karaoke',
+}
 
 
 class TestScreensaverInterface(unittest.TestCase):
-    """Test that all screensavers implement the Screensaver interface correctly."""
+    """Interface contract and metadata for all screensavers."""
 
     def test_all_screensavers_inherit_from_screensaver(self):
         """Verify all screensavers inherit from Screensaver ABC."""
@@ -83,25 +87,6 @@ class TestScreensaverInterface(unittest.TestCase):
                     issubclass(cls, Screensaver),
                     f"{screensaver_id} ({cls.__name__}) does not inherit from Screensaver"
                 )
-
-    def test_all_screensavers_use_standard_constructor(self):
-        """Verify all screensavers can be instantiated with led_frame_player=None."""
-        for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
-            with self.subTest(screensaver=screensaver_id):
-                try:
-                    instance = cls(led_frame_player=None)
-                    self.assertIsInstance(
-                        instance, Screensaver,
-                        f"{screensaver_id} instance is not a Screensaver"
-                    )
-                    self.assertTrue(
-                        hasattr(instance, 'play'),
-                        f"{screensaver_id} instance missing play method"
-                    )
-                except TypeError as e:
-                    self.fail(
-                        f"{screensaver_id} failed to instantiate with led_frame_player=None: {e}"
-                    )
 
     def test_get_all_screensavers_returns_valid_data(self):
         """Verify ScreensaverManager.get_all_screensavers() returns valid data."""
@@ -190,47 +175,85 @@ class TestScreensaverInterface(unittest.TestCase):
             f"screensavers.configs keys are not in alphabetical order. Expected: {sorted(keys)}"
         )
 
-    def test_all_screensavers_call_super_init(self):
-        """Verify all screensaver subclasses call super().__init__() in their __init__ method."""
+
+class TestScreensaverRendering(unittest.TestCase):
+    """Construct, interface-check, and render every screensaver.
+
+    One pass over all screensavers, constructing each exactly once: every one is
+    interface-checked (is a Screensaver with play(), called super().__init__());
+    those that don't need external resources are then ticked 100 times and their
+    output frame validated. The external-resource screensavers (SKIP_TICK) are
+    still constructed and interface-checked — only their render loop is skipped.
+    """
+
+    def test_each_screensaver_constructs_and_renders(self):
+        h = Config.get_or_throw('leds.display_height')
+        w = Config.get_or_throw('leds.display_width')
         for screensaver_id, cls in ScreensaverManager.SCREENSAVER_CLASSES.items():
             with self.subTest(screensaver=screensaver_id):
-                # Instantiate the screensaver
-                try:
-                    instance = cls(led_frame_player=None)
-                except Exception as e:
-                    self.fail(f"{screensaver_id} failed to instantiate: {e}")
+                # Inject a BlackHoleFramePlayer so __init__ never builds a real
+                # LedFramePlayer (which would touch hardware). render_tick() swaps
+                # in its own BlackHoleFramePlayer during the tick regardless;
+                # screensavers only ever call play_frame/fade_to_frame.
+                ss = cls(led_frame_player=BlackHoleFramePlayer())
 
-                # Check if the base class __init__ was called by verifying the flag
+                # Interface contract (all screensavers, including SKIP_TICK ones).
+                self.assertIsInstance(
+                    ss, Screensaver, f"{screensaver_id} instance is not a Screensaver")
                 self.assertTrue(
-                    hasattr(instance, '_Screensaver__screensaver_base_init_called'),
-                    f"{screensaver_id} does not call super().__init__() - " +
-                    f"missing __screensaver_base_init_called attribute"
-                )
+                    hasattr(ss, 'play'), f"{screensaver_id} instance missing play method")
+                # __screensaver_base_init_called is set only by Screensaver.__init__,
+                # so its presence proves the subclass called super().__init__().
                 self.assertTrue(
-                    instance._Screensaver__screensaver_base_init_called,
-                    f"{screensaver_id}.__screensaver_base_init_called is not True"
-                )
+                    getattr(ss, '_Screensaver__screensaver_base_init_called', False),
+                    f"{screensaver_id} does not call super().__init__()")
+
+                # Ticking needs external resources for these; construction above
+                # is enough to cover them.
+                if screensaver_id in SKIP_TICK:
+                    continue
+
+                try:
+                    last_frame = None
+                    for _ in range(100):
+                        frame, alive = ss.render_tick()
+                        if frame is not None:
+                            last_frame = frame
+                        if not alive:
+                            break
+                    if last_frame is None:
+                        self.fail(f"{screensaver_id} produced no frame")
+                    # Integer dtype (not necessarily uint8 — cyclic_automaton
+                    # emits int64). A float frame would mean a screensaver forgot
+                    # to scale/cast, which is exactly the kind of HSV regression
+                    # this guards against.
+                    self.assertTrue(
+                        np.issubdtype(last_frame.dtype, np.integer),
+                        f"{screensaver_id} emitted non-integer frame dtype {last_frame.dtype}",
+                    )
+                    # Allow either (H, W, 3) RGB or (H, W) monochrome.
+                    self.assertIn(last_frame.shape, [(h, w, 3), (h, w)])
+                finally:
+                    ss.teardown()
 
 
 class TestSpecificScreensavers(unittest.TestCase):
-    """Test specific screensaver implementations."""
+    """Behavior specific to individual screensaver implementations."""
 
     def test_video_screensaver_uses_config(self):
         """Verify VideoScreensaver gets video_list from Config, not constructor."""
-        # Should be able to instantiate without passing video_list
-        instance = VideoScreensaver(led_frame_player=None)
+        instance = VideoScreensaver(led_frame_player=BlackHoleFramePlayer())
         self.assertTrue(hasattr(instance, 'video_list'))
         self.assertIsInstance(instance.video_list, list)
 
     def test_video_screensaver_handles_empty_list(self):
         """Verify VideoScreensaver.play() handles empty video list gracefully."""
-        # Create instance with empty video list (from default config)
-        instance = VideoScreensaver(led_frame_player=None)
+        instance = VideoScreensaver(led_frame_player=BlackHoleFramePlayer())
 
         # Should have empty list from config
         self.assertEqual(instance.video_list, [])
 
-        # play() should return gracefully without error
+        # play() should return gracefully without error (empty list => _tick stops)
         try:
             instance.play()
         except Exception as e:

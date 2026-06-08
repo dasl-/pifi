@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -50,31 +51,6 @@ class StringArt(Screensaver):
         x = center_x + math.cos(angle) * radius
         y = center_y + math.sin(angle) * radius
         return x, y
-
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert HSV to RGB."""
-        if s == 0:
-            return v, v, v
-
-        h = h % 1.0
-        i = int(h * 6)
-        f = h * 6 - i
-        p = v * (1 - s)
-        q = v * (1 - s * f)
-        t = v * (1 - s * (1 - f))
-
-        if i == 0:
-            return v, t, p
-        elif i == 1:
-            return q, v, p
-        elif i == 2:
-            return p, v, t
-        elif i == 3:
-            return p, q, v
-        elif i == 4:
-            return t, p, v
-        else:
-            return v, p, q
 
     def __draw_line(self, x0, y0, x1, y1, r, g, b):
         """Draw a line using Bresenham's algorithm with additive blending."""
@@ -137,7 +113,7 @@ class StringArt(Screensaver):
 
             # Color based on position with hue shift
             line_hue = (self.__hue + i / self.__num_strings * 0.3) % 1.0
-            r, g, b = self.__hsv_to_rgb(line_hue, 0.8, 1.0)
+            r, g, b = hsv_to_rgb(line_hue, 0.8, 1.0)
 
             self.__draw_line(x0, y0, x1, y1, r, g, b)
 

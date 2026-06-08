@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from pifi.config import Config
 from pifi.logger import Logger
+from pifi.screensaver.colorutils import hsv_to_rgb_bytes
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -330,7 +331,7 @@ class MeltingClock(Screensaver):
                 b = self.__buffer[y, x]
                 if b > 0.01:
                     if color_mode == 'rainbow':
-                        rgb = self.__hsv_to_rgb(self.__hue, 0.8, b)
+                        rgb = hsv_to_rgb_bytes(self.__hue, 0.8, b)
                     elif color_mode == 'green':
                         rgb = [0, int(b * 255), int(b * 100)]
                     elif color_mode == 'blue':
@@ -343,33 +344,6 @@ class MeltingClock(Screensaver):
                     frame[y, x] = rgb
 
         self._led_frame_player.play_frame(frame)
-
-    def __hsv_to_rgb(self, h, s, v):
-        """Convert HSV color to RGB."""
-        if s == 0.0:
-            return [int(v * 255)] * 3
-
-        i = int(h * 6.0)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        if i == 0:
-            r, g, b = v, t, p
-        elif i == 1:
-            r, g, b = q, v, p
-        elif i == 2:
-            r, g, b = p, v, t
-        elif i == 3:
-            r, g, b = p, q, v
-        elif i == 4:
-            r, g, b = t, p, v
-        else:
-            r, g, b = v, p, q
-
-        return [int(r * 255), int(g * 255), int(b * 255)]
 
     @classmethod
     def get_id(cls) -> str:

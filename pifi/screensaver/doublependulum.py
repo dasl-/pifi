@@ -4,6 +4,7 @@ import math
 
 from pifi.config import Config
 from pifi.logger import Logger  # pyright: ignore[reportUnusedImport]
+from pifi.screensaver.colorutils import hsv_to_rgb
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -152,7 +153,7 @@ class DoublePendulum(Screensaver):
 
         # Trail color — hue shifts slowly over time
         hue = (self.__hue_base + self.__time * 0.02) % 1.0
-        r, g, b = _hsv_to_rgb_scalar(hue, 0.8, 1.0)
+        r, g, b = hsv_to_rgb(hue, 0.8, 1.0)
 
         for s in range(steps + 1):
             t = s / steps if steps > 0 else 0
@@ -190,7 +191,7 @@ class DoublePendulum(Screensaver):
 
         # Draw bobs as bright discs — pivot, joint, and tip
         hue = (self.__hue_base + self.__time * 0.02) % 1.0
-        tip_r, tip_g, tip_b = _hsv_to_rgb_scalar(hue, 0.7, 1.0)
+        tip_r, tip_g, tip_b = hsv_to_rgb(hue, 0.7, 1.0)
         bobs = [
             (self.__cx, self.__cy, 1, np.array([0.5, 0.5, 0.6])),     # pivot — small, dim
             (x1, y1, 2, np.array([0.8, 0.8, 0.9])),                    # joint — medium
@@ -216,19 +217,3 @@ class DoublePendulum(Screensaver):
     @classmethod
     def get_description(cls) -> str:
         return 'Chaotic pendulum trail'
-
-
-def _hsv_to_rgb_scalar(h, s, v):
-    h = h % 1.0
-    i = int(h * 6)
-    f = h * 6 - i
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-    i = i % 6
-    if i == 0: return v, t, p
-    elif i == 1: return q, v, p
-    elif i == 2: return p, v, t
-    elif i == 3: return p, q, v
-    elif i == 4: return t, p, v
-    else: return v, p, q

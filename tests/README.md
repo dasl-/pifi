@@ -15,7 +15,7 @@ uv run pytest tests/
 uv run pytest tests/ -v
 
 # A single file
-uv run pytest tests/test_screensaver_interface.py -v
+uv run pytest tests/test_screensavers.py -v
 ```
 
 `uv run` puts the venv first on PATH, so the subprocess-based tests (which

@@ -3,6 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -116,7 +117,7 @@ class WaveInterference(Screensaver):
             sat = np.ones_like(amplitude) * 0.9
             val = (amplitude + 1) / 2 * 0.8 + 0.2  # Map to [0.2, 1.0]
 
-            frame = self.__hsv_array_to_rgb(hue, sat, val)
+            frame = hsv_to_rgb_uint8_frame(hue, sat, val)
 
         elif color_mode == 'monochrome':
             # Simple grayscale based on amplitude
@@ -145,35 +146,6 @@ class WaveInterference(Screensaver):
             frame[:, :, 2] = (brightness * 255).astype(np.uint8)  # B
 
         self._led_frame_player.play_frame(frame)
-
-    def __hsv_array_to_rgb(self, h, s, v):
-        """Convert HSV arrays to RGB frame."""
-        frame = np.zeros((self.__height, self.__width, 3), dtype=np.uint8)
-
-        # Vectorized HSV to RGB conversion
-        h = np.asarray(h)
-        s = np.asarray(s)
-        v = np.asarray(v)
-
-        i = (h * 6.0).astype(int)
-        f = (h * 6.0) - i
-        p = v * (1.0 - s)
-        q = v * (1.0 - s * f)
-        t = v * (1.0 - s * (1.0 - f))
-        i = i % 6
-
-        # Build RGB based on hue sector
-        conditions = [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5]
-
-        r = np.select(conditions, [v, q, p, p, t, v])
-        g = np.select(conditions, [t, v, v, q, p, p])
-        b = np.select(conditions, [p, p, t, v, v, q])
-
-        frame[:, :, 0] = (r * 255).astype(np.uint8)
-        frame[:, :, 1] = (g * 255).astype(np.uint8)
-        frame[:, :, 2] = (b * 255).astype(np.uint8)
-
-        return frame
 
     @classmethod
     def get_id(cls) -> str:
