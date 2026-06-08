@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.screensaver.colorutils import hsv_to_rgb
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -117,8 +117,7 @@ class WaveInterference(Screensaver):
             sat = np.ones_like(amplitude) * 0.9
             val = (amplitude + 1) / 2 * 0.8 + 0.2  # Map to [0.2, 1.0]
 
-            r, g, b = hsv_to_rgb(hue, sat, val)
-            frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+            frame = hsv_to_rgb_uint8_frame(hue, sat, val)
 
         elif color_mode == 'monochrome':
             # Simple grayscale based on amplitude

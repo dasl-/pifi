@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 from pifi.config import Config
-from pifi.screensaver.colorutils import hsv_to_rgb
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -73,8 +73,7 @@ class Kaleidoscope(Screensaver):
         sat = 0.6 + pattern * 0.2
         val = np.clip(0.1 + (pattern + 1) * 0.4 + (1 - r) * 0.15, 0, 1)
 
-        r, g, b = hsv_to_rgb(hue, sat, val)
-        frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+        frame = hsv_to_rgb_uint8_frame(hue, sat, val)
         self._led_frame_player.play_frame(frame)
 
     @classmethod

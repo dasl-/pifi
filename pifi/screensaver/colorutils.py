@@ -1,15 +1,20 @@
 import colorsys
-from typing import Any
+from typing import overload
 
 import numpy as np
 
 
-def hsv_to_rgb(h, s, v) -> tuple[Any, Any, Any]:
+@overload
+def hsv_to_rgb(h: float, s: float, v: float) -> tuple[float, float, float]: ...
+@overload
+def hsv_to_rgb(h: np.ndarray, s: np.ndarray, v: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+def hsv_to_rgb(h, s, v):
     """Convert HSV to RGB, vectorized over numpy arrays (also works on scalars).
 
     h, s, v may be Python floats or numpy arrays. Returns a 3-tuple (r, g, b) of
     floats in [0, 1]; for array inputs the components are arrays of the same
-    shape, for scalar inputs they are Python floats.
+    shape, for scalar inputs they are Python floats. To build a uint8 RGB frame
+    straight from hue/sat/val arrays, prefer hsv_to_rgb_uint8_frame().
 
     Hue is wrapped into [0, 1) first, so the result matches colorsys.hsv_to_rgb
     for h in [0, 1) and wraps correctly for hue outside that range. Use this for
@@ -37,6 +42,8 @@ def hsv_to_rgb(h, s, v) -> tuple[Any, Any, Any]:
     p = v * (1.0 - s)
     q = v * (1.0 - s * f)
     t = v * (1.0 - s * (1.0 - f))
+    # Load-bearing: a tiny negative h can round up to exactly 1.0 under % 1.0,
+    # making i == 6. Wrap it back into [0, 5] so every pixel hits a sector below.
     i = i % 6
 
     r = np.zeros_like(h)
@@ -49,6 +56,18 @@ def hsv_to_rgb(h, s, v) -> tuple[Any, Any, Any]:
     m = i == 4; r[m] = t[m]; g[m] = p[m]; b[m] = v[m]
     m = i == 5; r[m] = v[m]; g[m] = p[m]; b[m] = q[m]
     return r, g, b
+
+
+def hsv_to_rgb_uint8_frame(h, s, v) -> np.ndarray:
+    """Convert HSV arrays to an (H, W, 3) uint8 RGB frame.
+
+    Convenience wrapper over hsv_to_rgb() for the common screensaver pattern of
+    turning hue/sat/val arrays straight into a frame for play_frame(): it stacks
+    the three channels and scales [0, 1] -> [0, 255]. h, s, v are float arrays of
+    the same shape.
+    """
+    r, g, b = hsv_to_rgb(np.asarray(h), np.asarray(s), np.asarray(v))
+    return (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
 
 
 def hsv_to_rgb_bytes(h, s, v) -> tuple[int, int, int]:

@@ -3,7 +3,7 @@ import random
 import math
 
 from pifi.config import Config
-from pifi.screensaver.colorutils import hsv_to_rgb
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -64,8 +64,7 @@ class PixelSort(Screensaver):
         sat = 0.7 + pattern * 0.2
         val = 0.15 + pattern * 0.75
 
-        r, g, b = hsv_to_rgb(hue, sat, val)
-        frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+        frame = hsv_to_rgb_uint8_frame(hue, sat, val)
 
         # Animated sort threshold — controls which pixels get sorted
         # Lower threshold = more sorting, higher = less

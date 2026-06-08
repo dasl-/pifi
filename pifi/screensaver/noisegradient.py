@@ -3,7 +3,7 @@ import random
 import math
 
 from pifi.config import Config
-from pifi.screensaver.colorutils import hsv_to_rgb
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -93,8 +93,7 @@ class NoiseGradient(Screensaver):
         val = breath + projection * 0.15 + noise * 2
         val = np.clip(val, 0.2, 0.85)
 
-        r, g, b = hsv_to_rgb(hue, sat, val)
-        frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+        frame = hsv_to_rgb_uint8_frame(hue, sat, val)
         self._led_frame_player.play_frame(frame)
 
     @classmethod

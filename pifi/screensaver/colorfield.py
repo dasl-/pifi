@@ -3,7 +3,7 @@ import random
 import math
 
 from pifi.config import Config
-from pifi.screensaver.colorutils import hsv_to_rgb
+from pifi.screensaver.colorutils import hsv_to_rgb_uint8_frame
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -140,8 +140,7 @@ class ColorField(Screensaver):
         noise = np.random.uniform(-0.02, 0.02, (self.__height, self.__width))
         val_2d = np.clip(val_2d + noise, 0, 1)
 
-        r, g, b = hsv_to_rgb(hue_2d, sat_2d, val_2d)
-        frame = (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
+        frame = hsv_to_rgb_uint8_frame(hue_2d, sat_2d, val_2d)
         self._led_frame_player.play_frame(frame)
 
     @classmethod
