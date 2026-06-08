@@ -138,18 +138,20 @@ class SnakePlayer:
             new_head = (old_head_y, (old_head_x - 1) % display_width)
         elif self.__direction == self.RIGHT:
             new_head = (old_head_y, (old_head_x + 1) % display_width)
+        else:
+            raise Exception(f"Unexpected snake direction: {self.__direction}")
 
-        self.__snake_linked_list.insert(0, new_head)  # pyright: ignore[reportPossiblyUnboundVariable]
+        self.__snake_linked_list.insert(0, new_head)
 
         # Must call this before placing the apple to ensure the apple is not placed on the new head
-        self.__snake_set.add(new_head)  # pyright: ignore[reportPossiblyUnboundVariable]
+        self.__snake_set.add(new_head)
 
-        if new_head == self.__snake_game.get_apple():  # pyright: ignore[reportOptionalMemberAccess, reportPossiblyUnboundVariable]
+        if new_head == self.__snake_game.get_apple():  # pyright: ignore[reportOptionalMemberAccess]
             was_apple_eaten = True
         else:
             old_tail = self.__snake_linked_list[-1]
             del self.__snake_linked_list[-1]
-            if old_tail != new_head:  # pyright: ignore[reportPossiblyUnboundVariable]
+            if old_tail != new_head:
                 # Prevent edge case when the head is "following" the tail.
                 # If the old_tail is the same as the new_head, we don't want to remove the old_tail from the set
                 # because  the call to `self.__snake_set.add(new_head)` would have been a no-op above.

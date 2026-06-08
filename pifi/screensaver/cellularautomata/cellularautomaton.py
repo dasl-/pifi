@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import hashlib
 import time
 
+import numpy as np
+
 from pifi.datastructure.limitedsizedict import LimitedSizeDict
 from pifi.screensaver.screensaver import Screensaver
 
@@ -78,7 +80,7 @@ class CellularAutomaton(Screensaver, ABC):
         pass
 
     @abstractmethod
-    def _board_to_frame(self):
+    def _board_to_frame(self) -> np.ndarray:
         pass
 
     @abstractmethod
@@ -97,5 +99,5 @@ class CellularAutomaton(Screensaver, ABC):
         return self._DEFAULT_MAX_STATE_REPETITIONS_FOR_GAME_OVER
 
     # 0 means unlimited
-    def _get_max_game_length_seconds(self):
+    def _get_max_game_length_seconds(self) -> int:
         return self._DEFAULT_MAX_GAME_LENGTH_SECONDS

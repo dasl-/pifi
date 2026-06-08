@@ -466,6 +466,8 @@ class KaraokeBase(Screensaver):
 
         best_id = None
         best_diff = float('inf')
+        best_name = ''
+        best_length = 0
         for item in body['track_list']:
             track = item['track']
             length = track.get('track_length', 0)
@@ -480,7 +482,7 @@ class KaraokeBase(Screensaver):
 
         if best_id and best_diff <= 10:
             self._logger.debug(
-                f"Musixmatch search: '{best_name}' (id={best_id}, length={best_length}s, " +  # pyright: ignore[reportPossiblyUnboundVariable]
+                f"Musixmatch search: '{best_name}' (id={best_id}, length={best_length}s, " +
                 f"diff={best_diff}s)"
             )
             return best_id
