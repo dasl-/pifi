@@ -33,9 +33,15 @@ def hsv_to_rgb(h, s, v):
             or isinstance(v, np.ndarray)):
         return colorsys.hsv_to_rgb(h % 1.0, s, v)
 
-    h = np.asarray(h, dtype=np.float64) % 1.0
-    s = np.asarray(s, dtype=np.float64)
-    v = np.asarray(v, dtype=np.float64)
+    # Broadcast to a common shape so a scalar s/v paired with an array h still
+    # works: without this, a scalar becomes a 0-d array and the 2-D mask
+    # indexing below (v[m], p[m], ...) raises IndexError. broadcast_arrays
+    # returns views, not copies, so this is O(1) for the common equal-shape case.
+    h, s, v = np.broadcast_arrays(
+        np.asarray(h, dtype=np.float64) % 1.0,
+        np.asarray(s, dtype=np.float64),
+        np.asarray(v, dtype=np.float64),
+    )
 
     i = (h * 6.0).astype(np.int64)
     f = (h * 6.0) - i

@@ -45,10 +45,13 @@ def setUpModule():
 
 def tearDownModule():
     # Undo the singleton mutation from setUpModule so any test module that runs
-    # after this one starts from a clean, unloaded Config (its initial state)
-    # rather than inheriting our screensaver config.
-    Config._Config__config = {}  # pyright: ignore[reportAttributeAccessIssue]
+    # after this one starts from a clean, unloaded Config rather than inheriting
+    # our screensaver config. Reset all four mutable class attributes back to
+    # their declared defaults (see Config in pifi/config.py).
     Config._Config__is_loaded = False  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__config = {}  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__base_config = {}  # pyright: ignore[reportAttributeAccessIssue]
+    Config._Config__applied_overrides = {}  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class TestScreensaverSmoke(unittest.TestCase):
