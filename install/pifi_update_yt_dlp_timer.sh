@@ -18,7 +18,6 @@ cat <<-EOF | sudo tee /etc/systemd/system/pifi_update_yt_dlp.timer >/dev/null
 Description=pifi update yt-dlp timer
 
 [Timer]
-# Run daily at 09:31. Persistent=true runs the job on next boot if it was missed (e.g. the pi was off).
 OnCalendar=*-*-* 09:31:00
 Persistent=true
 
