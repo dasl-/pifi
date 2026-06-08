@@ -44,8 +44,7 @@ def setUpModule():
     # control here keeps this suite deterministic regardless of run order.
     default_config_path = DirectoryUtils().root_dir + '/default_config.json'
     with open(default_config_path) as f:
-        Config._Config__config = pyjson5.decode(f.read())  # pyright: ignore[reportAttributeAccessIssue]
-    Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._load_for_test(pyjson5.decode(f.read()))
 
     # default_config.json ships display dimensions of 0 (real values come from
     # config.json on a device); set real ones so frames aren't empty.
@@ -60,10 +59,7 @@ def tearDownModule():
     # after this one starts from a clean, unloaded Config rather than inheriting
     # our screensaver config. Reset all four mutable class attributes back to
     # their declared defaults (see Config in pifi/config.py).
-    Config._Config__is_loaded = False  # pyright: ignore[reportAttributeAccessIssue]
-    Config._Config__config = {}  # pyright: ignore[reportAttributeAccessIssue]
-    Config._Config__base_config = {}  # pyright: ignore[reportAttributeAccessIssue]
-    Config._Config__applied_overrides = {}  # pyright: ignore[reportAttributeAccessIssue]
+    Config._reset_for_test()
 
 
 # Screensavers that need external resources (video files, network, audio

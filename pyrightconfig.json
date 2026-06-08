@@ -26,5 +26,20 @@
     "reportCallInDefaultInitializer": "error",
     "reportUnsupportedDunderAll": "error",
     "reportAssertAlwaysTrue": "error",
-    "reportMissingTypeArgument": "error"
+    "reportMissingTypeArgument": "error",
+    // Tests legitimately reach into the internals of the classes under test:
+    // protected members (ss._teardown) and name-mangled private state
+    // (ss._Screensaver__timeout). Both are allowed here so tests can assert and
+    // manipulate internal state without per-line suppressions. Where it dedupes
+    // setup, prefer the Config fixture loader (Config._load_for_test) instead.
+    // extraPaths keeps `pifi` importable from tests/ (mirrors the runtime
+    // sys.path insert each test file does).
+    "executionEnvironments": [
+        {
+            "root": "tests",
+            "extraPaths": ["."],
+            "reportPrivateUsage": "none",
+            "reportAttributeAccessIssue": "none"
+        }
+    ]
 }

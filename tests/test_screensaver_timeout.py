@@ -16,12 +16,10 @@ import time
 import unittest
 import sys
 import os
-from unittest.mock import MagicMock
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pifi.config import Config
-from pifi.led.ledframeplayer import LedFramePlayer
+from pifi.led.blackholeframeplayer import BlackHoleFramePlayer
 from pifi.screensaver.screensaver import Screensaver
 
 
@@ -43,40 +41,34 @@ class _StubScreensaver(Screensaver):
         return 'Test stub'
 
 
-def setUpModule():
-    # Mock LedFramePlayer to avoid hardware initialization
-    LedFramePlayer.__init__ = lambda self: None  # pyright: ignore[reportAttributeAccessIssue]
-    LedFramePlayer.play_frame = MagicMock()
-
-
 class TestTimeoutResolution(unittest.TestCase):
     """Test the timeout config resolution chain."""
 
     def setUp(self):
-        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._reset_for_test()
 
     def _make(self, config):
         config = copy.deepcopy(config)
         # The base Screensaver reads display dimensions on construction.
         config.setdefault('leds', {}).setdefault('display_width', 64)
         config['leds'].setdefault('display_height', 32)
-        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
-        return _StubScreensaver(led_frame_player=None)
+        Config._load_for_test(config)
+        return _StubScreensaver(led_frame_player=BlackHoleFramePlayer())
 
     def test_default_timeout_is_120(self):
         """When timeout is set to 120 in config (as in default_config.json), it's used."""
         ss = self._make({'screensavers': {'timeout': 120}})
-        self.assertEqual(ss._Screensaver__timeout, 120)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 120)
 
     def test_timeout_absent_means_unlimited(self):
         """When timeout key is absent from config entirely, it's unlimited."""
         ss = self._make({'screensavers': {}})
-        self.assertEqual(ss._Screensaver__timeout, 0)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 0)
 
     def test_global_timeout_overrides_default(self):
         """Global screensavers.timeout overrides the hardcoded default."""
         ss = self._make({'screensavers': {'timeout': 60}})
-        self.assertEqual(ss._Screensaver__timeout, 60)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 60)
 
     def test_per_screensaver_timeout_overrides_global(self):
         """Per-screensaver timeout overrides the global timeout."""
@@ -86,7 +78,7 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': 30}},
             }
         })
-        self.assertEqual(ss._Screensaver__timeout, 30)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 30)
 
     def test_no_per_screensaver_timeout_falls_back_to_global(self):
         """When per-screensaver timeout is absent, global timeout is used."""
@@ -96,21 +88,21 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'tick_sleep': 0.01}},
             }
         })
-        self.assertEqual(ss._Screensaver__timeout, 90)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 90)
 
     def test_timeout_zero_means_unlimited(self):
         """Timeout of 0 means unlimited — _is_past_timeout always returns False."""
         ss = self._make({'screensavers': {'timeout': 0}})
-        self.assertEqual(ss._Screensaver__timeout, 0)  # pyright: ignore[reportAttributeAccessIssue]
-        ss._Screensaver__start_time = time.time() - 99999  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertFalse(ss._is_past_timeout())  # pyright: ignore[reportPrivateUsage]
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
+        self.assertFalse(ss._is_past_timeout())
 
     def test_global_timeout_none_means_unlimited(self):
         """Global timeout of None means unlimited (same as 0)."""
         ss = self._make({'screensavers': {'timeout': None}})
-        self.assertEqual(ss._Screensaver__timeout, 0)  # pyright: ignore[reportAttributeAccessIssue]
-        ss._Screensaver__start_time = time.time() - 99999  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertFalse(ss._is_past_timeout())  # pyright: ignore[reportPrivateUsage]
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
+        self.assertFalse(ss._is_past_timeout())
 
     def test_per_screensaver_timeout_null_falls_back_to_global(self):
         """Per-screensaver timeout of null falls back to global timeout."""
@@ -120,7 +112,7 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': None}},
             }
         })
-        self.assertEqual(ss._Screensaver__timeout, 60)  # pyright: ignore[reportAttributeAccessIssue]
+        self.assertEqual(ss._Screensaver__timeout, 60)
 
     def test_per_screensaver_timeout_zero_means_unlimited(self):
         """Per-screensaver timeout of 0 means unlimited, not fallback."""
@@ -130,36 +122,36 @@ class TestTimeoutResolution(unittest.TestCase):
                 'configs': {'stub': {'timeout': 0}},
             }
         })
-        self.assertEqual(ss._Screensaver__timeout, 0)  # pyright: ignore[reportAttributeAccessIssue]
-        ss._Screensaver__start_time = time.time() - 99999  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertFalse(ss._is_past_timeout())  # pyright: ignore[reportPrivateUsage]
+        self.assertEqual(ss._Screensaver__timeout, 0)
+        ss._Screensaver__start_time = time.time() - 99999
+        self.assertFalse(ss._is_past_timeout())
 
     def test_positive_timeout_expires(self):
         """A positive timeout causes _is_past_timeout to return True after elapsed time."""
         ss = self._make({'screensavers': {'timeout': 10}})
-        ss._Screensaver__start_time = time.time() - 11  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertTrue(ss._is_past_timeout())  # pyright: ignore[reportPrivateUsage]
+        ss._Screensaver__start_time = time.time() - 11
+        self.assertTrue(ss._is_past_timeout())
 
     def test_positive_timeout_not_expired(self):
         """A positive timeout returns False before the time elapses."""
         ss = self._make({'screensavers': {'timeout': 10}})
-        ss._Screensaver__start_time = time.time()  # pyright: ignore[reportAttributeAccessIssue]
-        self.assertFalse(ss._is_past_timeout())  # pyright: ignore[reportPrivateUsage]
+        ss._Screensaver__start_time = time.time()
+        self.assertFalse(ss._is_past_timeout())
 
 
 class TestTickSleepResolution(unittest.TestCase):
     """Test the tick_sleep config resolution chain."""
 
     def setUp(self):
-        Config._Config__is_loaded = True  # pyright: ignore[reportAttributeAccessIssue]
+        Config._reset_for_test()
 
     def _make(self, config):
         config = copy.deepcopy(config)
         # The base Screensaver reads display dimensions on construction.
         config.setdefault('leds', {}).setdefault('display_width', 64)
         config['leds'].setdefault('display_height', 32)
-        Config._Config__config = config  # pyright: ignore[reportAttributeAccessIssue]
-        return _StubScreensaver(led_frame_player=None)
+        Config._load_for_test(config)
+        return _StubScreensaver(led_frame_player=BlackHoleFramePlayer())
 
     def test_default_tick_sleep(self):
         """When tick_sleep is set to 0.05 in config (as in default_config.json), it's used."""
