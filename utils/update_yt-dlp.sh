@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Script that is run via cron to update yt-dlp.
+# Script that is run via a systemd timer (pifi_update_yt_dlp.timer) to update yt-dlp.
 # Youtube releases updates every once in a while that breaks yt-dlp. If we don't constantly update
 # to the latest yt-dlp version, the pifi will stop working.
 #

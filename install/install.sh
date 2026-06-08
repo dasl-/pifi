@@ -26,7 +26,6 @@ main(){
     generateLoadingScreens
     setTimezone
     setupSystemdServices
-    setupYtDlpUpdateCron
     updateDbSchema
     buildWebApp
     disableWifiPowerManagement
@@ -91,21 +90,29 @@ setTimezone(){
 setupSystemdServices(){
     info "Setting up systemd services"
 
+    # The yt-dlp updater used to run from cron; remove that when upgrading from an older install.
+    # It's now a oneshot service driven by pifi_update_yt_dlp.timer (set up below).
+    sudo rm -f /etc/cron.d/pifi
+
+    # Generate the unit files.
     sudo "$BASE_DIR/install/pifi_queue_service.sh"
     sudo "$BASE_DIR/install/pifi_server_service.sh"
     sudo "$BASE_DIR/install/pifi_websocket_server_service.sh"
-    sudo chown root:root /etc/systemd/system/pifi_*.service
-    sudo chmod 644 /etc/systemd/system/pifi_*.service
-    sudo systemctl enable /etc/systemd/system/pifi_*.service
-    sudo systemctl daemon-reload
-    sudo systemctl restart $(ls /etc/systemd/system/pifi_*.service | cut -d'/' -f5)
-}
+    sudo "$BASE_DIR/install/pifi_update_yt_dlp_timer.sh"
 
-setupYtDlpUpdateCron(){
-    # setup yt-dlp update cron
-    sudo "$BASE_DIR/install/pifi_cron.sh"
-    sudo chown root:root /etc/cron.d/pifi
-    sudo chmod 644 /etc/cron.d/pifi
+    sudo chown root:root /etc/systemd/system/pifi_*.{service,timer}
+    sudo chmod 644 /etc/systemd/system/pifi_*.{service,timer}
+    sudo systemctl daemon-reload
+
+    # Enable and (re)start the long-running services. We list these explicitly rather than globbing
+    # pifi_*.service, because that glob would also match the oneshot pifi_update_yt_dlp.service,
+    # which we don't want to enable or start directly -- its timer triggers it.
+    local services=(pifi_queue.service pifi_server.service pifi_websocket_server.service)
+    sudo systemctl enable "${services[@]}"
+    sudo systemctl restart "${services[@]}"
+
+    # Enable and start the timer (not the service) for the yt-dlp updater.
+    sudo systemctl enable --now pifi_update_yt_dlp.timer
 }
 
 updateDbSchema(){
